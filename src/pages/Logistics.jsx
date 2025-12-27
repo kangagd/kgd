@@ -4,7 +4,7 @@ import { useDebounce } from "@/components/common/useDebounce";
 import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as purchaseOrdersApi from "@/components/api/purchaseOrdersApi";
-import { isLegacyPurchasingReadOnly } from "@/config/featureFlags";
+import { isLegacyPurchasingReadOnly } from "@/components/config/featureFlags";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

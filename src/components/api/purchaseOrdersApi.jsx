@@ -1,5 +1,5 @@
 import { base44 } from "@/api/base44Client";
-import { isLegacyPurchasingReadOnly, logLegacyReadOnlyBlock } from "@/config/featureFlags";
+import { isLegacyPurchasingReadOnly, logLegacyReadOnlyBlock } from "@/components/config/featureFlags";
 import { toast } from "sonner";
 
 /**
