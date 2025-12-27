@@ -730,9 +730,9 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   return (
     <div className={containerClass}>
-      {!isModal && (
-        <div className="sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-6 py-4">
-          <div className="flex items-center justify-between">
+      <div className={isModal ? "px-6 pt-4" : "sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-6 py-4"}>
+        <div className="flex items-center justify-between">
+          {!isModal && (
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -782,16 +782,18 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 </div>
                 </div>
                 <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={deletePOMutation.isPending || !can(PERMISSIONS.DELETE_PO)}
-                  variant="outline"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Trash className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
+                {can(PERMISSIONS.DELETE_PO) && (
+                  <Button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deletePOMutation.isPending}
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                )}
                 <Button
                   type="button"
                   onClick={handleSave}
