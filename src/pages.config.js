@@ -27,6 +27,9 @@ import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
+import PurchaseOrdersV2 from './pages/PurchaseOrdersV2';
+import PurchaseOrderV2Detail from './pages/PurchaseOrderV2Detail';
+import InventoryV2 from './pages/InventoryV2';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +63,9 @@ export const PAGES = {
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
+    "PurchaseOrdersV2": PurchaseOrdersV2,
+    "PurchaseOrderV2Detail": PurchaseOrderV2Detail,
+    "InventoryV2": InventoryV2,
 }
 
 export const pagesConfig = {
