@@ -929,9 +929,27 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                 value={formData.delivery_method || ""}
                 onValueChange={async (value) => {
                   if (!value) return;
-                  setFormData({ ...formData, delivery_method: value });
+                  
+                  // Update formData
+                  const newFormData = { ...formData, delivery_method: value };
+                  setFormData(newFormData);
                   setIsDirty(true);
-                  await handleSave();
+                  
+                  // Save immediately with the new value
+                  try {
+                    await base44.entities.PurchaseOrder.update(poId, {
+                      delivery_method: value
+                    });
+                    
+                    const refetchedPO = await base44.entities.PurchaseOrder.get(poId);
+                    applyReturnedPO(refetchedPO);
+                    
+                    queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
+                    toast.success("Delivery method updated");
+                  } catch (error) {
+                    console.error("Failed to update delivery method:", error);
+                    toast.error("Failed to update delivery method");
+                  }
                 }}
                 disabled={!isDraft}
               >
