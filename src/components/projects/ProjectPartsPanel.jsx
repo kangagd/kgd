@@ -42,8 +42,6 @@ import {
 import { toast } from "sonner";
 import PurchaseOrderModal from "../logistics/PurchaseOrderModal";
 import PartDetailModal from "./PartDetailModal";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 export default function ProjectPartsPanel({ project, parts = [], inventoryByItem = {}, purchaseOrders = [], missingCount = 0 }) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
