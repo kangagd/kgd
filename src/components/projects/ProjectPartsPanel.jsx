@@ -115,6 +115,61 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     setSelectedSupplierId("");
   };
 
+  const createPartMutation = useMutation({
+    mutationFn: (data) => base44.functions.invoke('managePart', { action: 'create', data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectParts', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      setShowAddPartModal(false);
+      setEditingPart(null);
+      toast.success("Part added successfully");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to add part");
+    }
+  });
+
+  const updatePartMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.functions.invoke('managePart', { action: 'update', id, data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectParts', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      setShowAddPartModal(false);
+      setEditingPart(null);
+      toast.success("Part updated");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update part");
+    }
+  });
+
+  const handleSavePart = async (data) => {
+    return new Promise((resolve, reject) => {
+      const successCallback = (result) => {
+        const savedPart = result?.data?.part || { ...data, id: result?.data?.id };
+        resolve(savedPart);
+      };
+
+      if (editingPart?.id) {
+        updatePartMutation.mutate(
+          { id: editingPart.id, data },
+          { 
+            onSuccess: successCallback,
+            onError: reject
+          }
+        );
+      } else {
+        createPartMutation.mutate(
+          { ...data, project_id: project.id },
+          { 
+            onSuccess: successCallback,
+            onError: reject
+          }
+        );
+      }
+    });
+  };
+
   // Use passed purchaseOrders prop instead of fetching again
   const projectPOs = purchaseOrders;
 
