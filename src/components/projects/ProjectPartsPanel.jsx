@@ -806,6 +806,18 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
         open={!!activePoId}
         onClose={() => setActivePoId(null)}
       />
+
+      <PartDetailModal
+        open={showAddPartModal}
+        part={editingPart}
+        projectId={project.id}
+        onClose={() => {
+          setShowAddPartModal(false);
+          setEditingPart(null);
+        }}
+        onSave={handleSavePart}
+        isSubmitting={createPartMutation.isPending || updatePartMutation.isPending}
+      />
     </div>
   );
 }
