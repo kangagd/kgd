@@ -48,6 +48,8 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const [showCreatePODialog, setShowCreatePODialog] = useState(false);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
   const [activePoId, setActivePoId] = useState(null);
+  const [showAddPartModal, setShowAddPartModal] = useState(false);
+  const [editingPart, setEditingPart] = useState(null);
   const [posExpanded, setPosExpanded] = useState(() => {
     const hasShortages = parts.filter(p => !isPickablePart(p) && getNormalizedPartStatus(p) !== 'cancelled' && getNormalizedPartStatus(p) !== 'installed').length > 0;
     return hasShortages;
@@ -56,10 +58,8 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   const navigate = useNavigate();
 
   const handleAddPart = () => {
-    // Will trigger part modal from PartsSection
-    if (window.triggerAddPart) {
-      window.triggerAddPart();
-    }
+    setEditingPart(null);
+    setShowAddPartModal(true);
   };
 
   const openOrCreateProjectSupplierPO = async (supplierId) => {
