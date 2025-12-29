@@ -115,7 +115,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   };
 
   const createPartMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('managePart', { action: 'create', data }),
+    mutationFn: (data) => base44.entities.Part.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectParts', project.id] });
       queryClient.invalidateQueries({ queryKey: ['parts'] });
@@ -129,7 +129,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
   });
 
   const updatePartMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.functions.invoke('managePart', { action: 'update', id, data }),
+    mutationFn: ({ id, data }) => base44.entities.Part.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectParts', project.id] });
       queryClient.invalidateQueries({ queryKey: ['parts'] });
