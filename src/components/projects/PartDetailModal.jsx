@@ -38,18 +38,14 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const [formData, setFormData] = useState({
     category: "Other",
     status: PART_STATUS.PENDING,
-    source_type: SOURCE_TYPE.SUPPLIER_DELIVERY,
-    location: PART_LOCATION.SUPPLIER,
-    order_date: new Date().toISOString().split('T')[0],
+    source_type: SOURCE_TYPE.IN_STOCK,
+    location: PART_LOCATION.WAREHOUSE_STORAGE,
     linked_logistics_jobs: [],
     attachments: [],
     price_list_item_id: null,
     assigned_vehicle_id: null,
-    supplier_id: null,
-    supplier_name: "",
     quantity_required: 1,
-    notes: "",
-    tracking_url: ""
+    notes: ""
   });
   const [uploading, setUploading] = useState(false);
   const [jobSearch, setJobSearch] = useState("");
@@ -189,22 +185,18 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         setPriceListSearch(part.item_name || "");
       }
     } else {
-      // New part defaults
+      // New part defaults - for stock items only
       setFormData({
         category: "Other",
         status: PART_STATUS.PENDING,
-        source_type: SOURCE_TYPE.SUPPLIER_DELIVERY,
-        location: PART_LOCATION.SUPPLIER,
-        order_date: toDateOnly(new Date()),
+        source_type: SOURCE_TYPE.IN_STOCK,
+        location: PART_LOCATION.WAREHOUSE_STORAGE,
         linked_logistics_jobs: [],
         attachments: [],
         price_list_item_id: null,
         assigned_vehicle_id: null,
-        supplier_id: null,
-        supplier_name: "",
         quantity_required: 1,
         notes: "",
-        tracking_url: "",
         item_name: ""
       });
       setPriceListSearch("");
@@ -243,17 +235,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setPoError("");
-
-    const isSupplierSource = 
-      formData.source_type === SOURCE_TYPE.SUPPLIER_DELIVERY ||
-      formData.source_type === SOURCE_TYPE.SUPPLIER_PICKUP;
-
-    // Validate supplier is set if supplier source
-    if (isSupplierSource && !formData.supplier_id) {
-      setPoError("Supplier is required for this source type");
-      return;
-    }
 
     try {
       // Build the data to save
@@ -543,13 +524,15 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
-                      {SOURCE_TYPE_OPTIONS.map(type => (
-                        <SelectItem key={type} value={type}>
-                          {getSourceTypeLabel(type)}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value={SOURCE_TYPE.IN_STOCK}>
+                        {getSourceTypeLabel(SOURCE_TYPE.IN_STOCK)}
+                      </SelectItem>
+                      <SelectItem value={SOURCE_TYPE.CLIENT_SUPPLIED}>
+                        {getSourceTypeLabel(SOURCE_TYPE.CLIENT_SUPPLIED)}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-[#6B7280]">For items on order, use Purchase Orders</p>
                 </div>
 
                 <div className="space-y-2">
@@ -565,82 +548,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
               </div>
             </section>
 
-
-
-            {/* Supplier Selection for Supplier-type parts */}
-            {(formData.source_type === SOURCE_TYPE.SUPPLIER_DELIVERY ||
-              formData.source_type === SOURCE_TYPE.SUPPLIER_PICKUP) && (
-              <section className="space-y-4">
-                <h3 className="text-[15px] font-semibold text-[#111827] uppercase tracking-wide">Supplier Details</h3>
-                <p className="text-sm text-[#6B7280]">
-                  Select the supplier for this part. You can then add it to a Purchase Order from the Parts list.
-                </p>
-
-                {poError && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-sm text-red-600">{poError}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <Label className="text-[#111827] font-medium">Supplier *</Label>
-                    <Select
-                      value={formData.supplier_id || "none"}
-                      onValueChange={(val) => {
-                        const supplierId = val === "none" ? "" : val;
-                        setFormData(prev => ({ ...prev, supplier_id: supplierId }));
-                        setPoError("");
-                      }}
-                    >
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Select supplier" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Select a supplier</SelectItem>
-                        {suppliers.filter(s => s.is_active).map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-[#6B7280] font-normal">Order Date</Label>
-                    <Input
-                      type="date"
-                      value={formData.order_date || ""}
-                      onChange={(e) => setFormData({...formData, order_date: e.target.value})}
-                      className="bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-[#6B7280] font-normal">Expected ETA</Label>
-                    <Input
-                      type="date"
-                      value={formData.eta || ""}
-                      onChange={(e) => setFormData({...formData, eta: e.target.value})}
-                      className="bg-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-[#6B7280] font-normal">Tracking URL</Label>
-                    <Input
-                      type="url"
-                      value={formData.tracking_url || ""}
-                      onChange={(e) => setFormData({...formData, tracking_url: e.target.value})}
-                      placeholder="https://tracking.example.com/..."
-                      className="bg-white"
-                    />
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {(formData.source_type === "Supplier – Deliver to Warehouse" ||
-              formData.source_type === "Supplier – Pickup Required") && <hr className="border-[#E5E7EB]" />}
+            <hr className="border-[#E5E7EB]" />
 
             {/* Quick Movement Actions */}
             {part?.id && (isInLoadingBay || isOnVehicle) && (
