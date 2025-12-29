@@ -117,8 +117,11 @@ export default function Organisations() {
     return matchesSearch && matchesType;
   });
 
-  const getCustomerCount = (orgId) => {
-    return allCustomers.filter(c => c.organisation_id === orgId).length;
+  const getCustomerCount = (orgId, orgName) => {
+    return allCustomers.filter(c => 
+      c.organisation_id === orgId || 
+      (c.organisation_name && orgName && c.organisation_name.toLowerCase() === orgName.toLowerCase())
+    ).length;
   };
 
   if (showForm) {
@@ -286,7 +289,7 @@ export default function Organisations() {
                       </div>
                       <div className="flex items-center gap-2 text-[#6B7280] pt-1">
                         <Users className="w-4 h-4" />
-                        <span className="text-[14px] font-medium">{getCustomerCount(org.id)} customer{getCustomerCount(org.id) !== 1 ? 's' : ''}</span>
+                        <span className="text-[14px] font-medium">{getCustomerCount(org.id, org.name)} customer{getCustomerCount(org.id, org.name) !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </div>
@@ -307,7 +310,7 @@ export default function Organisations() {
         {modalOrganisation && (
           <OrganisationModalView 
             organisation={modalOrganisation} 
-            customerCount={getCustomerCount(modalOrganisation.id)}
+            customerCount={getCustomerCount(modalOrganisation.id, modalOrganisation.name)}
           />
         )}
       </EntityModal>
