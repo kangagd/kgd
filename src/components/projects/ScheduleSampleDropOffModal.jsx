@@ -54,12 +54,15 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
     queryKey: ['vehicleSamplesForDropOff', vehicleId],
     queryFn: async () => {
       if (!vehicleId) return [];
-      const samples = await base44.entities.Sample.filter({
-        location_type: "Vehicle",
-        location_reference_id: vehicleId,
-        status: "Active",
-      });
-      return samples;
+      const allSamples = await base44.entities.Sample.list();
+      // Show samples currently in vehicle OR those whose home is this vehicle
+      const filtered = allSamples.filter(s => 
+        s.status === "Active" && (
+          (s.location_type === "Vehicle" && s.location_reference_id === vehicleId) ||
+          (s.home_location_type === "Vehicle" && s.home_location_reference_id === vehicleId)
+        )
+      );
+      return filtered;
     },
     enabled: open && sourceLocation === "vehicle" && !!vehicleId,
   });
