@@ -26,9 +26,17 @@ import {
 export default function OrganisationDetails({ organisation, onClose, onEdit, onDelete }) {
   const navigate = useNavigate();
 
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['organisationCustomers', organisation.id],
-    queryFn: () => base44.entities.Customer.filter({ organisation_id: organisation.id, deleted_at: { $exists: false } })
+    queryFn: async () => {
+      const result = await base44.entities.Customer.filter({ 
+        organisation_id: organisation.id, 
+        deleted_at: { $exists: false } 
+      });
+      console.log('Fetched customers for organisation:', organisation.id, result);
+      return result;
+    },
+    enabled: !!organisation.id
   });
 
   const { data: contracts = [] } = useQuery({
@@ -196,7 +204,11 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
               </TabsList>
 
               <TabsContent value="customers">
-                {customers.length === 0 ? (
+                {customersLoading ? (
+                  <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
+                    <p className="text-slate-600">Loading customers...</p>
+                  </div>
+                ) : customers.length === 0 ? (
                   <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
                     <User className="w-12 h-12 mx-auto text-slate-300 mb-3" />
                     <p className="text-slate-600">No customers linked to this organisation</p>
