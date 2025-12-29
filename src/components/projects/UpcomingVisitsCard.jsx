@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Calendar, User, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
+  const navigate = useNavigate();
+
   // Get upcoming scheduled jobs (max 2)
   const upcomingJobs = jobs
     .filter(j => j.status === "Scheduled" && j.scheduled_date)
@@ -25,7 +29,11 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
         ) : (
           <>
             {upcomingJobs.map((job) => (
-              <div key={job.id} className="pb-3 border-b border-[#E5E7EB] last:border-0 last:pb-0">
+              <button
+                key={job.id}
+                onClick={() => navigate(`${createPageUrl("Jobs")}?jobId=${job.id}`)}
+                className="w-full pb-3 border-b border-[#E5E7EB] last:border-0 last:pb-0 text-left hover:bg-[#F9FAFB] rounded-lg p-2 -m-2 transition-colors"
+              >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="font-medium text-[14px] text-[#111827]">
                     {job.job_type_name || `Job #${job.job_number}`}
@@ -46,7 +54,7 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
                     <span>{job.scheduled_time}</span>
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </>
         )}
