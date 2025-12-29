@@ -118,10 +118,18 @@ export default function Organisations() {
   });
 
   const getCustomerCount = (orgId, orgName) => {
-    return allCustomers.filter(c => 
+    const matchedCustomers = allCustomers.filter(c => 
       c.organisation_id === orgId || 
       (c.organisation_name && orgName && c.organisation_name.toLowerCase() === orgName.toLowerCase())
-    ).length;
+    );
+    
+    console.log(`Counting customers for org ${orgName} (${orgId}):`, {
+      totalCustomers: allCustomers.length,
+      matchedCount: matchedCustomers.length,
+      matched: matchedCustomers.map(c => ({ name: c.name, org_id: c.organisation_id, org_name: c.organisation_name }))
+    });
+    
+    return matchedCustomers.length;
   };
 
   if (showForm) {
