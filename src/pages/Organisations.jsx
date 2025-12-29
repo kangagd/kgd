@@ -159,7 +159,7 @@ export default function Organisations() {
           </div>
           <Button
             onClick={() => setShowForm(true)}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold w-full md:w-auto h-10 px-4 text-[14px] rounded-lg"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Organisation
@@ -223,7 +223,7 @@ export default function Organisations() {
           {filteredOrganisations.map((org) => (
             <Card
               key={org.id}
-              className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative group"
+              className="hover:shadow-md transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedOrganisation(org);
@@ -232,7 +232,7 @@ export default function Organisations() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
+                className="absolute top-3 right-3 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
                 onClick={(e) => {
                   e.stopPropagation();
                   setModalOrganisation(org);
@@ -240,53 +240,53 @@ export default function Organisations() {
               >
                 <Eye className="w-4 h-4 text-[#6B7280]" />
               </Button>
-              <CardContent className="p-6">
+              <CardContent className="p-5">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1 pr-8">
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+                  <div className="flex-1 pr-10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="text-[18px] font-semibold text-[#111827]">
                         {org.name}
                       </h3>
                       {org.organisation_type && (
                         <OrganisationTypeBadge value={org.organisation_type} />
                       )}
                       {org.status === 'inactive' && (
-                        <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200">
+                        <Badge variant="outline" className="text-[11px]">
                           Inactive
                         </Badge>
                       )}
                     </div>
 
-                    <div className="space-y-2 text-[14px] leading-[1.4]">
+                    <div className="space-y-2 text-[14px]">
                       {org.organisation_type === "Strata" && org.sp_number && (
-                        <div className="flex items-start gap-2 text-[#4B5563]">
-                          <Hash className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
+                        <div className="flex items-start gap-2 text-[#6B7280]">
+                          <Hash className="w-4 h-4 mt-0.5 flex-shrink-0" />
                           <span>SP: {org.sp_number}</span>
                         </div>
                       )}
                       {org.address && (
-                        <div className="flex items-start gap-2 text-[#4B5563]">
-                          <MapPin className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
+                        <div className="flex items-start gap-2 text-[#6B7280]">
+                          <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                           <span>{org.address}</span>
                         </div>
                       )}
                       <div className="flex flex-wrap gap-4">
                         {org.phone && (
-                          <div className="flex items-center gap-2 text-[#4B5563]">
-                            <Phone className="w-4 h-4 text-[#6B7280]" />
+                          <div className="flex items-center gap-2 text-[#6B7280]">
+                            <Phone className="w-4 h-4" />
                             <span>{org.phone}</span>
                           </div>
                         )}
                         {org.email && (
-                          <div className="flex items-center gap-2 text-[#4B5563]">
-                            <Mail className="w-4 h-4 text-[#6B7280]" />
+                          <div className="flex items-center gap-2 text-[#6B7280]">
+                            <Mail className="w-4 h-4" />
                             <span>{org.email}</span>
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-[#4B5563] pt-2">
-                        <Users className="w-4 h-4 text-[#6B7280]" />
-                        <span className="text-[14px] font-medium leading-[1.4]">{getCustomerCount(org.id)} customer{getCustomerCount(org.id) !== 1 ? 's' : ''}</span>
+                      <div className="flex items-center gap-2 text-[#6B7280] pt-1">
+                        <Users className="w-4 h-4" />
+                        <span className="text-[14px] font-medium">{getCustomerCount(org.id)} customer{getCustomerCount(org.id) !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </div>

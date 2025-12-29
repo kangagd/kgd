@@ -51,110 +51,114 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
   });
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4 flex-1">
-              <BackButton onClick={onClose} />
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <CardTitle className="text-2xl font-bold text-[#000000] tracking-tight">
-                    {organisation.name}
-                  </CardTitle>
-                  <OrganisationTypeBadge value={organisation.organisation_type} />
-                  {organisation.status === 'inactive' && (
-                    <Badge variant="outline" className="bg-slate-100 text-slate-600 border-slate-300">
-                      Inactive
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEdit}
-                className="border-2 hover:bg-slate-100 font-semibold"
-              >
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-2 hover:bg-red-100 hover:text-red-600 hover:border-red-200"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-2xl">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-xl font-bold text-[#000000]">Delete Organisation?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will remove the organisation. Linked customers will remain but will no longer be associated with this organisation.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="border-2 font-semibold">Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={onDelete}
-                      className="bg-red-600 hover:bg-red-700 font-semibold"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+    <div className="p-4 md:p-6 lg:p-10 max-w-7xl mx-auto bg-[#ffffff]">
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <BackButton onClick={onClose} />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-[28px] font-bold text-[#111827]">
+                {organisation.name}
+              </h1>
+              <OrganisationTypeBadge value={organisation.organisation_type} />
+              {organisation.status === 'inactive' && (
+                <Badge variant="outline" className="text-[12px]">
+                  Inactive
+                </Badge>
+              )}
             </div>
           </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="text-[14px] h-9"
+            >
+              <Edit2 className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[14px] h-9 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-[18px] font-semibold text-[#111827]">Delete Organisation?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-[14px] text-[#6B7280]">
+                    This will remove the organisation. Linked customers will remain but will no longer be associated with this organisation.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="text-[14px]">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={onDelete}
+                    className="bg-red-600 hover:bg-red-700 text-[14px]"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </div>
+
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-xl">
+        <CardHeader className="border-b border-[#E5E7EB] p-6">
+          <CardTitle className="text-[18px] font-semibold text-[#111827]">Organisation Details</CardTitle>
         </CardHeader>
 
         <CardContent className="p-6 space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {organisation.organisation_type === "Strata" && organisation.sp_number && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-[#6B7280] text-[13px] font-medium">
                   <Hash className="w-4 h-4" />
                   <span>SP Number</span>
                 </div>
-                <p className="text-[#000000] font-medium">{organisation.sp_number}</p>
+                <p className="text-[#111827] text-[14px] font-medium">{organisation.sp_number}</p>
               </div>
             )}
 
             {organisation.address && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-[#6B7280] text-[13px] font-medium">
                   <MapPin className="w-4 h-4" />
                   <span>Address</span>
                 </div>
-                <p className="text-[#000000] font-medium">{organisation.address}</p>
+                <p className="text-[#111827] text-[14px]">{organisation.address}</p>
               </div>
             )}
 
             {organisation.phone && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-[#6B7280] text-[13px] font-medium">
                   <Phone className="w-4 h-4" />
                   <span>Phone</span>
                 </div>
-                <a href={`tel:${organisation.phone}`} className="text-blue-600 hover:underline font-medium">
+                <a href={`tel:${organisation.phone}`} className="text-[#2563EB] hover:underline text-[14px]">
                   {organisation.phone}
                 </a>
               </div>
             )}
 
             {organisation.email && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-[#6B7280] text-[13px] font-medium">
                   <Mail className="w-4 h-4" />
                   <span>Email</span>
                 </div>
-                <a href={`mailto:${organisation.email}`} className="text-blue-600 hover:underline font-medium">
+                <a href={`mailto:${organisation.email}`} className="text-[#2563EB] hover:underline text-[14px]">
                   {organisation.email}
                 </a>
               </div>
@@ -162,31 +166,36 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
           </div>
 
           {organisation.notes && (
-            <div className="pt-4 border-t-2 border-slate-200">
-              <h3 className="text-sm font-bold text-slate-500 mb-2">Notes</h3>
+            <div className="pt-6 border-t border-[#E5E7EB]">
+              <h3 className="text-[14px] font-semibold text-[#111827] mb-2">Notes</h3>
               <div 
-                className="text-slate-700 prose prose-sm max-w-none"
+                className="text-[#4B5563] text-[14px] prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: organisation.notes }}
               />
             </div>
           )}
 
-          <div className="pt-4 border-t-2 border-slate-200">
+          <div className="pt-6 border-t border-[#E5E7EB]">
             {/* Contracts Section */}
             {contracts.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-lg font-bold text-[#000000] tracking-tight mb-3">Contracts</h3>
+                <h3 className="text-[16px] font-semibold text-[#111827] mb-3">Contracts</h3>
                 <div className="grid gap-3">
                   {contracts.map(contract => (
-                    <Card key={contract.id} className="border-2 border-blue-100 bg-blue-50">
+                    <Card key={contract.id} className="border border-[#DBEAFE] bg-[#EFF6FF] rounded-xl">
                       <CardContent className="p-4 flex justify-between items-center">
                         <div>
-                          <div className="font-bold text-blue-900 text-lg">{contract.name}</div>
-                          <div className="text-sm text-blue-700 mt-1">
+                          <div className="font-semibold text-[#1E40AF] text-[15px]">{contract.name}</div>
+                          <div className="text-[13px] text-[#3B82F6] mt-1">
                             {contract.status} • {contract.start_date} - {contract.end_date || 'Ongoing'}
                           </div>
                         </div>
-                        <Button onClick={() => navigate(createPageUrl('Contracts'))} variant="outline" className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100">
+                        <Button 
+                          onClick={() => navigate(createPageUrl('Contracts'))} 
+                          variant="outline" 
+                          size="sm"
+                          className="bg-white border-[#DBEAFE] text-[#2563EB] hover:bg-[#DBEAFE] text-[13px]"
+                        >
                           View Dashboard
                         </Button>
                       </CardContent>
@@ -196,44 +205,44 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
               </div>
             )}
 
-            <Tabs defaultValue="customers">
-              <TabsList className="mb-4">
-                <TabsTrigger value="customers">Linked Customers ({customers.length})</TabsTrigger>
-                <TabsTrigger value="stations">Stations ({customers.filter(c => c.is_station).length})</TabsTrigger>
-                <TabsTrigger value="jobs">All Jobs ({orgJobs.length})</TabsTrigger>
+            <Tabs defaultValue="customers" className="w-full">
+              <TabsList className="mb-4 w-full">
+                <TabsTrigger value="customers" className="flex-1">Linked Customers ({customers.length})</TabsTrigger>
+                <TabsTrigger value="stations" className="flex-1">Stations ({customers.filter(c => c.is_station).length})</TabsTrigger>
+                <TabsTrigger value="jobs" className="flex-1">All Jobs ({orgJobs.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="customers">
                 {customersLoading ? (
-                  <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
-                    <p className="text-slate-600">Loading customers...</p>
+                  <div className="text-center py-12 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB]">
+                    <p className="text-[#6B7280] text-[14px]">Loading customers...</p>
                   </div>
                 ) : customers.length === 0 ? (
-                  <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-slate-200">
-                    <User className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                    <p className="text-slate-600">No customers linked to this organisation</p>
+                  <div className="text-center py-12 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB]">
+                    <User className="w-12 h-12 mx-auto text-[#D1D5DB] mb-3" />
+                    <p className="text-[#6B7280] text-[14px]">No customers linked to this organisation</p>
                   </div>
                 ) : (
                   <div className="grid gap-3">
                     {customers.map((customer) => (
                       <Card
                         key={customer.id}
-                        className="hover:shadow-md transition-all cursor-pointer border-2 border-slate-200 rounded-xl"
+                        className="hover:shadow-md hover:border-[#FAE008] transition-all cursor-pointer border border-[#E5E7EB] rounded-xl"
                         onClick={() => navigate(createPageUrl('Customers') + `?customerId=${customer.id}`)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-bold text-[#000000]">{customer.name}</h4>
-                              <div className="text-sm text-slate-600 mt-1 space-y-0.5">
+                              <h4 className="font-semibold text-[#111827] text-[15px]">{customer.name}</h4>
+                              <div className="text-[13px] text-[#6B7280] mt-1 space-y-0.5">
                                 {customer.phone && <p>Phone: {customer.phone}</p>}
                                 {customer.email && <p>Email: {customer.email}</p>}
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              {customer.is_station && <Badge className="bg-purple-100 text-purple-700">Station</Badge>}
+                              {customer.is_station && <Badge className="bg-purple-100 text-purple-700 text-[11px]">Station</Badge>}
                               {customer.status === 'inactive' && (
-                                <Badge variant="outline" className="bg-slate-100 text-slate-600">
+                                <Badge variant="outline" className="text-[11px]">
                                   Inactive
                                 </Badge>
                               )}
@@ -251,24 +260,26 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
                   {customers.filter(c => c.is_station).map((customer) => (
                     <Card
                       key={customer.id}
-                      className="hover:shadow-md transition-all cursor-pointer border-2 border-slate-200 rounded-xl"
+                      className="hover:shadow-md hover:border-[#FAE008] transition-all cursor-pointer border border-[#E5E7EB] rounded-xl"
                       onClick={() => navigate(createPageUrl('Customers') + `?customerId=${customer.id}`)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-bold text-[#000000]">{customer.name}</h4>
-                            <div className="text-sm text-slate-600 mt-1">
+                            <h4 className="font-semibold text-[#111827] text-[15px]">{customer.name}</h4>
+                            <div className="text-[13px] text-[#6B7280] mt-1">
                               Station / Site
                             </div>
                           </div>
-                          <Badge className="bg-purple-100 text-purple-700">Station</Badge>
+                          <Badge className="bg-purple-100 text-purple-700 text-[11px]">Station</Badge>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                   {customers.filter(c => c.is_station).length === 0 && (
-                    <p className="text-gray-500">No stations found.</p>
+                    <div className="text-center py-12 bg-[#F9FAFB] rounded-xl border border-[#E5E7EB]">
+                      <p className="text-[#6B7280] text-[14px]">No stations found</p>
+                    </div>
                   )}
                 </div>
               </TabsContent>
