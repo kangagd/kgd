@@ -29,11 +29,22 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
   const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['organisationCustomers', organisation.id],
     queryFn: async () => {
-      const result = await base44.entities.Customer.filter({ 
-        organisation_id: organisation.id, 
-        deleted_at: { $exists: false } 
-      });
-      console.log('Fetched customers for organisation:', organisation.id, result);
+      // First check if ANY customers exist with this organisation_name (legacy)
+      const allCustomers = await base44.entities.Customer.filter({ deleted_at: { $exists: false } });
+      console.log('All customers:', allCustomers.map(c => ({ 
+        id: c.id, 
+        name: c.name, 
+        organisation_id: c.organisation_id, 
+        organisation_name: c.organisation_name 
+      })));
+      
+      // Filter by organisation_id (new way) OR organisation_name (legacy fallback)
+      const result = allCustomers.filter(c => 
+        c.organisation_id === organisation.id || 
+        (c.organisation_name && c.organisation_name.toLowerCase() === organisation.name.toLowerCase())
+      );
+      
+      console.log('Filtered customers for organisation:', organisation.id, organisation.name, result);
       return result;
     },
     enabled: !!organisation.id
