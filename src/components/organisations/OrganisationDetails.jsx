@@ -57,10 +57,29 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
     queryFn: () => base44.entities.Contract.filter({ organisation_id: organisation.id })
   });
 
-  // Fetch all jobs for this org (optional, might be heavy if not paginated, but asked for "Jobs" tab)
+  // Fetch all jobs for this org's customers
   const { data: orgJobs = [] } = useQuery({
-    queryKey: ['organisationJobs', organisation.id],
-    queryFn: () => base44.entities.Job.filter({ organisation_id: organisation.id })
+    queryKey: ['organisationJobs', organisation.id, customers.length],
+    queryFn: async () => {
+      // Get jobs directly linked to the organisation
+      const directJobs = await base44.entities.Job.filter({ organisation_id: organisation.id });
+      
+      // Get jobs linked to this organisation's customers
+      const customerIds = customers.map(c => c.id);
+      if (customerIds.length === 0) return directJobs;
+      
+      const customerJobs = await base44.entities.Job.list();
+      const filteredCustomerJobs = customerJobs.filter(job => 
+        customerIds.includes(job.customer_id) && !job.deleted_at
+      );
+      
+      // Combine and deduplicate
+      const allJobs = [...directJobs, ...filteredCustomerJobs];
+      const uniqueJobs = Array.from(new Map(allJobs.map(job => [job.id, job])).values());
+      
+      return uniqueJobs;
+    },
+    enabled: !!organisation.id
   });
 
   return (
