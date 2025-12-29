@@ -34,7 +34,10 @@ export default function Organisations() {
 
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.filter({ deleted_at: { $exists: false } })
+    queryFn: async () => {
+      const customers = await base44.entities.Customer.list();
+      return customers.filter(c => !c.deleted_at);
+    }
   });
 
   // Handle URL params for direct navigation
