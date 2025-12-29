@@ -29,9 +29,11 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
   const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['organisationCustomers', organisation.id],
     queryFn: async () => {
-      // First check if ANY customers exist with this organisation_name (legacy)
-      const allCustomers = await base44.entities.Customer.filter({ deleted_at: { $exists: false } });
-      console.log('All customers:', allCustomers.map(c => ({ 
+      // Fetch all active customers
+      const allCustomers = await base44.entities.Customer.list();
+      const activeCustomers = allCustomers.filter(c => !c.deleted_at);
+      
+      console.log('All active customers:', activeCustomers.map(c => ({ 
         id: c.id, 
         name: c.name, 
         organisation_id: c.organisation_id, 
@@ -39,9 +41,9 @@ export default function OrganisationDetails({ organisation, onClose, onEdit, onD
       })));
       
       // Filter by organisation_id (new way) OR organisation_name (legacy fallback)
-      const result = allCustomers.filter(c => 
+      const result = activeCustomers.filter(c => 
         c.organisation_id === organisation.id || 
-        (c.organisation_name && c.organisation_name.toLowerCase() === organisation.name.toLowerCase())
+        (c.organisation_name && organisation.name && c.organisation_name.toLowerCase() === organisation.name.toLowerCase())
       );
       
       console.log('Filtered customers for organisation:', organisation.id, organisation.name, result);
