@@ -57,7 +57,7 @@ export default function SampleDetailModal({ open, onClose, sample }) {
   const { data: movements = [] } = useQuery({
     queryKey: ['sampleMovements', sample.id],
     queryFn: async () => {
-      const mvts = await base44.entities.SampleMovementV2.filter({ sample_id: sample.id });
+      const mvts = await base44.entities.SampleMovement.filter({ sample_id: sample.id });
       return mvts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     },
     enabled: open && !!sample.id,
