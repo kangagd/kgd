@@ -67,8 +67,8 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
   const { data: samples = [] } = useQuery({
     queryKey: ['projectSamples', project.id],
     queryFn: async () => {
-      const allSamples = await base44.entities.Sample.list();
-      return allSamples.filter(s => s.current_location_project_id === project.id);
+      const allSamples = await base44.entities.SampleV2.list();
+      return allSamples.filter(s => s.checked_out_project_id === project.id);
     },
     enabled: !!project.id
   });
