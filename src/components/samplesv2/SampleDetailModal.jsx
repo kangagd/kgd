@@ -69,6 +69,18 @@ export default function SampleDetailModal({ open, onClose, sample }) {
     enabled: open && !!sample.checked_out_project_id,
   });
 
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles'],
+    queryFn: () => base44.entities.Vehicle.list(),
+    enabled: open,
+  });
+
+  const getVehicleName = (vehicleId) => {
+    if (!vehicleId) return '';
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    return vehicle ? (vehicle.name || vehicle.registration_plate) : vehicleId;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -184,10 +196,10 @@ export default function SampleDetailModal({ open, onClose, sample }) {
                     </div>
                     <div className="text-[13px] text-[#6B7280] space-y-1">
                       {movement.from_location_type && (
-                        <p>From: {movement.from_location_type} {movement.from_location_reference_id && `(${movement.from_location_reference_id})`}</p>
+                        <p>From: {movement.from_location_type} {movement.from_location_reference_id && movement.from_location_type === 'vehicle' ? `(${getVehicleName(movement.from_location_reference_id)})` : movement.from_location_reference_id ? `(${movement.from_location_reference_id})` : ''}</p>
                       )}
                       {movement.to_location_type && (
-                        <p>To: {movement.to_location_type} {movement.to_location_reference_id && `(${movement.to_location_reference_id})`}</p>
+                        <p>To: {movement.to_location_type} {movement.to_location_reference_id && movement.to_location_type === 'vehicle' ? `(${getVehicleName(movement.to_location_reference_id)})` : movement.to_location_reference_id ? `(${movement.to_location_reference_id})` : ''}</p>
                       )}
                       {movement.notes && (
                         <p className="text-[#4B5563] mt-2">{movement.notes}</p>
