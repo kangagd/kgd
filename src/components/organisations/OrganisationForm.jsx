@@ -21,6 +21,7 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     // Filter out empty strings and undefined values for optional fields
     const submitData = { ...formData };
     if (!submitData.organisation_type) {

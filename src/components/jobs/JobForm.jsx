@@ -239,8 +239,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
     await handleAutoSave();
-
   };
 
   const handleCustomerChange = (customerId) => {

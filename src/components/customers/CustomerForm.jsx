@@ -125,6 +125,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     
     // Ensure organisation_name is included if organisation_id is set
     const submitData = { ...formData };

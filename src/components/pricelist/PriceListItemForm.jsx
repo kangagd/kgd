@@ -40,6 +40,7 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     onSubmit({
       ...formData,
       price: parseFloat(formData.price) || 0,

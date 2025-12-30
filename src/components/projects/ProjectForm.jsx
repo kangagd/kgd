@@ -157,6 +157,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     onSubmit(formData);
   };
 
