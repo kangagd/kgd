@@ -11,6 +11,7 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { handleEnterToNextField } from "../common/formNavigator";
 
 const TASK_TYPES = ["Call", "Email", "Site Visit", "Internal", "Follow-up", "Parts / Ordering", "Other"];
 const TASK_STATUSES = ["Open", "In Progress", "Completed", "Cancelled"];
@@ -54,6 +55,13 @@ export default function TaskFormModal({
     queryFn: () => base44.entities.Job.list(),
     enabled: !!preLinkedEntity && preLinkedEntity.type === 'job'
   });
+
+  // Handle FormNavigator save request
+  useEffect(() => {
+    const onSaveRequest = () => handleSave();
+    window.addEventListener("FORM_NAV_SAVE_REQUEST", onSaveRequest);
+    return () => window.removeEventListener("FORM_NAV_SAVE_REQUEST", onSaveRequest);
+  }, [formData]);
 
   useEffect(() => {
     if (!open) return; // Don't run if modal isn't open
@@ -124,8 +132,7 @@ export default function TaskFormModal({
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSave = () => {
     if (!formData.title.trim()) return;
 
     const submitData = {
@@ -136,6 +143,12 @@ export default function TaskFormModal({
     onSubmit(submitData);
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSave();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -143,11 +156,12 @@ export default function TaskFormModal({
           <DialogTitle>{task ? "Edit Task" : "Create Task"}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} onKeyDownCapture={handleEnterToNextField} className="space-y-4">
           {/* Title */}
           <div>
             <Label>Title *</Label>
             <Input
+              data-nav="true"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="Task title..."
@@ -277,7 +291,8 @@ export default function TaskFormModal({
               Cancel
             </Button>
             <Button 
-              type="submit" 
+              type="submit"
+              data-nav="true"
               className="flex-1 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
               disabled={isSubmitting || !formData.title.trim()}
             >
