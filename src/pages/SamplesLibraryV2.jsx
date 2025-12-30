@@ -66,6 +66,17 @@ const getLocationLabel = (locationType) => {
   }
 };
 
+const safeFormatDate = (dateString, formatString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return format(date, formatString);
+  } catch {
+    return '-';
+  }
+};
+
 export default function SamplesLibraryV2() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -282,10 +293,10 @@ export default function SamplesLibraryV2() {
                       ) : '-'}
                     </td>
                     <td className="py-3 px-4 text-[14px] text-[#6B7280]">
-                      {sample.due_back_at ? format(new Date(sample.due_back_at), 'MMM d, yyyy') : '-'}
+                      {safeFormatDate(sample.due_back_at, 'MMM d, yyyy')}
                     </td>
                     <td className="py-3 px-4 text-[14px] text-[#6B7280]">
-                      {sample.last_seen_at ? format(new Date(sample.last_seen_at), 'MMM d, h:mm a') : '-'}
+                      {safeFormatDate(sample.last_seen_at, 'MMM d, h:mm a')}
                     </td>
                     <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       {canUpdate && (
