@@ -305,10 +305,24 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryFn: async () => {
       if (!job.project_id) return [];
       const project = await base44.entities.Project.get(job.project_id);
-      if (!project.xero_invoices || project.xero_invoices.length === 0) return [];
+      
+      const invoiceIds = [];
+      
+      // Collect invoice IDs from both xero_invoices array and primary_xero_invoice_id
+      if (project.primary_xero_invoice_id) {
+        invoiceIds.push(project.primary_xero_invoice_id);
+      }
+      if (project.xero_invoices && project.xero_invoices.length > 0) {
+        invoiceIds.push(...project.xero_invoices);
+      }
+      
+      if (invoiceIds.length === 0) return [];
+      
+      // Remove duplicates
+      const uniqueIds = [...new Set(invoiceIds)];
       
       const invoices = await Promise.all(
-        project.xero_invoices.map(id => base44.entities.XeroInvoice.get(id).catch(() => null))
+        uniqueIds.map(id => base44.entities.XeroInvoice.get(id).catch(() => null))
       );
       return invoices.filter(Boolean);
     },
