@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
           last_seen_at: new Date().toISOString(),
         };
 
-        validateSampleData({ ...sample, ...updatedData });
+        validateSampleData({ ...sample, ...updatedData }, sample_id);
 
         const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'checkout', fromLocType, fromLocRef, 'project', project_id, notes);
