@@ -328,19 +328,23 @@ export default function ToolsAdmin() {
                 className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors group"
               >
                 <div className="flex-1 grid grid-cols-12 gap-4 items-center">
-                  <div className="col-span-4">
+                  <div className="col-span-3">
                     <div className="font-medium text-sm text-gray-900">{tool.name}</div>
                     {tool.notes && (
                         <div className="text-xs text-gray-500 truncate">{tool.notes}</div>
                     )}
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <LocationBadge location={tool.category} />
+                  </div>
+                  <div className="col-span-3">
+                    <div className="text-xs text-gray-500">Location</div>
+                    <div className="text-sm text-gray-900">{tool.location || '-'}</div>
                   </div>
                   <div className="col-span-2 text-sm text-gray-600">
                     Qty: {tool.default_quantity_required ?? 0}
                   </div>
-                  <div className="col-span-3 flex items-center gap-2">
+                  <div className="col-span-2 flex items-center gap-2">
                     <Button
                         variant="ghost"
                         size="sm"

@@ -19,6 +19,7 @@ import Projects from './pages/Projects';
 import PurchaseOrders from './pages/PurchaseOrders';
 import Reports from './pages/Reports';
 import RoleSettings from './pages/RoleSettings';
+import SamplesLibrary from './pages/SamplesLibrary';
 import Schedule from './pages/Schedule';
 import Suppliers from './pages/Suppliers';
 import SupplyLogistics from './pages/SupplyLogistics';
@@ -26,7 +27,6 @@ import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
-import SamplesLibrary from './pages/SamplesLibrary';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +52,7 @@ export const PAGES = {
     "PurchaseOrders": PurchaseOrders,
     "Reports": Reports,
     "RoleSettings": RoleSettings,
+    "SamplesLibrary": SamplesLibrary,
     "Schedule": Schedule,
     "Suppliers": Suppliers,
     "SupplyLogistics": SupplyLogistics,
@@ -59,7 +60,6 @@ export const PAGES = {
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
-    "SamplesLibrary": SamplesLibrary,
 }
 
 export const pagesConfig = {
