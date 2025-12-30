@@ -20,6 +20,7 @@ export default function AddressAutocomplete({
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
   const onChangeRef = useRef(onChange);
+  const suppressEnterRef = useRef(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -248,6 +249,33 @@ export default function AddressAutocomplete({
     }
   };
 
+  const handleKeyDownCapture = (e) => {
+    if (e.key !== "Enter") return;
+
+    // Check if Google Places dropdown is open
+    const pac = document.querySelector(".pac-container");
+    const isOpen = pac && pac.offsetParent !== null && pac.querySelector(".pac-item");
+
+    if (isOpen) {
+      // Dropdown is open - suppress form submission
+      suppressEnterRef.current = true;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    // Dropdown not open - allow FormNavigator to handle it
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && suppressEnterRef.current) {
+      // Safety net: prevent form submission if flag is set
+      e.preventDefault();
+      e.stopPropagation();
+      suppressEnterRef.current = false;
+    }
+  };
+
   return (
     <div className="relative">
       <Input
@@ -255,6 +283,8 @@ export default function AddressAutocomplete({
         id={id}
         value={inputValue}
         onChange={handleInputChange}
+        onKeyDownCapture={handleKeyDownCapture}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         required={required}
         className={className}
