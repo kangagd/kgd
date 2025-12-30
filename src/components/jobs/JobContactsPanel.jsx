@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Plus, Trash2, Phone, Mail, ExternalLink } from "lucide-react";
+import { Users, Plus, Trash2, Phone, Mail, ExternalLink, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function JobContactsPanel({ job }) {
   const queryClient = useQueryClient();
@@ -23,6 +24,7 @@ export default function JobContactsPanel({ job }) {
     role: "",
   });
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const { data: jobContacts = [], isLoading: jobContactsLoading } = useQuery({
     queryKey: ["job-contacts", job.id],
@@ -114,18 +116,22 @@ export default function JobContactsPanel({ job }) {
   });
 
   return (
-    <div className="mt-4 border border-[#E5E7EB] rounded-lg bg-white p-4 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-4 border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
+      <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-[#F9FAFB] transition-colors group">
         <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-[#111827]" />
             <h2 className="text-sm font-semibold text-[#111827]">Job Contacts</h2>
         </div>
-        {jobContacts?.length > 0 && (
-          <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-            {jobContacts.length} contact{jobContacts.length === 1 ? "" : "s"}
-          </span>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          {jobContacts?.length > 0 && (
+            <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              {jobContacts.length} contact{jobContacts.length === 1 ? "" : "s"}
+            </span>
+          )}
+          <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="px-4 pb-4">
 
       {jobContactsLoading ? (
         <p className="text-xs text-gray-500">Loading contacts…</p>
@@ -261,6 +267,7 @@ export default function JobContactsPanel({ job }) {
           </Button>
         </div>
       </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
