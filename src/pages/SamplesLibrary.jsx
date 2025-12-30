@@ -77,7 +77,7 @@ const safeFormatDate = (dateString, formatString) => {
   }
 };
 
-export default function SamplesLibraryV2() {
+export default function SamplesLibrary() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -180,7 +180,7 @@ export default function SamplesLibraryV2() {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-[28px] font-bold text-[#111827]">Samples Library V2</h1>
+            <h1 className="text-[28px] font-bold text-[#111827]">Samples</h1>
             <p className="text-[14px] text-[#6B7280] mt-1">Manage physical samples with checkout tracking</p>
           </div>
           {canCreate && (
