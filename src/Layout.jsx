@@ -72,7 +72,7 @@ const navigationSections = [
       { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
       { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), icon: Package },
       { title: "Supply & Logistics", url: createPageUrl("SupplyLogistics"), icon: Truck },
-      { title: "Samples Library", url: createPageUrl("SamplesLibrary"), icon: TestTube2 },
+      { title: "Samples Library", url: createPageUrl("SamplesLibraryV2"), icon: TestTube2 },
       { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
       { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
     ]
