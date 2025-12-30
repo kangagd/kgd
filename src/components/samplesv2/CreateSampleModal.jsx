@@ -33,6 +33,13 @@ export default function CreateSampleModal({ open, onClose }) {
 
   const queryClient = useQueryClient();
 
+  // Handle FormNavigator save request
+  React.useEffect(() => {
+    const onSaveRequest = () => handleSave();
+    window.addEventListener("FORM_NAV_SAVE_REQUEST", onSaveRequest);
+    return () => window.removeEventListener("FORM_NAV_SAVE_REQUEST", onSaveRequest);
+  }, [formData]);
+
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles'],
     queryFn: () => base44.entities.Vehicle.list(),
@@ -57,13 +64,18 @@ export default function CreateSampleModal({ open, onClose }) {
     },
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSave = () => {
     if (!formData.name) {
       toast.error('Sample name is required');
       return;
     }
     createMutation.mutate();
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleSave();
   };
 
   return (
