@@ -1,3 +1,24 @@
+/**
+ * manageSample - Command-Based Sample Management
+ * 
+ * ⚠️ CRITICAL: Samples system is command-based. Do not update Sample records directly.
+ * All mutations MUST go through this manageSample function.
+ * 
+ * ⚠️ DO NOT recreate SampleV2 or SampleMovementV2 entities - they have been migrated.
+ * Current entities: Sample, SampleMovement
+ * 
+ * Supported Actions:
+ * - createSample: Create a new sample
+ * - checkoutToProject: Check out sample to a project
+ * - returnSample: Return sample from project
+ * - transferToVehicle: Transfer sample to vehicle
+ * - markLost: Mark sample as lost
+ * - markFound: Mark lost sample as found
+ * - retireSample: Retire a sample
+ * 
+ * All actions maintain data integrity through validation and automatic movement tracking.
+ */
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {

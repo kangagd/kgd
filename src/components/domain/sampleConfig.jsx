@@ -1,6 +1,13 @@
 /**
  * Sample Configuration
  * Central source of truth for Sample location types, statuses, and movement types
+ * 
+ * ⚠️ MIGRATION NOTICE:
+ * - SampleV2 → Sample (completed)
+ * - SampleMovementV2 → SampleMovement (completed)
+ * 
+ * DO NOT recreate V2 entities. Use Sample and SampleMovement entities only.
+ * All sample mutations must go through manageSample backend function.
  */
 
 export const SAMPLE_LOCATION_TYPE = {
