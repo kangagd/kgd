@@ -209,6 +209,9 @@ export default function AddressAutocomplete({
         console.log('✅ [AddressAutocomplete] Address data:', addressData);
         setInputValue(place.formatted_address);
         onChangeRef.current(addressData);
+        
+        // Move focus to next field after selection
+        requestAnimationFrame(() => focusNextField());
       });
       
       console.log('✅ [AddressAutocomplete] Autocomplete widget initialized');
@@ -276,11 +279,32 @@ export default function AddressAutocomplete({
     }
   };
 
+  const focusNextField = () => {
+    const input = inputRef.current;
+    const form = input?.closest("form");
+    if (!form) return;
+
+    const fields = Array.from(
+      form.querySelectorAll('[data-nav="true"]:not([disabled]):not([aria-disabled="true"])')
+    );
+
+    const currentIndex = fields.indexOf(input);
+    if (currentIndex === -1) return;
+
+    const nextField = fields[currentIndex + 1];
+    if (nextField) {
+      nextField.focus();
+    } else {
+      window.dispatchEvent(new CustomEvent("FORM_NAV_SAVE_REQUEST"));
+    }
+  };
+
   return (
     <div className="relative">
       <Input
         ref={inputRef}
         id={id}
+        data-nav="true"
         value={inputValue}
         onChange={handleInputChange}
         onKeyDownCapture={handleKeyDownCapture}
