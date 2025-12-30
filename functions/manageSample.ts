@@ -38,27 +38,46 @@ Deno.serve(async (req) => {
     }
 
     // Helper function to validate sample entity before update
-    const validateSampleData = (data) => {
+    const validateSampleData = (data, sampleId = null) => {
+      const violations = [];
+
       // Rule 1: If current_location_type = warehouse → current_location_reference_id must be null
       if (data.current_location_type === 'warehouse' && data.current_location_reference_id !== null) {
-        throw new Error('current_location_reference_id must be null when current_location_type is warehouse');
+        violations.push('current_location_reference_id must be null when current_location_type is warehouse');
       }
 
       // Rule 2: If checked_out_project_id is set → must be in project location
       if (data.checked_out_project_id) {
         if (data.current_location_type !== 'project') {
-          throw new Error('current_location_type must be project when checked_out_project_id is set');
+          violations.push('current_location_type must be project when checked_out_project_id is set');
         }
         if (data.current_location_reference_id !== data.checked_out_project_id) {
-          throw new Error('current_location_reference_id must equal checked_out_project_id');
+          violations.push('current_location_reference_id must equal checked_out_project_id');
         }
       }
 
       // Rule 3: If status = retired → all checked_out fields must be null
       if (data.status === 'retired') {
         if (data.checked_out_project_id || data.checked_out_by_user_id || data.checked_out_at || data.due_back_at) {
-          throw new Error('All checked_out fields must be null when status is retired');
+          violations.push('All checked_out fields must be null when status is retired');
         }
+      }
+
+      // If violations found, log and throw
+      if (violations.length > 0) {
+        const violationLog = {
+          timestamp: new Date().toISOString(),
+          sample_id: sampleId || data.id || 'unknown',
+          user_email: user?.email || 'unknown',
+          user_id: user?.id || 'unknown',
+          violations,
+          attempted_fields: Object.keys(data),
+          attempted_values: data
+        };
+
+        console.error('⚠️ SAMPLE DATA INTEGRITY VIOLATION:', JSON.stringify(violationLog, null, 2));
+
+        throw new Error(`Sample data integrity violation: ${violations.join('; ')}`);
       }
     };
 
@@ -96,7 +115,7 @@ Deno.serve(async (req) => {
           last_seen_at: new Date().toISOString(),
         };
 
-        validateSampleData(sampleData);
+        validateSampleData(sampleData, null);
 
         const sample = await base44.asServiceRole.entities.Sample.create(sampleData);
         return Response.json({ success: true, sample });
@@ -194,7 +213,7 @@ Deno.serve(async (req) => {
           last_seen_at: new Date().toISOString(),
         };
 
-        validateSampleData({ ...sample, ...updatedData });
+        validateSampleData({ ...sample, ...updatedData }, sample_id);
 
         const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'return', fromLocType, fromLocRef, toLocType, toLocRef, notes);
@@ -231,7 +250,7 @@ Deno.serve(async (req) => {
           last_seen_at: new Date().toISOString(),
         };
 
-        validateSampleData({ ...sample, ...updatedData });
+        validateSampleData({ ...sample, ...updatedData }, sample_id);
 
         const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'transfer', fromLocType, fromLocRef, 'vehicle', vehicle_id, notes);
@@ -261,7 +280,7 @@ Deno.serve(async (req) => {
           last_seen_at: new Date().toISOString(),
         };
 
-        validateSampleData({ ...sample, ...updatedData });
+        validateSampleData({ ...sample, ...updatedData }, sample_id);
 
         const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'mark_lost', fromLocType, fromLocRef, 'unknown', null, notes);
@@ -306,7 +325,7 @@ Deno.serve(async (req) => {
           last_seen_at: new Date().toISOString(),
         };
 
-        validateSampleData({ ...sample, ...updatedData });
+        validateSampleData({ ...sample, ...updatedData }, sample_id);
 
         const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'mark_found', fromLocType, fromLocRef, toLocType, toLocRef, notes);
@@ -338,7 +357,7 @@ Deno.serve(async (req) => {
           last_seen_at: new Date().toISOString(),
         };
 
-        validateSampleData({ ...sample, ...updatedData });
+        validateSampleData({ ...sample, ...updatedData }, sample_id);
 
         const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'retire', fromLocType, fromLocRef, sample.current_location_type, sample.current_location_reference_id, notes);
