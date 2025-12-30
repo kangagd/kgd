@@ -62,13 +62,16 @@ Deno.serve(async (req) => {
           return Response.json({ success: false, error: 'data.name is required' }, { status: 400 });
         }
 
+        const homeLocType = data.home_location_type || 'warehouse';
+        const homeLocRef = homeLocType === 'warehouse' ? null : data.home_location_reference_id;
+        
         const sampleData = {
           ...data,
           status: data.status || 'active',
-          current_location_type: data.current_location_type || 'warehouse',
-          current_location_reference_id: data.current_location_type === 'warehouse' ? null : data.current_location_reference_id,
-          home_location_type: data.home_location_type || 'warehouse',
-          home_location_reference_id: data.home_location_type === 'warehouse' ? null : data.home_location_reference_id,
+          current_location_type: homeLocType,
+          current_location_reference_id: homeLocRef,
+          home_location_type: homeLocType,
+          home_location_reference_id: homeLocRef,
           last_seen_at: new Date().toISOString(),
         };
 
