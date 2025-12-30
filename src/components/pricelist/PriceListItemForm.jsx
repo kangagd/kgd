@@ -54,6 +54,29 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
     });
   };
 
+  // Cmd+Enter / Ctrl+Enter to save
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        onSubmit({
+          ...formData,
+          price: parseFloat(formData.price) || 0,
+          unit_cost: parseFloat(formData.unit_cost) || 0,
+          target_margin: parseFloat(formData.target_margin) || 0,
+          stock_level: parseFloat(formData.stock_level) || 0,
+          min_stock_level: parseFloat(formData.min_stock_level) || 5,
+          car_quantity: parseFloat(formData.car_quantity) || 0,
+          in_inventory: formData.track_inventory
+        });
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [formData, onSubmit]);
+
   return (
     <div className="p-4 md:p-8 bg-slate-50 min-h-screen">
       <div className="max-w-3xl mx-auto">
@@ -312,23 +335,28 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={isSubmitting}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 bg-orange-600 hover:bg-orange-700"
-                >
-                  {isSubmitting ? 'Saving...' : item ? 'Update Item' : 'Create Item'}
-                </Button>
+              <div className="space-y-2 pt-4">
+                <div className="text-center">
+                  <span className="text-[11px] text-[#6B7280]">Press ⌘+Enter to save</span>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onCancel}
+                    disabled={isSubmitting}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  >
+                    {isSubmitting ? 'Saving...' : item ? 'Update Item' : 'Create Item'}
+                  </Button>
+                </div>
               </div>
             </form>
           </CardContent>

@@ -161,6 +161,20 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     onSubmit(formData);
   };
 
+  // Cmd+Enter / Ctrl+Enter to save
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        onSubmit(formData);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [formData, onSubmit]);
+
   const handleCustomerChange = (customerId) => {
     const customer = customers.find(c => c.id === customerId);
     setFormData({
@@ -688,25 +702,28 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => {
-                if (onCancel) onCancel();
-                navigate(-1);
-              }}
-              className="border-2 hover:bg-white font-semibold"
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting} 
-              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
-            >
-              {isSubmitting ? 'Saving...' : project ? 'Update Project' : 'Create Project'}
-            </Button>
+          <CardFooter className="border-t-2 border-slate-200 flex justify-between items-center p-6 bg-slate-50">
+            <span className="text-[11px] text-[#6B7280]">Press ⌘+Enter to save</span>
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  if (onCancel) onCancel();
+                  navigate(-1);
+                }}
+                className="border-2 hover:bg-white font-semibold"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
+              >
+                {isSubmitting ? 'Saving...' : project ? 'Update Project' : 'Create Project'}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>

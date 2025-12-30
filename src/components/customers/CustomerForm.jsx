@@ -137,6 +137,25 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     onSubmit(submitData);
   };
 
+  // Cmd+Enter / Ctrl+Enter to save
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        const submitData = { ...formData };
+        if (submitData.organisation_id && !submitData.organisation_name) {
+          const org = organisations.find(o => o.id === submitData.organisation_id);
+          submitData.organisation_name = org?.name || "";
+        }
+        onSubmit(submitData);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [formData, organisations, onSubmit]);
+
   const handleOrganisationChange = (orgId) => {
     if (orgId === "none") {
       setFormData({
@@ -496,13 +515,16 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
               )}
             </div>
           </CardContent>
-          <CardFooter className="border-t border-slate-100 flex justify-end gap-3">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all">
-              {isSubmitting ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
-            </Button>
+          <CardFooter className="border-t border-slate-100 flex justify-between items-center">
+            <span className="text-[11px] text-[#6B7280]">Press ⌘+Enter to save</span>
+            <div className="flex gap-3">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all">
+                {isSubmitting ? 'Saving...' : customer ? 'Update Customer' : 'Create Customer'}
+              </Button>
+            </div>
           </CardFooter>
         </form>
       </Card>
