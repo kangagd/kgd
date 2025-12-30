@@ -3,8 +3,15 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const LOCATION_COLORS = {
+  "Tools": "bg-green-100 text-green-800 border-green-200",
+  "Powertools": "bg-yellow-100 text-yellow-800 border-yellow-200",
+  "Stationary": "bg-orange-100 text-orange-800 border-orange-200",
+  "Accessories": "bg-blue-100 text-blue-800 border-blue-200",
+  "Electrical": "bg-purple-100 text-purple-800 border-purple-200",
+  "Safety": "bg-red-100 text-red-800 border-red-200",
+  "Spray": "bg-gray-100 text-gray-800 border-gray-200",
   "Main Tool Bag": "bg-blue-100 text-blue-800 border-blue-200",
-  "Power Tools": "bg-amber-100 text-amber-800 border-amber-200",
+  "Power Tools": "bg-yellow-100 text-yellow-800 border-yellow-200",
   "Vehicle": "bg-slate-100 text-slate-800 border-slate-200",
   "Consumables": "bg-green-100 text-green-800 border-green-200",
   "Safety Gear": "bg-red-100 text-red-800 border-red-200",
@@ -24,9 +31,14 @@ export default function LocationBadge({ location, className }) {
   // If no exact match, check if any key is contained in the location (e.g. "Rear Vehicle" matches "Vehicle")
   if (!colorClass && location) {
     const lowerLoc = location.toLowerCase();
-    if (lowerLoc.includes("bag")) colorClass = LOCATION_COLORS["Main Tool Bag"];
-    else if (lowerLoc.includes("power")) colorClass = LOCATION_COLORS["Power Tools"];
-    else if (lowerLoc.includes("safety")) colorClass = LOCATION_COLORS["Safety Gear"];
+    if (lowerLoc.includes("tools")) colorClass = LOCATION_COLORS["Tools"];
+    else if (lowerLoc.includes("powertools") || lowerLoc.includes("power")) colorClass = LOCATION_COLORS["Powertools"];
+    else if (lowerLoc.includes("stationary")) colorClass = LOCATION_COLORS["Stationary"];
+    else if (lowerLoc.includes("accessories")) colorClass = LOCATION_COLORS["Accessories"];
+    else if (lowerLoc.includes("electrical")) colorClass = LOCATION_COLORS["Electrical"];
+    else if (lowerLoc.includes("safety")) colorClass = LOCATION_COLORS["Safety"];
+    else if (lowerLoc.includes("spray")) colorClass = LOCATION_COLORS["Spray"];
+    else if (lowerLoc.includes("bag")) colorClass = LOCATION_COLORS["Main Tool Bag"];
     else if (lowerLoc.includes("test")) colorClass = LOCATION_COLORS["Test Equipment"];
     else if (lowerLoc.includes("consumable")) colorClass = LOCATION_COLORS["Consumables"];
   }
