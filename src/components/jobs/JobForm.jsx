@@ -240,6 +240,20 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Runtime detection of implicit form submission
+    const focusedElement = document.activeElement;
+    const isExplicitSubmit = e.nativeEvent?.submitter?.type === 'submit';
+    
+    if (!isExplicitSubmit) {
+      console.warn('⚠️ Blocked implicit form submit via Enter key', {
+        formName: 'JobForm',
+        focusedField: focusedElement?.name || focusedElement?.id || focusedElement?.tagName,
+        keyPressed: 'Enter'
+      });
+      return;
+    }
+    
     await handleAutoSave();
   };
 

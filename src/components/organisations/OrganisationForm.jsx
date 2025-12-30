@@ -22,6 +22,20 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
   const handleSubmit = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Runtime detection of implicit form submission
+    const focusedElement = document.activeElement;
+    const isExplicitSubmit = e.nativeEvent?.submitter?.type === 'submit';
+    
+    if (!isExplicitSubmit) {
+      console.warn('⚠️ Blocked implicit form submit via Enter key', {
+        formName: 'OrganisationForm',
+        focusedField: focusedElement?.name || focusedElement?.id || focusedElement?.tagName,
+        keyPressed: 'Enter'
+      });
+      return;
+    }
+    
     // Filter out empty strings and undefined values for optional fields
     const submitData = { ...formData };
     if (!submitData.organisation_type) {

@@ -41,6 +41,20 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
   const handleSubmit = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Runtime detection of implicit form submission
+    const focusedElement = document.activeElement;
+    const isExplicitSubmit = e.nativeEvent?.submitter?.type === 'submit';
+    
+    if (!isExplicitSubmit) {
+      console.warn('⚠️ Blocked implicit form submit via Enter key', {
+        formName: 'PriceListItemForm',
+        focusedField: focusedElement?.name || focusedElement?.id || focusedElement?.tagName,
+        keyPressed: 'Enter'
+      });
+      return;
+    }
+    
     onSubmit({
       ...formData,
       price: parseFloat(formData.price) || 0,

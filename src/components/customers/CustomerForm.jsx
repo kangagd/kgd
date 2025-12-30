@@ -127,6 +127,19 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     e.preventDefault();
     e.stopPropagation();
     
+    // Runtime detection of implicit form submission
+    const focusedElement = document.activeElement;
+    const isExplicitSubmit = e.nativeEvent?.submitter?.type === 'submit';
+    
+    if (!isExplicitSubmit) {
+      console.warn('⚠️ Blocked implicit form submit via Enter key', {
+        formName: 'CustomerForm',
+        focusedField: focusedElement?.name || focusedElement?.id || focusedElement?.tagName,
+        keyPressed: 'Enter'
+      });
+      return;
+    }
+    
     // Ensure organisation_name is included if organisation_id is set
     const submitData = { ...formData };
     if (submitData.organisation_id && !submitData.organisation_name) {
