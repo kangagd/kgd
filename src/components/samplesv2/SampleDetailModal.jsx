@@ -132,7 +132,7 @@ export default function SampleDetailModal({ open, onClose, sample }) {
             <p className="text-[13px] text-[#6B7280] mb-1">Home Location</p>
             <p className="text-[14px] text-[#111827]">
               {sample.home_location_type} 
-              {sample.home_location_reference_id && ` (${sample.home_location_reference_id})`}
+              {sample.home_location_reference_id && sample.home_location_type === 'vehicle' ? ` (${getVehicleName(sample.home_location_reference_id)})` : sample.home_location_reference_id ? ` (${sample.home_location_reference_id})` : ''}
             </p>
           </div>
 
