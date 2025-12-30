@@ -35,9 +35,9 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
   const { data: warehouseSamples = [] } = useQuery({
     queryKey: ['warehouseSamples'],
     queryFn: async () => {
-      const samples = await base44.entities.Sample.filter({
-        location_type: "Warehouse",
-        status: "Active",
+      const samples = await base44.entities.SampleV2.filter({
+        current_location_type: "warehouse",
+        status: "active",
       });
       return samples;
     },
@@ -54,12 +54,12 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
     queryKey: ['vehicleSamplesForDropOff', vehicleId],
     queryFn: async () => {
       if (!vehicleId) return [];
-      const allSamples = await base44.entities.Sample.list();
+      const allSamples = await base44.entities.SampleV2.list();
       // Show samples currently in vehicle OR those whose home is this vehicle
       const filtered = allSamples.filter(s => 
-        s.status === "Active" && (
-          (s.location_type === "Vehicle" && s.location_reference_id === vehicleId) ||
-          (s.home_location_type === "Vehicle" && s.home_location_reference_id === vehicleId)
+        s.status === "active" && (
+          (s.current_location_type === "vehicle" && s.current_location_reference_id === vehicleId) ||
+          (s.home_location_type === "vehicle" && s.home_location_reference_id === vehicleId)
         )
       );
       return filtered;
