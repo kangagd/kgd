@@ -125,12 +125,10 @@ Deno.serve(async (req) => {
       for (const sample_id of sample_ids) {
         try {
           await base44.functions.invoke('manageSampleV2', {
-            action: 'checkoutSample',
-            sampleId: sample_id,
-            data: {
-              project_id,
-              notes: `Checked out for drop-off job #${job.job_number}`,
-            },
+            action: 'checkoutToProject',
+            sample_id,
+            project_id,
+            notes: `Checked out for drop-off job #${job.job_number}`,
           });
         } catch (error) {
           console.error(`Error checking out sample ${sample_id}:`, error);
