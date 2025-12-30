@@ -211,7 +211,14 @@ export default function AddressAutocomplete({
         onChangeRef.current(addressData);
         
         // Move focus to next field after selection
-        requestAnimationFrame(() => focusNextField());
+        requestAnimationFrame(() => {
+          const form = inputRef.current?.closest("form");
+          if (!form) return;
+          const fields = Array.from(form.querySelectorAll('[data-nav="true"]:not([disabled]):not([aria-disabled="true"])'));
+          const idx = fields.indexOf(inputRef.current);
+          if (idx >= 0 && fields[idx + 1]) fields[idx + 1].focus();
+          else window.dispatchEvent(new CustomEvent("FORM_NAV_SAVE_REQUEST"));
+        });
       });
       
       console.log('✅ [AddressAutocomplete] Autocomplete widget initialized');
@@ -271,31 +278,11 @@ export default function AddressAutocomplete({
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && suppressEnterRef.current) {
-      // Safety net: prevent form submission if flag is set
+    if (e.key !== "Enter") return;
+    if (suppressEnterRef.current) {
       e.preventDefault();
       e.stopPropagation();
       suppressEnterRef.current = false;
-    }
-  };
-
-  const focusNextField = () => {
-    const input = inputRef.current;
-    const form = input?.closest("form");
-    if (!form) return;
-
-    const fields = Array.from(
-      form.querySelectorAll('[data-nav="true"]:not([disabled]):not([aria-disabled="true"])')
-    );
-
-    const currentIndex = fields.indexOf(input);
-    if (currentIndex === -1) return;
-
-    const nextField = fields[currentIndex + 1];
-    if (nextField) {
-      nextField.focus();
-    } else {
-      window.dispatchEvent(new CustomEvent("FORM_NAV_SAVE_REQUEST"));
     }
   };
 
