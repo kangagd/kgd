@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,6 +10,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
@@ -22,17 +24,29 @@ export default function RescheduleConfirmModal({
   newTime,
   notifyTechnician,
   setNotifyTechnician,
-  isSubmitting = false
+  isSubmitting = false,
+  onTimeChange
 }) {
   if (!job) return null;
+
+  const [localTime, setLocalTime] = useState(newTime || job.scheduled_time || "");
 
   const oldDate = job.scheduled_date ? format(parseISO(job.scheduled_date), 'MMM d, yyyy') : 'Not set';
   const oldTime = job.scheduled_time || 'Not set';
   const formattedNewDate = newDate ? format(typeof newDate === 'string' ? parseISO(newDate) : newDate, 'MMM d, yyyy') : oldDate;
-  const formattedNewTime = newTime || oldTime;
+  const formattedNewTime = localTime || oldTime;
 
   const dateChanged = newDate && job.scheduled_date !== (typeof newDate === 'string' ? newDate : format(newDate, 'yyyy-MM-dd'));
-  const timeChanged = newTime && job.scheduled_time !== newTime;
+  const timeChanged = localTime && job.scheduled_time !== localTime;
+  
+  const handleTimeChange = (value) => {
+    setLocalTime(value);
+    if (onTimeChange) onTimeChange(value);
+  };
+  
+  const handleConfirm = () => {
+    onConfirm(localTime);
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={onClose}>
@@ -59,16 +73,25 @@ export default function RescheduleConfirmModal({
                     </div>
                   </div>
                 )}
-                {timeChanged && (
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-[#6B7280] line-through">{oldTime}</span>
-                      <ArrowRight className="w-4 h-4 text-[#111827]" />
+                
+                {/* Time Selector */}
+                <div>
+                  <Label className="text-[13px] font-medium text-[#4B5563] mb-1.5">Time</Label>
+                  <Input
+                    type="time"
+                    value={localTime}
+                    onChange={(e) => handleTimeChange(e.target.value)}
+                    className="h-10"
+                  />
+                  {timeChanged && (
+                    <div className="flex items-center gap-2 text-xs mt-1.5 text-[#6B7280]">
+                      <span className="line-through">{oldTime}</span>
+                      <ArrowRight className="w-3 h-3" />
                       <span className="font-semibold text-[#111827]">{formattedNewTime}</span>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+                
                 {!dateChanged && !timeChanged && (
                   <p className="text-sm text-[#6B7280]">No changes detected</p>
                 )}
@@ -102,7 +125,7 @@ export default function RescheduleConfirmModal({
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={handleConfirm}
             disabled={isSubmitting || (!dateChanged && !timeChanged)}
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] rounded-xl font-semibold"
           >
