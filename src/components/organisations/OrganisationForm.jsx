@@ -21,21 +21,6 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    // Runtime detection of implicit form submission
-    const focusedElement = document.activeElement;
-    const isExplicitSubmit = e.nativeEvent?.submitter?.type === 'submit';
-    
-    if (!isExplicitSubmit) {
-      console.warn('⚠️ Blocked implicit form submit via Enter key', {
-        formName: 'OrganisationForm',
-        focusedField: focusedElement?.name || focusedElement?.id || focusedElement?.tagName,
-        keyPressed: 'Enter'
-      });
-      return;
-    }
-    
     // Filter out empty strings and undefined values for optional fields
     const submitData = { ...formData };
     if (!submitData.organisation_type) {
@@ -55,26 +40,6 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
     }
     onSubmit(submitData);
   };
-
-  // Cmd+Enter / Ctrl+Enter to save
-  React.useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
-        const submitData = { ...formData };
-        if (!submitData.organisation_type) delete submitData.organisation_type;
-        if (!submitData.address) delete submitData.address;
-        if (!submitData.phone) delete submitData.phone;
-        if (!submitData.email) delete submitData.email;
-        if (!submitData.notes) delete submitData.notes;
-        onSubmit(submitData);
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [formData, onSubmit]);
 
   return (
     <Card className="max-w-3xl mx-auto m-6 border-2 border-slate-200 shadow-lg rounded-2xl">
@@ -184,25 +149,22 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
             helperText="Internal only"
           />
         </CardContent>
-        <CardFooter className="border-t-2 border-slate-200 flex justify-between items-center p-6 bg-slate-50">
-          <span className="text-[11px] text-[#6B7280]">Press ⌘+Enter to save</span>
-          <div className="flex gap-3">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onCancel}
-              className="border-2 hover:bg-white font-semibold"
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting} 
-              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
-            >
-              {isSubmitting ? 'Saving...' : organisation ? 'Update Organisation' : 'Create Organisation'}
-            </Button>
-          </div>
+        <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            className="border-2 hover:bg-white font-semibold"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
+          >
+            {isSubmitting ? 'Saving...' : organisation ? 'Update Organisation' : 'Create Organisation'}
+          </Button>
         </CardFooter>
       </form>
     </Card>

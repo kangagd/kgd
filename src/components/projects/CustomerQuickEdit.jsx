@@ -317,23 +317,6 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
           <Input
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                e.target.blur();
-                const focusableElements = document.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])');
-                const currentIndex = Array.from(focusableElements).indexOf(e.target);
-                if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
-                  focusableElements[currentIndex + 1].focus();
-                }
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                setFormData({ ...formData, name: customer?.name || "" });
-                e.target.blur();
-              }
-            }}
             className="h-9 text-[14px]"
           />
         </div>
@@ -419,23 +402,6 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             <Input
               value={formData.source_details}
               onChange={(e) => setFormData({ ...formData, source_details: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.target.blur();
-                  const focusableElements = document.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])');
-                  const currentIndex = Array.from(focusableElements).indexOf(e.target);
-                  if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
-                    focusableElements[currentIndex + 1].focus();
-                  }
-                } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setFormData({ ...formData, source_details: customer?.source_details || "" });
-                  e.target.blur();
-                }
-              }}
               className="h-9 text-[14px]"
               placeholder="Referring customer"
             />
@@ -448,23 +414,6 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             <Input
               value={formData.source_details}
               onChange={(e) => setFormData({ ...formData, source_details: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.target.blur();
-                  const focusableElements = document.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])');
-                  const currentIndex = Array.from(focusableElements).indexOf(e.target);
-                  if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
-                    focusableElements[currentIndex + 1].focus();
-                  }
-                } else if (e.key === 'Escape') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setFormData({ ...formData, source_details: customer?.source_details || "" });
-                  e.target.blur();
-                }
-              }}
               className="h-9 text-[14px]"
               placeholder="Please specify"
             />
@@ -477,23 +426,6 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             type="tel"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                e.target.blur();
-                const focusableElements = document.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])');
-                const currentIndex = Array.from(focusableElements).indexOf(e.target);
-                if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
-                  focusableElements[currentIndex + 1].focus();
-                }
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                setFormData({ ...formData, phone: customer?.phone || "" });
-                e.target.blur();
-              }
-            }}
             className="h-9 text-[14px]"
             placeholder="Primary phone"
           />
@@ -505,23 +437,6 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             type="tel"
             value={formData.secondary_phone}
             onChange={(e) => setFormData({ ...formData, secondary_phone: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                e.target.blur();
-                const focusableElements = document.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])');
-                const currentIndex = Array.from(focusableElements).indexOf(e.target);
-                if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
-                  focusableElements[currentIndex + 1].focus();
-                }
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                setFormData({ ...formData, secondary_phone: customer?.secondary_phone || "" });
-                e.target.blur();
-              }
-            }}
             className="h-9 text-[14px]"
             placeholder="Secondary phone"
           />
@@ -533,23 +448,6 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                e.stopPropagation();
-                e.target.blur();
-                const focusableElements = document.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])');
-                const currentIndex = Array.from(focusableElements).indexOf(e.target);
-                if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
-                  focusableElements[currentIndex + 1].focus();
-                }
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                e.stopPropagation();
-                setFormData({ ...formData, email: customer?.email || "" });
-                e.target.blur();
-              }
-            }}
             className="h-9 text-[14px]"
             placeholder="Email address"
           />

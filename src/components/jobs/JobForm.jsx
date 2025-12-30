@@ -239,37 +239,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    
-    // Runtime detection of implicit form submission
-    const focusedElement = document.activeElement;
-    const isExplicitSubmit = e.nativeEvent?.submitter?.type === 'submit';
-    
-    if (!isExplicitSubmit) {
-      console.warn('⚠️ Blocked implicit form submit via Enter key', {
-        formName: 'JobForm',
-        focusedField: focusedElement?.name || focusedElement?.id || focusedElement?.tagName,
-        keyPressed: 'Enter'
-      });
-      return;
-    }
-    
     await handleAutoSave();
-  };
 
-  // Cmd+Enter / Ctrl+Enter to save
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
-        handleAutoSave();
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [formData]);
+  };
 
   const handleCustomerChange = (customerId) => {
     const customer = customers.find(c => c.id === customerId);
@@ -960,25 +932,22 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t-2 border-slate-200 flex justify-between items-center p-6 bg-slate-50">
-            <span className="text-[11px] text-[#6B7280]">Press ⌘+Enter to save</span>
-            <div className="flex gap-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onCancel}
-                className="border-2 hover:bg-white font-semibold"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting} 
-                className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
-              >
-                {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
-              </Button>
-            </div>
+          <CardFooter className="border-t-2 border-slate-200 flex justify-end gap-3 p-6 bg-slate-50">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              className="border-2 hover:bg-white font-semibold"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
+            >
+              {isSubmitting ? 'Saving...' : job ? 'Update Job' : 'Create Job'}
+            </Button>
           </CardFooter>
         </form>
       </Card>
