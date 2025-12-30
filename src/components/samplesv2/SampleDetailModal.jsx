@@ -42,6 +42,17 @@ const getMovementTypeLabel = (type) => {
   return labels[type] || type;
 };
 
+const safeFormatDate = (dateString, formatString) => {
+  if (!dateString) return '-';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return format(date, formatString);
+  } catch {
+    return '-';
+  }
+};
+
 export default function SampleDetailModal({ open, onClose, sample }) {
   const { data: movements = [] } = useQuery({
     queryKey: ['sampleMovements', sample.id],
@@ -89,10 +100,10 @@ export default function SampleDetailModal({ open, onClose, sample }) {
               <div className="space-y-2 text-[13px] text-[#78350F]">
                 <p>Project: {sample.checked_out_project_id}</p>
                 {sample.checked_out_at && (
-                  <p>Checked out: {format(new Date(sample.checked_out_at), 'MMM d, yyyy h:mm a')}</p>
+                  <p>Checked out: {safeFormatDate(sample.checked_out_at, 'MMM d, yyyy h:mm a')}</p>
                 )}
                 {sample.due_back_at && (
-                  <p>Due back: {format(new Date(sample.due_back_at), 'MMM d, yyyy')}</p>
+                  <p>Due back: {safeFormatDate(sample.due_back_at, 'MMM d, yyyy')}</p>
                 )}
               </div>
             </div>
@@ -112,7 +123,7 @@ export default function SampleDetailModal({ open, onClose, sample }) {
             <div>
               <p className="text-[13px] text-[#6B7280] mb-1">Last Seen</p>
               <p className="text-[14px] text-[#111827]">
-                {format(new Date(sample.last_seen_at), 'MMM d, yyyy h:mm a')}
+                {safeFormatDate(sample.last_seen_at, 'MMM d, yyyy h:mm a')}
               </p>
             </div>
           )}
@@ -162,7 +173,7 @@ export default function SampleDetailModal({ open, onClose, sample }) {
                         </span>
                       </div>
                       <span className="text-[12px] text-[#6B7280]">
-                        {format(new Date(movement.created_at), 'MMM d, h:mm a')}
+                        {safeFormatDate(movement.created_at, 'MMM d, h:mm a')}
                       </span>
                     </div>
                     <div className="text-[13px] text-[#6B7280] space-y-1">
