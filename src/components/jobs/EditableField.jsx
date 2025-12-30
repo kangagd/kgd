@@ -67,10 +67,20 @@ export default function EditableField({
       e.preventDefault();
       e.stopPropagation();
       handleSave();
+      
+      // Move focus to next focusable element
+      const focusableElements = document.querySelectorAll(
+        'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      const currentIndex = Array.from(focusableElements).indexOf(e.target);
+      if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
+        focusableElements[currentIndex + 1].focus();
+      }
     } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       handleCancel();
+      e.target.blur();
     }
   };
 
