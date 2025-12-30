@@ -19,7 +19,6 @@ import Projects from './pages/Projects';
 import PurchaseOrders from './pages/PurchaseOrders';
 import Reports from './pages/Reports';
 import RoleSettings from './pages/RoleSettings';
-import SamplesLibrary from './pages/SamplesLibrary';
 import Schedule from './pages/Schedule';
 import Suppliers from './pages/Suppliers';
 import SupplyLogistics from './pages/SupplyLogistics';
@@ -53,7 +52,6 @@ export const PAGES = {
     "PurchaseOrders": PurchaseOrders,
     "Reports": Reports,
     "RoleSettings": RoleSettings,
-    "SamplesLibrary": SamplesLibrary,
     "Schedule": Schedule,
     "Suppliers": Suppliers,
     "SupplyLogistics": SupplyLogistics,
