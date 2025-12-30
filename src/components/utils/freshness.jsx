@@ -1,4 +1,5 @@
 import { computeFreshness } from "./computeFreshness";
+import { differenceInDays } from "date-fns";
 
 /**
  * Get the effective opened date for a project
@@ -10,7 +11,25 @@ export function getProjectEffectiveOpenedDate(project) {
 }
 
 /**
- * Calculate project age/freshness based on last activity
+ * Calculate project age based on opened_date or created_date
+ * @param {Object} project - Project object
+ * @returns {number|null} - Age in days
+ */
+export function getProjectAge(project) {
+  const openedDate = project?.opened_date || project?.created_date;
+  if (!openedDate) return null;
+  
+  try {
+    const date = new Date(openedDate);
+    if (isNaN(date.getTime())) return null;
+    return Math.max(0, differenceInDays(new Date(), date));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Calculate project freshness based on last activity
  * @param {Object} project - Project object
  * @returns {Object} { label: string, color: string, days: number }
  */

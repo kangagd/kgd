@@ -30,7 +30,7 @@ import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
-import { getProjectFreshnessBadge } from "../components/utils/freshness";
+import { getProjectFreshnessBadge, getProjectAge } from "../components/utils/freshness";
 import { useLocation } from "react-router-dom";
 import EntityLink from "../components/common/EntityLink";
 import BackButton from "../components/common/BackButton";
@@ -517,6 +517,7 @@ export default function Projects() {
             const suburb = extractSuburb(project.address);
             const scopeSummary = buildScopeSummary(project);
             const freshness = getProjectFreshnessBadge(project);
+            const age = getProjectAge(project);
             
             const freshnessColors = {
               green: "bg-green-100 text-green-700",
@@ -562,7 +563,7 @@ export default function Projects() {
                       <Badge className={freshnessColors[freshness.color]}>
                         {freshness.label}
                       </Badge>
-                      <span className="text-[12px] text-[#6B7280]">Age: {freshness.days !== null ? `${freshness.days} days` : 'Unknown'}</span>
+                      <span className="text-[12px] text-[#6B7280]">Age: {age !== null ? `${age} days` : 'Unknown'}</span>
                       {project.organisation_type && (
                         <OrganisationTypeBadge value={project.organisation_type} />
                       )}
