@@ -443,15 +443,22 @@ export default function Schedule() {
     }
   };
 
-  const handleConfirmReschedule = () => {
+  const handleConfirmReschedule = (updatedTime) => {
     if (!pendingReschedule) return;
     
     rescheduleMutation.mutate({
       jobId: pendingReschedule.job.id,
       newDate: pendingReschedule.newDate,
-      newTime: pendingReschedule.newTime,
+      newTime: updatedTime !== undefined ? updatedTime : pendingReschedule.newTime,
       notify: notifyTechnician
     });
+  };
+  
+  const handleTimeChange = (newTime) => {
+    setPendingReschedule(prev => ({
+      ...prev,
+      newTime
+    }));
   };
 
   const handleConflictProceed = () => {
@@ -1250,6 +1257,7 @@ export default function Schedule() {
           job={pendingReschedule?.job}
           newDate={pendingReschedule?.newDate}
           newTime={pendingReschedule?.newTime}
+          onTimeChange={handleTimeChange}
           notifyTechnician={notifyTechnician}
           setNotifyTechnician={setNotifyTechnician}
           isSubmitting={rescheduleMutation.isPending}
