@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
           current_location_type: data.current_location_type || 'warehouse',
           current_location_reference_id: data.current_location_type === 'warehouse' ? null : data.current_location_reference_id,
           home_location_type: data.home_location_type || 'warehouse',
+          home_location_reference_id: data.home_location_type === 'warehouse' ? null : data.home_location_reference_id,
           last_seen_at: new Date().toISOString(),
         };
 
