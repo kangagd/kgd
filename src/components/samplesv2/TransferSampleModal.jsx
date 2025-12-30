@@ -33,7 +33,7 @@ export default function TransferSampleModal({ open, onClose, sample }) {
 
   const transferMutation = useMutation({
     mutationFn: async () => {
-      const result = await base44.functions.invoke('manageSampleV2', {
+      const result = await base44.functions.invoke('manageSample', {
         action: 'transferToVehicle',
         sample_id: sample.id,
         vehicle_id: vehicleId,
@@ -42,7 +42,7 @@ export default function TransferSampleModal({ open, onClose, sample }) {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['samplesV2'] });
+      queryClient.invalidateQueries({ queryKey: ['samples'] });
       toast.success('Sample transferred successfully');
       onClose();
     },

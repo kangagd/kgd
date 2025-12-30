@@ -34,7 +34,7 @@ export default function ReturnSampleModal({ open, onClose, sample }) {
 
   const returnMutation = useMutation({
     mutationFn: async () => {
-      const result = await base44.functions.invoke('manageSampleV2', {
+      const result = await base44.functions.invoke('manageSample', {
         action: 'returnSample',
         sample_id: sample.id,
         return_to: returnTo,
@@ -44,7 +44,7 @@ export default function ReturnSampleModal({ open, onClose, sample }) {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['samplesV2'] });
+      queryClient.invalidateQueries({ queryKey: ['samples'] });
       toast.success('Sample returned successfully');
       onClose();
     },

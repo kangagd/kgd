@@ -29,7 +29,7 @@ export default function CheckoutSampleModal({ open, onClose, sample, projects })
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const result = await base44.functions.invoke('manageSampleV2', {
+      const result = await base44.functions.invoke('manageSample', {
         action: 'checkoutToProject',
         sample_id: sample.id,
         project_id: projectId,
@@ -39,7 +39,7 @@ export default function CheckoutSampleModal({ open, onClose, sample, projects })
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['samplesV2'] });
+      queryClient.invalidateQueries({ queryKey: ['samples'] });
       toast.success('Sample checked out successfully');
       onClose();
     },

@@ -98,8 +98,8 @@ export default function SamplesLibraryV2() {
   });
 
   const { data: samples = [], isLoading } = useQuery({
-    queryKey: ['samplesV2'],
-    queryFn: () => base44.entities.SampleV2.list(),
+    queryKey: ['samples'],
+    queryFn: () => base44.entities.Sample.list(),
   });
 
   const { data: projects = [] } = useQuery({
@@ -131,11 +131,11 @@ export default function SamplesLibraryV2() {
 
   const actionMutation = useMutation({
     mutationFn: async ({ action, payload }) => {
-      const result = await base44.functions.invoke('manageSampleV2', { action, ...payload });
+      const result = await base44.functions.invoke('manageSample', { action, ...payload });
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['samplesV2'] });
+      queryClient.invalidateQueries({ queryKey: ['samples'] });
       toast.success('Action completed successfully');
       setConfirmAction(null);
     },

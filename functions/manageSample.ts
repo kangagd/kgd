@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
 
     // Helper function to create movement record
     const createMovement = async (sample, movementType, fromLocType, fromLocRef, toLocType, toLocRef, notes) => {
-      await base44.asServiceRole.entities.SampleMovementV2.create({
+      await base44.asServiceRole.entities.SampleMovement.create({
         sample_id: sample.id,
         movement_type: movementType,
         from_location_type: fromLocType || null,
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
 
         validateSampleData(sampleData);
 
-        const sample = await base44.asServiceRole.entities.SampleV2.create(sampleData);
+        const sample = await base44.asServiceRole.entities.Sample.create(sampleData);
         return Response.json({ success: true, sample });
       }
 
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
           return Response.json({ success: false, error: 'sample_id and project_id are required' }, { status: 400 });
         }
 
-        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
+        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
         if (!sample) {
           return Response.json({ success: false, error: 'Sample not found' }, { status: 404 });
         }
@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
 
         validateSampleData({ ...sample, ...updatedData });
 
-        const updatedSample = await base44.asServiceRole.entities.SampleV2.update(sample_id, updatedData);
+        const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'checkout', fromLocType, fromLocRef, 'project', project_id, notes);
 
         return Response.json({ success: true, sample: updatedSample });
@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
           return Response.json({ success: false, error: 'sample_id and return_to are required' }, { status: 400 });
         }
 
-        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
+        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
         if (!sample) {
           return Response.json({ success: false, error: 'Sample not found' }, { status: 404 });
         }
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
 
         validateSampleData({ ...sample, ...updatedData });
 
-        const updatedSample = await base44.asServiceRole.entities.SampleV2.update(sample_id, updatedData);
+        const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'return', fromLocType, fromLocRef, toLocType, toLocRef, notes);
 
         return Response.json({ success: true, sample: updatedSample });
@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
           return Response.json({ success: false, error: 'sample_id and vehicle_id are required' }, { status: 400 });
         }
 
-        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
+        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
         if (!sample) {
           return Response.json({ success: false, error: 'Sample not found' }, { status: 404 });
         }
@@ -212,7 +212,7 @@ Deno.serve(async (req) => {
 
         validateSampleData({ ...sample, ...updatedData });
 
-        const updatedSample = await base44.asServiceRole.entities.SampleV2.update(sample_id, updatedData);
+        const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'transfer', fromLocType, fromLocRef, 'vehicle', vehicle_id, notes);
 
         return Response.json({ success: true, sample: updatedSample });
@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
           return Response.json({ success: false, error: 'sample_id is required' }, { status: 400 });
         }
 
-        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
+        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
         if (!sample) {
           return Response.json({ success: false, error: 'Sample not found' }, { status: 404 });
         }
@@ -242,7 +242,7 @@ Deno.serve(async (req) => {
 
         validateSampleData({ ...sample, ...updatedData });
 
-        const updatedSample = await base44.asServiceRole.entities.SampleV2.update(sample_id, updatedData);
+        const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'mark_lost', fromLocType, fromLocRef, 'unknown', null, notes);
 
         return Response.json({ success: true, sample: updatedSample });
@@ -255,7 +255,7 @@ Deno.serve(async (req) => {
           return Response.json({ success: false, error: 'sample_id and found_location_type are required' }, { status: 400 });
         }
 
-        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
+        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
         if (!sample) {
           return Response.json({ success: false, error: 'Sample not found' }, { status: 404 });
         }
@@ -287,7 +287,7 @@ Deno.serve(async (req) => {
 
         validateSampleData({ ...sample, ...updatedData });
 
-        const updatedSample = await base44.asServiceRole.entities.SampleV2.update(sample_id, updatedData);
+        const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'mark_found', fromLocType, fromLocRef, toLocType, toLocRef, notes);
 
         return Response.json({ success: true, sample: updatedSample });
@@ -300,7 +300,7 @@ Deno.serve(async (req) => {
           return Response.json({ success: false, error: 'sample_id is required' }, { status: 400 });
         }
 
-        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
+        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
         if (!sample) {
           return Response.json({ success: false, error: 'Sample not found' }, { status: 404 });
         }
@@ -319,7 +319,7 @@ Deno.serve(async (req) => {
 
         validateSampleData({ ...sample, ...updatedData });
 
-        const updatedSample = await base44.asServiceRole.entities.SampleV2.update(sample_id, updatedData);
+        const updatedSample = await base44.asServiceRole.entities.Sample.update(sample_id, updatedData);
         await createMovement(updatedSample, 'retire', fromLocType, fromLocRef, sample.current_location_type, sample.current_location_reference_id, notes);
 
         return Response.json({ success: true, sample: updatedSample });
@@ -332,7 +332,7 @@ Deno.serve(async (req) => {
         }, { status: 400 });
     }
   } catch (error) {
-    console.error('Error in manageSampleV2:', error);
+    console.error('Error in manageSample:', error);
     return Response.json({ 
       success: false, 
       error: error.message || 'Internal server error' 

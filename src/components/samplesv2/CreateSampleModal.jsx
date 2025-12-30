@@ -40,14 +40,14 @@ export default function CreateSampleModal({ open, onClose }) {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const result = await base44.functions.invoke('manageSampleV2', {
+      const result = await base44.functions.invoke('manageSample', {
         action: 'createSample',
         data: formData,
       });
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['samplesV2'] });
+      queryClient.invalidateQueries({ queryKey: ['samples'] });
       toast.success('Sample created successfully');
       onClose();
     },

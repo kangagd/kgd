@@ -34,7 +34,7 @@ export default function MarkFoundModal({ open, onClose, sample }) {
 
   const markFoundMutation = useMutation({
     mutationFn: async () => {
-      const result = await base44.functions.invoke('manageSampleV2', {
+      const result = await base44.functions.invoke('manageSample', {
         action: 'markFound',
         sample_id: sample.id,
         found_location_type: foundLocationType,
@@ -44,7 +44,7 @@ export default function MarkFoundModal({ open, onClose, sample }) {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['samplesV2'] });
+      queryClient.invalidateQueries({ queryKey: ['samples'] });
       toast.success('Sample marked as found');
       onClose();
     },

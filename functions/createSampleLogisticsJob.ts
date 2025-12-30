@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     const samples = [];
     for (const sample_id of sample_ids) {
       try {
-        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
+        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
         if (sample) {
           samples.push(sample);
         }
@@ -119,12 +119,12 @@ Deno.serve(async (req) => {
       expected_duration: 0.5,
     });
 
-    // Record sample movement based on job type using manageSampleV2
+    // Record sample movement based on job type using manageSample
     if (job_type === SAMPLE_JOB_TYPES.SAMPLE_DROP_OFF) {
       // Drop-off: Check out samples to project immediately
       for (const sample_id of sample_ids) {
         try {
-          await base44.functions.invoke('manageSampleV2', {
+          await base44.functions.invoke('manageSample', {
             action: 'checkoutToProject',
             sample_id,
             project_id,
