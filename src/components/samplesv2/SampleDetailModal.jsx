@@ -75,10 +75,29 @@ export default function SampleDetailModal({ open, onClose, sample }) {
     enabled: open,
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => base44.entities.Project.list(),
+    enabled: open,
+  });
+
   const getVehicleName = (vehicleId) => {
     if (!vehicleId) return '';
     const vehicle = vehicles.find(v => v.id === vehicleId);
     return vehicle ? (vehicle.name || vehicle.registration_plate) : vehicleId;
+  };
+
+  const getProjectName = (projectId) => {
+    if (!projectId) return '';
+    const proj = projects.find(p => p.id === projectId);
+    return proj ? proj.title : projectId;
+  };
+
+  const getLocationDisplay = (locationType, referenceId) => {
+    if (!referenceId) return '';
+    if (locationType === 'vehicle') return `(${getVehicleName(referenceId)})`;
+    if (locationType === 'project') return `(${getProjectName(referenceId)})`;
+    return `(${referenceId})`;
   };
 
   return (
@@ -196,10 +215,10 @@ export default function SampleDetailModal({ open, onClose, sample }) {
                     </div>
                     <div className="text-[13px] text-[#6B7280] space-y-1">
                       {movement.from_location_type && (
-                        <p>From: {movement.from_location_type} {movement.from_location_reference_id && movement.from_location_type === 'vehicle' ? `(${getVehicleName(movement.from_location_reference_id)})` : movement.from_location_reference_id ? `(${movement.from_location_reference_id})` : ''}</p>
+                        <p>From: {movement.from_location_type} {getLocationDisplay(movement.from_location_type, movement.from_location_reference_id)}</p>
                       )}
                       {movement.to_location_type && (
-                        <p>To: {movement.to_location_type} {movement.to_location_reference_id && movement.to_location_type === 'vehicle' ? `(${getVehicleName(movement.to_location_reference_id)})` : movement.to_location_reference_id ? `(${movement.to_location_reference_id})` : ''}</p>
+                        <p>To: {movement.to_location_type} {getLocationDisplay(movement.to_location_type, movement.to_location_reference_id)}</p>
                       )}
                       {movement.notes && (
                         <p className="text-[#4B5563] mt-2">{movement.notes}</p>
