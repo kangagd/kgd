@@ -335,6 +335,20 @@ export default function ToolsAdmin() {
                     {toolsByLocation[location].filter(t => t.is_active).length} active
                 </div>
               </div>
+              
+              {/* Header Row */}
+              <div className="px-5 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 grid grid-cols-12 gap-4">
+                    <div className="col-span-5 text-xs font-medium text-gray-500 uppercase">Tool Name</div>
+                    <div className="col-span-3 text-xs font-medium text-gray-500 uppercase">Category</div>
+                    <div className="col-span-2 text-xs font-medium text-gray-500 uppercase">Qty</div>
+                    <div className="col-span-2 text-xs font-medium text-gray-500 uppercase">Status</div>
+                  </div>
+                  <div className="w-20"></div>
+                </div>
+              </div>
+
               <div className="divide-y divide-gray-100">
                 {toolsByLocation[location].map((tool) => (
                   <div
@@ -351,8 +365,8 @@ export default function ToolsAdmin() {
                       <div className="col-span-3">
                         <LocationBadge location={tool.category} />
                       </div>
-                      <div className="col-span-2 text-sm text-gray-600">
-                        Qty: {tool.default_quantity_required ?? 0}
+                      <div className="col-span-2 text-sm text-gray-900">
+                        {tool.default_quantity_required ?? 0}
                       </div>
                       <div className="col-span-2 flex items-center gap-2">
                         <Button
