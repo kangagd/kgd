@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { moveSampleToClient, moveSampleFromClientToVehicle } from './recordSampleMovement.js';
 
 // Sample Job Types
 const SAMPLE_JOB_TYPES = {
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
     const samples = [];
     for (const sample_id of sample_ids) {
       try {
-        const sample = await base44.asServiceRole.entities.Sample.get(sample_id);
+        const sample = await base44.asServiceRole.entities.SampleV2.get(sample_id);
         if (sample) {
           samples.push(sample);
         }
@@ -120,42 +119,30 @@ Deno.serve(async (req) => {
       expected_duration: 0.5,
     });
 
-    // Record sample movement based on job type
-    let movementResult;
-    
+    // Record sample movement based on job type using manageSampleV2
     if (job_type === SAMPLE_JOB_TYPES.SAMPLE_DROP_OFF) {
-      // Drop-off: Move samples to client immediately
-      movementResult = await moveSampleToClient(
-        base44,
-        sample_ids,
-        project_id,
-        user.email,
-        job.id
-      );
-    } else if (job_type === SAMPLE_JOB_TYPES.SAMPLE_PICKUP) {
-      // Pickup: Don't move yet - will be moved on job completion
-      // Just mark intention via job creation
-      // Movement will happen in performCheckOut or job completion handler
-      movementResult = { 
-        success: true, 
-        message: "Pickup job created - samples will be moved on completion",
-        updatedSamples: samples,
-        movements: []
-      };
+      // Drop-off: Check out samples to project immediately
+      for (const sample_id of sample_ids) {
+        try {
+          await base44.functions.invoke('manageSampleV2', {
+            action: 'checkoutSample',
+            sampleId: sample_id,
+            data: {
+              project_id,
+              notes: `Checked out for drop-off job #${job.job_number}`,
+            },
+          });
+        } catch (error) {
+          console.error(`Error checking out sample ${sample_id}:`, error);
+        }
+      }
     }
-
-    if (!movementResult.success) {
-      return Response.json({ 
-        success: false, 
-        error: `Job created but sample movement failed: ${movementResult.error}` 
-      }, { status: 500 });
-    }
+    // For pickup, samples are moved on job completion
 
     return Response.json({
       success: true,
       job,
-      updatedSamples: movementResult.updatedSamples || [],
-      movements: movementResult.movements || []
+      updatedSamples: samples,
     });
   } catch (error) {
     console.error("Error creating sample logistics job:", error);
