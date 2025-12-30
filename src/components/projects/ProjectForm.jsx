@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
+import { handleEnterToNextField } from "../common/formNavigator";
 
 export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
   const navigate = useNavigate();
@@ -353,20 +354,15 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             </CardTitle>
           </div>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} onKeyDownCapture={handleEnterToNextField}>
           <CardContent className="p-6 space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Project Title *</Label>
               <Input
                 id="title"
+                data-nav="true"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }
-                }}
                 required
                 placeholder="e.g., Garage Door Replacement - Unit 6"
                 className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
@@ -700,7 +696,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
               Cancel
             </Button>
             <Button 
-              type="submit" 
+              type="submit"
+              data-nav="true"
               disabled={isSubmitting} 
               className="bg-[#fae008] hover:bg-[#e5d007] active:bg-[#d4c006] text-[#000000] font-bold shadow-md hover:shadow-lg transition-all"
             >

@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { handleEnterToNextField } from "../common/formNavigator";
 
 export default function CreateSampleModal({ open, onClose }) {
   const [formData, setFormData] = useState({
@@ -72,11 +73,12 @@ export default function CreateSampleModal({ open, onClose }) {
           <DialogTitle>Create New Sample</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} onKeyDownCapture={handleEnterToNextField} className="space-y-4">
           <div>
             <Label htmlFor="name">Sample Name *</Label>
             <Input
               id="name"
+              data-nav="true"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., 36mm Roller Shutter (CW)"
@@ -88,6 +90,7 @@ export default function CreateSampleModal({ open, onClose }) {
             <Label htmlFor="category">Category</Label>
             <Input
               id="category"
+              data-nav="true"
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               placeholder="e.g., Roller Shutter"
@@ -98,6 +101,7 @@ export default function CreateSampleModal({ open, onClose }) {
             <Label htmlFor="sample_tag">Sample Tag (Barcode/QR)</Label>
             <Input
               id="sample_tag"
+              data-nav="true"
               value={formData.sample_tag}
               onChange={(e) => setFormData({ ...formData, sample_tag: e.target.value })}
               placeholder="e.g., CW-36"
@@ -161,7 +165,8 @@ export default function CreateSampleModal({ open, onClose }) {
               Cancel
             </Button>
             <Button 
-              type="submit" 
+              type="submit"
+              data-nav="true"
               disabled={createMutation.isPending}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
             >
