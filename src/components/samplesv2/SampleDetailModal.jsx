@@ -63,6 +63,12 @@ export default function SampleDetailModal({ open, onClose, sample }) {
     enabled: open && !!sample.id,
   });
 
+  const { data: project } = useQuery({
+    queryKey: ['project', sample.checked_out_project_id],
+    queryFn: () => base44.entities.Project.get(sample.checked_out_project_id),
+    enabled: open && !!sample.checked_out_project_id,
+  });
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -98,7 +104,7 @@ export default function SampleDetailModal({ open, onClose, sample }) {
             <div className="bg-[#FEF3C7] border border-[#FCD34D] rounded-lg p-4">
               <h3 className="text-[14px] font-semibold text-[#92400E] mb-2">Currently Checked Out</h3>
               <div className="space-y-2 text-[13px] text-[#78350F]">
-                <p>Project: {sample.checked_out_project_id}</p>
+                <p>Project: {project?.title || sample.checked_out_project_id}</p>
                 {sample.checked_out_at && (
                   <p>Checked out: {safeFormatDate(sample.checked_out_at, 'MMM d, yyyy h:mm a')}</p>
                 )}
