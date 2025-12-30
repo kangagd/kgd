@@ -110,6 +110,18 @@ export default function ToolsAdmin() {
     return 0;
   });
 
+  // Group tools by location
+  const toolsByLocation = sortedTools.reduce((acc, tool) => {
+    const location = tool.location || 'Unassigned';
+    if (!acc[location]) {
+      acc[location] = [];
+    }
+    acc[location].push(tool);
+    return acc;
+  }, {});
+
+  const locationGroups = Object.keys(toolsByLocation).sort();
+
   const handleSort = (key) => {
     setSortConfig(current => ({
       key,
@@ -308,70 +320,70 @@ export default function ToolsAdmin() {
         </div>
       </div>
 
-      {/* Tool list */}
-      <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-            <h2 className="text-sm font-semibold text-gray-900">Tool Templates ({filteredTools.length})</h2>
-            <div className="text-xs text-gray-500">
-                {filteredTools.filter(t => t.is_active).length} active
-            </div>
-        </div>
+      {/* Tool list grouped by location */}
+      <div className="space-y-4">
         {!sortedTools.length ? (
-          <div className="p-8 text-center text-gray-500 italic">
+          <div className="border border-gray-200 rounded-xl bg-white shadow-sm p-8 text-center text-gray-500 italic">
               {tools.length === 0 ? "No tools defined yet. Add one above." : "No tools match your filters."}
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {sortedTools.map((tool) => (
-              <div
-                key={tool.id}
-                className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors group"
-              >
-                <div className="flex-1 grid grid-cols-12 gap-4 items-center">
-                  <div className="col-span-3">
-                    <div className="font-medium text-sm text-gray-900">{tool.name}</div>
-                    {tool.notes && (
-                        <div className="text-xs text-gray-500 truncate">{tool.notes}</div>
-                    )}
-                  </div>
-                  <div className="col-span-2">
-                    <LocationBadge location={tool.category} />
-                  </div>
-                  <div className="col-span-3">
-                    <div className="text-xs text-gray-500">Location</div>
-                    <div className="text-sm text-gray-900">{tool.location || '-'}</div>
-                  </div>
-                  <div className="col-span-2 text-sm text-gray-600">
-                    Qty: {tool.default_quantity_required ?? 0}
-                  </div>
-                  <div className="col-span-2 flex items-center gap-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-6 text-xs ${tool.is_active ? 'text-green-600 hover:text-green-700 hover:bg-green-50' : 'text-gray-400 hover:text-gray-500'}`}
-                        onClick={() => updateToolMutation.mutate({ id: tool.id, data: { is_active: !tool.is_active } })}
-                    >
-                        {tool.is_active ? "Active" : "Inactive"}
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => {
-                            if (confirm('Are you sure you want to delete this tool template?')) {
-                                deleteToolMutation.mutate(tool.id);
-                            }
-                        }}
-                    >
-                        Delete
-                    </Button>
+          locationGroups.map((location) => (
+            <div key={location} className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 className="text-sm font-semibold text-gray-900">{location} ({toolsByLocation[location].length})</h2>
+                <div className="text-xs text-gray-500">
+                    {toolsByLocation[location].filter(t => t.is_active).length} active
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="divide-y divide-gray-100">
+                {toolsByLocation[location].map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="flex-1 grid grid-cols-12 gap-4 items-center">
+                      <div className="col-span-5">
+                        <div className="font-medium text-sm text-gray-900">{tool.name}</div>
+                        {tool.notes && (
+                            <div className="text-xs text-gray-500 truncate">{tool.notes}</div>
+                        )}
+                      </div>
+                      <div className="col-span-3">
+                        <LocationBadge location={tool.category} />
+                      </div>
+                      <div className="col-span-2 text-sm text-gray-600">
+                        Qty: {tool.default_quantity_required ?? 0}
+                      </div>
+                      <div className="col-span-2 flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className={`h-6 text-xs ${tool.is_active ? 'text-green-600 hover:text-green-700 hover:bg-green-50' : 'text-gray-400 hover:text-gray-500'}`}
+                            onClick={() => updateToolMutation.mutate({ id: tool.id, data: { is_active: !tool.is_active } })}
+                        >
+                            {tool.is_active ? "Active" : "Inactive"}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                                if (confirm('Are you sure you want to delete this tool template?')) {
+                                    deleteToolMutation.mutate(tool.id);
+                                }
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
