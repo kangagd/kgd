@@ -1093,63 +1093,88 @@ export default function Schedule() {
             </div>
             
             {/* Mobile: Grid layout, Desktop: Flex row */}
-            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-row lg:items-center lg:gap-3">
-              <div className="col-span-2 inline-flex items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
-                <Button
-                  type="button"
-                  variant={viewScope === "mine" ? "default" : "ghost"}
-                  size="sm"
-                  className={`h-7 rounded-md px-3 text-xs font-medium flex-1 lg:flex-initial ${viewScope === "mine" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
-                  onClick={() => setViewScope("mine")}
-                >
-                  My Schedule
-                </Button>
-                <Button
-                  type="button"
-                  variant={viewScope === "all" ? "default" : "ghost"}
-                  size="sm"
-                  className={`h-7 rounded-md px-3 text-xs font-medium flex-1 lg:flex-initial ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
-                  onClick={() => setViewScope("all")}
-                >
-                  All Technicians
-                </Button>
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-row lg:items-center lg:justify-between lg:gap-3">
+              <div className="col-span-2 lg:col-span-1 flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
+                  <Button
+                    type="button"
+                    variant={viewScope === "mine" ? "default" : "ghost"}
+                    size="sm"
+                    className={`h-7 rounded-md px-3 text-xs font-medium ${viewScope === "mine" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                    onClick={() => setViewScope("mine")}
+                  >
+                    My Schedule
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={viewScope === "all" ? "default" : "ghost"}
+                    size="sm"
+                    className={`h-7 rounded-md px-3 text-xs font-medium ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                    onClick={() => setViewScope("all")}
+                  >
+                    All Technicians
+                  </Button>
+                </div>
+
+                {isAdminOrManager && (
+                  <>
+                    <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail} disabled={viewScope === 'mine'}>
+                      <SelectTrigger className="h-9 w-[160px] text-xs border-slate-200 shadow-sm">
+                        <SelectValue placeholder="Select Technician" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="me">Me</SelectItem>
+                        <SelectItem value="all">All Technicians</SelectItem>
+                        {technicians.map((tech) => (
+                          <SelectItem key={tech.email} value={tech.email}>
+                            {tech.full_name || tech.display_name || tech.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-9 w-[140px] text-xs border-slate-200 shadow-sm">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="Open">Open</SelectItem>
+                        <SelectItem value="Scheduled">Scheduled</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </>
+                )}
               </div>
 
-              {isAdminOrManager && (
-                <>
-                  <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail} disabled={viewScope === 'mine'}>
-                    <SelectTrigger className="h-9 w-full lg:w-[160px] text-xs border-slate-200 shadow-sm">
-                      <SelectValue placeholder="Select Technician" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="me">Me</SelectItem>
-                      <SelectItem value="all">All Technicians</SelectItem>
-                      {technicians.map((tech) => (
-                        <SelectItem key={tech.email} value={tech.email}>
-                          {tech.full_name || tech.display_name || tech.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="col-span-2 lg:col-span-1 flex items-center gap-2 lg:justify-end">
+                {isAdminOrManager && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowAvailabilityManager(true)}
+                      className="h-9 w-9"
+                      title="Manage Availability"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
 
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="h-9 w-full lg:w-[140px] text-xs border-slate-200 shadow-sm">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="Open">Open</SelectItem>
-                      <SelectItem value="Scheduled">Scheduled</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                      <SelectItem value="Cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </>
-              )}
-
-
-              
-              <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowAIAssistant(true)}
+                      className="h-9 w-9"
+                      title="AI Scheduling Assistant"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+                
+                <div className="flex items-center gap-2 flex-1 lg:flex-initial">
                 <Button variant="outline" onClick={handlePrevious} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
