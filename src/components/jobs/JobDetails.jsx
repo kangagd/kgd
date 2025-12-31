@@ -270,6 +270,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     staleTime: 60_000
   });
 
+  // Fetch Project Trade Requirements
+  const { data: projectTradeReqs = [], isLoading: isProjectTradeReqsLoading } = useQuery({
+    queryKey: ['projectTradeReqsForJob', job.project_id],
+    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: job.project_id }),
+    enabled: !!job.project_id,
+    staleTime: 60_000
+  });
+
   // Detect logistics job
   const isLogisticsJob = !!(job.job_type === 'Logistics' || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id);
 
@@ -1637,8 +1645,44 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           <h4 className="text-[14px] font-semibold text-[#111827]">Third-party Trades</h4>
                           <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="px-3 pt-2">
-                          <p className="text-[13px] text-[#6B7280]">Loading...</p>
+                        <CollapsibleContent className="px-3 pt-2 pb-3">
+                          {isProjectTradeReqsLoading ? (
+                            <div className="flex items-center gap-2 py-2">
+                              <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
+                              <span className="text-[13px] text-[#6B7280]">Loading trades...</span>
+                            </div>
+                          ) : projectTradeReqs.length === 0 ? (
+                            <p className="text-[13px] text-[#9CA3AF] py-2">No third-party trades required.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {projectTradeReqs.map((trade) => (
+                                <div key={trade.id} className="bg-white border border-[#E5E7EB] rounded-lg p-2.5">
+                                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                                    <div className="flex-1">
+                                      <div className="text-[13px] font-semibold text-[#111827]">
+                                        {trade.trade_name || trade.trade_type || trade.name || 'Trade'}
+                                      </div>
+                                      {trade.notes && (
+                                        <div className="text-[12px] text-[#6B7280] mt-1">
+                                          {trade.notes}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1">
+                                      {trade.is_required && (
+                                        <Badge className="bg-amber-100 text-amber-700 text-[11px]">
+                                          Required
+                                        </Badge>
+                                      )}
+                                      <Badge className="bg-[#F3F4F6] text-[#6B7280] text-[11px]">
+                                        {trade.status || 'Required'}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </CollapsibleContent>
                       </Collapsible>
 
