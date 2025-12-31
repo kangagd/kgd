@@ -717,6 +717,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           status: jobTypeName === "Installation" && newStage === "Scheduled" ? "Scheduled" : "Open",
           scheduled_date: new Date().toISOString().split('T')[0],
           additional_info: additionalInfo,
+          notes: project.notes || "",
           image_urls: project.image_urls || [],
           quote_url: project.quote_url || null,
           invoice_url: project.invoice_url || null
