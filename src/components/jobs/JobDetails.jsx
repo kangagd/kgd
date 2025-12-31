@@ -305,15 +305,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryFn: async () => {
       if (!job.project_id) return [];
       
+      console.log('💰 Fetching invoices for project:', job.project_id);
+      
       try {
         // Fetch invoices where project_id matches
         const invoices = await base44.entities.XeroInvoice.filter({ 
           project_id: job.project_id 
         });
         
+        console.log('💰 Found project invoices:', invoices);
         return invoices;
       } catch (error) {
-        console.error('Error fetching project invoices:', error);
+        console.error('❌ Error fetching project invoices:', error);
         return [];
       }
     },
