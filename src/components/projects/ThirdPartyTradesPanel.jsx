@@ -55,6 +55,9 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
 
   const createTradeMutation = useMutation({
     mutationFn: async (data) => {
+      if (!project?.id) {
+        throw new Error('Project is required');
+      }
       const newTrade = await base44.entities.ProjectTradeRequirement.create({
         ...data,
         project_id: project.id
@@ -90,6 +93,9 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
 
   const updateTradeMutation = useMutation({
     mutationFn: async ({ id, data, wasBooked }) => {
+      if (!project?.id) {
+        throw new Error('Project is required');
+      }
       await base44.entities.ProjectTradeRequirement.update(id, data);
       
       // Trigger logistics job creation if newly booked
@@ -205,6 +211,10 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   };
 
   const handleSubmit = () => {
+    if (!project?.id) {
+      toast.error('Project is required to add trade requirements');
+      return;
+    }
     if (editingId) {
       // Find original trade to compare is_booked status
       const originalTrade = tradeRequirements.find(t => t.id === editingId);
