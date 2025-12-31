@@ -63,19 +63,6 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
         project_id: project.id
       });
       
-      // If marked as booked on creation, trigger logistics job
-      if (data.is_booked && newTrade?.id) {
-        try {
-          await base44.functions.invoke('onTradeRequirementUpdated', {
-            tradeId: newTrade.id,
-            wasBooked: false,
-            isBooked: true
-          });
-        } catch (error) {
-          console.error('Failed to create logistics job:', error);
-        }
-      }
-      
       return newTrade;
     },
     onSuccess: () => {
@@ -95,21 +82,8 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   });
 
   const updateTradeMutation = useMutation({
-    mutationFn: async ({ id, data, wasBooked }) => {
+    mutationFn: async ({ id, data }) => {
       await base44.entities.ProjectTradeRequirement.update(id, data);
-      
-      // Trigger logistics job creation if newly booked
-      if (wasBooked !== undefined && !wasBooked && data.is_booked) {
-        try {
-          await base44.functions.invoke('onTradeRequirementUpdated', {
-            tradeId: id,
-            wasBooked: wasBooked,
-            isBooked: data.is_booked
-          });
-        } catch (error) {
-          console.error('Failed to create logistics job:', error);
-        }
-      }
     },
     onSuccess: () => {
       if (project?.id) {
@@ -143,23 +117,8 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   });
 
   const toggleBookedMutation = useMutation({
-    mutationFn: async ({ id, isBooked, wasBooked }) => {
-      // Update the trade requirement
+    mutationFn: async ({ id, isBooked }) => {
       await base44.entities.ProjectTradeRequirement.update(id, { is_booked: isBooked });
-      
-      // Trigger logistics job creation/update if newly booked
-      if (!wasBooked && isBooked) {
-        try {
-          await base44.functions.invoke('onTradeRequirementUpdated', {
-            tradeId: id,
-            wasBooked: wasBooked,
-            isBooked: isBooked
-          });
-        } catch (error) {
-          console.error('Failed to create/update logistics job:', error);
-          // Don't fail the whole operation if logistics job creation fails
-        }
-      }
     },
     onSuccess: () => {
       if (project?.id) {
@@ -226,12 +185,9 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       return;
     }
     if (editingId) {
-      // Find original trade to compare is_booked status
-      const originalTrade = tradeRequirements.find(t => t.id === editingId);
       updateTradeMutation.mutate({ 
         id: editingId, 
-        data: formData, 
-        wasBooked: originalTrade?.is_booked || false 
+        data: formData
       });
     } else {
       createTradeMutation.mutate(formData);
@@ -442,8 +398,7 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
                         e.stopPropagation();
                         toggleBookedMutation.mutate({ 
                           id: trade.id, 
-                          isBooked: !trade.is_booked,
-                          wasBooked: trade.is_booked 
+                          isBooked: !trade.is_booked
                         });
                       }}
                       className="hover:opacity-70 transition-opacity"
