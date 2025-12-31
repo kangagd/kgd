@@ -1713,14 +1713,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                       )}
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
-                                      {trade.is_required && (
-                                        <Badge className="bg-amber-100 text-amber-700 text-[11px]">
-                                          Required
-                                        </Badge>
-                                      )}
-                                      <Badge className="bg-[#F3F4F6] text-[#6B7280] text-[11px]">
-                                        {trade.status || 'Required'}
-                                      </Badge>
+                                     {trade.is_booked ? (
+                                       <Badge className="bg-green-100 text-green-700 text-[11px]">
+                                         Booked
+                                       </Badge>
+                                     ) : trade.is_required ? (
+                                       <Badge className="bg-amber-100 text-amber-700 text-[11px]">
+                                         Required
+                                       </Badge>
+                                     ) : null}
                                     </div>
                                   </div>
                                 </div>
