@@ -1463,10 +1463,54 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       </CardTitle>
                       <p className="text-[12px] text-[#6B7280]">Live from the linked Project</p>
                     </div>
-                    <Badge className="bg-green-100 text-green-700 font-medium flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      Ready
-                    </Badge>
+                    {(() => {
+                      if (!job.project_id || isProjectLoading || projectError) {
+                        return null;
+                      }
+
+                      // Calculate readiness
+                      const missingParts = projectParts.filter(p => 
+                        p.status !== 'in_storage' && 
+                        p.status !== 'in_vehicle' && 
+                        p.status !== 'installed' && 
+                        p.status !== 'cancelled'
+                      );
+
+                      const outstandingTrades = projectTradeReqs.filter(t => 
+                        t.is_required && 
+                        (!t.status || (t.status !== 'complete' && t.status !== 'completed' && t.status !== 'done'))
+                      );
+
+                      const isReady = missingParts.length === 0 && outstandingTrades.length === 0;
+
+                      return (
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge className={`font-medium flex items-center gap-1 ${
+                            isReady 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {isReady ? (
+                              <>
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                Ready
+                              </>
+                            ) : (
+                              <>
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                Not ready
+                              </>
+                            )}
+                          </Badge>
+                          {!isReady && (
+                            <div className="text-[11px] text-[#6B7280] text-right">
+                              {missingParts.length > 0 && <div>Missing parts: {missingParts.length}</div>}
+                              {outstandingTrades.length > 0 && <div>Outstanding trades: {outstandingTrades.length}</div>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -1657,7 +1701,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                             <div className="space-y-2">
                               {projectTradeReqs.map((trade) => (
                                 <div key={trade.id} className="bg-white border border-[#E5E7EB] rounded-lg p-2.5">
-                                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                                  <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1">
                                       <div className="text-[13px] font-semibold text-[#111827]">
                                         {trade.trade_name || trade.trade_type || trade.name || 'Trade'}
