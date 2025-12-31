@@ -1115,20 +1115,35 @@ export default function Schedule() {
               </div>
 
               {isAdminOrManager && (
-                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail} disabled={viewScope === 'mine'}>
-                  <SelectTrigger className="h-9 w-full lg:w-[160px] text-xs border-slate-200 shadow-sm">
-                    <SelectValue placeholder="Select Technician" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="me">Me</SelectItem>
-                    <SelectItem value="all">All Technicians</SelectItem>
-                    {technicians.map((tech) => (
-                      <SelectItem key={tech.email} value={tech.email}>
-                        {tech.full_name || tech.display_name || tech.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <>
+                  <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail} disabled={viewScope === 'mine'}>
+                    <SelectTrigger className="h-9 w-full lg:w-[160px] text-xs border-slate-200 shadow-sm">
+                      <SelectValue placeholder="Select Technician" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="me">Me</SelectItem>
+                      <SelectItem value="all">All Technicians</SelectItem>
+                      {technicians.map((tech) => (
+                        <SelectItem key={tech.email} value={tech.email}>
+                          {tech.full_name || tech.display_name || tech.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="h-9 w-full lg:w-[140px] text-xs border-slate-200 shadow-sm">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="Open">Open</SelectItem>
+                      <SelectItem value="Scheduled">Scheduled</SelectItem>
+                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="Cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
               )}
 
               {isAdminOrManager && (
@@ -1173,22 +1188,6 @@ export default function Schedule() {
                 <TabsTrigger value="month" className="flex-1">Month</TabsTrigger>
               </TabsList>
             </Tabs>
-
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:flex-1 lg:w-[180px]">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Open">Open</SelectItem>
-                  <SelectItem value="Scheduled">Scheduled</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                  <SelectItem value="Cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             {/* View Type Toggle (Resource/Calendar) */}
             <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E5E7EB] p-1 w-full sm:w-auto">
