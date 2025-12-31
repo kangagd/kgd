@@ -34,16 +34,16 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
         throw new Error(res.data.error);
       }
 
-      const updatedThread = res.data?.thread || res.data;
-      
-      // Notify parent of update
-      if (onThreadUpdated) {
-        onThreadUpdated(updatedThread);
-      }
-
-      return updatedThread;
+      return res.data?.thread || res.data;
     },
   });
+
+  // Notify parent when AI data changes
+  React.useEffect(() => {
+    if (aiData && onThreadUpdated) {
+      onThreadUpdated(aiData);
+    }
+  }, [aiData?.id, aiData?.ai_analyzed_at]);
 
   // Use AI data if available, otherwise fall back to thread prop
   const t = aiData || thread;
