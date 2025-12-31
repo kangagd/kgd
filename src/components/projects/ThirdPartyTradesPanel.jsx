@@ -55,6 +55,9 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
 
   const createTradeMutation = useMutation({
     mutationFn: async (data) => {
+      if (!project?.id) {
+        throw new Error('Project ID is missing');
+      }
       const newTrade = await base44.entities.ProjectTradeRequirement.create({
         ...data,
         project_id: project.id
@@ -76,8 +79,10 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       return newTrade;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      if (project?.id) {
+        queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       resetForm();
       toast.success("Trade requirement added");
@@ -106,8 +111,10 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      if (project?.id) {
+        queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      }
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
       resetForm();
       toast.success("Trade requirement updated");
@@ -121,7 +128,9 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   const deleteTradeMutation = useMutation({
     mutationFn: (id) => base44.entities.ProjectTradeRequirement.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+      if (project?.id) {
+        queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+      }
       toast.success("Trade requirement removed");
     },
     onError: (error) => {
@@ -150,8 +159,10 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      if (project?.id) {
+        queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      }
       toast.success("Trade requirement updated");
     },
     onError: (error) => {
@@ -205,6 +216,11 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   };
 
   const handleSubmit = () => {
+    if (!project?.id) {
+      console.error('Project is missing or has no ID:', project);
+      toast.error('Cannot add trade: Project information is missing');
+      return;
+    }
     if (editingId) {
       // Find original trade to compare is_booked status
       const originalTrade = tradeRequirements.find(t => t.id === editingId);
