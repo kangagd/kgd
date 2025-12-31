@@ -304,27 +304,38 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['projectInvoices', job.project_id],
     queryFn: async () => {
       if (!job.project_id) return [];
-      const project = await base44.entities.Project.get(job.project_id);
       
-      const invoiceIds = [];
-      
-      // Collect invoice IDs from both xero_invoices array and primary_xero_invoice_id
-      if (project.primary_xero_invoice_id) {
-        invoiceIds.push(project.primary_xero_invoice_id);
+      try {
+        const project = await base44.entities.Project.get(job.project_id);
+        
+        const invoiceIds = [];
+        
+        // Collect invoice IDs from both xero_invoices array and primary_xero_invoice_id
+        if (project.primary_xero_invoice_id) {
+          invoiceIds.push(project.primary_xero_invoice_id);
+        }
+        if (project.xero_invoices && Array.isArray(project.xero_invoices) && project.xero_invoices.length > 0) {
+          invoiceIds.push(...project.xero_invoices);
+        }
+        
+        if (invoiceIds.length === 0) return [];
+        
+        // Remove duplicates
+        const uniqueIds = [...new Set(invoiceIds)];
+        
+        // Fetch all invoices
+        const invoices = await Promise.all(
+          uniqueIds.map(id => base44.entities.XeroInvoice.get(id).catch((err) => {
+            console.error(`Failed to fetch invoice ${id}:`, err);
+            return null;
+          }))
+        );
+        
+        return invoices.filter(Boolean);
+      } catch (error) {
+        console.error('Error fetching project invoices:', error);
+        return [];
       }
-      if (project.xero_invoices && project.xero_invoices.length > 0) {
-        invoiceIds.push(...project.xero_invoices);
-      }
-      
-      if (invoiceIds.length === 0) return [];
-      
-      // Remove duplicates
-      const uniqueIds = [...new Set(invoiceIds)];
-      
-      const invoices = await Promise.all(
-        uniqueIds.map(id => base44.entities.XeroInvoice.get(id).catch(() => null))
-      );
-      return invoices.filter(Boolean);
     },
     enabled: !!job.project_id
   });
@@ -2610,8 +2621,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   isAdmin={isAdmin}
                 />
 
-                {/* Project-level Invoices */}
-                {projectInvoices.length > 0 && (
+                {/* Project-level Invoices - Always show if job is linked to project */}
+                {job.project_id && (
                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
@@ -2620,38 +2631,44 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-3">
-                      {projectInvoices.map((invoice) => (
-                        <XeroInvoiceCard
-                          key={invoice.id}
-                          invoice={invoice}
-                          onRefreshStatus={() => {
-                            base44.functions.invoke('syncXeroInvoiceStatus', { 
-                              invoice_id: invoice.id 
-                            }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ['projectInvoices'] });
-                            });
-                          }}
-                          onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
-                          onDownloadPdf={() => {
-                            base44.functions.invoke('getInvoicePdf', {
-                              xero_invoice_id: invoice.xero_invoice_id
-                            }).then((response) => {
-                              const blob = new Blob([response.data], { type: 'application/pdf' });
-                              const url = window.URL.createObjectURL(blob);
-                              const a = document.createElement('a');
-                              a.href = url;
-                              a.download = `invoice-${invoice.xero_invoice_number}.pdf`;
-                              document.body.appendChild(a);
-                              a.click();
-                              window.URL.revokeObjectURL(url);
-                              a.remove();
-                              toast.success('Invoice PDF downloaded');
-                            }).catch(() => toast.error('Failed to download PDF'));
-                          }}
-                          isRefreshing={false}
-                          isDownloading={false}
-                        />
-                      ))}
+                      {projectInvoices.length === 0 ? (
+                        <div className="text-center py-4">
+                          <p className="text-sm text-[#6B7280]">No invoices linked to the parent project yet</p>
+                        </div>
+                      ) : (
+                        projectInvoices.map((invoice) => (
+                          <XeroInvoiceCard
+                            key={invoice.id}
+                            invoice={invoice}
+                            onRefreshStatus={() => {
+                              base44.functions.invoke('syncXeroInvoiceStatus', { 
+                                invoice_id: invoice.id 
+                              }).then(() => {
+                                queryClient.invalidateQueries({ queryKey: ['projectInvoices'] });
+                              });
+                            }}
+                            onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
+                            onDownloadPdf={() => {
+                              base44.functions.invoke('getInvoicePdf', {
+                                xero_invoice_id: invoice.xero_invoice_id
+                              }).then((response) => {
+                                const blob = new Blob([response.data], { type: 'application/pdf' });
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `invoice-${invoice.xero_invoice_number}.pdf`;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                a.remove();
+                                toast.success('Invoice PDF downloaded');
+                              }).catch(() => toast.error('Failed to download PDF'));
+                            }}
+                            isRefreshing={false}
+                            isDownloading={false}
+                          />
+                        ))
+                      )}
                     </CardContent>
                   </Card>
                 )}
