@@ -117,10 +117,11 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   
   // Set initial body with signature once user is loaded
   useEffect(() => {
-    if (currentUser && !existingDraft) {
-      setBody(getInitialBody());
+    if (currentUser && !existingDraft && !body) {
+      const initialBody = getInitialBody();
+      setBody(initialBody);
     }
-  }, [currentUser]);
+  }, [currentUser, mode, message, thread]);
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(!!(existingDraft?.cc_addresses?.length || existingDraft?.cc));
