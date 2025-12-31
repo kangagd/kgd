@@ -1736,6 +1736,29 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           <h4 className="text-[14px] font-semibold text-[#111827]">Project Requirements</h4>
                           <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
                         </CollapsibleTrigger>
+                        <CollapsibleContent className="px-3 pt-2 pb-3">
+                          {isProjectLoading ? (
+                            <div className="flex items-center gap-2 py-2">
+                              <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
+                              <span className="text-[13px] text-[#6B7280]">Loading requirements...</span>
+                            </div>
+                          ) : !linkedProject?.special_requirements ? (
+                            <p className="text-[13px] text-[#9CA3AF] py-2">No special requirements specified.</p>
+                          ) : (
+                            <div 
+                              className="text-[13px] text-[#111827] prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: linkedProject.special_requirements }}
+                            />
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+
+                      {/* Project Requirements */}
+                      <Collapsible defaultOpen={false}>
+                        <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
+                          <h4 className="text-[14px] font-semibold text-[#111827]">Project Requirements</h4>
+                          <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
+                        </CollapsibleTrigger>
                         <CollapsibleContent className="px-3 pt-2">
                           <p className="text-[13px] text-[#6B7280]">Loading...</p>
                         </CollapsibleContent>
