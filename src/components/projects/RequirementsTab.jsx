@@ -164,7 +164,7 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
         </CardHeader>
         <CardContent>
           <ThirdPartyTradesPanel 
-            projectId={project.id}
+            project={project}
             canEdit={canEdit}
           />
         </CardContent>
