@@ -79,6 +79,7 @@ import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
 import DerivedAttentionItems from "./DerivedAttentionItems";
+import EmailComposer from "../inbox/EmailComposer";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -152,6 +153,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const addTradeRef = React.useRef(null);
+  const [composerMode, setComposerMode] = useState(null);
+  const [composerMessage, setComposerMessage] = useState(null);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -1882,11 +1885,33 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="activity" className="mt-3">
+            {composerMode && (
+              <div className="mb-4">
+                <EmailComposer
+                  mode={composerMode}
+                  thread={null}
+                  message={composerMessage}
+                  onClose={() => {
+                    setComposerMode(null);
+                    setComposerMessage(null);
+                  }}
+                  onSent={() => {
+                    setComposerMode(null);
+                    setComposerMessage(null);
+                    queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+                    queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
+                    toast.success('Email sent successfully');
+                  }}
+                  defaultTo={project.customer_email}
+                  projectId={project.id}
+                />
+              </div>
+            )}
             <ActivityTab 
               project={project}
               onComposeEmail={() => {
-                // Navigate to inbox to compose email
-                navigate(createPageUrl("Inbox") + `?action=compose&projectId=${project.id}`);
+                setComposerMode('compose');
+                setComposerMessage(null);
               }}
             />
           </TabsContent>
