@@ -1084,18 +1084,20 @@ export default function Schedule() {
       <div className="max-w-7xl mx-auto">
         {/* Sticky Header */}
         <div className="sticky top-0 bg-[#ffffff] z-10 pb-3 mb-4">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+          <div className="flex flex-col gap-4 mb-4">
             <div>
               <h1 className="text-3xl font-semibold text-[#111827] leading-tight">Schedule</h1>
               <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="inline-flex items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
+            
+            {/* Mobile: Grid layout, Desktop: Flex row */}
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-row lg:items-center lg:gap-3">
+              <div className="col-span-2 inline-flex items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
                 <Button
                   type="button"
                   variant={viewScope === "mine" ? "default" : "ghost"}
                   size="sm"
-                  className={`h-7 rounded-md px-3 text-xs font-medium ${viewScope === "mine" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                  className={`h-7 rounded-md px-3 text-xs font-medium flex-1 lg:flex-initial ${viewScope === "mine" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
                   onClick={() => setViewScope("mine")}
                 >
                   My Schedule
@@ -1104,7 +1106,7 @@ export default function Schedule() {
                   type="button"
                   variant={viewScope === "all" ? "default" : "ghost"}
                   size="sm"
-                  className={`h-7 rounded-md px-3 text-xs font-medium ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
+                  className={`h-7 rounded-md px-3 text-xs font-medium flex-1 lg:flex-initial ${viewScope === "all" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : "text-slate-500 hover:text-slate-900"}`}
                   onClick={() => setViewScope("all")}
                 >
                   All Technicians
@@ -1112,8 +1114,8 @@ export default function Schedule() {
               </div>
 
               {isAdminOrManager && (
-                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail}>
-                  <SelectTrigger className="h-9 w-[160px] text-xs border-slate-200 shadow-sm">
+                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail} className="col-span-2 lg:col-span-1">
+                  <SelectTrigger className="h-9 w-full lg:w-[160px] text-xs border-slate-200 shadow-sm">
                     <SelectValue placeholder="Select Technician" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1132,25 +1134,32 @@ export default function Schedule() {
                 <Button
                   variant="outline"
                   onClick={() => setShowAvailabilityManager(true)}
-                  className="h-10 px-3 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                  className="h-10 w-full lg:w-auto px-3 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
                   title="Manage Availability"
                 >
-                  <Settings className="w-4 h-4" />
+                  <Settings className="w-4 h-4 lg:mr-0" />
+                  <span className="ml-2 lg:hidden">Availability</span>
                 </Button>
               )}
-              <AISchedulingAssistant 
-                selectedDate={selectedDate} 
-                onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
-              />
-              <Button variant="outline" onClick={handlePrevious} className="h-10 w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" onClick={handleToday} className="h-10 px-4 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-medium">
-                Today
-              </Button>
-              <Button variant="outline" onClick={handleNext} className="h-10 w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
-                <ChevronRight className="w-4 h-4" />
-              </Button>
+              
+              <div className="col-span-2 lg:col-span-1 lg:w-auto">
+                <AISchedulingAssistant 
+                  selectedDate={selectedDate} 
+                  onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
+                />
+              </div>
+              
+              <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
+                <Button variant="outline" onClick={handlePrevious} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" onClick={handleToday} className="h-10 flex-1 lg:flex-initial px-4 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-medium">
+                  Today
+                </Button>
+                <Button variant="outline" onClick={handleNext} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
