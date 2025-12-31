@@ -27,6 +27,7 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   const queryClient = useQueryClient();
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [selectedTradeId, setSelectedTradeId] = useState("");
 
   const [formData, setFormData] = useState({
     trade_type: "Electrician",
@@ -45,6 +46,11 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
     queryKey: ['projectTradeRequirements', project?.id],
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
     enabled: !!project?.id
+  });
+
+  const { data: thirdPartyTrades = [] } = useQuery({
+    queryKey: ['thirdPartyTrades'],
+    queryFn: () => base44.entities.ThirdPartyTrade.filter({ is_active: true }),
   });
 
   const createTradeMutation = useMutation({
@@ -169,6 +175,33 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
     });
     setIsAdding(false);
     setEditingId(null);
+    setSelectedTradeId("");
+  };
+
+  const handleTradeSelection = (tradeId) => {
+    setSelectedTradeId(tradeId);
+    
+    if (tradeId === "custom") {
+      // Reset to custom entry
+      setFormData({
+        ...formData,
+        contact_name: "",
+        contact_phone: "",
+        contact_email: ""
+      });
+    } else if (tradeId) {
+      // Auto-fill from selected trade
+      const selectedTrade = thirdPartyTrades.find(t => t.id === tradeId);
+      if (selectedTrade) {
+        setFormData({
+          ...formData,
+          trade_type: selectedTrade.type,
+          contact_name: selectedTrade.contact_name || "",
+          contact_phone: selectedTrade.contact_phone || "",
+          contact_email: selectedTrade.contact_email || ""
+        });
+      }
+    }
   };
 
   const handleSubmit = () => {
@@ -234,6 +267,26 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       {/* Add/Edit Form */}
       {isAdding && (
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
+            <div className="space-y-2">
+              <Label>Select Existing Trade or Create Custom</Label>
+              <Select 
+                value={selectedTradeId} 
+                onValueChange={handleTradeSelection}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a trade..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">➕ Custom Trade</SelectItem>
+                  {thirdPartyTrades.map((trade) => (
+                    <SelectItem key={trade.id} value={trade.id}>
+                      {trade.name} ({trade.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label>Trade Type</Label>
               <Select 

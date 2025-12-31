@@ -13,6 +13,7 @@ import SupplierForm from "../components/suppliers/SupplierForm";
 import SupplierDetails from "../components/suppliers/SupplierDetails";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
+import ThirdPartyTradeForm from "../components/suppliers/ThirdPartyTradeForm";
 
 function SuppliersPage() {
   const queryClient = useQueryClient();
@@ -20,10 +21,17 @@ function SuppliersPage() {
   const [viewMode, setViewMode] = useState("list"); // "list", "form", "details"
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [editingSupplier, setEditingSupplier] = useState(null);
+  const [showTradeForm, setShowTradeForm] = useState(false);
+  const [editingTrade, setEditingTrade] = useState(null);
 
   const { data: suppliers = [], isLoading } = useQuery({
     queryKey: ["suppliers-admin"],
     queryFn: () => base44.entities.Supplier.list("name"),
+  });
+
+  const { data: thirdPartyTrades = [], isLoading: isLoadingTrades } = useQuery({
+    queryKey: ["thirdPartyTrades"],
+    queryFn: () => base44.entities.ThirdPartyTrade.list("name"),
   });
 
   const createMutation = useMutation({
@@ -78,6 +86,28 @@ function SuppliersPage() {
     setSelectedSupplier(supplier);
     setViewMode("details");
   };
+
+  const createTradeMutation = useMutation({
+    mutationFn: async (data) => {
+      await base44.entities.ThirdPartyTrade.create(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["thirdPartyTrades"]);
+      setShowTradeForm(false);
+      setEditingTrade(null);
+    },
+  });
+
+  const updateTradeMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      await base44.entities.ThirdPartyTrade.update(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["thirdPartyTrades"]);
+      setShowTradeForm(false);
+      setEditingTrade(null);
+    },
+  });
 
   const filteredSuppliers = suppliers.filter(s => 
     s.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -250,6 +280,120 @@ function SuppliersPage() {
                                     ) : (
                                         <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 font-normal">Inactive</Badge>
                                     )}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        )}
+      </div>
+
+      {/* Third Party Trades Section */}
+      <div className="flex flex-col md:flex-row justify-between items-center w-full py-3 lg:py-4 mb-4 lg:mb-6 gap-3 mt-8">
+        <div>
+          <h2 className="text-2xl font-bold text-[#111827] leading-tight">Third-Party Trades</h2>
+          <p className="text-sm text-[#4B5563] mt-1">
+            Manage external trade contractors for projects.
+          </p>
+        </div>
+        <Button 
+            onClick={() => {
+                setEditingTrade(null);
+                setShowTradeForm(true);
+            }}
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+        >
+            <Plus className="w-4 h-4 mr-2" />
+            New Trade
+        </Button>
+      </div>
+
+      {showTradeForm && (
+        <div className="mb-6">
+          <ThirdPartyTradeForm
+            trade={editingTrade}
+            onSubmit={(data) => {
+              if (editingTrade) {
+                updateTradeMutation.mutate({ id: editingTrade.id, data });
+              } else {
+                createTradeMutation.mutate(data);
+              }
+            }}
+            onCancel={() => {
+              setShowTradeForm(false);
+              setEditingTrade(null);
+            }}
+            isSubmitting={createTradeMutation.isPending || updateTradeMutation.isPending}
+          />
+        </div>
+      )}
+
+      <div className="card rounded-xl border bg-white shadow-sm overflow-hidden">
+        {isLoadingTrades ? (
+            <div className="p-8 text-center text-gray-500">Loading trades...</div>
+        ) : thirdPartyTrades.length === 0 ? (
+            <div className="p-12 text-center">
+                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-lg font-medium text-gray-900">No third-party trades found</h3>
+                <p className="text-gray-500 mt-1">Get started by creating a new trade.</p>
+            </div>
+        ) : (
+            <div className="overflow-x-auto">
+                <Table className="table-auto w-full text-xs">
+                    <TableHeader>
+                        <TableRow className="bg-gray-50/50 hover:bg-transparent border-b">
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Name</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Type</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Contact Name</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Phone</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold">Email</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold text-center">Status</TableHead>
+                            <TableHead className="text-[11px] uppercase text-gray-500 h-10 font-semibold"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {thirdPartyTrades.map((trade) => (
+                            <TableRow 
+                                key={trade.id} 
+                                className="hover:bg-gray-50 transition-colors border-b last:border-0"
+                            >
+                                <TableCell className="px-4 py-3 font-medium text-gray-900">{trade.name}</TableCell>
+                                <TableCell className="px-4 py-3 text-gray-600">{trade.type || "—"}</TableCell>
+                                <TableCell className="px-4 py-3 text-gray-600">{trade.contact_name || "—"}</TableCell>
+                                <TableCell className="px-4 py-3">
+                                  {trade.contact_phone ? (
+                                    <a href={`tel:${trade.contact_phone}`} className="text-blue-600 hover:underline">
+                                      {trade.contact_phone}
+                                    </a>
+                                  ) : "—"}
+                                </TableCell>
+                                <TableCell className="px-4 py-3">
+                                  {trade.contact_email ? (
+                                    <a href={`mailto:${trade.contact_email}`} className="text-blue-600 hover:underline">
+                                      {trade.contact_email}
+                                    </a>
+                                  ) : "—"}
+                                </TableCell>
+                                <TableCell className="px-4 py-3 text-center">
+                                    {trade.is_active ? (
+                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-normal">Active</Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="bg-gray-100 text-gray-500 border-gray-200 font-normal">Inactive</Badge>
+                                    )}
+                                </TableCell>
+                                <TableCell className="px-4 py-3">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingTrade(trade);
+                                      setShowTradeForm(true);
+                                    }}
+                                    className="h-7 text-xs"
+                                  >
+                                    Edit
+                                  </Button>
                                 </TableCell>
                             </TableRow>
                         ))}
