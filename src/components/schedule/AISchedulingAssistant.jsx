@@ -168,10 +168,11 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
       <SheetTrigger asChild>
         <Button
           variant="outline"
-          className="gap-2 border-[#FAE008] bg-[#FFFEF5] hover:bg-[#FAE008]/20 text-[#111827]"
+          size="icon"
+          className="h-10 w-10 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+          title="AI Scheduling Assistant"
         >
           <Sparkles className="w-4 h-4 text-[#D97706]" />
-          AI Assistant
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
