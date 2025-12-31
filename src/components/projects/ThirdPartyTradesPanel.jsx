@@ -29,14 +29,6 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
   const [editingId, setEditingId] = useState(null);
   const [selectedTradeId, setSelectedTradeId] = useState("");
 
-  if (!project?.id) {
-    return (
-      <div className="text-center py-8 bg-slate-50 rounded-lg border border-slate-200">
-        <p className="text-sm text-slate-500">Project information is loading...</p>
-      </div>
-    );
-  }
-
   const [formData, setFormData] = useState({
     trade_type: "Electrician",
     description: "",
