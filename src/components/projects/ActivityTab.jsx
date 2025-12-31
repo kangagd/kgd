@@ -19,8 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-import { FileEdit } from "lucide-react";
-
 export default function ActivityTab({ project, onComposeEmail }) {
   const [filter, setFilter] = useState("all");
   const [showLogModal, setShowLogModal] = useState(false);
