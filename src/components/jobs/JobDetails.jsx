@@ -1456,84 +1456,71 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <DuplicateWarningCard entityType="Job" record={job} />
 
               {/* Parts & Requirements Section */}
-              {!isLogisticsJob && (
-              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-0.5">
-                        Parts & Requirements
-                      </CardTitle>
-                      <p className="text-[12px] text-[#6B7280]">Live from the linked Project</p>
-                    </div>
-                    {(() => {
-                      if (!job.project_id || isProjectLoading || projectError) {
-                        return null;
-                      }
+              {!isLogisticsJob && (() => {
+                if (!job.project_id || isProjectLoading || projectError) {
+                  return null;
+                }
 
-                      // Calculate readiness
-                      const missingParts = projectParts.filter(p => 
-                        p.status !== 'in_storage' && 
-                        p.status !== 'in_vehicle' && 
-                        p.status !== 'installed' && 
-                        p.status !== 'cancelled'
-                      );
+                // Calculate readiness
+                const missingParts = projectParts.filter(p => 
+                  p.status !== 'in_storage' && 
+                  p.status !== 'in_vehicle' && 
+                  p.status !== 'installed' && 
+                  p.status !== 'cancelled'
+                );
 
-                      const outstandingTrades = projectTradeReqs.filter(t => 
-                        t.is_required && 
-                        (!t.status || (t.status !== 'complete' && t.status !== 'completed' && t.status !== 'done'))
-                      );
+                const outstandingTrades = projectTradeReqs.filter(t => 
+                  t.is_required && 
+                  (!t.status || (t.status !== 'complete' && t.status !== 'completed' && t.status !== 'done'))
+                );
 
-                      const isReady = missingParts.length === 0 && outstandingTrades.length === 0;
+                const isReady = missingParts.length === 0 && outstandingTrades.length === 0;
 
-                      return (
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge className={`font-medium flex items-center gap-1 ${
-                            isReady 
-                              ? 'bg-green-100 text-green-700' 
-                              : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {isReady ? (
-                              <>
-                                <CheckCircle className="w-3.5 h-3.5" />
-                                Ready
-                              </>
-                            ) : (
-                              <>
-                                <AlertTriangle className="w-3.5 h-3.5" />
-                                Not ready
-                              </>
-                            )}
-                          </Badge>
+                return (
+                  <Collapsible defaultOpen={!isReady}>
+                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                      <CollapsibleTrigger asChild>
+                        <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] cursor-pointer hover:bg-[#F9FAFB] transition-colors group">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                                Parts & Requirements
+                              </CardTitle>
+                              <p className="text-[12px] text-[#6B7280]">Live from the linked Project</p>
+                              <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
+                            </div>
+                            <Badge className={`font-medium flex items-center gap-1 ${
+                              isReady 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-amber-100 text-amber-700'
+                            }`}>
+                              {isReady ? (
+                                <>
+                                  <CheckCircle className="w-3.5 h-3.5" />
+                                  Ready
+                                </>
+                              ) : (
+                                <>
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                  Not ready
+                                </>
+                              )}
+                            </Badge>
+                          </div>
                           {!isReady && (
-                            <div className="text-[11px] text-[#6B7280] text-right">
-                              {missingParts.length > 0 && <div>Missing parts: {missingParts.length}</div>}
-                              {outstandingTrades.length > 0 && <div>Outstanding trades: {outstandingTrades.length}</div>}
+                            <div className="text-[11px] text-[#6B7280] mt-1">
+                              {missingParts.length > 0 && <span>Missing parts: {missingParts.length}</span>}
+                              {missingParts.length > 0 && outstandingTrades.length > 0 && <span> • </span>}
+                              {outstandingTrades.length > 0 && <span>Outstanding trades: {outstandingTrades.length}</span>}
                             </div>
                           )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  {!job.project_id ? (
-                    <div className="text-center py-6">
-                      <p className="text-[13px] text-[#9CA3AF]">No project linked — Parts & Requirements unavailable.</p>
-                    </div>
-                  ) : isProjectLoading ? (
-                    <div className="flex items-center justify-center py-6">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#6B7280]" />
-                      <span className="ml-2 text-[13px] text-[#6B7280]">Loading project data...</span>
-                    </div>
-                  ) : projectError ? (
-                    <div className="text-center py-6">
-                      <p className="text-[13px] text-red-600">Failed to load project data. Please try again.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {/* Parts Required */}
-                      <Collapsible defaultOpen={false}>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            {/* Parts Required */}
+                            <Collapsible defaultOpen={false}>
                         <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
                           <h4 className="text-[14px] font-semibold text-[#111827]">Parts Required</h4>
                           <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
@@ -1757,10 +1744,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         </CollapsibleContent>
                       </Collapsible>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-              )}
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                );
+              })()}
 
               {isLogisticsJob ? (
                 <>
