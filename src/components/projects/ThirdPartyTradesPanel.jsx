@@ -189,13 +189,13 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
         contact_phone: "",
         contact_email: ""
       });
-    } else if (tradeId) {
+    } else if (tradeId && thirdPartyTrades && thirdPartyTrades.length > 0) {
       // Auto-fill from selected trade
-      const selectedTrade = thirdPartyTrades.find(t => t.id === tradeId);
+      const selectedTrade = thirdPartyTrades.find(t => t && t.id === tradeId);
       if (selectedTrade) {
         setFormData({
           ...formData,
-          trade_type: selectedTrade.type,
+          trade_type: selectedTrade.type || "Electrician",
           contact_name: selectedTrade.contact_name || "",
           contact_phone: selectedTrade.contact_phone || "",
           contact_email: selectedTrade.contact_email || ""
