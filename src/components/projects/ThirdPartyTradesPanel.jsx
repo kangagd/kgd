@@ -61,7 +61,7 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
       });
       
       // If marked as booked on creation, trigger logistics job
-      if (data.is_booked) {
+      if (data.is_booked && newTrade?.id) {
         try {
           await base44.functions.invoke('onTradeRequirementUpdated', {
             tradeId: newTrade.id,
