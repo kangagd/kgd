@@ -1131,23 +1131,24 @@ export default function Schedule() {
               )}
 
               {isAdminOrManager && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAvailabilityManager(true)}
-                  className="h-10 w-full lg:w-auto px-3 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-                  title="Manage Availability"
-                >
-                  <Settings className="w-4 h-4 lg:mr-0" />
-                  <span className="ml-2 lg:hidden">Availability</span>
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowAvailabilityManager(true)}
+                    className="h-10 w-10 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+                    title="Manage Availability"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                  <div className="lg:w-auto">
+                    <AISchedulingAssistant 
+                      selectedDate={selectedDate} 
+                      onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
+                    />
+                  </div>
+                </>
               )}
-              
-              <div className="col-span-2 lg:col-span-1 lg:w-auto">
-                <AISchedulingAssistant 
-                  selectedDate={selectedDate} 
-                  onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
-                />
-              </div>
               
               <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
                 <Button variant="outline" onClick={handlePrevious} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
