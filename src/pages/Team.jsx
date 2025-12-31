@@ -270,8 +270,8 @@ export default function Team() {
                       {/* Status */}
                       <div className="md:col-span-2 flex items-center gap-2 md:gap-0">
                         <span className="md:hidden text-[12px] text-[#9CA3AF]">Status:</span>
-                        <Badge variant={(user.status || 'active') === 'active' ? 'success' : 'secondary'}>
-                          {user.status || 'active'}
+                        <Badge variant={(user.status && user.status !== '' ? user.status : 'active') === 'active' ? 'success' : 'secondary'}>
+                          {user.status && user.status !== '' ? user.status : 'active'}
                         </Badge>
                       </div>
 
