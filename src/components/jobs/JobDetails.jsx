@@ -2621,22 +2621,24 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   isAdmin={isAdmin}
                 />
 
-                {/* Project-level Invoices - Always show if job is linked to project */}
-                {job.project_id && (
-                  <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                    <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
-                        <FolderKanban className="w-4 h-4 text-[#6B7280]" />
-                        Project Invoices
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 space-y-3">
-                      {projectInvoices.length === 0 ? (
-                        <div className="text-center py-4">
-                          <p className="text-sm text-[#6B7280]">No invoices linked to the parent project yet</p>
-                        </div>
-                      ) : (
-                        projectInvoices.map((invoice) => (
+                {/* Combined Invoice Section - Shows project invoices AND/OR job-specific invoice */}
+                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                    <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-[#FAE008]" />
+                      Invoices
+                      {(projectInvoices.length > 0 || xeroInvoice) && (
+                        <span className="text-[12px] font-normal text-[#6B7280]">
+                          ({(projectInvoices.length || 0) + (xeroInvoice ? 1 : 0)})
+                        </span>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {/* Show project invoices first */}
+                    {projectInvoices.length > 0 && (
+                      <div className="space-y-3 mb-4">
+                        {projectInvoices.map((invoice) => (
                           <XeroInvoiceCard
                             key={invoice.id}
                             invoice={invoice}
@@ -2667,48 +2669,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                             isRefreshing={false}
                             isDownloading={false}
                           />
-                        ))
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Xero Invoicing Section */}
-                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                    <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                      Job Invoice
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4">
-                    {!xeroInvoice ? (
-                      <div className="text-center py-6">
-                        <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
-                        <p className="text-[14px] text-[#6B7280] mb-4">
-                          No invoice has been linked to this job yet.
-                        </p>
-                        {isAdmin && (
-                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                            <Button
-                              onClick={() => setShowInvoiceModal(true)}
-                              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
-                            >
-                              <DollarSign className="w-4 h-4 mr-2" />
-                              Create Invoice
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => setShowLinkInvoiceModal(true)}
-                              className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-semibold h-10 px-6"
-                            >
-                              <FileText className="w-4 h-4 mr-2" />
-                              Link Existing
-                            </Button>
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    ) : (
-                      <>
+                    )}
+
+                    {/* Show job-specific invoice if exists */}
+                    {xeroInvoice && (
+                      <div className={projectInvoices.length > 0 ? 'pt-3 border-t border-[#E5E7EB]' : ''}>
+                        {projectInvoices.length > 0 && (
+                          <div className="text-[12px] font-semibold text-[#6B7280] mb-3">Job-Specific Invoice</div>
+                        )}
                         <XeroInvoiceCard
                           invoice={xeroInvoice}
                           onRefreshStatus={() => syncInvoiceMutation.mutate()}
@@ -2740,7 +2710,36 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                             </Button>
                           </div>
                         )}
-                      </>
+                      </div>
+                    )}
+
+                    {/* Show create/link buttons only if no invoices exist */}
+                    {!xeroInvoice && projectInvoices.length === 0 && (
+                      <div className="text-center py-6">
+                        <DollarSign className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+                        <p className="text-[14px] text-[#6B7280] mb-4">
+                          No invoice has been created yet.
+                        </p>
+                        {isAdmin && (
+                          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                            <Button
+                              onClick={() => setShowInvoiceModal(true)}
+                              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm h-10 px-6"
+                            >
+                              <DollarSign className="w-4 h-4 mr-2" />
+                              Create Invoice
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowLinkInvoiceModal(true)}
+                              className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-semibold h-10 px-6"
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              Link Existing
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </CardContent>
                 </Card>
