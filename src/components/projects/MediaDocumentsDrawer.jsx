@@ -42,7 +42,7 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
             <input
               ref={photoInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               multiple
               className="hidden"
               onChange={(e) => onUploadPhotos?.(e)}
@@ -82,7 +82,7 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="px-4 py-3 border-b border-[#E5E7EB]">
               <TabsList className="w-full">
-                <TabsTrigger value="photos" className="flex-1">Photos</TabsTrigger>
+                <TabsTrigger value="photos" className="flex-1">Photos & Videos</TabsTrigger>
                 <TabsTrigger value="documents" className="flex-1">Documents</TabsTrigger>
               </TabsList>
             </div>
@@ -90,20 +90,31 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
             <TabsContent value="photos" className="p-4">
               {!project.image_urls || project.image_urls.length === 0 ? (
                 <div className="text-center py-12 text-[#9CA3AF]">
-                  <p className="text-[14px]">No photos yet</p>
+                  <p className="text-[14px]">No photos or videos yet</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {project.image_urls.map((url, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[#E5E7EB] hover:border-[#FAE008] transition-colors cursor-pointer group">
-                      <img 
-                        src={url} 
-                        alt={`Photo ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                    </div>
-                  ))}
+                  {project.image_urls.map((url, idx) => {
+                    const isVideo = url.match(/\.(mp4|mov|avi|webm|mkv)$/i);
+                    return (
+                      <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[#E5E7EB] hover:border-[#FAE008] transition-colors cursor-pointer group">
+                        {isVideo ? (
+                          <video 
+                            src={url} 
+                            className="w-full h-full object-cover"
+                            controls
+                          />
+                        ) : (
+                          <img 
+                            src={url} 
+                            alt={`Media ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </TabsContent>
