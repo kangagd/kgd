@@ -1114,7 +1114,7 @@ export default function Schedule() {
               </div>
 
               {isAdminOrManager && (
-                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail} className="col-span-2 lg:col-span-1">
+                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail}>
                   <SelectTrigger className="h-9 w-full lg:w-[160px] text-xs border-slate-200 shadow-sm">
                     <SelectValue placeholder="Select Technician" />
                   </SelectTrigger>
@@ -1131,7 +1131,7 @@ export default function Schedule() {
               )}
 
               {isAdminOrManager && (
-                <>
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="icon"
@@ -1141,13 +1141,11 @@ export default function Schedule() {
                   >
                     <Settings className="w-4 h-4" />
                   </Button>
-                  <div className="lg:w-auto">
-                    <AISchedulingAssistant 
-                      selectedDate={selectedDate} 
-                      onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
-                    />
-                  </div>
-                </>
+                  <AISchedulingAssistant 
+                    selectedDate={selectedDate} 
+                    onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
+                  />
+                </div>
               )}
               
               <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
