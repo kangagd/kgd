@@ -431,6 +431,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                 message={null}
                 onClose={() => setComposerMode(null)}
                 onSent={handleEmailSent}
+                onDraftSaved={handleDraftSaved}
                 defaultTo={project.customer_email}
                 projectId={project.id}
               />
