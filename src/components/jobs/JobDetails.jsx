@@ -272,10 +272,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   // Fetch Project Trade Requirements
   const { data: projectTradeReqs = [], isLoading: isProjectTradeReqsLoading } = useQuery({
-    queryKey: ['projectTradeReqsForJob', job.project_id],
+    queryKey: ['projectTradeRequirements', job.project_id],
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    refetchInterval: 5000
+    refetchInterval: 3000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   // Detect logistics job
