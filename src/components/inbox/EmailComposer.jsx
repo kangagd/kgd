@@ -42,6 +42,7 @@ const sanitizeBodyHtml = (html) => {
 };
 
 export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, onDraftSaved, existingDraft = null, projectId = null, jobId = null, defaultTo = null }) {
+  const [currentUser, setCurrentUser] = useState(null);
   const [to, setTo] = useState(existingDraft?.to_addresses?.join(', ') || existingDraft?.to || (mode === "reply" ? message?.from_address : (defaultTo || "")));
   const [toSearchTerm, setToSearchTerm] = useState("");
   const [showToDropdown, setShowToDropdown] = useState(false);
@@ -52,6 +53,19 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     (mode === "reply" ? `Re: ${thread?.subject || ""}` : 
     mode === "forward" ? `Fwd: ${thread?.subject || ""}` : "")
   );
+
+  // Load current user for signature
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    };
+    loadUser();
+  }, []);
   
   const getSignature = () => {
     if (!currentUser?.email_signature) return '';
@@ -118,20 +132,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const textareaRef = useRef(null);
   const toInputRef = useRef(null);
   const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [currentUser, setCurrentUser] = useState(null);
-
-  // Fetch current user for signature
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error('Error loading user:', error);
-      }
-    };
-    loadUser();
-  }, []);
 
   // Fetch customers for email autocomplete
   const { data: customers = [] } = useQuery({
