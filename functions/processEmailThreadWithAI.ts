@@ -233,22 +233,36 @@ Return JSON only.`,
     }
 
     // STEP 3: Generate AI overview and key points
-    const conversationForAI = messages.map(m => {
-      const body = m.body_text || (m.body_html ? m.body_html.replace(/<[^>]*>/g, ' ').substring(0, 1500) : '');
-      return `${m.from_name || m.from_address}: ${body}`;
-    }).join('\n\n');
+    let conversationForAI;
+    
+    if (isWix && parsedEmail.customer_name) {
+      // For Wix emails, use the parsed form data instead of raw email body
+      conversationForAI = `Website Enquiry Form Submission:
+Customer: ${parsedEmail.customer_name}
+Email: ${parsedEmail.customer_email || 'Not provided'}
+Phone: ${parsedEmail.customer_phone || 'Not provided'}
+Address: ${parsedEmail.address || 'Not provided'}
+Request: ${parsedEmail.description || 'No details provided'}
+Source: ${parsedEmail.source || 'Website form'}`;
+    } else {
+      // For regular emails, use conversation
+      conversationForAI = messages.map(m => {
+        const body = m.body_text || (m.body_html ? m.body_html.replace(/<[^>]*>/g, ' ').substring(0, 1500) : '');
+        return `${m.from_name || m.from_address}: ${body}`;
+      }).join('\n\n');
+    }
 
     const overviewResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Analyze this email thread for a garage door service company and provide:
+      prompt: `Analyze this ${isWix ? 'website form submission' : 'email thread'} for a garage door service company and provide:
 
-1. A SHORT overview (1-3 sentences max) summarizing what this email thread is about.
-2. Key points (3-7 bullet items) - facts, requests, or important details.
+1. A SHORT overview (1-3 sentences max) summarizing what the customer needs or is asking about.
+2. Key points (3-7 bullet items) - facts, requests, or important details about the customer's needs.
 
-EMAIL:
+${isWix ? 'FORM SUBMISSION' : 'EMAIL'}:
 Subject: ${thread.subject}
 From: ${thread.from_address}
 
-CONVERSATION:
+${isWix ? 'CUSTOMER ENQUIRY' : 'CONVERSATION'}:
 ${conversationForAI.substring(0, 5000)}
 
 Return JSON with: overview (string), key_points (array of strings)`,
@@ -269,11 +283,12 @@ Return JSON with: overview (string), key_points (array of strings)`,
 
     // STEP 4: Generate labels, priority, category
     const classificationResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Classify this email for a garage door service company.
+      prompt: `Classify this ${isWix ? 'website form submission' : 'email'} for a garage door service company.
 
-EMAIL:
+${isWix ? 'FORM SUBMISSION' : 'EMAIL'}:
 Subject: ${thread.subject}
 From: ${thread.from_address}
+Customer: ${parsedEmail.customer_name || 'Unknown'}
 Description: ${parsedEmail.description || bodyText.substring(0, 500)}
 
 Return JSON with:
