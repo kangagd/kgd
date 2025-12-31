@@ -53,8 +53,7 @@ const healthColors = {
   critical: { bg: "bg-red-50", text: "text-red-700", badge: "bg-red-100" }
 };
 
-export default function AISchedulingAssistant({ selectedDate, onApplySuggestion }) {
-  const [open, setOpen] = useState(false);
+export default function AISchedulingAssistant({ open, onClose, selectedDate, onApplySuggestion }) {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
@@ -164,17 +163,7 @@ export default function AISchedulingAssistant({ selectedDate, onApplySuggestion 
   const healthStyle = healthColors[health];
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-          title="AI Scheduling Assistant"
-        >
-          <Sparkles className="w-4 h-4 text-[#D97706]" />
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col">
         <SheetHeader className="px-6 py-4 border-b border-[#E5E7EB] flex-shrink-0">
           <div className="flex items-center justify-between">
