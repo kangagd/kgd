@@ -262,6 +262,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job?.project_id
   });
 
+  // Fetch Project Parts
+  const { data: projectParts = [], isLoading: isProjectPartsLoading } = useQuery({
+    queryKey: ['projectPartsForJob', job.project_id],
+    queryFn: () => base44.entities.Part.filter({ project_id: job.project_id }),
+    enabled: !!job.project_id,
+    staleTime: 60_000
+  });
+
   // Detect logistics job
   const isLogisticsJob = !!(job.job_type === 'Logistics' || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id);
 
@@ -1475,8 +1483,151 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           <h4 className="text-[14px] font-semibold text-[#111827]">Parts Required</h4>
                           <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="px-3 pt-2">
-                          <p className="text-[13px] text-[#6B7280]">Loading...</p>
+                        <CollapsibleContent className="px-3 pt-2 pb-3">
+                          {isProjectPartsLoading ? (
+                            <div className="flex items-center gap-2 py-2">
+                              <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
+                              <span className="text-[13px] text-[#6B7280]">Loading parts...</span>
+                            </div>
+                          ) : projectParts.length === 0 ? (
+                            <p className="text-[13px] text-[#9CA3AF] py-2">No parts found for this project.</p>
+                          ) : (
+                            <div className="space-y-4">
+                              {/* Missing / Not Ready */}
+                              {(() => {
+                                const missingParts = projectParts.filter(p => 
+                                  p.status !== 'in_storage' && 
+                                  p.status !== 'in_vehicle' && 
+                                  p.status !== 'installed' && 
+                                  p.status !== 'cancelled'
+                                );
+                                if (missingParts.length === 0) return null;
+                                return (
+                                  <div>
+                                    <div className="text-[11px] font-semibold text-red-600 uppercase tracking-wide mb-2">
+                                      Missing / Not Ready ({missingParts.length})
+                                    </div>
+                                    <div className="space-y-2">
+                                      {missingParts.map((part) => (
+                                        <div key={part.id} className="bg-red-50 border border-red-200 rounded-lg p-2.5">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div className="flex-1">
+                                              <div className="text-[13px] font-semibold text-[#111827]">
+                                                {part.item_name || part.category || 'Part'}
+                                              </div>
+                                              <div className="text-[12px] text-[#6B7280] mt-0.5">
+                                                Qty: {part.quantity_required || part.quantity || 1}
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <Badge className="bg-red-100 text-red-700 text-[11px] mb-1">
+                                                {part.status || 'pending'}
+                                              </Badge>
+                                              {part.location && (
+                                                <div className="text-[11px] text-[#6B7280]">
+                                                  {part.location}
+                                                  {part.assigned_vehicle_id && ` • Vehicle`}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Ready */}
+                              {(() => {
+                                const readyParts = projectParts.filter(p => 
+                                  p.status === 'in_storage' || p.status === 'in_vehicle'
+                                );
+                                if (readyParts.length === 0) return null;
+                                return (
+                                  <div>
+                                    <div className="text-[11px] font-semibold text-green-600 uppercase tracking-wide mb-2">
+                                      Ready ({readyParts.length})
+                                    </div>
+                                    <div className="space-y-2">
+                                      {readyParts.map((part) => (
+                                        <div key={part.id} className="bg-green-50 border border-green-200 rounded-lg p-2.5">
+                                          <div className="flex items-start justify-between gap-2">
+                                            <div className="flex-1">
+                                              <div className="text-[13px] font-semibold text-[#111827]">
+                                                {part.item_name || part.category || 'Part'}
+                                              </div>
+                                              <div className="text-[12px] text-[#6B7280] mt-0.5">
+                                                Qty: {part.quantity_required || part.quantity || 1}
+                                              </div>
+                                            </div>
+                                            <div className="text-right">
+                                              <Badge className="bg-green-100 text-green-700 text-[11px] mb-1">
+                                                {part.status}
+                                              </Badge>
+                                              {part.location && (
+                                                <div className="text-[11px] text-[#6B7280]">
+                                                  {part.location}
+                                                  {part.assigned_vehicle_id && ` • Vehicle`}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Installed / Cancelled */}
+                              {(() => {
+                                const completedParts = projectParts.filter(p => 
+                                  p.status === 'installed' || p.status === 'cancelled'
+                                );
+                                if (completedParts.length === 0) return null;
+                                return (
+                                  <Collapsible defaultOpen={false}>
+                                    <CollapsibleTrigger className="w-full flex items-center justify-between p-2.5 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
+                                      <div className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide">
+                                        Installed / Cancelled ({completedParts.length})
+                                      </div>
+                                      <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] transition-transform group-data-[state=open]:rotate-180" />
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="pt-2">
+                                      <div className="space-y-2">
+                                        {completedParts.map((part) => (
+                                          <div key={part.id} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-2.5">
+                                            <div className="flex items-start justify-between gap-2">
+                                              <div className="flex-1">
+                                                <div className="text-[13px] font-semibold text-[#111827]">
+                                                  {part.item_name || part.category || 'Part'}
+                                                </div>
+                                                <div className="text-[12px] text-[#6B7280] mt-0.5">
+                                                  Qty: {part.quantity_required || part.quantity || 1}
+                                                </div>
+                                              </div>
+                                              <div className="text-right">
+                                                <Badge className="bg-[#E5E7EB] text-[#6B7280] text-[11px] mb-1">
+                                                  {part.status}
+                                                </Badge>
+                                                {part.location && (
+                                                  <div className="text-[11px] text-[#9CA3AF]">
+                                                    {part.location}
+                                                    {part.assigned_vehicle_id && ` • Vehicle`}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                );
+                              })()}
+                            </div>
+                          )}
                         </CollapsibleContent>
                       </Collapsible>
 
