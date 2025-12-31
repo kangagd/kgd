@@ -38,6 +38,57 @@ function mapSource(rawSource) {
   return 'Other';
 }
 
+function decodeBasicEntities(str) {
+  if (!str) return str;
+  return str
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\u00A0/g, ' ')
+    .trim();
+}
+
+function parseWixEmailFromHtml(bodyHtml) {
+  if (!bodyHtml) return null;
+
+  // Only parse the "Notification Summary" block to avoid footer noise
+  const summaryIdx = bodyHtml.toLowerCase().indexOf('notification summary');
+  const html = summaryIdx >= 0 ? bodyHtml.slice(summaryIdx) : bodyHtml;
+
+  // Match: <span ...>Label:</span> <span ...>Value</span>
+  const pairRegex =
+    /<span[^>]*>\s*([^<:]+?)\s*:\s*<\/span>\s*<span[^>]*>\s*([^<]+?)\s*<\/span>/gi;
+
+  const pairs = {};
+  let match;
+
+  while ((match = pairRegex.exec(html)) !== null) {
+    const rawLabel = decodeBasicEntities(match[1]).toLowerCase();
+    const rawValue = decodeBasicEntities(match[2]);
+
+    if (!rawValue) continue;
+    pairs[rawLabel] = rawValue;
+  }
+
+  const result = {
+    first_name: pairs['first name'] || null,
+    last_name: pairs['last name'] || null,
+    phone: pairs['phone'] || null,
+    email: pairs['email'] || null,
+    address: pairs['address'] || null,
+    how_can_we_help: pairs['how can we help?'] || pairs['how can we help'] || null,
+    how_did_you_hear: pairs['how did you hear about us?'] || pairs['how did you hear about us'] || null,
+  };
+
+  const hasAny =
+    result.first_name || result.last_name || result.phone || result.email || result.address || result.how_can_we_help;
+
+  return hasAny ? result : null;
+}
+
 function parseWixEmailBody(bodyText) {
   if (!bodyText) return null;
   
@@ -72,7 +123,7 @@ function parseWixEmailBody(bodyText) {
 }
 
 function isWixFormEmail(fromAddress, subject) {
-  const isWixSender = fromAddress?.toLowerCase() === WIX_SENDER.toLowerCase();
+  const isWixSender = fromAddress?.toLowerCase().includes(WIX_SENDER.toLowerCase());
   const isWixSubject = subject?.includes(WIX_SUBJECT_PATTERN);
   return isWixSender && isWixSubject;
 }
@@ -170,10 +221,34 @@ Deno.serve(async (req) => {
     // STEP 1: Detect and parse Wix enquiry
     if (isWixFormEmail(thread.from_address, thread.subject)) {
       isWix = true;
-      const wixBody = firstMessage.body_text || 
-        (firstMessage.body_html ? firstMessage.body_html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ') : '');
       
-      const wixData = parseWixEmailBody(wixBody);
+      // Parse Wix form data (HTML-first, then fallback to text)
+      let wixData = parseWixEmailFromHtml(firstMessage.body_html);
+
+      if (!wixData) {
+        const wixBody =
+          firstMessage.body_text?.trim()
+          || (firstMessage.body_html
+            ? firstMessage.body_html
+                .replace(/<\s*br\s*\/?>/gi, '\n')
+                .replace(/<\/\s*p\s*>/gi, '\n')
+                .replace(/<\/\s*div\s*>/gi, '\n')
+                .replace(/<\/\s*tr\s*>/gi, '\n')
+                .replace(/<\/\s*td\s*>/gi, '\n')
+                .replace(/<[^>]*>/g, '')
+                .replace(/&nbsp;/gi, ' ')
+                .replace(/\u00A0/g, ' ')
+                .replace(/\r\n/g, '\n')
+                .replace(/[ \t]+\n/g, '\n')
+                .replace(/\n{2,}/g, '\n')
+                .trim()
+            : '');
+
+        wixData = parseWixEmailBody(wixBody);
+      }
+
+      console.log('[WIX PARSE] Parsed data:', wixData);
+      console.log('[WIX PARSE] Used HTML parser:', !!parseWixEmailFromHtml(firstMessage.body_html));
       
       if (wixData && (wixData.first_name || wixData.email || wixData.phone)) {
         const customerName = [wixData.first_name, wixData.last_name].filter(Boolean).join(' ') || 'Unknown';
