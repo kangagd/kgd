@@ -1175,7 +1175,6 @@ export default function Schedule() {
                 )}
                 
                 <Button variant="outline" onClick={handlePrevious} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
-                <Button variant="outline" onClick={handlePrevious} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <Button variant="outline" onClick={handleToday} className="h-10 flex-1 lg:flex-initial px-4 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-medium">
