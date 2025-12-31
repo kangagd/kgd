@@ -883,7 +883,17 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
     setUploading(true);
     try {
-      if (type === 'other') {
+      if (type === 'image') {
+        const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
+        const results = await Promise.all(uploadPromises);
+        const newImageUrls = results.map(r => r.file_url);
+        const currentImages = project.image_urls || [];
+        updateProjectMutation.mutate({ 
+          field: 'image_urls', 
+          value: [...currentImages, ...newImageUrls] 
+        });
+        toast.success(`${files.length} file(s) uploaded successfully`);
+      } else if (type === 'other') {
         const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
         const results = await Promise.all(uploadPromises);
         const newDocs = results.map((r, idx) => ({
