@@ -35,20 +35,29 @@ export default function Schedule() {
   const [view, setView] = useState("day");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedJob, setSelectedJob] = useState(null);
-  const [technicianFilter, setTechnicianFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [contractFilter, setContractFilter] = useState(false);
   const [viewType, setViewType] = useState("resource"); // 'resource' or 'calendar'
   const { user, role, isTechnician, isAdminOrManager } = usePermissions();
   
   const [viewScope, setViewScope] = useState("all");
-  const [selectedTechnicianEmail, setSelectedTechnicianEmail] = useState("me");
+  const [selectedTechnicianEmail, setSelectedTechnicianEmail] = useState("all");
 
   React.useEffect(() => {
     if (role === 'technician') {
       setViewScope('mine');
+      setSelectedTechnicianEmail('me');
     }
   }, [role]);
+
+  // When viewScope changes, update selectedTechnicianEmail accordingly
+  React.useEffect(() => {
+    if (viewScope === 'mine') {
+      setSelectedTechnicianEmail('me');
+    } else if (viewScope === 'all' && selectedTechnicianEmail === 'me') {
+      setSelectedTechnicianEmail('all');
+    }
+  }, [viewScope]);
   
   // Drag and drop state
   const [pendingReschedule, setPendingReschedule] = useState(null);
@@ -349,14 +358,6 @@ export default function Schedule() {
           }
         }
 
-        // Technician filter
-        if (technicianFilter !== "all") {
-          const isAssigned = Array.isArray(job.assigned_to) 
-            ? job.assigned_to.includes(technicianFilter)
-            : job.assigned_to === technicianFilter;
-          if (!isAssigned) return false;
-        }
-
         // Status filter
         if (statusFilter !== "all" && job.status !== statusFilter) {
           return false;
@@ -377,7 +378,7 @@ export default function Schedule() {
         const timeB = b.scheduled_time || '';
         return timeA.localeCompare(timeB);
       });
-  }, [scopedJobs, technicianFilter, statusFilter, contractFilter]);
+  }, [scopedJobs, statusFilter, contractFilter]);
 
   // Get date range text
   const getDateRangeText = () => {
@@ -1114,7 +1115,7 @@ export default function Schedule() {
               </div>
 
               {isAdminOrManager && (
-                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail}>
+                <Select value={selectedTechnicianEmail} onValueChange={setSelectedTechnicianEmail} disabled={viewScope === 'mine'}>
                   <SelectTrigger className="h-9 w-full lg:w-[160px] text-xs border-slate-200 shadow-sm">
                     <SelectValue placeholder="Select Technician" />
                   </SelectTrigger>
@@ -1175,20 +1176,6 @@ export default function Schedule() {
 
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
-                <SelectTrigger className="w-full sm:flex-1 lg:w-[200px]">
-                  <SelectValue placeholder="All Technicians" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Technicians</SelectItem>
-                  {technicians.map((tech) => (
-                    <SelectItem key={tech.email} value={tech.email}>
-                      {tech.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:flex-1 lg:w-[180px]">
                   <SelectValue placeholder="All Statuses" />
