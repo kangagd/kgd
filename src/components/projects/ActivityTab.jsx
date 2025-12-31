@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2, X, Unlink } from "lucide-react";
+import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2, X, Unlink, FileEdit } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+
+import { FileEdit } from "lucide-react";
 
 export default function ActivityTab({ project, onComposeEmail }) {
   const [filter, setFilter] = useState("all");
@@ -40,6 +42,23 @@ export default function ActivityTab({ project, onComposeEmail }) {
     queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
     enabled: !!project.id,
     refetchOnMount: true
+  });
+
+  // Fetch draft emails for this project
+  const { data: draftEmails = [] } = useQuery({
+    queryKey: ['emailDrafts', project.id],
+    queryFn: async () => {
+      const allDrafts = await base44.entities.EmailDraft.list('-created_date');
+      // Filter drafts that have project context or are related to project emails
+      return allDrafts.filter(draft => {
+        // Check if draft has thread_id that matches any project email
+        if (draft.thread_id) {
+          return projectEmails.some(pe => pe.thread_id === draft.thread_id);
+        }
+        return false;
+      });
+    },
+    enabled: !!project.id && projectEmails.length > 0
   });
 
   // Fetch all email threads for linking (last 6 months)
@@ -197,6 +216,24 @@ export default function ActivityTab({ project, onComposeEmail }) {
       });
     });
 
+    // Add draft emails
+    draftEmails.forEach(draft => {
+      const thread = emailThreads.find(t => t.id === draft.thread_id);
+      activities.push({
+        id: `draft-${draft.id}`,
+        type: 'draft',
+        date: draft.updated_date || draft.created_date,
+        from: 'Draft',
+        subject: draft.subject || '(No subject)',
+        content: draft.body_html || draft.body,
+        toAddresses: draft.to_addresses || [],
+        isDraft: true,
+        draftId: draft.id,
+        threadId: draft.thread_id,
+        mode: draft.mode || 'compose'
+      });
+    });
+
     // Add manual activities
     projectMessages
       .filter(msg => msg.message_type === 'manual_activity')
@@ -218,18 +255,18 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
     // Sort by date, newest first
     return activities.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [emailMessages, projectMessages, emailThreads]);
+  }, [emailMessages, projectMessages, emailThreads, draftEmails]);
 
   // Filter activities
   const filteredActivities = React.useMemo(() => {
     if (filter === 'all') return allActivities;
-    if (filter === 'emails') return allActivities.filter(a => a.type === 'email');
+    if (filter === 'emails') return allActivities.filter(a => a.type === 'email' || a.type === 'draft');
     if (filter === 'manual') return allActivities.filter(a => a.type === 'manual');
     return allActivities;
   }, [allActivities, filter]);
 
   const getActivityIcon = (activity) => {
-    if (activity.type === 'email') return <Mail className="w-4 h-4" />;
+    if (activity.type === 'email' || activity.type === 'draft') return <Mail className="w-4 h-4" />;
     if (activity.subType === 'call') return <Phone className="w-4 h-4" />;
     if (activity.subType === 'sms') return <MessageSquare className="w-4 h-4" />;
     if (activity.subType === 'in-person') return <User className="w-4 h-4" />;
@@ -237,6 +274,9 @@ export default function ActivityTab({ project, onComposeEmail }) {
   };
 
   const getActivityBadge = (activity) => {
+    if (activity.type === 'draft') {
+      return <Badge variant="default" className="bg-amber-100 text-amber-700">Draft</Badge>;
+    }
     if (activity.type === 'email') {
       return activity.isOutbound ? (
         <Badge variant="default" className="bg-blue-100 text-blue-700">Sent</Badge>
@@ -338,8 +378,14 @@ export default function ActivityTab({ project, onComposeEmail }) {
               {filteredActivities.map((activity) => (
                 <div
                   key={activity.id}
-                  className={`border-l-2 border-[#E5E7EB] pl-4 pb-4 last:pb-0 relative ${activity.type === 'email' ? 'cursor-pointer hover:bg-[#F9FAFB] -mx-4 px-8 py-2 rounded-lg transition-colors' : ''}`}
-                  onClick={() => activity.type === 'email' && setSelectedActivity(activity)}
+                  className={`border-l-2 border-[#E5E7EB] pl-4 pb-4 last:pb-0 relative ${(activity.type === 'email' || activity.type === 'draft') ? 'cursor-pointer hover:bg-[#F9FAFB] -mx-4 px-8 py-2 rounded-lg transition-colors' : ''}`}
+                  onClick={() => {
+                    if (activity.type === 'email') {
+                      setSelectedActivity(activity);
+                    } else if (activity.type === 'draft') {
+                      onComposeEmail?.(activity);
+                    }
+                  }}
                 >
                   <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-white border-2 border-[#E5E7EB] flex items-center justify-center">
                     <div className="w-2 h-2 rounded-full bg-[#6B7280]" />
@@ -370,11 +416,18 @@ export default function ActivityTab({ project, onComposeEmail }) {
                     <div 
                       className="text-[13px] text-[#6B7280] line-clamp-3"
                       dangerouslySetInnerHTML={{ 
-                        __html: activity.type === 'email' 
+                        __html: activity.type === 'email' || activity.type === 'draft'
                           ? stripHtml(activity.content).substring(0, 200) + '...'
                           : activity.content.replace(/\*\*/g, '').substring(0, 200)
                       }}
                     />
+                  )}
+                  
+                  {activity.type === 'draft' && activity.toAddresses?.length > 0 && (
+                    <div className="text-[12px] text-[#9CA3AF] mt-1 flex items-center gap-1">
+                      <FileEdit className="w-3 h-3" />
+                      <span>To: {activity.toAddresses.join(', ')}</span>
+                    </div>
                   )}
 
                   {activity.attachments?.length > 0 && (
