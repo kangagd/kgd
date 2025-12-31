@@ -615,7 +615,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     id="image-upload"
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept="image/*,video/*"
                     className="hidden"
                     onChange={handleImageUpload}
                   />
