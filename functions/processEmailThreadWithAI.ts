@@ -253,16 +253,17 @@ Source: ${parsedEmail.source || 'Website form'}`;
     }
 
     const overviewResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `${isWix 
-        ? `A customer submitted an enquiry form on the website. Summarize what they need and provide key details about their request.`
-        : `Analyze this email thread for a garage door service company and provide a summary of what the customer needs.`}
+      prompt: `Analyze this ${isWix ? 'website form submission' : 'email thread'} for a garage door service company and provide:
 
-${isWix ? 'CUSTOMER ENQUIRY DETAILS' : 'EMAIL THREAD'}:
+1. A SHORT overview (1-3 sentences max) summarizing what the customer needs or is asking about.
+2. Key points (3-7 bullet items) - facts, requests, or important details about the customer's needs.
+
+${isWix ? 'FORM SUBMISSION' : 'EMAIL'}:
+Subject: ${thread.subject}
+From: ${thread.from_address}
+
+${isWix ? 'CUSTOMER ENQUIRY' : 'CONVERSATION'}:
 ${conversationForAI.substring(0, 5000)}
-
-Provide:
-1. Overview: A SHORT summary (1-3 sentences) of what the customer wants or needs. Focus on their actual request, not on the fact that they submitted a form.
-2. Key Points: 3-7 bullet items with factual details about the customer and their request.
 
 Return JSON with: overview (string), key_points (array of strings)`,
       response_json_schema: {
@@ -282,15 +283,16 @@ Return JSON with: overview (string), key_points (array of strings)`,
 
     // STEP 4: Generate labels, priority, category
     const classificationResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Classify this customer enquiry for a garage door service company.
+      prompt: `Classify this ${isWix ? 'website form submission' : 'email'} for a garage door service company.
 
-CUSTOMER REQUEST:
-${parsedEmail.description || bodyText.substring(0, 500)}
-${parsedEmail.customer_name ? `\nCustomer: ${parsedEmail.customer_name}` : ''}
-${parsedEmail.address ? `\nLocation: ${parsedEmail.address}` : ''}
+${isWix ? 'FORM SUBMISSION' : 'EMAIL'}:
+Subject: ${thread.subject}
+From: ${thread.from_address}
+Customer: ${parsedEmail.customer_name || 'Unknown'}
+Description: ${parsedEmail.description || bodyText.substring(0, 500)}
 
 Return JSON with:
-- labels: array of 2-5 freeform tags (e.g., ["Quote Request", "Garage Door", "Urgent", "Motor Fault", "Gate"])
+- labels: array of 2-5 freeform tags (e.g., ["Quote Request", "Builder", "Urgent", "Motor Fault", "Gate"])
 - priority: one of "Low", "Normal", "High", "Critical"
 - category: one of "Quote Request", "New Install", "Repair/Service", "Warranty", "Builder Tender", "Strata/Real Estate", "Other"
 
