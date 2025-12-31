@@ -344,6 +344,37 @@ CATEGORY RULES:
     // STEP 5: Suggest project/job links
     const ai_suggested_links = await findExistingProjectMatch(base44, parsedEmail);
 
+    // STEP 5.5: Find or create customer
+    let suggested_customer_id = null;
+    
+    if (parsedEmail.customer_email) {
+      try {
+        // Try to find existing customer by email
+        const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
+          email: parsedEmail.customer_email
+        });
+
+        if (existingCustomers.length > 0) {
+          // Use existing customer
+          suggested_customer_id = existingCustomers[0].id;
+        } else if (parsedEmail.customer_name) {
+          // Create new customer
+          const newCustomer = await base44.asServiceRole.entities.Customer.create({
+            name: parsedEmail.customer_name,
+            email: parsedEmail.customer_email,
+            phone: parsedEmail.customer_phone || null,
+            source: isWix ? parsedEmail.source : null,
+            source_details: isWix ? parsedEmail.source : null,
+            customer_type: 'Owner',
+            address_full: parsedEmail.address || null
+          });
+          suggested_customer_id = newCustomer.id;
+        }
+      } catch (error) {
+        console.error('Error creating/finding customer:', error);
+      }
+    }
+
     // STEP 6: Build suggested project fields
     let suggested_project_type = "Garage Door Install";
     
@@ -367,6 +398,7 @@ CATEGORY RULES:
 
     const ai_suggested_project_fields = {
       suggested_title: parsedEmail.title || thread.subject || "New enquiry",
+      suggested_customer_id: suggested_customer_id,
       suggested_customer_name: parsedEmail.customer_name,
       suggested_customer_email: parsedEmail.customer_email || thread.from_address,
       suggested_customer_phone: parsedEmail.customer_phone,
