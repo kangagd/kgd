@@ -67,6 +67,7 @@ export default function Schedule() {
   const [notifyTechnician, setNotifyTechnician] = useState(true);
   const [modalJob, setModalJob] = useState(null);
   const [showAvailabilityManager, setShowAvailabilityManager] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [activeCheckInMap, setActiveCheckInMap] = useState({});
 
   // User loaded via usePermissions
@@ -1146,23 +1147,7 @@ export default function Schedule() {
                 </>
               )}
 
-              {isAdminOrManager && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setShowAvailabilityManager(true)}
-                    className="h-10 w-10 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
-                    title="Manage Availability"
-                  >
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                  <AISchedulingAssistant 
-                    selectedDate={selectedDate} 
-                    onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
-                  />
-                </div>
-              )}
+
               
               <div className="col-span-2 flex items-center gap-2 lg:col-span-1">
                 <Button variant="outline" onClick={handlePrevious} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
@@ -1291,6 +1276,13 @@ export default function Schedule() {
             technicians={technicians}
           />
         )}
+
+        <AISchedulingAssistant 
+          open={showAIAssistant}
+          onClose={() => setShowAIAssistant(false)}
+          selectedDate={selectedDate} 
+          onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
+        />
       </div>
     </div>
   );
