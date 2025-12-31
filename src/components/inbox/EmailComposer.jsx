@@ -113,9 +113,15 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     return signature;
   };
   
-  const [body, setBody] = useState(existingDraft?.body_html || existingDraft?.body || "");
+  const [body, setBody] = useState(() => {
+    // If there's an existing draft, use it as-is (already has signature)
+    if (existingDraft?.body_html || existingDraft?.body) {
+      return existingDraft.body_html || existingDraft.body;
+    }
+    return "";
+  });
   
-  // Set initial body with signature once user is loaded
+  // Set initial body with signature once user is loaded (for new emails only)
   useEffect(() => {
     if (currentUser && !existingDraft && !body) {
       const initialBody = getInitialBody();
