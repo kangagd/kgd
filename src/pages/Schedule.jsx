@@ -1155,20 +1155,20 @@ export default function Schedule() {
           </div>
 
           {/* Filters and Tabs Container */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
+          <div className="flex flex-col gap-4 mb-6">
             {/* View Period Tabs (Day/Week/Month) */}
-            <Tabs value={view} onValueChange={setView} className="w-full lg:w-auto">
-              <TabsList className="bg-white w-full lg:w-auto">
-                <TabsTrigger value="day" className="flex-1 lg:flex-initial">Day</TabsTrigger>
-                <TabsTrigger value="week" className="flex-1 lg:flex-initial">Week</TabsTrigger>
-                <TabsTrigger value="month" className="flex-1 lg:flex-initial">Month</TabsTrigger>
+            <Tabs value={view} onValueChange={setView} className="w-full">
+              <TabsList className="bg-white w-full">
+                <TabsTrigger value="day" className="flex-1">Day</TabsTrigger>
+                <TabsTrigger value="week" className="flex-1">Week</TabsTrigger>
+                <TabsTrigger value="month" className="flex-1">Month</TabsTrigger>
               </TabsList>
             </Tabs>
 
             {/* Filters */}
-            <div className="flex flex-wrap gap-3 flex-1">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
-                <SelectTrigger className="w-full lg:w-[200px]">
+                <SelectTrigger className="w-full sm:flex-1 lg:w-[200px]">
                   <SelectValue placeholder="All Technicians" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1182,7 +1182,7 @@ export default function Schedule() {
               </Select>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full lg:w-[180px]">
+                <SelectTrigger className="w-full sm:flex-1 lg:w-[180px]">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1196,12 +1196,12 @@ export default function Schedule() {
             </div>
 
             {/* View Type Toggle (Resource/Calendar) */}
-            <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E5E7EB] p-1">
+            <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E5E7EB] p-1 w-full sm:w-auto">
               <Button
                 variant={viewType === "resource" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewType("resource")}
-                className={viewType === "resource" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
+                className={`flex-1 sm:flex-initial ${viewType === "resource" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}`}
               >
                 <LayoutList className="w-4 h-4 mr-2" />
                 Resource
@@ -1210,7 +1210,7 @@ export default function Schedule() {
                 variant={viewType === "calendar" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewType("calendar")}
-                className={viewType === "calendar" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
+                className={`flex-1 sm:flex-initial ${viewType === "calendar" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}`}
               >
                 <CalendarIcon2 className="w-4 h-4 mr-2" />
                 Calendar

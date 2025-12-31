@@ -26,7 +26,7 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
         }`}
       >
         {/* Top Row: Time + Status + Badges */}
-        <div className="flex items-start justify-between mb-3 gap-2">
+        <div className="flex flex-col gap-2 mb-3">
           <div className="flex items-center gap-2">
             <div className="text-sm font-semibold text-[#111827]">
               {job.scheduled_time || 'Time TBD'}
@@ -39,9 +39,9 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
               </div>
             )}
           </div>
-          <div className="flex flex-wrap justify-end gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {(job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) && (
-              <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2">
+              <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2 text-[10px]">
                 <Truck className="w-3 h-3" />
                 Logistics
               </Badge>
@@ -72,8 +72,8 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
         </div>
 
         {/* Bottom Row: Address + Project + Technicians */}
-        <div className="flex items-end justify-between mt-3">
-          <div className="space-y-2 text-xs text-[#6B7280] flex-1 min-w-0 mr-2">
+        <div className="space-y-2">
+          <div className="space-y-2 text-xs text-[#6B7280]">
             {job.address_full && (
               <div className="flex items-start gap-2">
                 <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -83,7 +83,7 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
                     e.preventDefault(); // Prevent Link navigation
                     onAddressClick(job);
                   }}
-                  className="text-[#2563EB] hover:underline text-left truncate"
+                  className="text-[#2563EB] hover:underline text-left break-words"
                 >
                   {job.address_full}
                 </button>
@@ -97,18 +97,18 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
                     e.preventDefault(); // Prevent Link navigation
                     onProjectClick(job.project_id);
                   }}
-                  className="text-[#2563EB] hover:underline flex items-center gap-1 truncate"
+                  className="text-[#2563EB] hover:underline flex items-center gap-1 break-words"
                 >
-                  <ExternalLink className="w-3 h-3" />
-                  Project: {job.project_name}
+                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                  <span className="break-words">Project: {job.project_name}</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Technicians in bottom right */}
+          {/* Technicians below */}
           {job.assigned_to && job.assigned_to.length > 0 && (
-            <div className="flex-shrink-0">
+            <div className="flex items-center gap-2 pt-1">
               <TechnicianAvatarGroup
                 technicians={job.assigned_to.map((email, idx) => {
                   const normalized = email.toLowerCase();
