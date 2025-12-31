@@ -255,6 +255,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.contract_id
   });
 
+  // Fetch linked Project for Parts & Requirements section
+  const { data: linkedProject, isLoading: isProjectLoading, error: projectError } = useQuery({
+    queryKey: ['jobProject', job.id, job.project_id],
+    queryFn: () => base44.entities.Project.get(job.project_id),
+    enabled: !!job?.project_id
+  });
+
   // Detect logistics job
   const isLogisticsJob = !!(job.job_type === 'Logistics' || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id);
 
@@ -1431,58 +1438,73 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <DuplicateWarningCard entityType="Job" record={job} />
 
               {/* Parts & Requirements Section */}
-              {job.project_id && (
-                <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                  <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-0.5">
-                          Parts & Requirements
-                        </CardTitle>
-                        <p className="text-[12px] text-[#6B7280]">Live from the linked Project</p>
-                      </div>
-                      <Badge className="bg-green-100 text-green-700 font-medium flex items-center gap-1">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Ready
-                      </Badge>
+              <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-0.5">
+                        Parts & Requirements
+                      </CardTitle>
+                      <p className="text-[12px] text-[#6B7280]">Live from the linked Project</p>
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-4 space-y-3">
-                    {/* Parts Required */}
-                    <Collapsible defaultOpen={false}>
-                      <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
-                        <h4 className="text-[14px] font-semibold text-[#111827]">Parts Required</h4>
-                        <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="px-3 pt-2">
-                        <p className="text-[13px] text-[#6B7280]">Loading...</p>
-                      </CollapsibleContent>
-                    </Collapsible>
+                    <Badge className="bg-green-100 text-green-700 font-medium flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Ready
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  {!job.project_id ? (
+                    <div className="text-center py-6">
+                      <p className="text-[13px] text-[#9CA3AF]">No project linked — Parts & Requirements unavailable.</p>
+                    </div>
+                  ) : isProjectLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="w-5 h-5 animate-spin text-[#6B7280]" />
+                      <span className="ml-2 text-[13px] text-[#6B7280]">Loading project data...</span>
+                    </div>
+                  ) : projectError ? (
+                    <div className="text-center py-6">
+                      <p className="text-[13px] text-red-600">Failed to load project data. Please try again.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {/* Parts Required */}
+                      <Collapsible defaultOpen={false}>
+                        <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
+                          <h4 className="text-[14px] font-semibold text-[#111827]">Parts Required</h4>
+                          <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="px-3 pt-2">
+                          <p className="text-[13px] text-[#6B7280]">Loading...</p>
+                        </CollapsibleContent>
+                      </Collapsible>
 
-                    {/* Third-party Trades */}
-                    <Collapsible defaultOpen={false}>
-                      <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
-                        <h4 className="text-[14px] font-semibold text-[#111827]">Third-party Trades</h4>
-                        <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="px-3 pt-2">
-                        <p className="text-[13px] text-[#6B7280]">Loading...</p>
-                      </CollapsibleContent>
-                    </Collapsible>
+                      {/* Third-party Trades */}
+                      <Collapsible defaultOpen={false}>
+                        <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
+                          <h4 className="text-[14px] font-semibold text-[#111827]">Third-party Trades</h4>
+                          <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="px-3 pt-2">
+                          <p className="text-[13px] text-[#6B7280]">Loading...</p>
+                        </CollapsibleContent>
+                      </Collapsible>
 
-                    {/* Project Requirements */}
-                    <Collapsible defaultOpen={false}>
-                      <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
-                        <h4 className="text-[14px] font-semibold text-[#111827]">Project Requirements</h4>
-                        <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="px-3 pt-2">
-                        <p className="text-[13px] text-[#6B7280]">Loading...</p>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </CardContent>
-                </Card>
-              )}
+                      {/* Project Requirements */}
+                      <Collapsible defaultOpen={false}>
+                        <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] rounded-lg transition-colors group">
+                          <h4 className="text-[14px] font-semibold text-[#111827]">Project Requirements</h4>
+                          <ChevronDown className="w-4 h-4 text-[#6B7280] transition-transform group-data-[state=open]:rotate-180" />
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="px-3 pt-2">
+                          <p className="text-[13px] text-[#6B7280]">Loading...</p>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
               {isLogisticsJob ? (
                 <>
