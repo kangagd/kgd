@@ -275,7 +275,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['projectTradeReqsForJob', job.project_id],
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    staleTime: 60_000
+    refetchInterval: 5000
   });
 
   // Detect logistics job
