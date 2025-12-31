@@ -69,7 +69,7 @@ export default function EmailDetailView({
   // Update aiThread when thread prop changes
   React.useEffect(() => {
     setAiThread(thread);
-  }, [thread, thread?.id]);
+  }, [thread?.id]);
 
   const { data: messages = [], refetch } = useQuery({
     queryKey: ['emailMessages', thread.id, thread.gmail_thread_id],
