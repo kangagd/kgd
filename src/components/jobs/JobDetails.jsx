@@ -1454,6 +1454,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <DuplicateWarningCard entityType="Job" record={job} />
 
               {/* Parts & Requirements Section */}
+              {!isLogisticsJob && (
               <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                 <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center justify-between">
@@ -1757,6 +1758,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
                 </CardContent>
               </Card>
+              )}
 
               {isLogisticsJob ? (
                 <>
