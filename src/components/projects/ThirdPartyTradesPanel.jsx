@@ -81,6 +81,7 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
     onSuccess: () => {
       if (project?.id) {
         queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectTradeReqsForJob', project.id] });
         queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
       }
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
@@ -113,6 +114,7 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
     onSuccess: () => {
       if (project?.id) {
         queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectTradeReqsForJob', project.id] });
         queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
       }
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
@@ -130,6 +132,7 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
     onSuccess: () => {
       if (project?.id) {
         queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectTradeReqsForJob', project.id] });
       }
       toast.success("Trade requirement removed");
     },
@@ -161,6 +164,7 @@ export default function ThirdPartyTradesPanel({ project, onAddTrade }) {
     onSuccess: () => {
       if (project?.id) {
         queryClient.invalidateQueries({ queryKey: ['projectTradeRequirements', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectTradeReqsForJob', project.id] });
         queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
       }
       toast.success("Trade requirement updated");
