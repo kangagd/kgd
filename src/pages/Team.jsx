@@ -87,6 +87,11 @@ export default function Team() {
 
   // Filter users
   const filteredUsers = users.filter(user => {
+    // Exclude inactive Base44 platform staff accounts
+    if (user.email?.endsWith('@base44.com') && (user.status === 'inactive' || !user.status)) {
+      return false;
+    }
+
     const matchesSearch = 
       (user.display_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       (user.full_name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
