@@ -303,48 +303,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: projectInvoices = [] } = useQuery({
     queryKey: ['projectInvoices', job.project_id],
     queryFn: async () => {
-      if (!job.project_id) {
-        console.log('🔍 No project_id on job');
-        return [];
-      }
+      if (!job.project_id) return [];
       
       try {
-        console.log('🔍 Fetching project:', job.project_id);
-        const project = await base44.entities.Project.get(job.project_id);
-        console.log('🔍 Project data:', {
-          primary_xero_invoice_id: project.primary_xero_invoice_id,
-          xero_invoices: project.xero_invoices
+        // Fetch invoices where project_id matches
+        const invoices = await base44.entities.XeroInvoice.filter({ 
+          project_id: job.project_id 
         });
         
-        const invoiceIds = [];
-        
-        // Collect invoice IDs from both xero_invoices array and primary_xero_invoice_id
-        if (project.primary_xero_invoice_id) {
-          invoiceIds.push(project.primary_xero_invoice_id);
-        }
-        if (project.xero_invoices && Array.isArray(project.xero_invoices) && project.xero_invoices.length > 0) {
-          invoiceIds.push(...project.xero_invoices);
-        }
-        
-        console.log('🔍 Invoice IDs to fetch:', invoiceIds);
-        
-        if (invoiceIds.length === 0) return [];
-        
-        // Remove duplicates
-        const uniqueIds = [...new Set(invoiceIds)];
-        
-        // Fetch all invoices
-        const invoices = await Promise.all(
-          uniqueIds.map(id => base44.entities.XeroInvoice.get(id).catch((err) => {
-            console.error(`❌ Failed to fetch invoice ${id}:`, err);
-            return null;
-          }))
-        );
-        
-        console.log('🔍 Fetched invoices:', invoices.filter(Boolean));
-        return invoices.filter(Boolean);
+        return invoices;
       } catch (error) {
-        console.error('❌ Error fetching project invoices:', error);
+        console.error('Error fetching project invoices:', error);
         return [];
       }
     },
