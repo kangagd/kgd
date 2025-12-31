@@ -53,7 +53,14 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     mode === "forward" ? `Fwd: ${thread?.subject || ""}` : "")
   );
   
+  const getSignature = () => {
+    if (!currentUser?.email_signature) return '';
+    return `<br><br><div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${currentUser.email_signature}</div>`;
+  };
+
   const getInitialBody = () => {
+    const signature = getSignature();
+    
     if (mode === "reply") {
       // Get the original message content
       let quotedContent = "";
@@ -72,8 +79,8 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       
       const sender = message?.from_name || message?.from_address;
       
-      // Gmail-style quote block
-      return `<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quotedContent}</blockquote></div>`;
+      // Gmail-style quote block with signature before the quote
+      return `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quotedContent}</blockquote></div>`;
     }
     if (mode === "forward") {
       let forwardedContent = "";
@@ -87,12 +94,19 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
         : new Date().toLocaleString();
       
-      return `<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${message?.from_name || message?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${message?.subject}</div><div style="margin-top: 12px;">${forwardedContent}</div></div>`;
+      return `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${message?.from_name || message?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${message?.subject}</div><div style="margin-top: 12px;">${forwardedContent}</div></div>`;
     }
-    return "";
+    return signature;
   };
   
-  const [body, setBody] = useState(existingDraft?.body_html || existingDraft?.body || getInitialBody());
+  const [body, setBody] = useState(existingDraft?.body_html || existingDraft?.body || "");
+  
+  // Set initial body with signature once user is loaded
+  useEffect(() => {
+    if (currentUser && !existingDraft) {
+      setBody(getInitialBody());
+    }
+  }, [currentUser]);
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(!!(existingDraft?.cc_addresses?.length || existingDraft?.cc));
@@ -104,6 +118,20 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const textareaRef = useRef(null);
   const toInputRef = useRef(null);
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Fetch current user for signature
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    };
+    loadUser();
+  }, []);
 
   // Fetch customers for email autocomplete
   const { data: customers = [] } = useQuery({
