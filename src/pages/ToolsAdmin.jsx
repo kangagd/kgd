@@ -134,6 +134,9 @@ export default function ToolsAdmin() {
       const activeTools = (tools || []).filter((t) => t.is_active);
       let createdCount = 0;
 
+      // Helper function to delay between operations
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
       // Process vehicles sequentially to avoid overwhelming the API if there are many
       for (const vehicle of vehicles || []) {
         if (!vehicle.id) continue;
@@ -162,10 +165,22 @@ export default function ToolsAdmin() {
         }
 
         if (toolsToCreate.length > 0) {
-            // Create sequentially or in small batches
-            await Promise.all(toolsToCreate.map(t => base44.entities.VehicleTool.create(t)));
-            createdCount += toolsToCreate.length;
+            // Process in smaller batches with delays to avoid rate limiting
+            const batchSize = 5;
+            for (let i = 0; i < toolsToCreate.length; i += batchSize) {
+              const batch = toolsToCreate.slice(i, i + batchSize);
+              await Promise.all(batch.map(t => base44.entities.VehicleTool.create(t)));
+              createdCount += batch.length;
+              
+              // Add a small delay between batches to avoid rate limits
+              if (i + batchSize < toolsToCreate.length) {
+                await delay(100);
+              }
+            }
         }
+        
+        // Add delay between vehicles
+        await delay(150);
       }
       return createdCount;
     },
