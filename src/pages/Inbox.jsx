@@ -472,15 +472,28 @@ export default function Inbox() {
               onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
             />
             <div className="flex gap-2">
-              <Button
-                onClick={() => navigate(createPageUrl("EmailSettings"))}
-                size="sm"
-                variant="outline"
-                className="h-9"
-                title="Email Settings"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-9"
+                    title="Settings"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate(createPageUrl("EmailSettings"))}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Email Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(createPageUrl("EmailTemplates"))}>
+                    <FileEdit className="w-4 h-4 mr-2" />
+                    Manage Templates
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 onClick={async () => {
                   const btn = document.activeElement;
