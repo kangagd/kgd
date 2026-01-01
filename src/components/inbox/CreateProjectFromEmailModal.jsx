@@ -62,11 +62,13 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
       // Create ProjectEmail record for activity timeline
       await base44.entities.ProjectEmail.create({
         project_id: newProject.id,
-        email_thread_id: thread.id,
+        thread_id: thread.gmail_thread_id || thread.id,
+        gmail_message_id: thread.gmail_thread_id || thread.id,
         subject: thread.subject,
-        from_address: thread.from_address,
-        to_addresses: thread.to_addresses,
-        received_at: thread.last_message_date || thread.created_date
+        from_email: thread.from_address,
+        to_email: Array.isArray(thread.to_addresses) ? thread.to_addresses.join(', ') : thread.to_addresses,
+        sent_at: thread.last_message_date || thread.created_date,
+        direction: 'incoming'
       });
       
       queryClient.invalidateQueries({ queryKey: ['projects'] });
