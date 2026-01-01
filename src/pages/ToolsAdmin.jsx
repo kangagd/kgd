@@ -65,10 +65,24 @@ export default function ToolsAdmin() {
   const updateToolMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       await base44.entities.ToolItem.update(id, data);
+      
+      // If category was updated, sync it to all vehicle tools
+      if (data.category !== undefined) {
+        const vehicleTools = await base44.entities.VehicleTool.filter({ tool_item_id: id }, "id", 1000);
+        
+        if (vehicleTools.length > 0) {
+          await Promise.all(
+            vehicleTools.map(vt => 
+              base44.entities.VehicleTool.update(vt.id, { location: data.category })
+            )
+          );
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["tool-items"]);
-      toast.success("Tool updated");
+      queryClient.invalidateQueries(["vehicles-for-tools-admin"]);
+      toast.success("Tool updated and synced to fleet");
     },
   });
 
