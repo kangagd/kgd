@@ -1087,9 +1087,35 @@ export default function Schedule() {
         {/* Sticky Header */}
         <div className="sticky top-0 bg-[#ffffff] z-10 pb-3 mb-4">
           <div className="flex flex-col gap-4 mb-4">
-            <div>
-              <h1 className="text-3xl font-semibold text-[#111827] leading-tight">Schedule</h1>
-              <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl font-semibold text-[#111827] leading-tight">Schedule</h1>
+                <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
+              </div>
+              
+              {isAdminOrManager && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowAvailabilityManager(true)}
+                    className="h-9 w-9"
+                    title="Manage Availability"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowAIAssistant(true)}
+                    className="h-9 w-9"
+                    title="AI Scheduling Assistant"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
             
             {/* Mobile: Grid layout, Desktop: Flex row */}
@@ -1149,31 +1175,7 @@ export default function Schedule() {
                 )}
               </div>
 
-              <div className="col-span-2 lg:col-span-1 flex items-center gap-2 lg:justify-end">
-                {isAdminOrManager && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowAvailabilityManager(true)}
-                      className="h-9 w-9"
-                      title="Manage Availability"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowAIAssistant(true)}
-                      className="h-9 w-9"
-                      title="AI Scheduling Assistant"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-                
+              <div className="col-span-2 lg:col-span-1 flex items-center gap-2">
                 <Button variant="outline" onClick={handlePrevious} className="h-10 flex-1 lg:flex-initial lg:w-10 p-0 rounded-xl border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]">
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
