@@ -65,35 +65,10 @@ export default function ToolsAdmin() {
   const updateToolMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       await base44.entities.ToolItem.update(id, data);
-      
-      // If category was updated, sync it to all vehicle tools
-      if (data.category !== undefined) {
-        const vehicleTools = await base44.entities.VehicleTool.filter({ tool_item_id: id }, "id", 1000);
-        
-        if (vehicleTools.length > 0) {
-          // Process in batches to avoid rate limiting
-          const batchSize = 10;
-          for (let i = 0; i < vehicleTools.length; i += batchSize) {
-            const batch = vehicleTools.slice(i, i + batchSize);
-            await Promise.all(
-              batch.map(vt => 
-                base44.entities.VehicleTool.update(vt.id, { location: data.category || "Other" })
-              )
-            );
-            // Small delay between batches
-            if (i + batchSize < vehicleTools.length) {
-              await new Promise(resolve => setTimeout(resolve, 100));
-            }
-          }
-        }
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["tool-items"]);
-      queryClient.invalidateQueries(["vehicles-for-tools-admin"]);
-      queryClient.invalidateQueries(["vehicle-tools"]);
-      queryClient.invalidateQueries(["vehicleTools"]);
-      toast.success("Tool updated and synced to fleet");
+      toast.success("Tool updated");
     },
   });
 
