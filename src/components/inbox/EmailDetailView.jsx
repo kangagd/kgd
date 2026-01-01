@@ -92,6 +92,38 @@ export default function EmailDetailView({
     refetchInterval: 30000
   });
 
+  // Verify linked project exists
+  const { data: linkedProject } = useQuery({
+    queryKey: ['project', thread.linked_project_id],
+    queryFn: async () => {
+      if (!thread.linked_project_id) return null;
+      try {
+        const project = await base44.entities.Project.get(thread.linked_project_id);
+        if (project.deleted_at) return null;
+        return project;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!thread.linked_project_id
+  });
+
+  // Verify linked job exists
+  const { data: linkedJob } = useQuery({
+    queryKey: ['job', thread.linked_job_id],
+    queryFn: async () => {
+      if (!thread.linked_job_id) return null;
+      try {
+        const job = await base44.entities.Job.get(thread.linked_job_id);
+        if (job.deleted_at) return null;
+        return job;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!thread.linked_job_id
+  });
+
   const latestMessage = messages[messages.length - 1];
   const allAttachments = messages.flatMap(m => m.attachments || []);
 
@@ -176,29 +208,29 @@ export default function EmailDetailView({
                     {thread.subject}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#6B7280]">
-                    {(thread.linked_project_id || thread.linked_job_id) && (
+                    {(linkedProject || linkedJob) && (
                       <>
-                        {thread.linked_project_id && (
+                        {linkedProject && (
                           <div className="flex items-center gap-1">
                             <LinkIcon className="w-3 h-3" />
                             <span>Project:</span>
                             <button
-                              onClick={() => navigate(createPageUrl("Projects") + `?projectId=${thread.linked_project_id}`)}
+                              onClick={() => navigate(createPageUrl("Projects") + `?projectId=${linkedProject.id}`)}
                               className="text-[#111827] font-medium hover:underline"
                             >
-                              {thread.linked_project_title}
+                              {linkedProject.title}
                             </button>
                           </div>
                         )}
-                        {thread.linked_job_id && (
+                        {linkedJob && (
                           <div className="flex items-center gap-1">
                             <LinkIcon className="w-3 h-3" />
                             <span>Job:</span>
                             <button
-                              onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${thread.linked_job_id}`)}
+                              onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${linkedJob.id}`)}
                               className="text-[#111827] font-medium hover:underline"
                             >
-                              #{thread.linked_job_number}
+                              #{linkedJob.job_number}
                             </button>
                           </div>
                         )}
