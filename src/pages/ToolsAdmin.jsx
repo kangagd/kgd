@@ -212,10 +212,19 @@ export default function ToolsAdmin() {
         <Button
           variant="outline"
           onClick={() => applyTemplateMutation.mutate()}
-          disabled={applyTemplateMutation.isLoading || !tools.length || !vehicles.length}
+          disabled={applyTemplateMutation.isPending || !tools.length || !vehicles.length}
         >
-          <Truck className="w-4 h-4 mr-2" />
-          {applyTemplateMutation.isLoading ? "Applying..." : "Apply to All Vehicles"}
+          {applyTemplateMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Applying...
+            </>
+          ) : (
+            <>
+              <Truck className="w-4 h-4 mr-2" />
+              Apply to All Vehicles
+            </>
+          )}
         </Button>
       </div>
 
