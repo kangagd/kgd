@@ -20,7 +20,10 @@ export default function UserProfile() {
     display_name: "",
     email: "",
     role: "",
-    is_field_technician: false
+    is_field_technician: false,
+    technician_skills: "",
+    home_address: "",
+    max_jobs_per_day: 0
   });
   const [emailSignature, setEmailSignature] = useState("");
   const [notificationSettings, setNotificationSettings] = useState({
@@ -55,7 +58,10 @@ export default function UserProfile() {
           display_name: currentUser.display_name || currentUser.full_name || "",
           email: currentUser.email || "",
           role: currentUser.role || "",
-          is_field_technician: currentUser.is_field_technician || false
+          is_field_technician: currentUser.is_field_technician || false,
+          technician_skills: currentUser.technician_skills || "",
+          home_address: currentUser.home_address || "",
+          max_jobs_per_day: currentUser.max_jobs_per_day || 0
         });
         setEmailSignature(currentUser.email_signature || "");
         setNotificationSettings({
@@ -92,7 +98,10 @@ export default function UserProfile() {
         display_name: updatedUser.display_name || updatedUser.full_name || "",
         email: updatedUser.email || "",
         role: updatedUser.role || "",
-        is_field_technician: updatedUser.is_field_technician || false
+        is_field_technician: updatedUser.is_field_technician || false,
+        technician_skills: updatedUser.technician_skills || "",
+        home_address: updatedUser.home_address || "",
+        max_jobs_per_day: updatedUser.max_jobs_per_day || 0
       });
       setEmailSignature(updatedUser.email_signature || "");
       setNotificationSettings({
@@ -117,7 +126,10 @@ export default function UserProfile() {
     e.preventDefault();
     updateProfileMutation.mutate({
       display_name: formData.display_name,
-      is_field_technician: formData.is_field_technician
+      is_field_technician: formData.is_field_technician,
+      technician_skills: formData.technician_skills,
+      home_address: formData.home_address,
+      max_jobs_per_day: formData.max_jobs_per_day
     });
   };
 
@@ -235,6 +247,42 @@ export default function UserProfile() {
                   />
                 </div>
                 <p className="text-xs text-slate-500">Enable if you work in the field</p>
+              </div>
+
+              {formData.is_field_technician && (
+                <div className="space-y-2">
+                  <Label htmlFor="technician_skills">Skills</Label>
+                  <Input
+                    id="technician_skills"
+                    value={formData.technician_skills}
+                    onChange={(e) => setFormData({ ...formData, technician_skills: e.target.value })}
+                    placeholder="e.g., electrical, plumbing, welding"
+                  />
+                  <p className="text-xs text-slate-500">Comma-separated list of skills</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="home_address">Home Address</Label>
+                <Input
+                  id="home_address"
+                  value={formData.home_address}
+                  onChange={(e) => setFormData({ ...formData, home_address: e.target.value })}
+                  placeholder="Enter your home address"
+                />
+                <p className="text-xs text-slate-500">Used for route optimization</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="max_jobs_per_day">Maximum Jobs Per Day</Label>
+                <Input
+                  id="max_jobs_per_day"
+                  type="number"
+                  value={formData.max_jobs_per_day}
+                  onChange={(e) => setFormData({ ...formData, max_jobs_per_day: parseInt(e.target.value) || 0 })}
+                  placeholder="e.g., 5"
+                />
+                <p className="text-xs text-slate-500">Maximum number of jobs you can handle per day</p>
               </div>
 
               <div className="flex justify-end">
