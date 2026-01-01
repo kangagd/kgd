@@ -82,6 +82,8 @@ export default function ToolsAdmin() {
     onSuccess: () => {
       queryClient.invalidateQueries(["tool-items"]);
       queryClient.invalidateQueries(["vehicles-for-tools-admin"]);
+      queryClient.invalidateQueries(["vehicle-tools"]);
+      queryClient.invalidateQueries(["vehicleTools"]);
       toast.success("Tool updated and synced to fleet");
     },
   });
