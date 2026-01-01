@@ -4,6 +4,7 @@ import Contracts from './pages/Contracts';
 import Customers from './pages/Customers';
 import Dashboard from './pages/Dashboard';
 import EmailSettings from './pages/EmailSettings';
+import EmailTemplates from './pages/EmailTemplates';
 import Fleet from './pages/Fleet';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
@@ -27,7 +28,6 @@ import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
-import EmailTemplates from './pages/EmailTemplates';
 import __Layout from './Layout.jsx';
 
 
@@ -38,6 +38,7 @@ export const PAGES = {
     "Customers": Customers,
     "Dashboard": Dashboard,
     "EmailSettings": EmailSettings,
+    "EmailTemplates": EmailTemplates,
     "Fleet": Fleet,
     "Home": Home,
     "Inbox": Inbox,
@@ -61,7 +62,6 @@ export const PAGES = {
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
-    "EmailTemplates": EmailTemplates,
 }
 
 export const pagesConfig = {

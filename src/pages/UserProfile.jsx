@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, User, Mail, Shield, Lock, Bell, LogOut } from "lucide-react";
+import { ArrowLeft, User, Mail, Shield, Lock, Bell, LogOut, FileSignature } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import ReactQuill from "react-quill";
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
@@ -21,6 +22,7 @@ export default function UserProfile() {
     role: "",
     is_field_technician: false
   });
+  const [emailSignature, setEmailSignature] = useState("");
   const [notificationSettings, setNotificationSettings] = useState({
     job_assigned: true,
     job_rescheduled: true,
@@ -55,6 +57,7 @@ export default function UserProfile() {
           role: currentUser.role || "",
           is_field_technician: currentUser.is_field_technician || false
         });
+        setEmailSignature(currentUser.email_signature || "");
         setNotificationSettings({
           job_assigned: currentUser.notification_settings?.job_assigned ?? true,
           job_rescheduled: currentUser.notification_settings?.job_rescheduled ?? true,
@@ -91,6 +94,7 @@ export default function UserProfile() {
         role: updatedUser.role || "",
         is_field_technician: updatedUser.is_field_technician || false
       });
+      setEmailSignature(updatedUser.email_signature || "");
       setNotificationSettings({
         job_assigned: updatedUser.notification_settings?.job_assigned ?? true,
         job_rescheduled: updatedUser.notification_settings?.job_rescheduled ?? true,
@@ -243,6 +247,56 @@ export default function UserProfile() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="border-b border-slate-100">
+            <CardTitle className="flex items-center gap-2">
+              <FileSignature className="w-5 h-5 text-[#fae008]" />
+              Email Signature
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4">
+            <p className="text-sm text-slate-500">
+              Create your email signature using the editor below. You can add text, images, and formatting.
+            </p>
+            <div className="text-xs text-slate-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <strong>Tip:</strong> To add an image, click the image icon in the toolbar and paste your image URL.
+            </div>
+            <ReactQuill
+              theme="snow"
+              value={emailSignature}
+              onChange={setEmailSignature}
+              placeholder="Enter your email signature..."
+              className="bg-white rounded-lg [&_.ql-container]:min-h-[150px]"
+              modules={{
+                toolbar: [
+                  ['bold', 'italic', 'underline'],
+                  [{ 'color': [] }],
+                  [{ 'list': 'bullet' }],
+                  ['link', 'image']
+                ]
+              }}
+            />
+            <div className="border-t border-slate-200 pt-4">
+              <p className="text-xs font-medium text-slate-600 mb-2">Preview:</p>
+              <div 
+                className="bg-slate-50 rounded-lg p-4 border border-slate-200 text-sm"
+                dangerouslySetInnerHTML={{ __html: emailSignature }}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  updateProfileMutation.mutate({ email_signature: emailSignature });
+                }}
+                disabled={updateProfileMutation.isPending}
+                className="bg-[#fae008] hover:bg-[#e5d007] text-slate-900"
+              >
+                {updateProfileMutation.isPending ? "Saving..." : "Save Signature"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
