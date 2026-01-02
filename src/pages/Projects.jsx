@@ -409,9 +409,9 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-            <Tabs value={stageFilter} onValueChange={setStageFilter}>
-              <TabsList className="inline-flex w-auto justify-start">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide max-w-full">
+            <Tabs value={stageFilter} onValueChange={setStageFilter} className="max-w-full">
+              <TabsList className="inline-flex w-auto justify-start max-w-full">
                 <TabsTrigger value="all" className="whitespace-nowrap flex-shrink-0">All Projects</TabsTrigger>
                 <TabsTrigger value="Lead" className="whitespace-nowrap flex-shrink-0">Lead</TabsTrigger>
                 <TabsTrigger value="Initial Site Visit" className="whitespace-nowrap flex-shrink-0">Initial Site Visit</TabsTrigger>
