@@ -134,7 +134,13 @@ export default function GmailHistorySearch({ open, onClose }) {
                     <p className="text-xs text-gray-500 line-clamp-2">{thread.snippet}</p>
                     {thread.date && (
                       <p className="text-xs text-gray-400 mt-1">
-                        {format(parseISO(thread.date), 'MMM d, yyyy h:mm a')}
+                        {(() => {
+                          try {
+                            return format(new Date(thread.date), 'MMM d, yyyy h:mm a');
+                          } catch {
+                            return thread.date;
+                          }
+                        })()}
                       </p>
                     )}
                   </div>
