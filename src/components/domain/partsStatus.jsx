@@ -165,7 +165,9 @@ export function computePartsStatus({ parts = [], purchaseOrders = [], logisticsJ
     
     // Check READY first (highest precedence)
     if (isPartReady(part)) {
-      const readyQty = Math.min(receivedQty || requiredQty, requiredQty);
+      // If part is ready, assume full quantity is ready
+      // (receivedQty is used only if it's explicitly tracked and less than required)
+      const readyQty = receivedQty > 0 ? Math.min(receivedQty, requiredQty) : requiredQty;
       readyCount += readyQty;
       
       // If not fully received, remainder could be ordered or missing
