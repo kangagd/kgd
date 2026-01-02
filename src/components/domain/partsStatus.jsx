@@ -108,7 +108,9 @@ function isPartReady(part) {
  * Determine if a part is ORDERED based on status and PO linkage
  */
 function isPartOrdered(part, purchaseOrders) {
-  const normalizedStatus = normalizeStatus(part.status);
+  // Handle potential field name variations (status or part_status)
+  const statusValue = part.status || part.part_status || '';
+  const normalizedStatus = normalizeStatus(statusValue);
   
   // Check status whitelist
   if (ORDERED_STATUSES.has(normalizedStatus)) {
