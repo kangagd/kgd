@@ -71,14 +71,14 @@ const CLOSED_PO_STATUSES = new Set([
 
 /**
  * Determine if a part is READY based on normalized status (which includes PO promotion)
+ * We trust location-first normalization to avoid stale status causing false shortages.
  */
 function isPartReady(part) {
-  // Use the normalized status which includes PO status promotion
+  // Use the normalized status which includes location-first promotion and PO status
   const status = getNormalizedPartStatus(part);
   
-  // CRITICAL: Parts with these statuses are READY
+  // Ready if normalized status is: in_storage, in_vehicle, or installed
   if (status === PART_STATUS.IN_STORAGE || 
-      status === PART_STATUS.IN_LOADING_BAY || 
       status === PART_STATUS.IN_VEHICLE ||
       status === PART_STATUS.INSTALLED) {
     return true;
