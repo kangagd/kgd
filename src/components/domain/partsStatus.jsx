@@ -176,6 +176,17 @@ export function computePartsStatus({ parts = [], purchaseOrders = [], logisticsJ
   let openPOCount = 0;
   let overduePOCount = 0;
   
+  // Statuses that should not count as overdue (already received/delivered)
+  const RECEIVED_PO_STATUSES = new Set([
+    'received',
+    'in_storage',
+    'in_loading_bay',
+    'in_vehicle',
+    'installed',
+    'completed',
+    'closed'
+  ]);
+  
   if (purchaseOrders && purchaseOrders.length > 0) {
     const now = new Date();
     
@@ -188,12 +199,14 @@ export function computePartsStatus({ parts = [], purchaseOrders = [], logisticsJ
       if (isOpen) {
         openPOCount++;
         
-        // Check if overdue using schemaAdapters
-        const etaValue = getPoEta(po);
-        if (etaValue) {
-          const etaDate = safeParseDate(etaValue);
-          if (etaDate && etaDate < now) {
-            overduePOCount++;
+        // Only check overdue if PO hasn't been received yet
+        if (!RECEIVED_PO_STATUSES.has(poStatus)) {
+          const etaValue = getPoEta(po);
+          if (etaValue) {
+            const etaDate = safeParseDate(etaValue);
+            if (etaDate && etaDate < now) {
+              overduePOCount++;
+            }
           }
         }
       }
