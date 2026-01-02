@@ -141,18 +141,29 @@ export function computeAttentionItems({
 
   if (futureInstallJobs.length > 0) {
     // CRITICAL: Parts are ready if they have these statuses
-    const readyStatuses = ['received', 'in_vehicle', 'in_storage', 'in_loading_bay', 'reserved', 'available', 'installed', 'ready'];
+    const readyStatuses = ['received', 'in_vehicle', 'in_storage', 'in_loading_bay', 'reserved', 'available', 'installed', 'ready', 'instorage', 'invehicle', 'inloadingbay'];
     
     const notReadyParts = parts.filter(p => {
-      const status = (p.status || '').toLowerCase();
+      const status = (p.status || '').toLowerCase().replace(/[\s_-]/g, '');
       
       // Cancelled and installed are not shortages
       if (status === 'cancelled' || status === 'installed') {
         return false;
       }
       
+      // Check linked PO status first (takes precedence)
+      if (p.purchase_order_id) {
+        const linkedPO = purchaseOrders.find(po => po.id === p.purchase_order_id);
+        if (linkedPO) {
+          const poStatus = (linkedPO.status || '').toLowerCase().replace(/[\s_-]/g, '');
+          if (readyStatuses.includes(linkedPO.status) || readyStatuses.includes(poStatus)) {
+            return false;
+          }
+        }
+      }
+      
       // Check if status indicates ready
-      if (readyStatuses.includes(status)) {
+      if (readyStatuses.includes(p.status) || readyStatuses.includes(status)) {
         return false;
       }
       
