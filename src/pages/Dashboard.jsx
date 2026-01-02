@@ -119,7 +119,16 @@ export default function Dashboard() {
   const today = getLocalDateString(new Date());
   const tomorrow = getLocalDateString(new Date(Date.now() + 86400000));
 
-  const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at && j.status !== 'Cancelled');
+  const todayJobs = jobs.filter(j => {
+    if (j.scheduled_date !== today || j.deleted_at || j.status === 'Cancelled') {
+      return false;
+    }
+    // Filter for field technician - only their assigned jobs
+    if (user?.is_field_technician && user?.role !== 'admin' && user?.role !== 'manager') {
+      return j.assigned_to?.includes(user.email);
+    }
+    return true;
+  });
   const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow && !j.deleted_at);
   const upcomingJobs = jobs.filter(j => {
     const scheduledDate = j.scheduled_date;
