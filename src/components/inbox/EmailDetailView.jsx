@@ -146,8 +146,12 @@ export default function EmailDetailView({
     setSelectedMessage(null);
   };
 
-  const handleEmailSent = () => {
-    refetch();
+  const handleEmailSent = async () => {
+    // Wait a moment for the backend to finish
+    await new Promise(resolve => setTimeout(resolve, 500));
+    // Invalidate and refetch
+    await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
+    await refetch();
   };
 
   const handlePriorityChange = async (newPriority) => {

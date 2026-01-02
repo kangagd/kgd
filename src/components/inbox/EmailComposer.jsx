@@ -322,7 +322,9 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
 
       toast.success("Email sent successfully");
       await deleteDraft();
-      if (onSent) onSent();
+      if (onSent) {
+        await onSent();
+      }
       onClose();
     } catch (error) {
       toast.error(`Failed to send email: ${error.message}`);
