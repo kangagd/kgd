@@ -125,15 +125,18 @@ export default function Dashboard() {
     const scheduledDate = j.scheduled_date;
     return scheduledDate && scheduledDate > today && !j.deleted_at && j.status !== 'Completed' && j.status !== 'Cancelled';
   }).slice(0, 5);
-  const completedToday = jobs.filter(j => {
-    if (j.status !== 'Completed' || j.deleted_at) return false;
-    if (!j.updated_date) return false;
-    
-    // Convert UTC updated_date to local date string for comparison
-    const updatedDate = new Date(j.updated_date);
-    const localDateString = getLocalDateString(updatedDate);
+  // Get jobs completed today based on check-out time
+  const completedTodayCheckOuts = checkIns.filter(c => {
+    if (!c.check_out_time) return false;
+    const checkOutDate = new Date(c.check_out_time);
+    const localDateString = getLocalDateString(checkOutDate);
     return localDateString === today;
   });
+  
+  const completedTodayJobIds = new Set(completedTodayCheckOuts.map(c => c.job_id));
+  const completedToday = jobs.filter(j => 
+    completedTodayJobIds.has(j.id) && !j.deleted_at
+  );
 
   const todayCheckIns = checkIns.filter(c =>
     c.created_date?.split('T')[0] === today
