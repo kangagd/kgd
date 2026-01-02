@@ -179,7 +179,7 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
                   Return visit required
                 </Badge>
               )}
-              {hasRequiredTrades && (
+              {hasRequiredTrades && !(job.job_type_name || job.job_type || "").match(/(Delivery|Pickup|Return|Logistics)/i) && (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium pointer-events-none">
                   Third-party required
                 </span>
