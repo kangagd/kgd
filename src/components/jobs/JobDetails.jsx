@@ -28,6 +28,7 @@ import RichTextField from "../common/RichTextField";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { PO_STATUS, LOGISTICS_LOCATION, getPoStatusLabel, normaliseLegacyPoStatus } from "../domain/logisticsConfig";
+import { getNormalizedPartStatus, PART_STATUS } from "../domain/partConfig";
 
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
@@ -269,6 +270,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!job.project_id,
     staleTime: 60_000
   });
+
+  // Fetch Purchase Orders for enriching parts with PO status
+  const { data: projectPurchaseOrders = [] } = useQuery({
+    queryKey: ['purchaseOrdersForJob', job.project_id],
+    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: job.project_id }),
+    enabled: !!job.project_id,
+    staleTime: 60_000
+  });
+
+  // Enrich parts with PO status for accurate status derivation
+  const enrichedProjectParts = React.useMemo(() => {
+    const poById = Object.fromEntries(projectPurchaseOrders.map(po => [po.id, po]));
+    return projectParts.map(p => ({
+      ...p,
+      po_status: p.po_status || (p.purchase_order_id ? poById[p.purchase_order_id]?.status : null),
+    }));
+  }, [projectParts, projectPurchaseOrders]);
 
   // Fetch Project Trade Requirements
   const { data: projectTradeReqs = [], isLoading: isProjectTradeReqsLoading } = useQuery({
@@ -1461,13 +1479,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   return null;
                 }
 
-                // Calculate readiness
-                const missingParts = projectParts.filter(p => 
-                  p.status !== 'in_storage' && 
-                  p.status !== 'in_vehicle' && 
-                  p.status !== 'installed' && 
-                  p.status !== 'cancelled'
-                );
+                // Calculate readiness using normalized part status (includes PO promotion)
+                const missingParts = enrichedProjectParts.filter(p => {
+                  const normalizedStatus = getNormalizedPartStatus(p);
+                  return normalizedStatus !== PART_STATUS.IN_STORAGE && 
+                    normalizedStatus !== PART_STATUS.IN_VEHICLE && 
+                    normalizedStatus !== PART_STATUS.INSTALLED && 
+                    normalizedStatus !== PART_STATUS.CANCELLED;
+                });
 
                 const outstandingTrades = projectTradeReqs.filter(t => 
                   t.is_required && 
@@ -1531,18 +1550,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                               <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
                               <span className="text-[13px] text-[#6B7280]">Loading parts...</span>
                             </div>
-                          ) : projectParts.length === 0 ? (
+                          ) : enrichedProjectParts.length === 0 ? (
                             <p className="text-[13px] text-[#9CA3AF] py-2">No parts found for this project.</p>
                           ) : (
                             <div className="space-y-4">
                               {/* Missing / Not Ready */}
                               {(() => {
-                                const missingParts = projectParts.filter(p => 
-                                  p.status !== 'in_storage' && 
-                                  p.status !== 'in_vehicle' && 
-                                  p.status !== 'installed' && 
-                                  p.status !== 'cancelled'
-                                );
+                                const missingParts = enrichedProjectParts.filter(p => {
+                                  const normalizedStatus = getNormalizedPartStatus(p);
+                                  return normalizedStatus !== PART_STATUS.IN_STORAGE && 
+                                    normalizedStatus !== PART_STATUS.IN_VEHICLE && 
+                                    normalizedStatus !== PART_STATUS.INSTALLED && 
+                                    normalizedStatus !== PART_STATUS.CANCELLED;
+                                });
                                 if (missingParts.length === 0) return null;
                                 return (
                                   <div>
@@ -1550,31 +1570,34 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                       Missing / Not Ready ({missingParts.length})
                                     </div>
                                     <div className="space-y-2">
-                                      {missingParts.map((part) => (
-                                        <div key={part.id} className="bg-red-50 border border-red-200 rounded-lg p-2.5">
-                                          <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1">
-                                              <div className="text-[13px] font-semibold text-[#111827]">
-                                                {part.item_name || part.category || 'Part'}
-                                              </div>
-                                              <div className="text-[12px] text-[#6B7280] mt-0.5">
-                                                Qty: {part.quantity_required || part.quantity || 1}
-                                              </div>
-                                            </div>
-                                            <div className="text-right">
-                                              <Badge className="bg-red-100 text-red-700 text-[11px] mb-1">
-                                                {part.status || 'pending'}
-                                              </Badge>
-                                              {part.location && (
-                                                <div className="text-[11px] text-[#6B7280]">
-                                                  {part.location}
-                                                  {part.assigned_vehicle_id && ` • Vehicle`}
+                                      {missingParts.map((part) => {
+                                        const normalizedStatus = getNormalizedPartStatus(part);
+                                        return (
+                                          <div key={part.id} className="bg-red-50 border border-red-200 rounded-lg p-2.5">
+                                            <div className="flex items-start justify-between gap-2">
+                                              <div className="flex-1">
+                                                <div className="text-[13px] font-semibold text-[#111827]">
+                                                  {part.item_name || part.category || 'Part'}
                                                 </div>
-                                              )}
+                                                <div className="text-[12px] text-[#6B7280] mt-0.5">
+                                                  Qty: {part.quantity_required || part.quantity || 1}
+                                                </div>
+                                              </div>
+                                              <div className="text-right">
+                                                <Badge className="bg-red-100 text-red-700 text-[11px] mb-1">
+                                                  {normalizedStatus || 'pending'}
+                                                </Badge>
+                                                {part.location && (
+                                                  <div className="text-[11px] text-[#6B7280]">
+                                                    {part.location}
+                                                    {part.assigned_vehicle_id && ` • Vehicle`}
+                                                  </div>
+                                                )}
+                                              </div>
                                             </div>
                                           </div>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 );
@@ -1582,9 +1605,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                               {/* Ready */}
                               {(() => {
-                                const readyParts = projectParts.filter(p => 
-                                  p.status === 'in_storage' || p.status === 'in_vehicle'
-                                );
+                                const readyParts = enrichedProjectParts.filter(p => {
+                                  const normalizedStatus = getNormalizedPartStatus(p);
+                                  return normalizedStatus === PART_STATUS.IN_STORAGE || 
+                                    normalizedStatus === PART_STATUS.IN_VEHICLE;
+                                });
                                 if (readyParts.length === 0) return null;
                                 return (
                                   <div>
@@ -1592,31 +1617,34 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                       Ready ({readyParts.length})
                                     </div>
                                     <div className="space-y-2">
-                                      {readyParts.map((part) => (
-                                        <div key={part.id} className="bg-green-50 border border-green-200 rounded-lg p-2.5">
-                                          <div className="flex items-start justify-between gap-2">
-                                            <div className="flex-1">
-                                              <div className="text-[13px] font-semibold text-[#111827]">
-                                                {part.item_name || part.category || 'Part'}
-                                              </div>
-                                              <div className="text-[12px] text-[#6B7280] mt-0.5">
-                                                Qty: {part.quantity_required || part.quantity || 1}
-                                              </div>
-                                            </div>
-                                            <div className="text-right">
-                                              <Badge className="bg-green-100 text-green-700 text-[11px] mb-1">
-                                                {part.status}
-                                              </Badge>
-                                              {part.location && (
-                                                <div className="text-[11px] text-[#6B7280]">
-                                                  {part.location}
-                                                  {part.assigned_vehicle_id && ` • Vehicle`}
+                                      {readyParts.map((part) => {
+                                        const normalizedStatus = getNormalizedPartStatus(part);
+                                        return (
+                                          <div key={part.id} className="bg-green-50 border border-green-200 rounded-lg p-2.5">
+                                            <div className="flex items-start justify-between gap-2">
+                                              <div className="flex-1">
+                                                <div className="text-[13px] font-semibold text-[#111827]">
+                                                  {part.item_name || part.category || 'Part'}
                                                 </div>
-                                              )}
+                                                <div className="text-[12px] text-[#6B7280] mt-0.5">
+                                                  Qty: {part.quantity_required || part.quantity || 1}
+                                                </div>
+                                              </div>
+                                              <div className="text-right">
+                                                <Badge className="bg-green-100 text-green-700 text-[11px] mb-1">
+                                                  {normalizedStatus}
+                                                </Badge>
+                                                {part.location && (
+                                                  <div className="text-[11px] text-[#6B7280]">
+                                                    {part.location}
+                                                    {part.assigned_vehicle_id && ` • Vehicle`}
+                                                  </div>
+                                                )}
+                                              </div>
                                             </div>
                                           </div>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 );
@@ -1624,9 +1652,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                               {/* Installed / Cancelled */}
                               {(() => {
-                                const completedParts = projectParts.filter(p => 
-                                  p.status === 'installed' || p.status === 'cancelled'
-                                );
+                                const completedParts = enrichedProjectParts.filter(p => {
+                                  const normalizedStatus = getNormalizedPartStatus(p);
+                                  return normalizedStatus === PART_STATUS.INSTALLED || 
+                                    normalizedStatus === PART_STATUS.CANCELLED;
+                                });
                                 if (completedParts.length === 0) return null;
                                 return (
                                   <Collapsible defaultOpen={false}>
@@ -1638,31 +1668,34 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="pt-2">
                                       <div className="space-y-2">
-                                        {completedParts.map((part) => (
-                                          <div key={part.id} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-2.5">
-                                            <div className="flex items-start justify-between gap-2">
-                                              <div className="flex-1">
-                                                <div className="text-[13px] font-semibold text-[#111827]">
-                                                  {part.item_name || part.category || 'Part'}
-                                                </div>
-                                                <div className="text-[12px] text-[#6B7280] mt-0.5">
-                                                  Qty: {part.quantity_required || part.quantity || 1}
-                                                </div>
-                                              </div>
-                                              <div className="text-right">
-                                                <Badge className="bg-[#E5E7EB] text-[#6B7280] text-[11px] mb-1">
-                                                  {part.status}
-                                                </Badge>
-                                                {part.location && (
-                                                  <div className="text-[11px] text-[#9CA3AF]">
-                                                    {part.location}
-                                                    {part.assigned_vehicle_id && ` • Vehicle`}
+                                        {completedParts.map((part) => {
+                                          const normalizedStatus = getNormalizedPartStatus(part);
+                                          return (
+                                            <div key={part.id} className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg p-2.5">
+                                              <div className="flex items-start justify-between gap-2">
+                                                <div className="flex-1">
+                                                  <div className="text-[13px] font-semibold text-[#111827]">
+                                                    {part.item_name || part.category || 'Part'}
                                                   </div>
-                                                )}
+                                                  <div className="text-[12px] text-[#6B7280] mt-0.5">
+                                                    Qty: {part.quantity_required || part.quantity || 1}
+                                                  </div>
+                                                </div>
+                                                <div className="text-right">
+                                                  <Badge className="bg-[#E5E7EB] text-[#6B7280] text-[11px] mb-1">
+                                                    {normalizedStatus}
+                                                  </Badge>
+                                                  {part.location && (
+                                                    <div className="text-[11px] text-[#9CA3AF]">
+                                                      {part.location}
+                                                      {part.assigned_vehicle_id && ` • Vehicle`}
+                                                    </div>
+                                                  )}
+                                                </div>
                                               </div>
                                             </div>
-                                          </div>
-                                        ))}
+                                          );
+                                        })}
                                       </div>
                                     </CollapsibleContent>
                                   </Collapsible>
