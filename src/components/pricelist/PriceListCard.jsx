@@ -5,12 +5,6 @@ import { Button } from "@/components/ui/button";
 import { PackagePlus, Pencil, Trash2, ChevronDown, AlertCircle, Package } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const categoryColors = {
-  "Service": "bg-blue-100 text-blue-700",
-  "Motor": "bg-purple-100 text-purple-700",
-  "Remotes/Accessories": "bg-green-100 text-green-700"
-};
-
 export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, inventorySummary, canViewCosts }) {
   const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
   const isOutOfStock = item.stock_level === 0;
@@ -37,7 +31,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <Badge className={`${categoryColors[item.category] || "bg-slate-100 text-slate-700"} font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]`}>
+                  <Badge className="bg-slate-100 text-slate-700 font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                     {item.category}
                   </Badge>
                   {(item.track_inventory !== false && item.in_inventory !== false) && isOutOfStock && (
