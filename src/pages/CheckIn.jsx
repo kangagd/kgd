@@ -49,7 +49,7 @@ export default function CheckIn() {
     enabled: !!user?.email,
   });
 
-  const activeCheckIn = checkIns.find(ci => !ci.check_out_time);
+  const activeCheckIn = checkIns.find(ci => !ci.check_out_time && ci.check_out_time !== "");
 
   const checkInMutation = useMutation({
     mutationFn: async (data) => {
