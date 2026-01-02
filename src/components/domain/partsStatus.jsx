@@ -14,14 +14,17 @@ const READY_STATUSES = new Set([
   'received',
   'in_stock',
   'in_storage',
+  'instorage', // Handle potential spacing issues
   'reserved',
   'allocated',
   'in_vehicle',
+  'invehicle', // Handle potential spacing issues
   'in_car',
   'picked',
   'available',
   'installed',
-  'in_loading_bay'
+  'in_loading_bay',
+  'inloadingbay' // Handle potential spacing issues
 ]);
 
 // Whitelist of locations that indicate a part is READY
