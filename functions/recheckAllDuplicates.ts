@@ -19,9 +19,8 @@ Deno.serve(async (req) => {
     };
 
     // Recheck all Customers
-    const customers = await base44.asServiceRole.entities.Customer.filter({
-      deleted_at: { $exists: false }
-    });
+    const allCustomers = await base44.asServiceRole.entities.Customer.list();
+    const customers = allCustomers.filter(c => !c.deleted_at);
 
     for (const customer of customers) {
       const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
@@ -38,9 +37,8 @@ Deno.serve(async (req) => {
     }
 
     // Recheck all Projects
-    const projects = await base44.asServiceRole.entities.Project.filter({
-      deleted_at: { $exists: false }
-    });
+    const allProjects = await base44.asServiceRole.entities.Project.list();
+    const projects = allProjects.filter(p => !p.deleted_at);
 
     for (const project of projects) {
       const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
@@ -57,9 +55,8 @@ Deno.serve(async (req) => {
     }
 
     // Recheck all Jobs
-    const jobs = await base44.asServiceRole.entities.Job.filter({
-      deleted_at: { $exists: false }
-    });
+    const allJobs = await base44.asServiceRole.entities.Job.list();
+    const jobs = allJobs.filter(j => !j.deleted_at);
 
     for (const job of jobs) {
       const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
