@@ -125,11 +125,15 @@ export default function Dashboard() {
     const scheduledDate = j.scheduled_date;
     return scheduledDate && scheduledDate > today && !j.deleted_at && j.status !== 'Completed' && j.status !== 'Cancelled';
   }).slice(0, 5);
-  const completedToday = jobs.filter(j =>
-    j.status === 'Completed' &&
-    j.updated_date?.split('T')[0] === today &&
-    !j.deleted_at
-  );
+  const completedToday = jobs.filter(j => {
+    if (j.status !== 'Completed' || j.deleted_at) return false;
+    if (!j.updated_date) return false;
+    
+    // Convert UTC updated_date to local date string for comparison
+    const updatedDate = new Date(j.updated_date);
+    const localDateString = getLocalDateString(updatedDate);
+    return localDateString === today;
+  });
 
   const todayCheckIns = checkIns.filter(c =>
     c.created_date?.split('T')[0] === today
