@@ -209,10 +209,12 @@ export default function Projects() {
     
     if (action === 'new' || action === 'create') {
       setShowForm(true);
+      return;
     }
     
-    if (projectId && projects.length > 0) {
-      const project = projects.find((p) => sameId(p.id, projectId));
+    if (projectId && allProjects.length > 0) {
+      // Use allProjects instead of filtered projects to ensure we find it
+      const project = allProjects.find((p) => sameId(p.id, projectId));
       if (project && !sameId(project.id, selectedProject?.id)) {
         setSelectedProject(project);
       }
@@ -220,7 +222,7 @@ export default function Projects() {
       // Clear selected project when projectId is removed from URL
       setSelectedProject(null);
     }
-  }, [projects, selectedProject, location.search]);
+  }, [allProjects, selectedProject, location.search]);
 
   const handleSubmit = (data) => {
     if (editingProject) {
