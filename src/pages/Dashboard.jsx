@@ -108,8 +108,16 @@ export default function Dashboard() {
     enabled: isAdminOrManager && logisticsJobs.length > 0,
   });
 
-  const today = new Date().toISOString().split('T')[0];
-  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  // Get today's date in local timezone (YYYY-MM-DD format)
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getLocalDateString(new Date());
+  const tomorrow = getLocalDateString(new Date(Date.now() + 86400000));
 
   const todayJobs = jobs.filter(j => j.scheduled_date === today && !j.deleted_at && j.status !== 'Cancelled');
   const tomorrowJobs = jobs.filter(j => j.scheduled_date === tomorrow && !j.deleted_at);
