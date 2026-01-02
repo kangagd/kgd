@@ -31,22 +31,28 @@ Deno.serve(async (req) => {
             });
         }
 
-        let syncedCount = 0;
-        let createdCount = 0;
-        let updatedCount = 0;
+        // Fetch ALL existing VehicleStock records at once
+        const allVehicleStock = await base44.asServiceRole.entities.VehicleStock.list('id');
+        
+        // Build lookup map: "vehicleId_productId" -> stockRecord
+        const stockLookup = {};
+        for (const stock of allVehicleStock) {
+            const key = `${stock.vehicle_id}_${stock.product_id}`;
+            stockLookup[key] = stock;
+        }
+
+        const recordsToCreate = [];
+        const recordsToUpdate = [];
 
         // For each vehicle, ensure all template items are added
         for (const vehicle of vehicles) {
             for (const item of templateItems) {
-                // Check if this item already exists for this vehicle
-                const existing = await base44.asServiceRole.entities.VehicleStock.filter({
-                    vehicle_id: vehicle.id,
-                    product_id: item.id
-                });
+                const key = `${vehicle.id}_${item.id}`;
+                const existing = stockLookup[key];
 
-                if (existing.length === 0) {
-                    // Create new VehicleStock record
-                    await base44.asServiceRole.entities.VehicleStock.create({
+                if (!existing) {
+                    // Prepare for bulk create
+                    recordsToCreate.push({
                         vehicle_id: vehicle.id,
                         product_id: item.id,
                         product_name: item.item,
@@ -55,20 +61,44 @@ Deno.serve(async (req) => {
                         quantity_on_hand: 0,
                         minimum_target_quantity: item.car_quantity
                     });
-                    createdCount++;
-                } else {
-                    // Update minimum_target_quantity if it changed
-                    const stockRecord = existing[0];
-                    if (stockRecord.minimum_target_quantity !== item.car_quantity) {
-                        await base44.asServiceRole.entities.VehicleStock.update(stockRecord.id, {
-                            minimum_target_quantity: item.car_quantity
-                        });
-                        updatedCount++;
-                    }
+                } else if (existing.minimum_target_quantity !== item.car_quantity) {
+                    // Prepare for update
+                    recordsToUpdate.push({
+                        id: existing.id,
+                        minimum_target_quantity: item.car_quantity
+                    });
                 }
-                syncedCount++;
             }
         }
+
+        // Bulk create new records
+        if (recordsToCreate.length > 0) {
+            await base44.asServiceRole.entities.VehicleStock.bulkCreate(recordsToCreate);
+        }
+
+        // Batch update existing records with delays to prevent rate limiting
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const batchSize = 10;
+        
+        for (let i = 0; i < recordsToUpdate.length; i += batchSize) {
+            const batch = recordsToUpdate.slice(i, i + batchSize);
+            await Promise.all(
+                batch.map(update => 
+                    base44.asServiceRole.entities.VehicleStock.update(update.id, {
+                        minimum_target_quantity: update.minimum_target_quantity
+                    })
+                )
+            );
+            
+            // Delay between batches
+            if (i + batchSize < recordsToUpdate.length) {
+                await delay(300);
+            }
+        }
+
+        const syncedCount = recordsToCreate.length + recordsToUpdate.length;
+        const createdCount = recordsToCreate.length;
+        const updatedCount = recordsToUpdate.length;
 
         return Response.json({ 
             success: true, 
