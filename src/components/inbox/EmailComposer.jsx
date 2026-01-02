@@ -306,7 +306,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
 
     setIsSending(true);
     try {
-      const response = await base44.functions.invoke('gmailSendEmail', {
+      await base44.functions.invoke('gmailSendEmail', {
         to,
         cc: cc || undefined,
         bcc: bcc || undefined,
@@ -320,26 +320,20 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         jobId: jobId || thread?.linked_job_id || undefined
       });
 
-      // Check for error in response
-      if (response?.data?.error) {
-        throw new Error(response.data.error);
-      }
-
       toast.success("Email sent successfully");
       await deleteDraft();
       if (onSent) onSent();
       onClose();
     } catch (error) {
-      console.error("Email send error:", error);
-      toast.error(`Failed to send email: ${error.message || 'Unknown error'}`);
+      toast.error(`Failed to send email: ${error.message}`);
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <Card className="border-2 border-[#FAE008] shadow-lg max-h-[90vh] flex flex-col">
-      <CardHeader className="bg-[#FAE008]/10 border-b border-[#E5E7EB] flex-shrink-0">
+    <Card className="border-2 border-[#FAE008] shadow-lg">
+      <CardHeader className="bg-[#FAE008]/10 border-b border-[#E5E7EB]">
         <div className="flex items-center justify-between">
           <CardTitle className="text-[18px] font-semibold">
             {mode === "compose" && "New Email"}
@@ -351,7 +345,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4 space-y-3 overflow-y-auto flex-1">
+      <CardContent className="p-4 space-y-3">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
                 <label className="text-[14px] font-medium w-12">To:</label>
