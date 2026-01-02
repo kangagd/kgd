@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // Normalization helpers
 function normalizeString(str) {
@@ -42,9 +42,9 @@ async function checkCustomerDuplicates(base44, record, excludeId) {
   const otherCustomers = allCustomers.filter(c => c.id !== excludeId);
   
   for (const other of otherCustomers) {
-    const otherNormalizedName = normalizeString(other.name);
-    const otherNormalizedEmail = other.email ? other.email.toLowerCase().trim() : '';
-    const otherNormalizedPhone = normalizePhone(other.phone);
+    const otherNormalizedName = other.normalized_name || normalizeString(other.name);
+    const otherNormalizedEmail = other.normalized_email || (other.email ? other.email.toLowerCase().trim() : '');
+    const otherNormalizedPhone = other.normalized_phone || normalizePhone(other.phone);
     const otherNormalizedAddress = other.normalized_address || normalizeAddress(other);
     
     let matchScore = 0;
@@ -110,7 +110,7 @@ async function checkProjectDuplicates(base44, record, excludeId) {
   const otherProjects = allProjects.filter(p => p.id !== excludeId);
   
   for (const other of otherProjects) {
-    const otherNormalizedTitle = normalizeString(other.title);
+    const otherNormalizedTitle = other.normalized_title || normalizeString(other.title);
     const otherNormalizedAddress = other.normalized_address || normalizeAddress(other);
     
     let matchScore = 0;
