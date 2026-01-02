@@ -28,10 +28,41 @@ export default function JobContactsPanel({ job }) {
 
   const { data: jobContacts = [], isLoading: jobContactsLoading } = useQuery({
     queryKey: ["job-contacts", job.id],
-    queryFn: () =>
-      base44.entities.JobContact.filter({
+    queryFn: async () => {
+      const existingContacts = await base44.entities.JobContact.filter({
         job_id: job.id,
-      }),
+      });
+
+      // If job has project_id, sync project contacts with show_on_jobs=true
+      if (job.project_id) {
+        const projectContacts = await base44.entities.ProjectContact.filter({
+          project_id: job.project_id,
+          show_on_jobs: true,
+        });
+
+        // Create missing job contacts from project contacts
+        for (const pc of projectContacts) {
+          const exists = existingContacts.find(jc => 
+            jc.contact_id === pc.contact_id || 
+            (jc.name === pc.name && jc.email === pc.email)
+          );
+
+          if (!exists) {
+            const newJobContact = await base44.entities.JobContact.create({
+              job_id: job.id,
+              contact_id: pc.contact_id || null,
+              name: pc.name,
+              email: pc.email || "",
+              phone: pc.phone || "",
+              role: pc.role || "",
+            });
+            existingContacts.push(newJobContact);
+          }
+        }
+      }
+
+      return existingContacts;
+    },
     enabled: !!job?.id,
   });
 
