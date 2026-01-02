@@ -111,6 +111,11 @@ export default function Projects() {
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
   });
 
+  const { data: allPurchaseOrders = [] } = useQuery({
+    queryKey: ['allPurchaseOrders'],
+    queryFn: () => base44.entities.PurchaseOrder.list(),
+  });
+
   const inventoryByItem = useMemo(() => {
     const map = {};
     // Warehouse from PriceList
