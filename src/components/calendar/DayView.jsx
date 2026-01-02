@@ -362,7 +362,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                         {technician.display_name || technician.full_name}
                       </span>
                     </div>
-                    <div className={`flex-1 relative ${compactMode ? 'h-20' : 'h-28'}`}>
+                    <div className={`flex-1 relative ${compactMode ? 'h-32' : 'h-36'}`}>
                       {hours.map(hour => (
                         <div 
                           key={hour} 
