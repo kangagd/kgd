@@ -92,7 +92,8 @@ export default function Projects() {
   const { data: allParts = [] } = useQuery({
     queryKey: ['allParts'],
     queryFn: () => base44.entities.Part.list(),
-    refetchInterval: 15000, // Refetch every 15 seconds
+    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 5000, // Consider data stale after 5 seconds
   });
 
   const { data: priceListItems = [] } = useQuery({
