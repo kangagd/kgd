@@ -306,7 +306,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
 
     setIsSending(true);
     try {
-      await base44.functions.invoke('gmailSendEmail', {
+      const response = await base44.functions.invoke('gmailSendEmail', {
         to,
         cc: cc || undefined,
         bcc: bcc || undefined,
@@ -320,12 +320,18 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         jobId: jobId || thread?.linked_job_id || undefined
       });
 
+      // Check for error in response
+      if (response?.data?.error) {
+        throw new Error(response.data.error);
+      }
+
       toast.success("Email sent successfully");
       await deleteDraft();
       if (onSent) onSent();
       onClose();
     } catch (error) {
-      toast.error(`Failed to send email: ${error.message}`);
+      console.error("Email send error:", error);
+      toast.error(`Failed to send email: ${error.message || 'Unknown error'}`);
     } finally {
       setIsSending(false);
     }
