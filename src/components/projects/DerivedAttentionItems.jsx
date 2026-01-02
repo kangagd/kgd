@@ -54,7 +54,7 @@ export default function DerivedAttentionItems({
             <AlertTriangle className="w-4 h-4 text-amber-600" />
           </div>
           <CardTitle className="text-[16px] font-semibold text-amber-900">
-            Attention Required
+            Attention Required ({items.length})
           </CardTitle>
           <span className="text-[12px] text-amber-700 font-medium ml-auto">
             {items.filter(i => i.priority === 'HIGH').length} high • {items.filter(i => i.priority === 'MEDIUM').length} medium

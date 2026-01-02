@@ -1681,7 +1681,68 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               />
             </div>
 
-            {/* Row 4: Collapsible Project Info */}
+            {/* Row 4: Jobs List */}
+            <Card className="border border-[#E5E7EB] shadow-sm">
+              <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                <CardTitle className="text-[16px] font-semibold text-[#111827]">
+                  Jobs ({jobs.length})
+                </CardTitle>
+                {canCreateJobs && (
+                  <Button
+                    size="sm"
+                    onClick={handleAddJob}
+                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] h-8"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Job
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {jobs.length === 0 ? (
+                  <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
+                    No jobs created yet
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {jobs.map((job) => (
+                      <button
+                        key={job.id}
+                        onClick={() => handleJobClick(job.id)}
+                        className="w-full bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] rounded-lg p-3 transition-all text-left"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <div className="font-medium text-[14px] text-[#111827]">
+                            {job.job_type_name || 'Job'} #{job.job_number}
+                          </div>
+                          <Badge className={jobStatusColors[job.status]}>
+                            {job.status}
+                          </Badge>
+                        </div>
+                        {job.scheduled_date && (
+                          <div className="text-[12px] text-[#6B7280]">
+                            {new Date(job.scheduled_date).toLocaleDateString('en-AU', { 
+                              day: 'numeric', 
+                              month: 'short', 
+                              year: 'numeric' 
+                            })}
+                            {job.scheduled_time && ` at ${job.scheduled_time}`}
+                          </div>
+                        )}
+                        {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+                          <div className="text-[12px] text-[#6B7280] mt-1">
+                            <User className="w-3 h-3 inline mr-1" />
+                            {job.assigned_to_name.join(', ')}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Row 5: Collapsible Project Info */}
             <Collapsible open={projectInfoOpen} onOpenChange={setProjectInfoOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm">
                 <CollapsibleTrigger className="w-full">
