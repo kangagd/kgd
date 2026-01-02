@@ -1,5 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Normalization helpers
+function normalizeString(str) {
+  if (!str) return '';
+  return str.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+function normalizePhone(phone) {
+  if (!phone) return '';
+  return phone.replace(/[\s\+\(\)\-\.]/g, '');
+}
+
+function normalizeAddress(record) {
+  const parts = [
+    record.address_street,
+    record.address_suburb,
+    record.address_state,
+    record.address_postcode,
+    record.address_full,
+    record.address
+  ].filter(Boolean);
+  
+  return normalizeString(parts.join(' '));
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -12,10 +36,13 @@ Deno.serve(async (req) => {
     const results = {
       customers_checked: 0,
       customers_with_duplicates: 0,
+      customers_cleared: 0,
       projects_checked: 0,
       projects_with_duplicates: 0,
+      projects_cleared: 0,
       jobs_checked: 0,
-      jobs_with_duplicates: 0
+      jobs_with_duplicates: 0,
+      jobs_cleared: 0
     };
 
     // Recheck all Customers
@@ -23,20 +50,41 @@ Deno.serve(async (req) => {
     const customers = allCustomers.filter(c => !c.deleted_at);
 
     for (const customer of customers) {
-      try {
-        const checkResult = await base44.functions.invoke('checkDuplicates', {
-          entity_type: 'Customer',
-          record: customer,
-          exclude_id: customer.id,
-          auto_update: true
-        });
+      const normalizedName = customer.normalized_name || normalizeString(customer.name);
+      const normalizedEmail = customer.normalized_email || (customer.email ? customer.email.toLowerCase().trim() : '');
+      const normalizedPhone = customer.normalized_phone || normalizePhone(customer.phone);
+      
+      // Find duplicates
+      const otherCustomers = customers.filter(c => c.id !== customer.id);
+      let hasDuplicate = false;
+      let maxScore = 0;
+      
+      for (const other of otherCustomers) {
+        const otherNormalizedName = other.normalized_name || normalizeString(other.name);
+        const otherNormalizedEmail = other.normalized_email || (other.email ? other.email.toLowerCase().trim() : '');
+        const otherNormalizedPhone = other.normalized_phone || normalizePhone(other.phone);
         
-        results.customers_checked++;
-        if (checkResult.data?.is_potential_duplicate) {
-          results.customers_with_duplicates++;
+        let score = 0;
+        if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName) score++;
+        if (normalizedEmail && otherNormalizedEmail && normalizedEmail === otherNormalizedEmail) score++;
+        if (normalizedPhone && otherNormalizedPhone && normalizedPhone === otherNormalizedPhone) score++;
+        
+        if (score > 0) {
+          hasDuplicate = true;
+          maxScore = Math.max(maxScore, score);
         }
-      } catch (error) {
-        console.error(`Error checking customer ${customer.id}:`, error);
+      }
+      
+      await base44.asServiceRole.entities.Customer.update(customer.id, {
+        is_potential_duplicate: hasDuplicate,
+        duplicate_score: maxScore
+      });
+      
+      results.customers_checked++;
+      if (hasDuplicate) {
+        results.customers_with_duplicates++;
+      } else if (customer.is_potential_duplicate) {
+        results.customers_cleared++;
       }
     }
 
@@ -45,20 +93,44 @@ Deno.serve(async (req) => {
     const projects = allProjects.filter(p => !p.deleted_at);
 
     for (const project of projects) {
-      try {
-        const checkResult = await base44.functions.invoke('checkDuplicates', {
-          entity_type: 'Project',
-          record: project,
-          exclude_id: project.id,
-          auto_update: true
-        });
+      const normalizedTitle = project.normalized_title || normalizeString(project.title);
+      const normalizedAddress = project.normalized_address || normalizeAddress(project);
+      
+      // Find duplicates
+      const otherProjects = projects.filter(p => p.id !== project.id);
+      let hasDuplicate = false;
+      let maxScore = 0;
+      
+      for (const other of otherProjects) {
+        const otherNormalizedTitle = other.normalized_title || normalizeString(other.title);
+        const otherNormalizedAddress = other.normalized_address || normalizeAddress(other);
         
-        results.projects_checked++;
-        if (checkResult.data?.is_potential_duplicate) {
-          results.projects_with_duplicates++;
+        let score = 0;
+        if (project.customer_id && other.customer_id === project.customer_id &&
+            normalizedAddress && otherNormalizedAddress && normalizedAddress === otherNormalizedAddress) {
+          score++;
         }
-      } catch (error) {
-        console.error(`Error checking project ${project.id}:`, error);
+        if (normalizedTitle && otherNormalizedTitle && normalizedTitle === otherNormalizedTitle &&
+            project.customer_id && other.customer_id === project.customer_id) {
+          score++;
+        }
+        
+        if (score > 0) {
+          hasDuplicate = true;
+          maxScore = Math.max(maxScore, score);
+        }
+      }
+      
+      await base44.asServiceRole.entities.Project.update(project.id, {
+        is_potential_duplicate: hasDuplicate,
+        duplicate_score: maxScore
+      });
+      
+      results.projects_checked++;
+      if (hasDuplicate) {
+        results.projects_with_duplicates++;
+      } else if (project.is_potential_duplicate) {
+        results.projects_cleared++;
       }
     }
 
@@ -67,20 +139,46 @@ Deno.serve(async (req) => {
     const jobs = allJobs.filter(j => !j.deleted_at);
 
     for (const job of jobs) {
-      try {
-        const checkResult = await base44.functions.invoke('checkDuplicates', {
-          entity_type: 'Job',
-          record: job,
-          exclude_id: job.id,
-          auto_update: true
-        });
+      const normalizedAddress = job.normalized_address || normalizeAddress(job);
+      
+      // Find duplicates
+      const otherJobs = jobs.filter(j => j.id !== job.id);
+      let hasDuplicate = false;
+      let maxScore = 0;
+      
+      for (const other of otherJobs) {
+        const otherNormalizedAddress = other.normalized_address || normalizeAddress(other);
+        const otherJobType = other.job_type_name || other.job_type;
+        const jobType = job.job_type_name || job.job_type;
         
-        results.jobs_checked++;
-        if (checkResult.data?.is_potential_duplicate) {
-          results.jobs_with_duplicates++;
+        let score = 0;
+        if (job.customer_id && other.customer_id === job.customer_id &&
+            job.scheduled_date && other.scheduled_date === job.scheduled_date &&
+            normalizedAddress && otherNormalizedAddress && normalizedAddress === otherNormalizedAddress) {
+          score++;
         }
-      } catch (error) {
-        console.error(`Error checking job ${job.id}:`, error);
+        if (job.project_id && other.project_id === job.project_id &&
+            jobType && otherJobType && jobType === otherJobType &&
+            job.scheduled_date && other.scheduled_date === job.scheduled_date) {
+          score++;
+        }
+        
+        if (score > 0) {
+          hasDuplicate = true;
+          maxScore = Math.max(maxScore, score);
+        }
+      }
+      
+      await base44.asServiceRole.entities.Job.update(job.id, {
+        is_potential_duplicate: hasDuplicate,
+        duplicate_score: maxScore
+      });
+      
+      results.jobs_checked++;
+      if (hasDuplicate) {
+        results.jobs_with_duplicates++;
+      } else if (job.is_potential_duplicate) {
+        results.jobs_cleared++;
       }
     }
 
