@@ -203,9 +203,13 @@ export function computePartsStatus({ parts = [], purchaseOrders = [], logisticsJ
         if (!RECEIVED_PO_STATUSES.has(poStatus)) {
           const etaValue = getPoEta(po);
           if (etaValue) {
-            const etaDate = safeParseDate(etaValue);
-            if (etaDate && etaDate < now) {
-              overduePOCount++;
+            try {
+              const etaDate = safeParseDate(etaValue);
+              if (etaDate && !isNaN(etaDate.getTime()) && etaDate < now) {
+                overduePOCount++;
+              }
+            } catch (e) {
+              // Skip invalid dates
             }
           }
         }
