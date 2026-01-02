@@ -1,0 +1,88 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (user?.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
+    const results = {
+      customers_checked: 0,
+      customers_with_duplicates: 0,
+      projects_checked: 0,
+      projects_with_duplicates: 0,
+      jobs_checked: 0,
+      jobs_with_duplicates: 0
+    };
+
+    // Recheck all Customers
+    const customers = await base44.asServiceRole.entities.Customer.filter({
+      deleted_at: { $exists: false }
+    });
+
+    for (const customer of customers) {
+      const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
+        entity_type: 'Customer',
+        record: customer,
+        exclude_id: customer.id,
+        auto_update: true
+      });
+      
+      results.customers_checked++;
+      if (checkResult.data?.is_potential_duplicate) {
+        results.customers_with_duplicates++;
+      }
+    }
+
+    // Recheck all Projects
+    const projects = await base44.asServiceRole.entities.Project.filter({
+      deleted_at: { $exists: false }
+    });
+
+    for (const project of projects) {
+      const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
+        entity_type: 'Project',
+        record: project,
+        exclude_id: project.id,
+        auto_update: true
+      });
+      
+      results.projects_checked++;
+      if (checkResult.data?.is_potential_duplicate) {
+        results.projects_with_duplicates++;
+      }
+    }
+
+    // Recheck all Jobs
+    const jobs = await base44.asServiceRole.entities.Job.filter({
+      deleted_at: { $exists: false }
+    });
+
+    for (const job of jobs) {
+      const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
+        entity_type: 'Job',
+        record: job,
+        exclude_id: job.id,
+        auto_update: true
+      });
+      
+      results.jobs_checked++;
+      if (checkResult.data?.is_potential_duplicate) {
+        results.jobs_with_duplicates++;
+      }
+    }
+
+    return Response.json({
+      success: true,
+      message: 'All duplicate checks completed',
+      ...results
+    });
+
+  } catch (error) {
+    console.error('Recheck all duplicates error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
