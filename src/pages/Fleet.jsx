@@ -28,6 +28,7 @@ export default function Fleet() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
@@ -129,8 +130,6 @@ export default function Fleet() {
   if (selectedVehicleId && selectedVehicle) {
     return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicleId(null)} />;
   }
-
-  const [isSyncing, setIsSyncing] = React.useState(false);
 
   const handleSyncStockTemplates = async () => {
     setIsSyncing(true);
