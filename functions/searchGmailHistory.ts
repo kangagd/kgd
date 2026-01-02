@@ -5,16 +5,11 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get Gmail access token via connector
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
-    
-    if (!accessToken) {
+    if (!user?.gmail_access_token) {
       return Response.json({ error: 'Gmail not connected' }, { status: 400 });
     }
+    
+    const accessToken = user.gmail_access_token;
 
     const { email, maxResults = 20 } = await req.json();
 
