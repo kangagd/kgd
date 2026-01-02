@@ -133,8 +133,9 @@ export default function Projects() {
     }
     
     // CRITICAL: Parts with these statuses are READY (not a shortage)
-    const readyStatuses = ['in_storage', 'in_loading_bay', 'in_vehicle', 'ready', 'received'];
-    if (readyStatuses.includes(part.status)) {
+    const readyStatuses = ['in_storage', 'in_loading_bay', 'in_vehicle', 'ready', 'received', 'instorage', 'invehicle', 'inloadingbay'];
+    const normalizedStatus = (part.status || '').toLowerCase().replace(/[\s_-]/g, '');
+    if (readyStatuses.includes(part.status) || readyStatuses.includes(normalizedStatus)) {
       return false;
     }
     
