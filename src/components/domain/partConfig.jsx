@@ -115,10 +115,53 @@ export const PICKABLE_STATUSES = new Set([
 
 /**
  * Get normalized part status (always use this for status checks)
- * CRITICAL: Promotes part status based on linked PO status
+ * CRITICAL: Location wins - physical location is the ground truth
+ * Then promotes based on linked PO status
  */
 export function getNormalizedPartStatus(part) {
   if (!part) return PART_STATUS.PENDING;
+  
+  // A) LOCATION-FIRST MAPPING (Physical reality wins)
+  const normalizedLocation = normaliseLegacyPartLocation(part.location);
+  
+  // Map location to canonical status override
+  let locationOverride = null;
+  switch (normalizedLocation) {
+    case PART_LOCATION.WAREHOUSE_STORAGE:
+      locationOverride = PART_STATUS.IN_STORAGE;
+      break;
+    case PART_LOCATION.VEHICLE:
+      locationOverride = PART_STATUS.IN_VEHICLE;
+      break;
+    case PART_LOCATION.LOADING_BAY:
+      locationOverride = PART_STATUS.IN_LOADING_BAY;
+      break;
+    case PART_LOCATION.CLIENT_SITE:
+      locationOverride = PART_STATUS.INSTALLED;
+      break;
+    case PART_LOCATION.SUPPLIER:
+      locationOverride = PART_STATUS.ON_ORDER;
+      break;
+  }
+  
+  // B) LOCATION WINS - Return immediately if we have a location override
+  if (locationOverride && part.location) {
+    // D) Warning for mismatches
+    const rawStatus = part.status?.toLowerCase().trim();
+    const orderedStatuses = ['on_order', 'in_transit', 'pending'];
+    const readyLocations = [PART_LOCATION.WAREHOUSE_STORAGE, PART_LOCATION.VEHICLE, PART_LOCATION.LOADING_BAY, PART_LOCATION.CLIENT_SITE];
+    
+    if (orderedStatuses.includes(rawStatus) && readyLocations.includes(normalizedLocation)) {
+      console.warn("[Parts] Status/location mismatch - using location override", {
+        part_id: part.id,
+        status: part.status,
+        location: part.location,
+        override: locationOverride
+      });
+    }
+    
+    return locationOverride;
+  }
   
   // First normalize the part's own status
   let status = normaliseLegacyPartStatus(part.status, part);
@@ -130,9 +173,10 @@ export function getNormalizedPartStatus(part) {
     return status;
   }
   
-  // Promote based on linked PO status if available
+  // C) EXPAND PO STATUS PROMOTION - Promote based on linked PO status if available
   const poStatus = part.po_status || part.purchase_order_status;
   if (poStatus) {
+    // Normalize PO status: handle spaces (e.g., "In Storage", "in storage")
     const normalizedPoStatus = poStatus.toLowerCase().trim().replace(/\s+/g, '_');
     
     // Map PO status to Part status (promotion only)
