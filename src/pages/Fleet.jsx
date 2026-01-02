@@ -130,6 +130,24 @@ export default function Fleet() {
     return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicleId(null)} />;
   }
 
+  const [isSyncing, setIsSyncing] = React.useState(false);
+
+  const handleSyncStockTemplates = async () => {
+    setIsSyncing(true);
+    try {
+      const { data } = await base44.functions.invoke('syncVehicleStockTemplates', {});
+      if (data.error) {
+        alert(`Error: ${data.error}`);
+      } else {
+        alert(`Success! Created ${data.created} records, updated ${data.updated} records across ${data.vehicles} vehicles.`);
+      }
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-4">
@@ -140,13 +158,23 @@ export default function Fleet() {
           <h1 className="text-3xl font-bold text-gray-900">Fleet Management</h1>
           <p className="text-gray-500 mt-1">Manage vehicles, assignments, and inventory</p>
         </div>
-        <Button 
-          className="bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Vehicle
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleSyncStockTemplates}
+            disabled={isSyncing}
+          >
+            <Package className="w-4 h-4 mr-2" />
+            {isSyncing ? "Syncing..." : "Sync Stock Templates"}
+          </Button>
+          <Button 
+            className="bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Vehicle
+          </Button>
+        </div>
       </div>
 
       <VehicleFormModal 
