@@ -72,7 +72,9 @@ const CLOSED_PO_STATUSES = new Set([
  * Determine if a part is READY based on status, location, and received quantity
  */
 function isPartReady(part) {
-  const normalizedStatus = normalizeStatus(part.status);
+  // Handle potential field name variations (status or part_status)
+  const statusValue = part.status || part.part_status || '';
+  const normalizedStatus = normalizeStatus(statusValue);
   const normalizedLocation = normalizeStatus(part.location);
   const receivedQty = Number(part.received_qty || part.quantity_received || 0);
   
