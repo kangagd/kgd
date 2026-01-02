@@ -313,17 +313,6 @@ export default function Projects() {
           return allTradeRequirements.some(t => sameId(t.project_id, projectId) && t.is_required);
         }, [allTradeRequirements]);
 
-        const hasNonLogisticsJobs = useCallback((projectId) => {
-          return allJobs.some(j => 
-            sameId(j.project_id, projectId) && 
-            !j.deleted_at && 
-            j.job_type !== 'Logistics' && 
-            !j.vehicle_id && 
-            !j.purchase_order_id &&
-            !j.third_party_trade_id
-          );
-        }, [allJobs]);
-
   if (showForm) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
@@ -595,7 +584,7 @@ export default function Projects() {
                         <ProjectTypeBadge value={project.project_type} />
                       )}
                       <ProjectStatusBadge value={project.status} />
-                      {hasRequiredTrades(project.id) && hasNonLogisticsJobs(project.id) && (
+                      {hasRequiredTrades(project.id) && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium">
                           Third-party required
                         </span>
