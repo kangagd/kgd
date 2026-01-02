@@ -140,10 +140,31 @@ export function computeAttentionItems({
   });
 
   if (futureInstallJobs.length > 0) {
-    const readyStatuses = ['received', 'in_vehicle', 'reserved', 'available', 'installed'];
-    const notReadyParts = parts.filter(p => 
-      !readyStatuses.includes((p.status || '').toLowerCase())
-    );
+    // CRITICAL: Parts are ready if they have these statuses
+    const readyStatuses = ['received', 'in_vehicle', 'in_storage', 'in_loading_bay', 'reserved', 'available', 'installed', 'ready'];
+    
+    const notReadyParts = parts.filter(p => {
+      const status = (p.status || '').toLowerCase();
+      
+      // Cancelled and installed are not shortages
+      if (status === 'cancelled' || status === 'installed') {
+        return false;
+      }
+      
+      // Check if status indicates ready
+      if (readyStatuses.includes(status)) {
+        return false;
+      }
+      
+      // Check if received quantity is available
+      const receivedQty = Number(p.received_qty || p.quantity_received || 0);
+      if (receivedQty > 0) {
+        return false;
+      }
+      
+      // Everything else is not ready
+      return true;
+    });
     
     if (notReadyParts.length > 0) {
       items.push({
