@@ -23,16 +23,20 @@ Deno.serve(async (req) => {
     const customers = allCustomers.filter(c => !c.deleted_at);
 
     for (const customer of customers) {
-      const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
-        entity_type: 'Customer',
-        record: customer,
-        exclude_id: customer.id,
-        auto_update: true
-      });
-      
-      results.customers_checked++;
-      if (checkResult.data?.is_potential_duplicate) {
-        results.customers_with_duplicates++;
+      try {
+        const checkResult = await base44.functions.invoke('checkDuplicates', {
+          entity_type: 'Customer',
+          record: customer,
+          exclude_id: customer.id,
+          auto_update: true
+        });
+        
+        results.customers_checked++;
+        if (checkResult.data?.is_potential_duplicate) {
+          results.customers_with_duplicates++;
+        }
+      } catch (error) {
+        console.error(`Error checking customer ${customer.id}:`, error);
       }
     }
 
@@ -41,16 +45,20 @@ Deno.serve(async (req) => {
     const projects = allProjects.filter(p => !p.deleted_at);
 
     for (const project of projects) {
-      const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
-        entity_type: 'Project',
-        record: project,
-        exclude_id: project.id,
-        auto_update: true
-      });
-      
-      results.projects_checked++;
-      if (checkResult.data?.is_potential_duplicate) {
-        results.projects_with_duplicates++;
+      try {
+        const checkResult = await base44.functions.invoke('checkDuplicates', {
+          entity_type: 'Project',
+          record: project,
+          exclude_id: project.id,
+          auto_update: true
+        });
+        
+        results.projects_checked++;
+        if (checkResult.data?.is_potential_duplicate) {
+          results.projects_with_duplicates++;
+        }
+      } catch (error) {
+        console.error(`Error checking project ${project.id}:`, error);
       }
     }
 
@@ -59,16 +67,20 @@ Deno.serve(async (req) => {
     const jobs = allJobs.filter(j => !j.deleted_at);
 
     for (const job of jobs) {
-      const checkResult = await base44.asServiceRole.functions.invoke('checkDuplicates', {
-        entity_type: 'Job',
-        record: job,
-        exclude_id: job.id,
-        auto_update: true
-      });
-      
-      results.jobs_checked++;
-      if (checkResult.data?.is_potential_duplicate) {
-        results.jobs_with_duplicates++;
+      try {
+        const checkResult = await base44.functions.invoke('checkDuplicates', {
+          entity_type: 'Job',
+          record: job,
+          exclude_id: job.id,
+          auto_update: true
+        });
+        
+        results.jobs_checked++;
+        if (checkResult.data?.is_potential_duplicate) {
+          results.jobs_with_duplicates++;
+        }
+      } catch (error) {
+        console.error(`Error checking job ${job.id}:`, error);
       }
     }
 
