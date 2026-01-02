@@ -22,7 +22,7 @@ export default function AddVehicleStockModal({ open, onClose, vehicleId }) {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newItemData, setNewItemData] = useState({
     item: "",
-    category: "Tools",
+    category: "",
     price: 0
   });
 
@@ -32,6 +32,12 @@ export default function AddVehicleStockModal({ open, onClose, vehicleId }) {
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list('-item', 100) // Fetching top 100 for now
   });
+
+  // Dynamically extract categories from loaded data
+  const existingCategories = React.useMemo(() => {
+    const cats = [...new Set(products.map(p => p.category).filter(Boolean))];
+    return cats.sort();
+  }, [products]);
 
   const filteredProducts = products.filter(p => 
     p.item.toLowerCase().includes(search.toLowerCase()) || 
@@ -81,7 +87,7 @@ export default function AddVehicleStockModal({ open, onClose, vehicleId }) {
     setSelectedProduct("");
     setQuantity(0);
     setIsCreatingNew(false);
-    setNewItemData({ item: "", category: "Tools", price: 0 });
+    setNewItemData({ item: "", category: "", price: 0 });
     setSearch("");
   };
 
@@ -185,14 +191,27 @@ export default function AddVehicleStockModal({ open, onClose, vehicleId }) {
                   onValueChange={(val) => setNewItemData({...newItemData, category: val})}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Tools">Tools</SelectItem>
-                    <SelectItem value="Motor">Motor</SelectItem>
-                    <SelectItem value="Service">Service</SelectItem>
-                    <SelectItem value="Remotes/Accessories">Remotes/Accessories</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {existingCategories.length > 0 ? (
+                      existingCategories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Accessories">Accessories</SelectItem>
+                        <SelectItem value="Arms">Arms</SelectItem>
+                        <SelectItem value="Door">Door</SelectItem>
+                        <SelectItem value="Gate">Gate</SelectItem>
+                        <SelectItem value="Motor">Motor</SelectItem>
+                        <SelectItem value="Posts">Posts</SelectItem>
+                        <SelectItem value="Rails">Rails</SelectItem>
+                        <SelectItem value="Remotes">Remotes</SelectItem>
+                        <SelectItem value="Service">Service</SelectItem>
+                        <SelectItem value="Springs">Springs</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

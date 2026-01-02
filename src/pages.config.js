@@ -26,8 +26,8 @@ import Suppliers from './pages/Suppliers';
 import SupplyLogistics from './pages/SupplyLogistics';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';
-import UserProfile from './pages/UserProfile';
 import ToolsAdmin from './pages/ToolsAdmin';
+import UserProfile from './pages/UserProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -60,8 +60,8 @@ export const PAGES = {
     "SupplyLogistics": SupplyLogistics,
     "Tasks": Tasks,
     "Team": Team,
-    "UserProfile": UserProfile,
     "ToolsAdmin": ToolsAdmin,
+    "UserProfile": UserProfile,
 }
 
 export const pagesConfig = {

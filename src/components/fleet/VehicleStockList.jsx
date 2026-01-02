@@ -9,12 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const categoryColors = {
-  "Service": "bg-blue-100 text-blue-700",
-  "Motor": "bg-purple-100 text-purple-700",
-  "Remotes/Accessories": "bg-green-100 text-green-700"
-};
-
 export default function VehicleStockList({ stock, onMarkUsed, onAdjust, isLoading, inventoryByItem }) {
   if (isLoading) {
     return <div className="text-center py-8 text-gray-500">Loading inventory...</div>;
@@ -58,7 +52,7 @@ export default function VehicleStockList({ stock, onMarkUsed, onAdjust, isLoadin
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-500">
-                      <Badge className={`${categoryColors[item.category] || "bg-slate-100 text-slate-700"} border-0 px-1.5 py-0 text-[10px] font-medium hover:bg-opacity-80`}>
+                      <Badge className="bg-slate-100 text-slate-700 border-0 px-1.5 py-0 text-[10px] font-medium hover:bg-opacity-80">
                         {item.category}
                       </Badge>
                       {item.location_label && (

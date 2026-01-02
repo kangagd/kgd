@@ -38,6 +38,17 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
     queryFn: () => base44.entities.Supplier.list('name'),
   });
 
+  const { data: allPriceItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list('category'),
+  });
+
+  // Dynamically extract categories from existing data
+  const existingCategories = React.useMemo(() => {
+    const cats = [...new Set(allPriceItems.map(i => i.category).filter(Boolean))];
+    return cats.sort();
+  }, [allPriceItems]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
@@ -78,11 +89,24 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Service">Service</SelectItem>
-                    <SelectItem value="Motor">Motor</SelectItem>
-                    <SelectItem value="Remotes/Accessories">Remotes/Accessories</SelectItem>
-                    <SelectItem value="Parts">Parts</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {existingCategories.length > 0 ? (
+                      existingCategories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))
+                    ) : (
+                      <>
+                        <SelectItem value="Accessories">Accessories</SelectItem>
+                        <SelectItem value="Arms">Arms</SelectItem>
+                        <SelectItem value="Door">Door</SelectItem>
+                        <SelectItem value="Gate">Gate</SelectItem>
+                        <SelectItem value="Motor">Motor</SelectItem>
+                        <SelectItem value="Posts">Posts</SelectItem>
+                        <SelectItem value="Rails">Rails</SelectItem>
+                        <SelectItem value="Remotes">Remotes</SelectItem>
+                        <SelectItem value="Service">Service</SelectItem>
+                        <SelectItem value="Springs">Springs</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

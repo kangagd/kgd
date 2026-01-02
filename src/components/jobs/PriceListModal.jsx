@@ -13,13 +13,6 @@ import { Search } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const categoryColors = {
-  "Service": "bg-blue-50 text-blue-900 border-blue-200",
-  "Remotes": "bg-purple-50 text-purple-900 border-purple-200",
-  "Accessories": "bg-green-50 text-green-900 border-green-200",
-  "Motor & Rails": "bg-orange-50 text-orange-900 border-orange-200",
-};
-
 export default function PriceListModal({ open, onClose }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -30,6 +23,12 @@ export default function PriceListModal({ open, onClose }) {
     enabled: open,
   });
 
+  // Dynamically extract categories from loaded data
+  const categories = React.useMemo(() => {
+    const cats = [...new Set(priceItems.map(item => item.category).filter(Boolean))];
+    return cats.sort();
+  }, [priceItems]);
+
   const filteredItems = priceItems.filter(item => {
     const matchesSearch = 
       item.item?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,8 +38,6 @@ export default function PriceListModal({ open, onClose }) {
     
     return matchesSearch && matchesCategory;
   });
-
-  const categories = ["Service", "Remotes", "Accessories", "Motor & Rails"];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -84,7 +81,7 @@ export default function PriceListModal({ open, onClose }) {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge className={`${categoryColors[item.category]} text-xs font-semibold border-2`}>
+                          <Badge className="bg-slate-100 text-slate-700 text-xs font-semibold border-2">
                             {item.category}
                           </Badge>
                           {!item.in_inventory && (

@@ -116,7 +116,12 @@ export default function PriceList() {
     return matchesSearch && matchesCategory && matchesStock && matchesInventoryType;
   });
 
-  const categories = ["Service", "Motor", "Remotes/Accessories"];
+  // Dynamically extract categories from loaded data
+  const categories = React.useMemo(() => {
+    const cats = [...new Set(priceItems.map(item => item.category).filter(Boolean))];
+    return cats.sort();
+  }, [priceItems]);
+
   const isAdmin = user?.role === 'admin';
   const isManager = user?.role === 'manager';
   const isAdminOrManager = isAdmin || isManager;
