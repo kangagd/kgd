@@ -36,6 +36,11 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Job ID and CheckIn ID are required' }, { status: 400 });
         }
 
+        // Require at least one photo/video
+        if (!imageUrls || imageUrls.length === 0) {
+            return Response.json({ error: 'At least one photo or video is required to check out' }, { status: 400 });
+        }
+
         // Verify CheckIn ownership
         const checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
         if (!checkIn) {
