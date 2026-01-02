@@ -22,13 +22,13 @@ export const PART_STATUS = {
  * - AND can be assigned to a vehicle immediately
  * - AND requires no supplier interaction
  * 
- * An item is READY TO PICK only if ALL of these conditions are met:
- * 1. status IN ("in_storage", "in_vehicle")
- * 2. location IN ("warehouse_storage", "vehicle") AND NOT "supplier"
- * 3. If PO exists: status NOT IN ("Draft", "Sent", "On Order")
- * 4. If PO exists: received_date IS NOT NULL (physically received)
+ * An item is READY TO PICK if:
+ * 1. status = "in_storage" (ready in warehouse) OR status = "in_vehicle" (already loaded)
+ * 2. Must NOT be at supplier location
+ * 3. If PO exists and has status, it must not be in draft/sent/on_order (must be received/delivered)
  * 
- * SAFETY RULE: If there is any ambiguity, default to NOT READY TO PICK
+ * IMPORTANT: Parts with status "in_storage" are considered READY even without other checks,
+ * as long as they're not still at the supplier location.
  */
 export function isPartAvailable(part) {
   if (!part) return false;
@@ -36,38 +36,25 @@ export function isPartAvailable(part) {
   // RULE 1: Status must be in usable state (physically available)
   const hasUsableStatus = 
     part.status === PART_STATUS.IN_STORAGE || 
-    part.status === PART_STATUS.IN_VEHICLE;
+    part.status === PART_STATUS.IN_VEHICLE ||
+    part.status === PART_STATUS.IN_LOADING_BAY; // Loading bay items are also ready to pick
   
   if (!hasUsableStatus) return false;
   
-  // RULE 2: Must NOT be at supplier
+  // RULE 2: Must NOT be at supplier location
   if (part.location === PART_LOCATION.SUPPLIER) return false;
   
-  // RULE 3: If linked to a PO, check PO status
-  if (part.purchase_order_id || part.po_number) {
-    // DISALLOWED PO statuses for picking
+  // RULE 3: If linked to a PO, check PO status only if we have that information
+  if (part.po_status) {
     const disallowedStatuses = ["draft", "sent", "on_order", "confirmed", "on order"];
-    
-    // If we have PO status info, check it
-    if (part.po_status) {
-      const normalizedPOStatus = part.po_status.toLowerCase().trim();
-      if (disallowedStatuses.includes(normalizedPOStatus)) {
-        return false;
-      }
-    }
-    
-    // RULE 4: If PO has received_date field, it must be set
-    // (null received_date means not physically received yet)
-    if ('received_date' in part && !part.received_date) {
+    const normalizedPOStatus = part.po_status.toLowerCase().trim();
+    if (disallowedStatuses.includes(normalizedPOStatus)) {
       return false;
     }
   }
   
-  // RULE 5: Special handling for supplier pickup
-  if (part.supplier_pickup_required === true && part.pickup_confirmed !== true) {
-    return false;
-  }
-  
+  // If part is in_storage and not at supplier, it's ready
+  // No need to check received_date - the status itself indicates it's been received
   return true;
 }
 
