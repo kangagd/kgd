@@ -130,13 +130,20 @@ export default function Projects() {
       return false;
     }
     
-    // CRITICAL: Part is only available if physically at warehouse or vehicle
-    const isAvailable = 
-      (part.status === 'in_storage' || part.status === 'in_vehicle') &&
-      part.location !== 'supplier';
+    // CRITICAL: Parts with these statuses are READY (not a shortage)
+    const readyStatuses = ['in_storage', 'in_loading_bay', 'in_vehicle', 'ready', 'received'];
+    if (readyStatuses.includes(part.status)) {
+      return false;
+    }
     
-    // If not available, it's a shortage
-    return !isAvailable;
+    // Check if received quantity is available
+    const receivedQty = Number(part.received_qty || part.quantity_received || 0);
+    if (receivedQty > 0) {
+      return false;
+    }
+    
+    // Everything else is a shortage
+    return true;
   }, []);
 
   const createProjectMutation = useMutation({
