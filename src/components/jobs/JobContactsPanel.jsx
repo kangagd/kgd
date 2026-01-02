@@ -35,17 +35,6 @@ export default function JobContactsPanel({ job }) {
     enabled: !!job?.id,
   });
 
-  // Fetch project contacts if job is linked to a project
-  const { data: projectContacts = [] } = useQuery({
-    queryKey: ["project-contacts", job.project_id],
-    queryFn: () =>
-      base44.entities.ProjectContact.filter({
-        project_id: job.project_id,
-        show_on_jobs: true,
-      }),
-    enabled: !!job?.project_id,
-  });
-
   const createContactMutation = useMutation({
     mutationFn: async () => {
       if (!job?.id) return;
@@ -146,59 +135,13 @@ export default function JobContactsPanel({ job }) {
 
       {jobContactsLoading ? (
         <p className="text-xs text-gray-500">Loading contacts…</p>
-      ) : !jobContacts?.length && !projectContacts?.length ? (
+      ) : !jobContacts?.length ? (
         <p className="text-xs text-gray-500 mb-3 italic">
           No additional contacts yet. Add owners, builders, tenants or strata managers here.
         </p>
       ) : (
-        <div className="space-y-3 mb-4">
-          {/* Project Contacts Section */}
-          {projectContacts?.length > 0 && (
-            <div>
-              <div className="text-[10px] font-semibold text-blue-600 uppercase tracking-wide mb-2">
-                From Project
-              </div>
-              <div className="space-y-2">
-                {projectContacts.map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/30 px-3 py-2 text-xs"
-                  >
-                    <div className="space-y-1">
-                      <div className="font-medium text-gray-900 flex items-center gap-2">
-                        {c.name || "Unnamed contact"}
-                        {c.role && (
-                          <span className="rounded-md bg-blue-100 border border-blue-200 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                            {c.role}
-                          </span>
-                        )}
-                        {c.is_primary && (
-                          <span className="rounded-md bg-[#FAE008]/30 border border-[#FAE008]/40 px-1.5 py-0.5 text-[10px] font-medium text-[#854D0E]">
-                            Primary
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-gray-500 flex items-center gap-2">
-                        {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {c.email}</span>}
-                        {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.phone}</span>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Job-Specific Contacts Section */}
-          {jobContacts?.length > 0 && (
-            <div>
-              {projectContacts?.length > 0 && (
-                <div className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                  Job-Specific
-                </div>
-              )}
-              <div className="space-y-2">
-                {jobContacts.map((c) => (
+        <div className="space-y-2 mb-4">
+          {jobContacts.map((c) => (
             <div
               key={c.id}
               className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
@@ -236,10 +179,7 @@ export default function JobContactsPanel({ job }) {
                 </Button>
               </div>
             </div>
-                ))}
-              </div>
-            </div>
-          )}
+          ))}
         </div>
       )}
 
