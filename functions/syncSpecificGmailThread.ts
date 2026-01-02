@@ -1,0 +1,119 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (!user?.gmail_access_token) {
+      return Response.json({ error: 'Gmail not connected' }, { status: 400 });
+    }
+
+    const { gmail_thread_id } = await req.json();
+
+    if (!gmail_thread_id) {
+      return Response.json({ error: 'Thread ID required' }, { status: 400 });
+    }
+
+    // Check if already synced
+    const existing = await base44.entities.EmailThread.filter({ gmail_thread_id });
+    if (existing.length > 0) {
+      return Response.json({ thread_id: existing[0].id, already_synced: true });
+    }
+
+    // Fetch thread from Gmail
+    const threadUrl = `https://gmail.googleapis.com/gmail/v1/users/me/threads/${gmail_thread_id}`;
+    const response = await fetch(threadUrl, {
+      headers: {
+        'Authorization': `Bearer ${user.gmail_access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      return Response.json({ error: `Gmail API error: ${error}` }, { status: response.status });
+    }
+
+    const threadData = await response.json();
+    const messages = threadData.messages || [];
+
+    if (messages.length === 0) {
+      return Response.json({ error: 'No messages found in thread' }, { status: 404 });
+    }
+
+    // Get thread-level info from first message
+    const firstMsg = messages[0];
+    const headers = firstMsg.payload?.headers || [];
+    const subject = headers.find(h => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
+    const from = headers.find(h => h.name.toLowerCase() === 'from')?.value || '';
+    const fromMatch = from.match(/<(.+?)>/);
+    const fromAddress = fromMatch ? fromMatch[1] : from;
+    const toHeader = headers.find(h => h.name.toLowerCase() === 'to')?.value || '';
+    const toAddresses = toHeader.split(',').map(addr => {
+      const match = addr.trim().match(/<(.+?)>/);
+      return match ? match[1] : addr.trim();
+    }).filter(Boolean);
+
+    // Create EmailThread
+    const thread = await base44.asServiceRole.entities.EmailThread.create({
+      subject,
+      gmail_thread_id,
+      last_message_snippet: firstMsg.snippet || '',
+      last_message_date: new Date(parseInt(firstMsg.internalDate)).toISOString(),
+      from_address: fromAddress,
+      to_addresses: toAddresses,
+      status: 'Open',
+      priority: 'Normal',
+      message_count: messages.length,
+      is_read: false
+    });
+
+    // Create EmailMessage records
+    for (const msg of messages) {
+      const msgHeaders = msg.payload?.headers || [];
+      const msgFrom = msgHeaders.find(h => h.name.toLowerCase() === 'from')?.value || '';
+      const msgFromMatch = msgFrom.match(/<(.+?)>/);
+      const msgFromAddress = msgFromMatch ? msgFromMatch[1] : msgFrom;
+      const msgTo = msgHeaders.find(h => h.name.toLowerCase() === 'to')?.value || '';
+      const msgToAddresses = msgTo.split(',').map(addr => {
+        const match = addr.trim().match(/<(.+?)>/);
+        return match ? match[1] : addr.trim();
+      }).filter(Boolean);
+
+      const sentDate = new Date(parseInt(msg.internalDate)).toISOString();
+
+      // Extract body
+      let bodyText = '';
+      let bodyHtml = '';
+      
+      if (msg.payload?.body?.data) {
+        bodyText = atob(msg.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+      } else if (msg.payload?.parts) {
+        for (const part of msg.payload.parts) {
+          if (part.mimeType === 'text/plain' && part.body?.data) {
+            bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+          } else if (part.mimeType === 'text/html' && part.body?.data) {
+            bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+          }
+        }
+      }
+
+      await base44.asServiceRole.entities.EmailMessage.create({
+        thread_id: thread.id,
+        gmail_message_id: msg.id,
+        from_address: msgFromAddress,
+        from_name: msgFrom.replace(/<.+?>/, '').trim() || msgFromAddress,
+        to_addresses: msgToAddresses,
+        sent_at: sentDate,
+        subject,
+        body_text: bodyText,
+        body_html: bodyHtml,
+        is_outbound: msgFromAddress.toLowerCase() === (user.gmail_email || user.email).toLowerCase()
+      });
+    }
+
+    return Response.json({ thread_id: thread.id, synced: true });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});

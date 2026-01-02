@@ -23,9 +23,10 @@ import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal
 import GmailConnect from "../components/inbox/GmailConnect";
 import AdvancedSearch from "../components/inbox/AdvancedSearch";
 import EmailComposer from "../components/inbox/EmailComposer";
+import GmailHistorySearch from "../components/inbox/GmailHistorySearch";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { FileEdit } from "lucide-react";
+import { FileEdit, History } from "lucide-react";
 import { createPageUrl } from "@/utils";
 
 export default function Inbox() {
@@ -62,6 +63,7 @@ export default function Inbox() {
   const sidebarRef = useRef(null);
   const [showComposer, setShowComposer] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
+  const [showHistorySearch, setShowHistorySearch] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -524,6 +526,16 @@ export default function Inbox() {
                 Resync Attachments
               </Button>
               <Button
+                onClick={() => setShowHistorySearch(true)}
+                size="sm"
+                variant="outline"
+                className="h-9"
+                title="Search Gmail history"
+              >
+                <History className="w-4 h-4 mr-1" />
+                Search History
+              </Button>
+              <Button
                 onClick={() => setShowComposer(true)}
                 size="sm"
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
@@ -836,6 +848,12 @@ export default function Inbox() {
           </div>
         </div>
       )}
+
+      {/* Gmail History Search Modal */}
+      <GmailHistorySearch 
+        open={showHistorySearch}
+        onClose={() => setShowHistorySearch(false)}
+      />
       </div>
       );
 }
