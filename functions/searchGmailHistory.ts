@@ -5,7 +5,14 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user?.gmail_access_token) {
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get Gmail access token via connector
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
+    
+    if (!accessToken) {
       return Response.json({ error: 'Gmail not connected' }, { status: 400 });
     }
 
@@ -21,7 +28,7 @@ Deno.serve(async (req) => {
     
     const response = await fetch(searchUrl, {
       headers: {
-        'Authorization': `Bearer ${user.gmail_access_token}`
+        'Authorization': `Bearer ${accessToken}`
       }
     });
 
@@ -44,7 +51,7 @@ Deno.serve(async (req) => {
       const msgUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`;
       const msgResponse = await fetch(msgUrl, {
         headers: {
-          'Authorization': `Bearer ${user.gmail_access_token}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
 
