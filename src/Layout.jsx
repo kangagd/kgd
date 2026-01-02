@@ -180,14 +180,12 @@ export default function Layout({ children, currentPageName }) {
       }
       try {
         // Fetch check-ins for user
-        const checkIns = await base44.entities.CheckInOut.filter({ 
-            technician_email: user.email 
-        });
+        const checkIns = await base44.entities.CheckInOut.list();
         
         if (isCancelled) return;
 
-        // Find active one (no check_out_time)
-        const active = checkIns.find(c => !c.check_out_time);
+        // Find active one for this user (no check_out_time)
+        const active = checkIns.find(c => !c.check_out_time && c.technician_email === user.email);
         
         if (active) {
             // Fetch job details
@@ -209,8 +207,8 @@ export default function Layout({ children, currentPageName }) {
 
     if (user) {
       fetchActiveCheckIn();
-      // Poll every minute
-      const interval = setInterval(fetchActiveCheckIn, 60000);
+      // Poll every 30 seconds for more responsive updates
+      const interval = setInterval(fetchActiveCheckIn, 30000);
       return () => {
         isCancelled = true;
         clearInterval(interval);
