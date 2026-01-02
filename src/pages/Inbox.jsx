@@ -209,19 +209,6 @@ export default function Inbox() {
     // Skip deleted threads
     if (thread.is_deleted) return false;
     
-    // Filter out automatic replies sent by admin@kangaroogd.com.au
-    const adminEmail = 'admin@kangaroogd.com.au';
-    const userEmail = user?.gmail_email || user?.email;
-    
-    // Check if this is an outbound thread from admin
-    if (userEmail?.toLowerCase() === adminEmail.toLowerCase()) {
-      // Get messages for this thread to check if all are outbound from admin
-      const threadMessages = messages.filter(m => m.thread_id === thread.id);
-      const isAdminOutbound = thread.from_address?.toLowerCase() === adminEmail.toLowerCase() &&
-                              (threadMessages.length === 0 || threadMessages.every(m => m.is_outbound));
-      
-      if (isAdminOutbound) return false;
-    }
     // Text search
     let matchesSearch = true;
     if (debouncedSearchFilters.searchText) {

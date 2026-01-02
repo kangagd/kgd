@@ -16,6 +16,7 @@ import Organisations from './pages/Organisations';
 import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
 import Photos from './pages/Photos';
 import PriceList from './pages/PriceList';
+import Projects from './pages/Projects';
 import PurchaseOrders from './pages/PurchaseOrders';
 import Reports from './pages/Reports';
 import RoleSettings from './pages/RoleSettings';
@@ -27,7 +28,6 @@ import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
-import Projects from './pages/Projects';
 import __Layout from './Layout.jsx';
 
 
@@ -50,6 +50,7 @@ export const PAGES = {
     "PartsHardwareAdmin": PartsHardwareAdmin,
     "Photos": Photos,
     "PriceList": PriceList,
+    "Projects": Projects,
     "PurchaseOrders": PurchaseOrders,
     "Reports": Reports,
     "RoleSettings": RoleSettings,
@@ -61,7 +62,6 @@ export const PAGES = {
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
-    "Projects": Projects,
 }
 
 export const pagesConfig = {
