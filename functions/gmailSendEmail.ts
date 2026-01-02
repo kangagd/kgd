@@ -35,7 +35,7 @@ async function refreshTokenIfNeeded(base44, user) {
       throw new Error(`Token refresh failed: ${tokens.error_description || tokens.error || 'Unknown error'}`);
     }
     
-    await base44.asServiceRole.entities.User.update(user.id, {
+    await base44.auth.updateMe({
       gmail_access_token: tokens.access_token,
       gmail_token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString()
     });
