@@ -76,9 +76,11 @@ function isPartReady(part) {
   const normalizedLocation = normalizeStatus(part.location);
   const receivedQty = Number(part.received_qty || part.quantity_received || 0);
   
-  // CRITICAL: Parts with in_storage status are READY regardless of other factors
-  // (as long as they're not at supplier location)
-  if (normalizedStatus === 'in_storage' && normalizedLocation !== 'supplier') {
+  // CRITICAL: Parts with in_storage, in_loading_bay, or in_vehicle status are READY
+  // These statuses inherently mean the part is physically available (not at supplier)
+  if (normalizedStatus === 'in_storage' || 
+      normalizedStatus === 'in_loading_bay' || 
+      normalizedStatus === 'in_vehicle') {
     return true;
   }
   
@@ -87,8 +89,8 @@ function isPartReady(part) {
     return true;
   }
   
-  // Check location whitelist
-  if (normalizedLocation && READY_LOCATIONS.has(normalizedLocation)) {
+  // Check location whitelist (but only if status is not already conclusive)
+  if (normalizedLocation && normalizedLocation !== 'supplier' && READY_LOCATIONS.has(normalizedLocation)) {
     return true;
   }
   
