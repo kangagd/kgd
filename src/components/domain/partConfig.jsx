@@ -115,9 +115,69 @@ export const PICKABLE_STATUSES = new Set([
 
 /**
  * Get normalized part status (always use this for status checks)
+ * CRITICAL: Promotes part status based on linked PO status
  */
 export function getNormalizedPartStatus(part) {
-  return normaliseLegacyPartStatus(part?.status, part);
+  if (!part) return PART_STATUS.PENDING;
+  
+  // First normalize the part's own status
+  let status = normaliseLegacyPartStatus(part.status, part);
+  
+  // If part is already in a terminal/advanced state, don't downgrade
+  if (status === PART_STATUS.IN_STORAGE || 
+      status === PART_STATUS.IN_VEHICLE || 
+      status === PART_STATUS.INSTALLED) {
+    return status;
+  }
+  
+  // Promote based on linked PO status if available
+  const poStatus = part.po_status || part.purchase_order_status;
+  if (poStatus) {
+    const normalizedPoStatus = poStatus.toLowerCase().trim().replace(/\s+/g, '_');
+    
+    // Map PO status to Part status (promotion only)
+    switch (normalizedPoStatus) {
+      case 'in_storage':
+      case 'instorage':
+        return PART_STATUS.IN_STORAGE;
+      
+      case 'in_vehicle':
+      case 'invehicle':
+        return PART_STATUS.IN_VEHICLE;
+      
+      case 'installed':
+        return PART_STATUS.INSTALLED;
+      
+      case 'in_loading_bay':
+      case 'inloadingbay':
+      case 'received':
+      case 'delivered':
+        // Only promote if part isn't already better positioned
+        if (status === PART_STATUS.PENDING || status === PART_STATUS.ON_ORDER || status === PART_STATUS.IN_TRANSIT) {
+          return PART_STATUS.IN_LOADING_BAY;
+        }
+        break;
+      
+      case 'in_transit':
+      case 'intransit':
+        // Only promote if part is still pending/ordered
+        if (status === PART_STATUS.PENDING || status === PART_STATUS.ON_ORDER) {
+          return PART_STATUS.IN_TRANSIT;
+        }
+        break;
+      
+      case 'on_order':
+      case 'onorder':
+      case 'sent':
+        // Only promote from pending
+        if (status === PART_STATUS.PENDING) {
+          return PART_STATUS.ON_ORDER;
+        }
+        break;
+    }
+  }
+  
+  return status;
 }
 
 /**

@@ -7,6 +7,7 @@
 
 import { normalizeStatus } from './statusRegistry';
 import { getPoEta, safeParseDate } from './schemaAdapters';
+import { getNormalizedPartStatus, PART_STATUS } from './partConfig';
 
 // Whitelist of statuses that indicate a part is READY
 const READY_STATUSES = new Set([
@@ -69,34 +70,22 @@ const CLOSED_PO_STATUSES = new Set([
 ]);
 
 /**
- * Determine if a part is READY based on status, location, and received quantity
+ * Determine if a part is READY based on normalized status (which includes PO promotion)
  */
 function isPartReady(part) {
-  // Handle potential field name variations (status or part_status)
-  const statusValue = part.status || part.part_status || '';
-  const normalizedStatus = normalizeStatus(statusValue);
-  const normalizedLocation = normalizeStatus(part.location);
-  const receivedQty = Number(part.received_qty || part.quantity_received || 0);
+  // Use the normalized status which includes PO status promotion
+  const status = getNormalizedPartStatus(part);
   
-  // CRITICAL: Parts with in_storage, in_loading_bay, or in_vehicle status are READY
-  // These statuses inherently mean the part is physically available (not at supplier)
-  if (normalizedStatus === 'in_storage' || 
-      normalizedStatus === 'in_loading_bay' || 
-      normalizedStatus === 'in_vehicle') {
-    return true;
-  }
-  
-  // Check status whitelist
-  if (READY_STATUSES.has(normalizedStatus)) {
-    return true;
-  }
-  
-  // Check location whitelist (but only if status is not already conclusive)
-  if (normalizedLocation && normalizedLocation !== 'supplier' && READY_LOCATIONS.has(normalizedLocation)) {
+  // CRITICAL: Parts with these statuses are READY
+  if (status === PART_STATUS.IN_STORAGE || 
+      status === PART_STATUS.IN_LOADING_BAY || 
+      status === PART_STATUS.IN_VEHICLE ||
+      status === PART_STATUS.INSTALLED) {
     return true;
   }
   
   // Check received quantity
+  const receivedQty = Number(part.received_qty || part.quantity_received || 0);
   if (receivedQty > 0) {
     return true;
   }
@@ -105,15 +94,15 @@ function isPartReady(part) {
 }
 
 /**
- * Determine if a part is ORDERED based on status and PO linkage
+ * Determine if a part is ORDERED based on normalized status (which includes PO promotion)
  */
 function isPartOrdered(part, purchaseOrders) {
-  // Handle potential field name variations (status or part_status)
-  const statusValue = part.status || part.part_status || '';
-  const normalizedStatus = normalizeStatus(statusValue);
+  // Use the normalized status which includes PO status promotion
+  const status = getNormalizedPartStatus(part);
   
-  // Check status whitelist
-  if (ORDERED_STATUSES.has(normalizedStatus)) {
+  // Check if status indicates ordered state
+  if (status === PART_STATUS.ON_ORDER || 
+      status === PART_STATUS.IN_TRANSIT) {
     return true;
   }
   
@@ -127,19 +116,6 @@ function isPartOrdered(part, purchaseOrders) {
   
   if (hasPoLink) {
     return true;
-  }
-  
-  // Check if matched to an open PO
-  if (purchaseOrders && purchaseOrders.length > 0) {
-    const openPOs = purchaseOrders.filter(po => {
-      const poStatus = normalizeStatus(po.status);
-      return !CLOSED_PO_STATUSES.has(poStatus);
-    });
-    
-    // If part has supplier_id matching an open PO
-    if (part.supplier_id && openPOs.some(po => po.supplier_id === part.supplier_id)) {
-      return true;
-    }
   }
   
   return false;

@@ -25,6 +25,17 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
     enabled: !!project.id
   });
 
+  // Enrich parts with PO status for accurate status derivation
+  const enrichedParts = useMemo(() => {
+    const poById = Object.fromEntries(purchaseOrders.map(po => [po.id, po]));
+    return (parts || []).map(p => ({
+      ...p,
+      po_status: p.po_status || (p.purchase_order_id ? poById[p.purchase_order_id]?.status : null),
+      po_eta: p.po_eta || (p.purchase_order_id ? poById[p.purchase_order_id]?.eta : null),
+      po_received_date: p.po_received_date || (p.purchase_order_id ? poById[p.purchase_order_id]?.received_date : null),
+    }));
+  }, [parts, purchaseOrders]);
+
   const { data: logisticsJobs = [] } = useQuery({
     queryKey: ['projectLogisticsJobs', project.id],
     queryFn: async () => {
@@ -82,14 +93,14 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
     "Cancelled": "bg-red-100 text-red-700"
   };
 
-  // Compute parts status using the mapping utility
+  // Compute parts status using the mapping utility with enriched parts
   const partsStatusMetrics = useMemo(() => {
     return computePartsStatus({
-      parts,
+      parts: enrichedParts,
       purchaseOrders,
       logisticsJobs
     });
-  }, [parts, purchaseOrders, logisticsJobs]);
+  }, [enrichedParts, purchaseOrders, logisticsJobs]);
 
   const { 
     requiredCount, 
@@ -185,7 +196,7 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
         <CardContent>
           <ProjectPartsPanel 
             project={project} 
-            parts={parts} 
+            parts={enrichedParts} 
             inventoryByItem={inventoryByItem} 
             onAddPart={() => window.triggerAddPart?.()}
             purchaseOrders={purchaseOrders}
