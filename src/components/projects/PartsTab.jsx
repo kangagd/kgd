@@ -28,12 +28,15 @@ export default function PartsTab({ project, parts, inventoryByItem }) {
   // Enrich parts with PO status for accurate status derivation
   const enrichedParts = useMemo(() => {
     const poById = Object.fromEntries(purchaseOrders.map(po => [po.id, po]));
-    return (parts || []).map(p => ({
-      ...p,
-      po_status: p.po_status || (p.purchase_order_id ? poById[p.purchase_order_id]?.status : null),
-      po_eta: p.po_eta || (p.purchase_order_id ? poById[p.purchase_order_id]?.eta : null),
-      po_received_date: p.po_received_date || (p.purchase_order_id ? poById[p.purchase_order_id]?.received_date : null),
-    }));
+    return (parts || []).map(p => {
+      const linkedPO = p.purchase_order_id ? poById[p.purchase_order_id] : null;
+      return {
+        ...p,
+        po_status: p.po_status || linkedPO?.status || null,
+        po_eta: p.po_eta || linkedPO?.eta || null,
+        po_received_date: p.po_received_date || linkedPO?.received_date || null,
+      };
+    });
   }, [parts, purchaseOrders]);
 
   const { data: logisticsJobs = [] } = useQuery({

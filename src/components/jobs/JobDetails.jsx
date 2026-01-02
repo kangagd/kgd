@@ -282,10 +282,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   // Enrich parts with PO status for accurate status derivation
   const enrichedProjectParts = React.useMemo(() => {
     const poById = Object.fromEntries(projectPurchaseOrders.map(po => [po.id, po]));
-    return projectParts.map(p => ({
-      ...p,
-      po_status: p.po_status || (p.purchase_order_id ? poById[p.purchase_order_id]?.status : null),
-    }));
+    return projectParts.map(p => {
+      const linkedPO = p.purchase_order_id ? poById[p.purchase_order_id] : null;
+      return {
+        ...p,
+        po_status: p.po_status || linkedPO?.status || null,
+      };
+    });
   }, [projectParts, projectPurchaseOrders]);
 
   // Fetch Project Trade Requirements
