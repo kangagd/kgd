@@ -147,11 +147,20 @@ export default function EmailDetailView({
   };
 
   const handleEmailSent = async () => {
-    // Wait a moment for the backend to finish
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // Invalidate and refetch
-    await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
+    // Wait a moment for the backend to finish saving
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Invalidate all related queries
+    await queryClient.invalidateQueries({ queryKey: ['emailMessages'] });
+    await queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    
+    // Force refetch
     await refetch();
+    
+    // Also update parent if callback exists
+    if (onThreadUpdate) {
+      onThreadUpdate();
+    }
   };
 
   const handlePriorityChange = async (newPriority) => {
