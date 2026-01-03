@@ -113,6 +113,45 @@ export default function Schedule() {
     },
   });
 
+  // Expand jobs with scheduled_visits into separate entries for the schedule
+  const expandedJobs = useMemo(() => {
+    const expanded = [];
+    
+    allJobs.forEach(job => {
+      // Add the primary visit (Visit 1)
+      if (job.scheduled_date) {
+        expanded.push({
+          ...job,
+          _isExpandedVisit: false,
+          _visitIndex: 0,
+          _visitId: null
+        });
+      }
+      
+      // Add additional visits
+      if (job.scheduled_visits && Array.isArray(job.scheduled_visits)) {
+        job.scheduled_visits.forEach((visit, index) => {
+          if (visit.date) {
+            expanded.push({
+              ...job,
+              scheduled_date: visit.date,
+              scheduled_time: visit.time || job.scheduled_time,
+              expected_duration: visit.duration || job.expected_duration,
+              assigned_to: visit.assigned_to || job.assigned_to,
+              assigned_to_name: visit.assigned_to_name || job.assigned_to_name,
+              _isExpandedVisit: true,
+              _visitIndex: index + 1,
+              _visitId: visit.id,
+              _originalVisit: visit
+            });
+          }
+        });
+      }
+    });
+    
+    return expanded;
+  }, [allJobs]);
+
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
@@ -151,13 +190,13 @@ export default function Schedule() {
     return map;
   }, [technicians]);
 
-  const { checkConflicts } = useScheduleConflicts(allJobs, leaves, closedDays);
+  const { checkConflicts } = useScheduleConflicts(expandedJobs, leaves, closedDays);
 
   // Filter jobs by scope (Mine vs All)
   // Memoized to avoid re-filtering on every render
   const scopedJobs = useMemo(() => {
-    if (!allJobs) return [];
-    if (viewScope === "all") return allJobs;
+    if (!expandedJobs) return [];
+    if (viewScope === "all") return expandedJobs;
 
     // Determine target email
     let targetEmail = null;
@@ -173,7 +212,7 @@ export default function Schedule() {
 
     const targetEmailLower = targetEmail.toLowerCase().trim();
 
-    return allJobs.filter((job) => {
+    return expandedJobs.filter((job) => {
       if (!job) return false;
       const assigned = job.assigned_to; 
       
@@ -182,7 +221,7 @@ export default function Schedule() {
       }
       return assigned?.toLowerCase().trim() === targetEmailLower;
     });
-  }, [allJobs, viewScope, user, selectedTechnicianEmail]);
+  }, [expandedJobs, viewScope, user, selectedTechnicianEmail]);
 
   const todaysJobs = React.useMemo(() => {
     const today = new Date();
@@ -414,7 +453,7 @@ export default function Schedule() {
     if (!result.destination) return;
     
     const { draggableId, destination } = result;
-    const job = allJobs.find(j => j.id === draggableId);
+    const job = expandedJobs.find(j => j.id === draggableId || `${j.id}-visit-${j._visitIndex}` === draggableId);
     if (!job) return;
     
     // Parse destination ID to get new date/time
@@ -649,27 +688,31 @@ export default function Schedule() {
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {dayJobs.map((job, index) => (
-                        <Draggable key={job.id} draggableId={job.id} index={index}>
-                          {(dragProvided, dragSnapshot) => (
-                            <div
-                              ref={dragProvided.innerRef}
-                              {...dragProvided.draggableProps}
-                              {...dragProvided.dragHandleProps}
-                            >
-                              <DraggableJobCard
-                                job={job}
-                                onClick={() => setModalJob(job)}
-                                onAddressClick={handleAddressClick}
-                                onProjectClick={handleProjectClick}
-                                isDragging={dragSnapshot.isDragging}
-                                techniciansLookup={techniciansLookup}
-                                hasActiveCheckIn={!!activeCheckInMap[job.id]}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
+                      {items.map(({ job, index }) => {
+                        const dragId = job._isExpandedVisit ? `${job.id}-visit-${job._visitIndex}` : job.id;
+                        return (
+                          <Draggable key={dragId} draggableId={dragId} index={index}>
+                            {(dragProvided, dragSnapshot) => (
+                              <div
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                {...dragProvided.dragHandleProps}
+                              >
+                                <DraggableJobCard
+                                  job={job}
+                                  onClick={() => setModalJob(job)}
+                                  onAddressClick={handleAddressClick}
+                                  onProjectClick={handleProjectClick}
+                                  isDragging={dragSnapshot.isDragging}
+                                  techniciansLookup={techniciansLookup}
+                                  hasActiveCheckIn={!!activeCheckInMap[job.id]}
+                                  visitLabel={job._isExpandedVisit ? `Visit ${job._visitIndex + 1}` : null}
+                                />
+                              </div>
+                            )}
+                          </Draggable>
+                        );
+                      })}
                     </div>
                   )}
                   {provided.placeholder}
@@ -762,39 +805,43 @@ export default function Schedule() {
 
                     {/* Jobs */}
                     <div className="space-y-1 overflow-y-auto max-h-[90px]">
-                      {dayJobs.map((job, jobIndex) => (
-                        <Draggable key={job.id} draggableId={job.id} index={jobIndex}>
-                          {(dragProvided, dragSnapshot) => (
-                            <div
-                              ref={dragProvided.innerRef}
-                              {...dragProvided.draggableProps}
-                              {...dragProvided.dragHandleProps}
-                              onClick={() => setModalJob(job)}
-                              className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all ${
-                                dragSnapshot.isDragging 
-                                  ? 'shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
-                                  : 'hover:opacity-80'
-                              }`}
-                              style={{
-                                backgroundColor: dragSnapshot.isDragging 
-                                  ? '#FAE008' 
-                                  : (jobTypeColorMap[job.job_type_id] ? `${jobTypeColorMap[job.job_type_id]}20` : '#F3F4F6'),
-                                borderLeft: `3px solid ${jobTypeColorMap[job.job_type_id] || '#6B7280'}`
-                              }}
-                            >
-                              <div className="font-medium text-[#111827] truncate flex items-center gap-1">
-                                {!!activeCheckInMap[job.id] && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                                )}
-                                {job.scheduled_time || ''} #{job.job_number}
+                      {dayJobs.map((job, jobIndex) => {
+                        const dragId = job._isExpandedVisit ? `${job.id}-visit-${job._visitIndex}` : job.id;
+                        return (
+                          <Draggable key={dragId} draggableId={dragId} index={jobIndex}>
+                            {(dragProvided, dragSnapshot) => (
+                              <div
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                {...dragProvided.dragHandleProps}
+                                onClick={() => setModalJob(job)}
+                                className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all ${
+                                  dragSnapshot.isDragging 
+                                    ? 'shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
+                                    : 'hover:opacity-80'
+                                }`}
+                                style={{
+                                  backgroundColor: dragSnapshot.isDragging 
+                                    ? '#FAE008' 
+                                    : (jobTypeColorMap[job.job_type_id] ? `${jobTypeColorMap[job.job_type_id]}20` : '#F3F4F6'),
+                                  borderLeft: `3px solid ${jobTypeColorMap[job.job_type_id] || '#6B7280'}`
+                                }}
+                              >
+                                <div className="font-medium text-[#111827] truncate flex items-center gap-1">
+                                  {!!activeCheckInMap[job.id] && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                  )}
+                                  {job.scheduled_time || ''} #{job.job_number}
+                                  {job._isExpandedVisit && <span className="text-[#6B7280]">(V{job._visitIndex + 1})</span>}
+                                </div>
+                                <div className="text-[#6B7280] truncate">
+                                  {job.customer_name}
+                                </div>
                               </div>
-                              <div className="text-[#6B7280] truncate">
-                                {job.customer_name}
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
+                            )}
+                          </Draggable>
+                        );
+                      })}
                     </div>
                     {provided.placeholder}
                   </div>
