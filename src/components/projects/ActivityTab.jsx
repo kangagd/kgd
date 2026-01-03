@@ -534,6 +534,11 @@ function EmailThreadViewerModal({
   const threadId = selectedActivity?.threadId;
   const [showAllMessages, setShowAllMessages] = useState(false);
   
+  // Reset showAllMessages when thread changes
+  useEffect(() => {
+    setShowAllMessages(false);
+  }, [threadId]);
+  
   // B) Dedicated query for the selected thread (more reliable than linkedThreads)
   const { data: threadById, isLoading: threadLoading } = useQuery({
     queryKey: ['emailThreadById', threadId],
