@@ -98,7 +98,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Gmail not connected. Please connect Gmail first.' }, { status: 401 });
     }
     
-    const { to, cc, bcc, subject, body, threadId, inReplyTo, references, attachments, projectId, jobId } = await req.json();
+    // UPDATED CONTRACT: Accept both base44_thread_id and gmail_thread_id
+    const { 
+      to, cc, bcc, subject, body, 
+      base44_thread_id, gmail_thread_id, 
+      inReplyTo, references, 
+      attachments, projectId, jobId 
+    } = await req.json();
     
     if (!to || !subject || !body) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -108,12 +114,11 @@ Deno.serve(async (req) => {
     
     const encodedMessage = createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, attachments);
     
-    const sendUrl = threadId 
-      ? `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`
-      : `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`;
+    // Use gmail_thread_id for Gmail API call if provided
+    const sendUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`;
     
     const sendBody = { raw: encodedMessage };
-    if (threadId) sendBody.threadId = threadId;
+    if (gmail_thread_id) sendBody.threadId = gmail_thread_id;
     
     const response = await fetch(sendUrl, {
       method: 'POST',
@@ -131,8 +136,8 @@ Deno.serve(async (req) => {
     
     const result = await response.json();
     
-    // C) Persist reply under the SAME EmailThread
-    let emailThreadId = threadId;
+    // C) Persist reply under the SAME EmailThread (use base44_thread_id)
+    let emailThreadId = base44_thread_id;
     
     if (!emailThreadId) {
       // Create new thread for this sent email
@@ -207,7 +212,7 @@ Deno.serve(async (req) => {
     
     if (finalProjectId) {
       // C) Update activity type based on whether this is a reply
-      const activityType = threadId ? 'Email Reply Sent' : 'Email Sent';
+      const activityType = base44_thread_id ? 'Email Reply Sent' : 'Email Sent';
       await updateProjectActivity(base44, finalProjectId, activityType);
       
       // Update project last contact timestamps
