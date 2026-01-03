@@ -324,6 +324,9 @@ export default function Inbox() {
         toast.success(`Saved ${res.data.saved_count} attachments to project`);
       }
 
+      // Mark thread as closed
+      await base44.entities.EmailThread.update(selectedThread.id, { status: 'Closed' });
+
       queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
       queryClient.invalidateQueries({ queryKey: ['emailThread', selectedThread.id] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
@@ -338,7 +341,7 @@ export default function Inbox() {
   const handleLinkJob = useCallback((jobId, jobNumber) => {
     updateThreadMutation.mutate({
       id: selectedThread.id,
-      data: { linked_job_id: jobId, linked_job_number: jobNumber }
+      data: { linked_job_id: jobId, linked_job_number: jobNumber, status: 'Closed' }
     }, {
       onSuccess: () => {
         // Auto-save attachments
