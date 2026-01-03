@@ -159,16 +159,23 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
     return html;
   }, [displayMessage.body_html, inlineImageUrls]);
 
-  // Format email content with proper decoding and structure
+  // Format email content - preserve original HTML when available
   const formattedEmailContent = useMemo(() => {
-    const content = processedBodyHtml || displayMessage.body_text;
-    if (!content) return null;
-
-    return processEmailForDisplay(content, {
-      isHtml: !!processedBodyHtml,
-      includeSignature: true,
-      collapseQuotes: true
-    });
+    // If we have HTML content, use it directly (already sanitized)
+    if (processedBodyHtml) {
+      return { html: processedBodyHtml, hasSignature: false, hasQuotes: false };
+    }
+    
+    // For plain text, convert to formatted HTML
+    if (displayMessage.body_text) {
+      return processEmailForDisplay(displayMessage.body_text, {
+        isHtml: false,
+        includeSignature: true,
+        collapseQuotes: true
+      });
+    }
+    
+    return null;
   }, [processedBodyHtml, displayMessage.body_text]);
 
 
@@ -297,18 +304,17 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             )}
             {formattedEmailContent ? (
               <div 
-                className="gmail-email-body"
+                className="gmail-email-body prose prose-sm max-w-none"
                 style={{
                   fontSize: '14px',
-                  lineHeight: '1.5',
+                  lineHeight: '1.6',
                   color: '#111827',
-                  wordWrap: 'break-word',
-                  overflowWrap: 'anywhere'
+                  wordBreak: 'break-word'
                 }}
-                dangerouslySetInnerHTML={{ __html: sanitizeForDisplay(formattedEmailContent.html) }} 
+                dangerouslySetInnerHTML={{ __html: formattedEmailContent.html }} 
               />
             ) : (
-              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
+              <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words">
                 {displayMessage.body_text || displayMessage.subject || '(No content)'}
               </div>
             )}
@@ -425,18 +431,17 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             <div className="mb-5">
               {formattedEmailContent ? (
                 <div 
-                  className="gmail-email-body"
+                  className="gmail-email-body prose prose-sm max-w-none"
                   style={{
                     fontSize: '14px',
-                    lineHeight: '1.5',
+                    lineHeight: '1.6',
                     color: '#111827',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'anywhere'
+                    wordBreak: 'break-word'
                   }}
-                  dangerouslySetInnerHTML={{ __html: sanitizeForDisplay(formattedEmailContent.html) }} 
+                  dangerouslySetInnerHTML={{ __html: formattedEmailContent.html }} 
                 />
               ) : (
-                <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
+                <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words">
                   {displayMessage.body_text || displayMessage.subject || '(No content)'}
                 </div>
               )}
