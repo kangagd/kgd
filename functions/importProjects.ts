@@ -1,0 +1,98 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (user.role !== 'admin' && user.role !== 'manager') {
+      return Response.json({ error: 'Forbidden: Admin or Manager access required' }, { status: 403 });
+    }
+
+    const { action, file_url, records_to_import } = await req.json();
+
+    if (action === 'parse_csv') {
+      // Parse CSV and return preview
+      const response = await fetch(file_url);
+      const csvText = await response.text();
+      
+      const lines = csvText.split('\n').filter(line => line.trim());
+      if (lines.length === 0) {
+        return Response.json({ error: 'CSV file is empty' }, { status: 400 });
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      const rows = lines.slice(1, 6).map(line => {
+        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        const row = {};
+        headers.forEach((header, idx) => {
+          row[header] = values[idx] || '';
+        });
+        return row;
+      });
+
+      return Response.json({
+        success: true,
+        headers,
+        preview_rows: rows,
+        total_rows: lines.length - 1
+      });
+    }
+
+    if (action === 'import') {
+      const results = {
+        created: 0,
+        skipped: 0,
+        errors: []
+      };
+
+      for (const record of records_to_import) {
+        try {
+          // Validation: Skip if title is blank
+          const trimmedTitle = (record.title || '').trim();
+          if (!trimmedTitle) {
+            results.skipped++;
+            results.errors.push({
+              record: 'Row with blank title',
+              error: 'Skipped - title is required'
+            });
+            continue;
+          }
+
+          // Explicitly set duplicate detection flags to false/0 for imports
+          const projectData = {
+            ...record,
+            is_potential_duplicate: false,
+            duplicate_score: 0
+          };
+
+          // Create project without duplicate detection
+          await base44.asServiceRole.entities.Project.create(projectData);
+
+          results.created++;
+        } catch (error) {
+          results.errors.push({
+            record: record.title || record.project_number || 'Unknown',
+            error: error.message
+          });
+        }
+      }
+
+      return Response.json({
+        success: true,
+        results
+      });
+    }
+
+    return Response.json({ error: 'Invalid action' }, { status: 400 });
+  } catch (error) {
+    return Response.json({ 
+      error: error.message,
+      stack: error.stack
+    }, { status: 500 });
+  }
+});
