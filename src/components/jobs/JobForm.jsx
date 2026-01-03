@@ -193,7 +193,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     };
     const autoProduct = productMapping[project.project_type] || "";
 
-    // Populate form with all project data
+    // Populate form with all project data including files
     setFormData({
       job_number: null,
       project_id: projectId,
@@ -223,13 +223,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       expected_duration: null,
       status: JOB_STATUS.OPEN,
       outcome: "",
-      notes: "",
+      notes: project.notes || "",
       pricing_provided: "",
       additional_info: project.description || "",
       measurements: null,
       image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
-      quote_url: "",
-      invoice_url: "",
+      quote_url: project.quote_url || "",
+      invoice_url: project.invoice_url || "",
     });
   }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
