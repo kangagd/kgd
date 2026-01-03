@@ -78,6 +78,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const [newCustomerData, setNewCustomerData] = useState({ name: "", phone: "", email: "", address_full: "", address_street: "", address_suburb: "", address_state: "", address_postcode: "", address_country: "Australia", google_place_id: "", latitude: null, longitude: null });
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
   const [liveDuplicates, setLiveDuplicates] = useState([]);
+  const hasInitializedFromProject = React.useRef(false);
 
 
   const queryClient = useQueryClient();
@@ -168,10 +169,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   useEffect(() => {
     const projectId = preselectedProjectId || projectIdFromUrl;
-    if (!projectId || job || projects.length === 0) return;
+    if (!projectId || job || projects.length === 0 || hasInitializedFromProject.current) return;
     
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
+    
+    hasInitializedFromProject.current = true;
     
     const productMapping = {
       [PROJECT_TYPE.GARAGE_DOOR_INSTALL]: "Garage Door",
@@ -182,35 +185,42 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
     const autoProduct = productMapping[project.project_type] || "";
 
-    setFormData(prev => {
-      // Only update if not already populated to avoid overwriting user changes
-      if (prev.customer_id && prev.customer_id !== project.customer_id) return prev;
-      
-      return {
-        ...prev,
-        project_id: projectId,
-        project_name: project.title,
-        customer_id: project.customer_id,
-        customer_name: project.customer_name,
-        customer_phone: project.customer_phone || "",
-        customer_email: project.customer_email || "",
-        customer_type: project.customer_type || "",
-        address: project.address_full || project.address || "",
-        address_full: project.address_full || project.address || "",
-        address_street: project.address_street || "",
-        address_suburb: project.address_suburb || "",
-        address_state: project.address_state || "",
-        address_postcode: project.address_postcode || "",
-        address_country: project.address_country || "Australia",
-        google_place_id: project.google_place_id || "",
-        latitude: project.latitude || null,
-        longitude: project.longitude || null,
-        product: autoProduct,
-        additional_info: project.description || "",
-        image_urls: project.image_urls || [],
-        quote_url: project.quote_url || "",
-        invoice_url: project.invoice_url || ""
-      };
+    setFormData({
+      job_number: null,
+      project_id: projectId,
+      project_name: project.title,
+      customer_id: project.customer_id,
+      customer_name: project.customer_name,
+      customer_phone: project.customer_phone || "",
+      customer_email: project.customer_email || "",
+      customer_type: project.customer_type || "",
+      address: project.address_full || project.address || "",
+      address_full: project.address_full || project.address || "",
+      address_street: project.address_street || "",
+      address_suburb: project.address_suburb || "",
+      address_state: project.address_state || "",
+      address_postcode: project.address_postcode || "",
+      address_country: project.address_country || "Australia",
+      google_place_id: project.google_place_id || "",
+      latitude: project.latitude || null,
+      longitude: project.longitude || null,
+      product: autoProduct,
+      job_type_id: "",
+      job_type: "",
+      assigned_to: [],
+      assigned_to_name: [],
+      scheduled_date: "",
+      scheduled_time: "",
+      expected_duration: null,
+      status: JOB_STATUS.OPEN,
+      outcome: "",
+      notes: "",
+      pricing_provided: "",
+      additional_info: project.description || "",
+      measurements: null,
+      image_urls: project.image_urls || [],
+      quote_url: project.quote_url || "",
+      invoice_url: project.invoice_url || ""
     });
   }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
