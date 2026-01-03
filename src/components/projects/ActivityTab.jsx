@@ -40,12 +40,21 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Fetch email threads linked to this project
+  // EmailThread.project_id is the ONLY source of truth for email-project linking
   const { data: linkedThreads = [], refetch: refetchThreads } = useQuery({
     queryKey: ['projectEmailThreads', project.id],
     queryFn: async () => {
       const threads = await base44.entities.EmailThread.filter({ 
         project_id: project.id 
       }, '-last_message_date');
+      
+      // Defensive logging: verify all threads have project_id
+      threads.forEach(thread => {
+        if (!thread.project_id) {
+          console.warn('[ActivityTab] Email thread rendered without project_id link:', thread.id);
+        }
+      });
+      
       return threads;
     },
     enabled: !!project.id,
@@ -68,6 +77,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Fetch draft emails related to linked threads
+  // ONLY show drafts if their thread has a project_id link
   const { data: draftEmails = [] } = useQuery({
     queryKey: ['projectEmailDrafts', linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
@@ -77,14 +87,31 @@ export default function ActivityTab({ project, onComposeEmail }) {
         created_by: user.email 
       }, '-updated_date');
       const threadIds = linkedThreads.map(t => t.id);
-      return allDrafts.filter(d => d.thread_id && threadIds.includes(d.thread_id));
+      const linkedDrafts = allDrafts.filter(d => d.thread_id && threadIds.includes(d.thread_id));
+      
+      // Defensive logging: verify drafts are only for linked threads
+      linkedDrafts.forEach(draft => {
+        if (!threadIds.includes(draft.thread_id)) {
+          console.warn('[ActivityTab] Draft rendered for unlinked thread:', draft.id, draft.thread_id);
+        }
+      });
+      
+      return linkedDrafts;
     },
     enabled: linkedThreads.length > 0
   });
 
   // Link email thread mutation
+  // This sets EmailThread.project_id as the canonical link
   const linkEmailMutation = useMutation({
     mutationFn: async (threadId) => {
+      // Verify thread exists and doesn't already have a project_id
+      const thread = await base44.entities.EmailThread.get(threadId);
+      
+      if (thread.project_id && thread.project_id !== project.id) {
+        console.warn('[ActivityTab] Relinking thread from project', thread.project_id, 'to', project.id);
+      }
+      
       await base44.functions.invoke('linkEmailThreadToProject', {
         email_thread_id: threadId,
         project_id: project.id,
@@ -92,7 +119,9 @@ export default function ActivityTab({ project, onComposeEmail }) {
       });
     },
     onSuccess: async () => {
+      // Immediately refetch to ensure UI updates
       await refetchThreads();
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       setShowLinkModal(false);
       toast.success('Email thread linked');
@@ -103,16 +132,24 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Unlink email thread mutation
+  // This removes EmailThread.project_id, the canonical link
   const unlinkEmailMutation = useMutation({
     mutationFn: async (threadId) => {
+      console.log('[ActivityTab] Unlinking thread', threadId, 'from project', project.id);
+      
       await base44.entities.EmailThread.update(threadId, {
         project_id: null,
         project_number: null,
-        project_title: null
+        project_title: null,
+        linked_to_project_at: null,
+        linked_to_project_by: null
       });
     },
     onSuccess: async () => {
+      // Immediately refetch to ensure UI updates everywhere
       await refetchThreads();
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       toast.success('Email thread unlinked');
     },
     onError: (error) => {
@@ -124,9 +161,16 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const allActivities = React.useMemo(() => {
     const activities = [];
 
-    // Add email messages
+    // Add email messages - ONLY from threads with project_id set
     emailMessages.forEach(msg => {
       const thread = linkedThreads.find(t => t.id === msg.thread_id);
+      
+      // Defensive check: ensure thread has project_id
+      if (!thread || !thread.project_id) {
+        console.warn('[ActivityTab] Email message rendered without linked thread:', msg.id, msg.thread_id);
+        return;
+      }
+      
       activities.push({
         id: `email-${msg.id}`,
         type: 'email',
@@ -140,8 +184,15 @@ export default function ActivityTab({ project, onComposeEmail }) {
       });
     });
 
-    // Add draft emails
+    // Add draft emails - ONLY if their thread is linked
     draftEmails.forEach(draft => {
+      const threadIsLinked = linkedThreads.some(t => t.id === draft.thread_id);
+      
+      if (!threadIsLinked && draft.thread_id) {
+        console.warn('[ActivityTab] Draft rendered for unlinked thread:', draft.id, draft.thread_id);
+        return;
+      }
+      
       activities.push({
         id: `draft-${draft.id}`,
         type: 'draft',
