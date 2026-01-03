@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    // Fetch all customers and jobs
+    // Fetch all customers, jobs, and projects
     const customers = await base44.asServiceRole.entities.Customer.filter({
       deleted_at: { $exists: false }
     });
@@ -18,19 +18,25 @@ Deno.serve(async (req) => {
       deleted_at: { $exists: false }
     });
 
-    // Create a set of customer IDs that have jobs
-    const customerIdsWithJobs = new Set(jobs.map(job => job.customer_id).filter(Boolean));
+    const projects = await base44.asServiceRole.entities.Project.filter({
+      deleted_at: { $exists: false }
+    });
 
-    // Find customers without jobs
-    const customersWithoutJobs = customers.filter(customer => !customerIdsWithJobs.has(customer.id));
+    // Create a set of customer IDs that have jobs or projects
+    const customerIdsWithJobs = new Set(jobs.map(job => job.customer_id).filter(Boolean));
+    const customerIdsWithProjects = new Set(projects.map(project => project.customer_id).filter(Boolean));
+    const customerIdsWithActivity = new Set([...customerIdsWithJobs, ...customerIdsWithProjects]);
+
+    // Find customers without jobs or projects
+    const customersWithoutActivity = customers.filter(customer => !customerIdsWithActivity.has(customer.id));
 
     console.log(`Total customers: ${customers.length}`);
-    console.log(`Customers with jobs: ${customerIdsWithJobs.size}`);
-    console.log(`Customers without jobs: ${customersWithoutJobs.length}`);
+    console.log(`Customers with jobs or projects: ${customerIdsWithActivity.size}`);
+    console.log(`Customers without jobs or projects: ${customersWithoutActivity.length}`);
 
-    // Delete customers without jobs
+    // Delete customers without jobs or projects
     const deletedIds = [];
-    for (const customer of customersWithoutJobs) {
+    for (const customer of customersWithoutActivity) {
       try {
         await base44.asServiceRole.entities.Customer.delete(customer.id);
         deletedIds.push(customer.id);
@@ -42,11 +48,11 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      message: `Deleted ${deletedIds.length} customers without jobs`,
+      message: `Deleted ${deletedIds.length} customers without jobs or projects`,
       stats: {
         total_customers: customers.length,
-        customers_with_jobs: customerIdsWithJobs.size,
-        customers_without_jobs: customersWithoutJobs.length,
+        customers_with_activity: customerIdsWithActivity.size,
+        customers_without_activity: customersWithoutActivity.length,
         deleted: deletedIds.length
       }
     });
