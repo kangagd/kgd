@@ -31,7 +31,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                              sourceParam === 'purchase_order' || 
                              sourceParam === 'logistics_timeline';
 
-  const initialFormData = job || {
+  const [formData, setFormData] = useState(job || {
     job_number: null,
     project_id: "",
     project_name: "",
@@ -67,9 +67,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     image_urls: [],
     quote_url: "",
     invoice_url: "",
-  };
-  
-  const [formData, setFormData] = useState(initialFormData);
+  });
 
   const [isLogisticsJob, setIsLogisticsJob] = useState(isLogisticsContext);
   const [uploadingImages, setUploadingImages] = useState(false);
