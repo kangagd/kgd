@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { updateProjectActivity } from './updateProjectActivity.js';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
     try {
