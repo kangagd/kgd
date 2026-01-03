@@ -240,9 +240,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
         content: msg.body_text || msg.body_html,
         attachments: msg.attachments || [],
         isOutbound: msg.is_outbound,
-        threadId: msg.thread_id,
-        messageId: msg.id,
-        message: msg
+        threadId: msg.thread_id
       });
     });
 
@@ -272,8 +270,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
         toAddresses: draft.to_addresses || [],
         draftId: draft.id,
         threadId: draft.thread_id,
-        mode: draft.mode || 'compose',
-        draft: draft
+        mode: draft.mode || 'compose'
       });
     });
 
@@ -361,7 +358,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
                 Link Email
               </Button>
               <Button
-                onClick={() => onComposeEmail?.({ mode: 'compose' })}
+                onClick={() => onComposeEmail?.()}
                 size="sm"
                 variant="outline"
                 className="gap-2"
@@ -409,7 +406,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
                     if (activity.type === 'email') {
                       setSelectedActivity(activity);
                     } else if (activity.type === 'draft') {
-                      onComposeEmail?.(activity.draft);
+                      onComposeEmail?.(activity);
                     }
                   }}
                 >
