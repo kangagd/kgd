@@ -82,6 +82,29 @@ Deno.serve(async (req) => {
             }
           }
 
+          // Resolve customer_id if present, otherwise populate import_customer_name_raw
+          let customerData = {};
+          if (record.customer_id) {
+            try {
+              const customer = await base44.asServiceRole.entities.Customer.get(record.customer_id);
+              if (customer) {
+                customerData.customer_id = customer.id;
+                customerData.customer_name = customer.name;
+                customerData.customer_phone = customer.phone;
+                customerData.customer_email = customer.email;
+              } else {
+                // Customer ID provided but not found - store raw name
+                customerData.import_customer_name_raw = record.customer_name || record.customer_id;
+              }
+            } catch (e) {
+              // Customer ID provided but failed to resolve - store raw name
+              customerData.import_customer_name_raw = record.customer_name || record.customer_id;
+            }
+          } else if (record.customer_name) {
+            // No customer_id provided - store raw customer name
+            customerData.import_customer_name_raw = record.customer_name;
+          }
+
           // Resolve and cache organisation_name if organisation_id is present
           let organisationName = null;
           if (record.organisation_id) {
@@ -99,6 +122,7 @@ Deno.serve(async (req) => {
           // Preserve legacy fields verbatim without transformation
           const projectData = {
             ...record,
+            ...customerData,
             is_potential_duplicate: false,
             duplicate_score: 0,
             // Cache organisation_name for display
