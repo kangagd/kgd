@@ -10,7 +10,7 @@ import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import EmailMessageView from "../inbox/EmailMessageView";
-import LinkThreadModal from "../inbox/LinkThreadModal";
+import LinkEmailThreadModal from "./LinkEmailThreadModal";
 import {
   Dialog,
   DialogContent,
@@ -443,7 +443,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
         </DialogContent>
       </Dialog>
 
-      <LinkThreadModal
+      <LinkEmailThreadModal
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         projectId={project.id}
