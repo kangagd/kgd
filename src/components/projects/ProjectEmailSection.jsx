@@ -4,103 +4,51 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Link as LinkIcon, Plus, Send, RefreshCw, ExternalLink, Reply, Forward, FileEdit, Trash2 } from "lucide-react";
+import { Mail, Link as LinkIcon, Plus, RefreshCw, ExternalLink, Reply, Forward, FileEdit, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
 import EmailComposer from "../inbox/EmailComposer";
-import LinkThreadModal from "../inbox/LinkThreadModal";
-import GmailHistorySearch from "../inbox/GmailHistorySearch";
+import { Input } from "@/components/ui/input";
 
 export default function ProjectEmailSection({ project, onThreadLinked }) {
   const queryClient = useQueryClient();
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [composerMode, setComposerMode] = useState(null); // null | 'compose' | { type: 'reply', thread: any } | { type: 'forward', thread: any }
+  const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
   const [editingDraft, setEditingDraft] = useState(null);
-  
-  // Historical Search State
-  const [showHistorySearch, setShowHistorySearch] = useState(false);
-  const [showGmailHistoryModal, setShowGmailHistoryModal] = useState(false);
-  const [historySearchInput, setHistorySearchInput] = useState("");
-  const [isSearchingHistory, setIsSearchingHistory] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch ALL email threads linked to this project
+  // Fetch email threads linked to this project
   const { data: linkedThreads = [], isLoading: threadLoading, refetch: refetchThreads } = useQuery({
-    queryKey: ['projectEmailThreads', project.id, refreshKey],
+    queryKey: ['projectEmailThreads', project.id],
     queryFn: async () => {
-      // Fetch threads linked via linked_project_id
-      const linkedByProject = await base44.entities.EmailThread.filter({ 
-        linked_project_id: project.id 
-      });
-      
-      // Also fetch by source_email_thread_id if set
-      let sourceThread = null;
-      if (project.source_email_thread_id) {
-        try {
-          sourceThread = await base44.entities.EmailThread.get(project.source_email_thread_id);
-        } catch (e) {
-          console.warn('Source thread not found:', project.source_email_thread_id);
-        }
-      }
-      
-      // Combine and dedupe
-      const allThreads = [...linkedByProject];
-      if (sourceThread && !allThreads.find(t => t.id === sourceThread.id)) {
-        allThreads.push(sourceThread);
-      }
-      
-      return allThreads.sort((a, b) => 
-        new Date(b.last_message_date) - new Date(a.last_message_date)
-      );
+      const threads = await base44.entities.EmailThread.filter({ 
+        project_id: project.id 
+      }, '-last_message_date');
+      return threads;
     },
-    enabled: !!project.id,
-    staleTime: 0
+    enabled: !!project.id
   });
 
-  // Fetch messages for all linked threads - direct fetch, no caching issues
+  // Fetch messages for linked threads
   const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
-    queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id).join(','), refreshKey],
+    queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
       if (linkedThreads.length === 0) return [];
-      
-      // Fetch messages for each thread directly
       const allMessages = [];
       for (const thread of linkedThreads) {
         const threadMessages = await base44.entities.EmailMessage.filter({ 
           thread_id: thread.id 
-        });
+        }, '-sent_at');
         allMessages.push(...threadMessages);
       }
-      
       return allMessages;
     },
-    enabled: linkedThreads.length > 0,
-    staleTime: 0,
-    cacheTime: 0
+    enabled: linkedThreads.length > 0
   });
 
-  // Fetch Saved Historical Emails
-  const { data: savedEmails = [], isLoading: savedEmailsLoading, refetch: refetchSavedEmails } = useQuery({
-    queryKey: ["project-emails", project.id, refreshKey],
-    queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
-    enabled: !!project?.id,
-  });
-
-  // For backward compatibility - use first thread as "emailThread"
   const emailThread = linkedThreads[0];
-
-  // Fetch all email threads for linking (not just unlinked)
-  const { data: availableThreads = [] } = useQuery({
-    queryKey: ['allEmailThreads'],
-    queryFn: async () => {
-      // Fetch all threads (up to 500 most recent) to allow searching
-      const threads = await base44.entities.EmailThread.list('-last_message_date', 500);
-      return threads;
-    },
-    enabled: showLinkModal
-  });
 
   // Fetch drafts related to this project's threads
   const { data: drafts = [], refetch: refetchDrafts } = useQuery({
@@ -108,224 +56,52 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     queryFn: async () => {
       const user = await base44.auth.me();
       const allDrafts = await base44.entities.EmailDraft.filter({ created_by: user.email }, '-updated_date');
-      // Filter to only drafts that are replies to this project's threads
       const threadIds = linkedThreads.map(t => t.id);
       return allDrafts.filter(d => threadIds.includes(d.thread_id));
     },
     enabled: linkedThreads.length > 0
   });
 
-  const handleSearchHistory = async () => {
-    if (!historySearchInput.trim()) return;
-    
-    const emails = historySearchInput.split(/[,;\s]+/).map(e => e.trim()).filter(Boolean);
-    if (emails.length === 0) return;
-
-    setIsSearchingHistory(true);
-    try {
-      const res = await base44.functions.invoke('fetchGmailHistory', { 
-        emails, 
-        projectId: project.id 
-      });
-      
-      // Auto-link any found threads that match
-      if (res.data?.threadIds?.length > 0) {
-        const threadIds = res.data.threadIds;
-        
-        // Link each thread to this project
-        for (const threadId of threadIds) {
-          try {
-            const thread = await base44.entities.EmailThread.get(threadId);
-            
-            // Only link if not already linked to another project
-            if (!thread.linked_project_id) {
-              await base44.entities.EmailThread.update(threadId, {
-                linked_project_id: project.id,
-                linked_project_title: project.title
-              });
-            }
-          } catch (e) {
-            console.warn(`Failed to link thread ${threadId}:`, e);
-          }
-        }
-      }
-      
-      // Refresh saved emails and threads - force complete re-fetch
-      setRefreshKey(k => k + 1); // Force re-fetch with new key
-      
-      // Wait a moment for backend to finish, then refetch everything
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await refetchSavedEmails();
-      await refetchThreads();
-      await refetchMessages();
-      
-      if (res.data?.messages?.length > 0) {
-        toast.success(`Found ${res.data.messages.length} historical emails and linked them`);
-      } else {
-        toast.info('No new historical emails found');
-      }
-    } catch (error) {
-      console.error('Search failed:', error);
-      toast.error('Failed to search Gmail history');
-    } finally {
-      setIsSearchingHistory(false);
-    }
-  };
-
-  // Combine Threads & Messages
-  const { displayThreads, displayMessages } = React.useMemo(() => {
-    // Normalize saved emails to message shape
-    const normalisedSavedEmails = savedEmails.map((e) => ({
-      id: e.id,
-      gmail_message_id: e.gmail_message_id,
-      thread_id: e.thread_id, // Gmail thread ID
-      subject: e.subject,
-      body_text: e.snippet, // Minimal content
-      from_address: e.from_email,
-      from_name: e.from_email?.split('<')[0]?.trim() || e.from_email,
-      to_addresses: e.to_email ? e.to_email.split(',').map(s => s.trim()) : [],
-      sent_at: e.sent_at,
-      is_outbound: e.direction === 'outgoing',
-      isHistorical: e.is_historical,
-      source: e.source || "gmail",
-      attachments: []
-    }));
-
-    // 1. Map historical messages to existing threads if possible
-    const mappedHistorical = normalisedSavedEmails.map(msg => {
-      const existingThread = linkedThreads.find(t => t.gmail_thread_id === msg.thread_id);
-      return existingThread 
-        ? { ...msg, thread_id: existingThread.id } // Map to UUID
-        : msg; // Keep Gmail Thread ID
-    });
-
-    // 2. Identify virtual threads (historical threads not in linkedThreads)
-    const virtualThreadIds = new Set();
-    mappedHistorical.forEach(msg => {
-      // If thread_id matches an existing UUID, it's already handled
-      // If it's still a Gmail ID (long string usually), check if we have a thread for it
-      const isLinked = linkedThreads.some(t => t.id === msg.thread_id);
-      if (!isLinked) {
-        virtualThreadIds.add(msg.thread_id);
-      }
-    });
-
-    const virtualThreads = Array.from(virtualThreadIds).map(vThreadId => {
-      const msgs = mappedHistorical.filter(m => m.thread_id === vThreadId);
-      const first = msgs[0] || {};
-      return {
-        id: vThreadId,
-        subject: first.subject || '(Historical Conversation)',
-        from_address: first.from_address,
-        last_message_date: msgs.reduce((latest, m) => new Date(m.sent_at) > new Date(latest) ? m.sent_at : latest, msgs[0]?.sent_at),
-        message_count: msgs.length,
-        isVirtual: true
-      };
-    });
-
-    // 3. Combine threads (sort by date)
-    const allThreads = [...linkedThreads, ...virtualThreads].sort((a, b) => 
-      new Date(b.last_message_date) - new Date(a.last_message_date)
-    );
-
-    // 4. Combine messages (deduplicate by gmail_message_id just in case)
-    const combinedMessages = [...messages];
-    const existingMessageIds = new Set(messages.map(m => m.gmail_message_id));
-    
-    mappedHistorical.forEach(hm => {
-      if (!existingMessageIds.has(hm.gmail_message_id)) {
-        combinedMessages.push(hm);
-      }
-    });
-
-    return { displayThreads: allThreads, displayMessages: combinedMessages };
-  }, [linkedThreads, messages, savedEmails]);
-
   // Link thread mutation
   const linkThreadMutation = useMutation({
     mutationFn: async (threadId) => {
-      // Use centralized linking function
       await base44.functions.invoke('linkEmailThreadToProject', {
         email_thread_id: threadId,
         project_id: project.id,
-        set_as_primary: !project.primary_email_thread_id && !project.source_email_thread_id
+        set_as_primary: linkedThreads.length === 0
       });
-      
-      // Maintain backward compatibility with source_email_thread_id
-      if (!project.source_email_thread_id) {
-        await base44.entities.Project.update(project.id, {
-          source_email_thread_id: threadId
-        });
-      }
-      
       return await base44.entities.EmailThread.get(threadId);
     },
-    onSuccess: async (data, variables) => {
-      // Run resync to ensure all attachments have IDs before rendering
-      try {
-        await base44.functions.invoke('resyncAttachments');
-      } catch (e) {
-        console.warn('Resync failed, continuing anyway', e);
-      }
-
-      // Auto-save attachments to project
-      try {
-        toast.info('Processing attachments...');
-        const threadId = variables; // mutationFn takes threadId as argument
-        const res = await base44.functions.invoke('saveThreadAttachments', {
-          thread_id: threadId,
-          target_type: 'project',
-          target_id: project.id
-        });
-        if (res.data?.saved_count > 0) {
-          toast.success(`Saved ${res.data.saved_count} attachments to project`);
-        }
-      } catch (e) {
-        console.error('Auto-save attachments failed', e);
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ['emailThread'] });
-      queryClient.invalidateQueries({ queryKey: ['emailThread', variables] });
-      queryClient.invalidateQueries({ queryKey: ['emailMessages'] });
-      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads'] });
-      queryClient.invalidateQueries({ queryKey: ['projectEmailMessages'] });
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
       setShowLinkModal(false);
-      toast.success('Email thread linked to project');
+      toast.success('Email thread linked');
       if (onThreadLinked) onThreadLinked();
     },
     onError: (error) => {
-      toast.error(`Failed to link thread: ${error.message}`);
+      toast.error(`Failed to link: ${error.message}`);
     }
   });
 
   // Unlink thread mutation
   const unlinkThreadMutation = useMutation({
-    mutationFn: async () => {
-      if (project.source_email_thread_id) {
-        await base44.entities.EmailThread.update(project.source_email_thread_id, {
-          linked_project_id: null,
-          linked_project_title: null
-        });
-      }
-      
-      await base44.entities.Project.update(project.id, {
-        source_email_thread_id: null
+    mutationFn: async (threadId) => {
+      await base44.entities.EmailThread.update(threadId, {
+        project_id: null,
+        project_number: null,
+        project_title: null
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emailThread'] });
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
       toast.success('Email thread unlinked');
     }
   });
 
   const handleRefresh = async () => {
-    // Force complete refresh by incrementing key
-    setRefreshKey(k => k + 1);
-    // Also refresh historical
-    queryClient.invalidateQueries(["project-emails", project.id]);
+    await refetchThreads();
+    await refetchMessages();
     toast.success('Emails refreshed');
   };
 
@@ -372,17 +148,17 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     }
   };
 
-  const isLoading = threadLoading || messagesLoading || savedEmailsLoading;
+  const isLoading = threadLoading || messagesLoading;
 
   // No linked threads - show option to link
-  if (linkedThreads.length === 0 && !project.source_email_thread_id && savedEmails.length === 0) {
+  if (linkedThreads.length === 0) {
     return (
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
         <CardContent className="p-8 text-center">
           <Mail className="w-12 h-12 text-[#E5E7EB] mx-auto mb-4" />
           <h3 className="text-[16px] font-semibold text-[#111827] mb-2">No Emails</h3>
           <p className="text-[14px] text-[#6B7280] mb-6">
-            Link an email thread or search for historical emails to view communications for this project.
+            Link an email thread to view project communications.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
@@ -402,28 +178,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
             </Button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-[#E5E7EB] max-w-md mx-auto">
-            <h4 className="text-sm font-medium text-[#111827] mb-3">Or load older emails from Gmail</h4>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={historySearchInput}
-                onChange={(e) => setHistorySearchInput(e.target.value)}
-                placeholder="e.g. client@example.com"
-                className="flex-1 px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:border-[#FAE008]"
-                onKeyDown={(e) => e.key === 'Enter' && handleSearchHistory()}
-              />
-              <Button 
-                onClick={handleSearchHistory} 
-                disabled={isSearchingHistory || !historySearchInput.trim()}
-                size="sm"
-                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-              >
-                {isSearchingHistory ? 'Searching...' : 'Search'}
-              </Button>
-            </div>
-          </div>
-
           {/* Email Composer */}
           {composerMode && (
             <div className="mt-6 text-left">
@@ -441,11 +195,11 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
           )}
 
           {/* Link Thread Modal */}
-          <LinkEmailThreadModal
+          <LinkThreadModal
             open={showLinkModal}
             onClose={() => setShowLinkModal(false)}
-            threads={availableThreads}
-            onSelect={(threadId) => linkThreadMutation.mutate(threadId)}
+            projectId={project.id}
+            onLink={(threadId) => linkThreadMutation.mutate(threadId)}
             isLinking={linkThreadMutation.isPending}
           />
         </CardContent>
@@ -505,84 +259,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         </Card>
       )}
 
-      {/* Historical Search Panel */}
-      <Card className="border border-[#E5E7EB] shadow-sm">
-        <div 
-        className="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
-        onClick={() => setShowHistorySearch(!showHistorySearch)}
-        >
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <div className="bg-slate-100 p-1.5 rounded-md">
-            <RefreshCw className={`w-4 h-4 text-slate-500 ${isSearchingHistory ? 'animate-spin' : ''}`} />
-          </div>
-          Load older emails
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-xs text-slate-500">
-            {savedEmails.length > 0 ? `${savedEmails.length} loaded` : 'Search Gmail'}
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowGmailHistoryModal(true);
-            }}
-            className="h-7 text-xs"
-          >
-            Advanced Search
-          </Button>
-        </div>
-        </div>
-        
-        {showHistorySearch && (
-          <CardContent className="p-3 pt-0 border-t border-slate-100 bg-slate-50/50">
-            <div className="space-y-3 mt-3">
-              <p className="text-xs text-slate-600">
-                Fetch emails from Gmail history that aren't synced. Enter email addresses to search for.
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={historySearchInput}
-                  onChange={(e) => setHistorySearchInput(e.target.value)}
-                  placeholder="e.g. client@example.com, builder@gmail.com"
-                  className="flex-1 px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:border-[#FAE008]"
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearchHistory()}
-                />
-                <Button 
-                  onClick={handleSearchHistory} 
-                  disabled={isSearchingHistory || !historySearchInput.trim()}
-                  size="sm"
-                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-                >
-                  {isSearchingHistory ? 'Searching...' : 'Search'}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-
-      {/* Email Composer */}
-      {composerMode && (
-        <EmailComposer
-          mode={composerMode?.type || composerMode}
-          thread={composerMode?.thread || emailThread}
-          message={selectedMessage}
-          existingDraft={editingDraft}
-          onClose={() => {
-            setComposerMode(null);
-            setSelectedMessage(null);
-            setEditingDraft(null);
-          }}
-          onSent={handleEmailSent}
-          onDraftSaved={handleDraftSaved}
-          defaultTo={composerMode?.type === 'compose' ? project.customer_email : undefined}
-          projectId={project.id}
-        />
-      )}
-
       {/* Loading State */}
       {isLoading ? (
         <div className="space-y-3">
@@ -598,70 +274,53 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         </div>
       ) : (
         <>
-          {/* Show each thread (linked + virtual) */}
-          {displayThreads.map((thread) => {
-            const threadMessages = displayMessages
+          {/* Show each thread */}
+          {linkedThreads.map((thread) => {
+            const threadMessages = messages
               .filter(m => m.thread_id === thread.id)
-              .sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
-            
-            // Skip threads with no messages (shouldn't happen often)
-            if (threadMessages.length === 0 && !thread.isVirtual) return null;
+              .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
             return (
-              <Card key={thread.id} className={`border border-[#E5E7EB] shadow-sm rounded-lg ${thread.isVirtual ? 'bg-slate-50/30' : ''}`}>
-                <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] bg-transparent">
+              <Card key={thread.id} className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                <CardHeader className="px-4 py-3 border-b border-[#E5E7EB]">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Mail className="w-5 h-5 text-[#FAE008]" />
-                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] truncate">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] truncate">
                           {thread.subject || 'Email Thread'}
                         </CardTitle>
                         <Badge variant="outline" className="text-[11px]">
-                          {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''}
+                          {threadMessages.length} msg
                         </Badge>
-                        {thread.isVirtual && (
-                          <Badge variant="secondary" className="bg-gray-100 text-gray-500 text-[10px] ml-1">
-                            Historical Only
-                          </Badge>
-                        )}
                       </div>
-                      {thread.from_address && (
-                        <p className="text-[13px] text-[#6B7280] mt-1">
-                          From: {thread.from_address}
-                        </p>
-                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleRefresh}
-                        className="h-8 text-[#6B7280] hover:text-[#111827]"
+                        className="h-8"
                       >
                         <RefreshCw className="w-4 h-4" />
                       </Button>
-                      {!thread.isVirtual && (
-                        <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(createPageUrl('Inbox') + `?threadId=${thread.id}`, '_blank')}
-                            className="h-8 text-[#6B7280] hover:text-[#111827]"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => unlinkThreadMutation.mutate()}
-                            className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                            disabled={unlinkThreadMutation.isPending}
-                          >
-                            Unlink
-                          </Button>
-                        </>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(createPageUrl('Inbox') + `?threadId=${thread.id}`, '_blank')}
+                        className="h-8"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => unlinkThreadMutation.mutate(thread.id)}
+                        className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        disabled={unlinkThreadMutation.isPending}
+                      >
+                        Unlink
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -699,37 +358,22 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                     )}
                   </div>
 
-                  {/* Messages for this thread */}
-                  {threadMessages.length === 0 ? (
-                    <p className="text-[14px] text-[#6B7280] text-center py-4">No messages in this thread yet.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {threadMessages.map((message, index) => {
-                        // Debug: Log attachment data
-                        if (message.attachments?.length > 0) {
-                          console.log(`Message ${message.id} attachments:`, message.attachments.map(a => ({
-                            filename: a.filename,
-                            has_attachment_id: !!a.attachment_id,
-                            has_gmail_message_id: !!a.gmail_message_id,
-                            message_gmail_id: message.gmail_message_id
-                          })));
-                        }
-                        return (
-                          <EmailMessageView
-                            key={message.id}
-                            message={message}
-                            isFirst={true}
-                            linkedProjectId={project.id}
-                            threadSubject={thread.subject}
-                            gmailMessageId={message.gmail_message_id}
-                            onReply={handleReply}
-                            onForward={handleForward}
-                            thread={thread}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
+                  {/* Messages */}
+                  <div className="space-y-3">
+                    {threadMessages.map((message) => (
+                      <EmailMessageView
+                        key={message.id}
+                        message={message}
+                        isFirst={true}
+                        linkedProjectId={project.id}
+                        threadSubject={thread.subject}
+                        gmailMessageId={message.gmail_message_id}
+                        onReply={handleReply}
+                        onForward={handleForward}
+                        thread={thread}
+                      />
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             );
@@ -748,42 +392,39 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       )}
 
       {/* Link Thread Modal */}
-      <LinkEmailThreadModal
+      <LinkThreadModal
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
-        threads={availableThreads}
-        onSelect={(threadId) => linkThreadMutation.mutate(threadId)}
-        isLinking={linkThreadMutation.isPending}
-      />
-
-      {/* Gmail History Search Modal */}
-      <GmailHistorySearch
-        open={showGmailHistoryModal}
-        onClose={() => {
-          setShowGmailHistoryModal(false);
-          // Refresh threads after closing modal
-          setRefreshKey(k => k + 1);
-        }}
         projectId={project.id}
+        onLink={(threadId) => linkThreadMutation.mutate(threadId)}
+        isLinking={linkThreadMutation.isPending}
       />
     </div>
   );
 }
 
-// Sub-component for linking email threads
-function LinkEmailThreadModal({ open, onClose, threads, onSelect, isLinking }) {
+// Link Thread Modal Component
+function LinkThreadModal({ open, onClose, projectId, onLink, isLinking }) {
   const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredThreads = threads.filter(thread => {
-    if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      thread.subject?.toLowerCase().includes(searchLower) ||
-      thread.from_address?.toLowerCase().includes(searchLower) ||
-      thread.to_addresses?.some(addr => addr.toLowerCase().includes(searchLower)) ||
-      thread.last_message_snippet?.toLowerCase().includes(searchLower)
-    );
-  }).slice(0, 30);
+  
+  const { data: threads = [], isLoading } = useQuery({
+    queryKey: ['emailThreadsForLinking', searchTerm],
+    queryFn: async () => {
+      if (!searchTerm || searchTerm.length < 2) return [];
+      
+      // Search threads by subject, from_address, or to_addresses
+      const allThreads = await base44.entities.EmailThread.list('-last_message_date', 100);
+      const searchLower = searchTerm.toLowerCase();
+      
+      return allThreads.filter(thread => 
+        thread.subject?.toLowerCase().includes(searchLower) ||
+        thread.from_address?.toLowerCase().includes(searchLower) ||
+        thread.to_addresses?.some(addr => addr.toLowerCase().includes(searchLower)) ||
+        thread.last_message_snippet?.toLowerCase().includes(searchLower)
+      );
+    },
+    enabled: open && searchTerm.length >= 2
+  });
 
   if (!open) return null;
 
@@ -795,68 +436,77 @@ function LinkEmailThreadModal({ open, onClose, threads, onSelect, isLinking }) {
       >
         <div className="p-4 border-b border-[#E5E7EB]">
           <h3 className="text-[18px] font-semibold text-[#111827] mb-3">Link Email Thread</h3>
-          <p className="text-[13px] text-[#6B7280] mb-3">
-            Search by email address, subject, or sender to find threads
-          </p>
-          <input
-            type="text"
-            placeholder="Search by email address, subject, or sender..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#FAE008] text-[14px]"
-            autoFocus
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 w-4 h-4 text-[#9CA3AF]" />
+            <Input
+              type="text"
+              placeholder="Search by subject, email address, or content..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+              autoFocus
+            />
+          </div>
+          {searchTerm.length > 0 && searchTerm.length < 2 && (
+            <p className="text-[12px] text-[#9CA3AF] mt-2">Type at least 2 characters to search</p>
+          )}
         </div>
         
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {filteredThreads.length === 0 ? (
+        <div className="flex-1 overflow-y-auto p-4">
+          {isLoading ? (
+            <div className="text-center py-8 text-[#6B7280]">Searching...</div>
+          ) : threads.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-[#6B7280] mb-2">
-                {searchTerm ? 'No threads found matching your search' : 'Loading threads...'}
+              <p className="text-[#6B7280]">
+                {searchTerm.length >= 2 ? 'No threads found' : 'Start typing to search email threads'}
               </p>
-              {searchTerm && (
-                <p className="text-[12px] text-[#9CA3AF]">
-                  Try searching by email address or subject
-                </p>
-              )}
             </div>
           ) : (
-            filteredThreads.map(thread => {
-              const isAlreadyLinked = thread.linked_project_id;
-              return (
-                <div
-                  key={thread.id}
-                  onClick={() => !isLinking && onSelect(thread.id)}
-                  className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                    isAlreadyLinked 
-                      ? 'border-amber-200 bg-amber-50 hover:border-amber-300' 
-                      : 'border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]'
-                  } ${isLinking ? 'opacity-50 pointer-events-none' : ''}`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <h4 className="text-[14px] font-semibold text-[#111827] truncate flex-1">
-                      {thread.subject || '(No subject)'}
-                    </h4>
-                    {isAlreadyLinked && (
-                      <span className="text-[10px] bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full flex-shrink-0">
-                        Linked
-                      </span>
+            <div className="space-y-2">
+              {threads.map(thread => {
+                const isLinkedToThis = thread.project_id === projectId;
+                const isLinkedElsewhere = thread.project_id && thread.project_id !== projectId;
+                
+                return (
+                  <div
+                    key={thread.id}
+                    onClick={() => !isLinking && !isLinkedToThis && onLink(thread.id)}
+                    className={`p-3 border rounded-lg transition-all ${
+                      isLinkedToThis 
+                        ? 'border-green-200 bg-green-50' 
+                        : isLinkedElsewhere
+                          ? 'border-amber-200 bg-amber-50 cursor-pointer hover:border-amber-300'
+                          : 'border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] cursor-pointer'
+                    } ${isLinking ? 'opacity-50 pointer-events-none' : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h4 className="text-[14px] font-semibold text-[#111827] truncate flex-1">
+                        {thread.subject || '(No subject)'}
+                      </h4>
+                      {isLinkedToThis && (
+                        <Badge variant="success" className="text-[10px] flex-shrink-0">
+                          Linked Here
+                        </Badge>
+                      )}
+                      {isLinkedElsewhere && (
+                        <Badge variant="warning" className="text-[10px] flex-shrink-0">
+                          Linked Elsewhere
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-[13px] text-[#6B7280]">From: {thread.from_address}</p>
+                    <p className="text-[12px] text-[#9CA3AF] mt-1">
+                      {thread.message_count || 0} msgs • {thread.last_message_date ? new Date(thread.last_message_date).toLocaleDateString() : ''}
+                    </p>
+                    {isLinkedElsewhere && thread.project_title && (
+                      <p className="text-[11px] text-amber-700 mt-1">
+                        Linked to: {thread.project_title}
+                      </p>
                     )}
                   </div>
-                  <p className="text-[13px] text-[#6B7280]">
-                    From: {thread.from_address}
-                  </p>
-                  <p className="text-[12px] text-[#9CA3AF] mt-1">
-                    {thread.message_count || 0} message{(thread.message_count || 0) !== 1 ? 's' : ''} • {thread.last_message_date ? new Date(thread.last_message_date).toLocaleDateString() : ''}
-                  </p>
-                  {isAlreadyLinked && thread.linked_project_title && (
-                    <p className="text-[11px] text-amber-700 mt-1">
-                      Currently linked to: {thread.linked_project_title}
-                    </p>
-                  )}
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
 
