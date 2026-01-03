@@ -19,7 +19,17 @@ export default function WeekView({ currentDate, jobs, onJobReschedule, onJobClic
   const getJobsForDay = (day) => {
     return jobs.filter(job => {
       try {
-        return job.scheduled_date && isSameDay(parseISO(job.scheduled_date), day);
+        // Check primary scheduled_date
+        if (job.scheduled_date && isSameDay(parseISO(job.scheduled_date), day)) {
+          return true;
+        }
+        // Check scheduled_visits array
+        if (job.scheduled_visits && Array.isArray(job.scheduled_visits)) {
+          return job.scheduled_visits.some(visit => 
+            visit.date && isSameDay(parseISO(visit.date), day)
+          );
+        }
+        return false;
       } catch {
         return false;
       }
