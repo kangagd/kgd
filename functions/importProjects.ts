@@ -82,6 +82,26 @@ Deno.serve(async (req) => {
             }
           }
 
+          // Validate status field against allowed enum values
+          const allowedStatuses = [
+            'Lead', 'Initial Site Visit', 'Create Quote', 'Quote Sent', 
+            'Quote Approved', 'Final Measure', 'Parts Ordered', 
+            'Scheduled', 'Completed', 'Warranty', 'Lost'
+          ];
+          
+          let statusValue = 'Lead';
+          let statusNote = '';
+          
+          if (record.status) {
+            const providedStatus = String(record.status).trim();
+            if (allowedStatuses.includes(providedStatus)) {
+              statusValue = providedStatus;
+            } else {
+              // Invalid status - default to Lead and append to notes
+              statusNote = `\n[Import Note: Original status was "${providedStatus}"]`;
+            }
+          }
+
           // Resolve customer_id if present, otherwise populate import_customer_name_raw
           let customerData = {};
           if (record.customer_id) {
@@ -123,6 +143,7 @@ Deno.serve(async (req) => {
           const projectData = {
             ...record,
             ...customerData,
+            status: statusValue,
             is_potential_duplicate: false,
             duplicate_score: 0,
             // Cache organisation_name for display
@@ -131,8 +152,8 @@ Deno.serve(async (req) => {
             pipedrive_deal_id: record.pipedrive_deal_id || null,
             legacy_xero_invoice_url: record.legacy_xero_invoice_url || null,
             legacy_pandadoc_url: record.legacy_pandadoc_url || null,
-            // Notes field preserved verbatim (may contain legacy stage text)
-            notes: record.notes || null
+            // Notes field preserved verbatim (may contain legacy stage text) + status note if needed
+            notes: (record.notes || '') + statusNote
           };
 
           // Create project without duplicate detection
