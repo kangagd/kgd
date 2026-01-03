@@ -31,16 +31,27 @@ Deno.serve(async (req) => {
     console.log(`Customers with jobs or projects: ${customerIdsWithActivity.size}`);
     console.log(`Customers without jobs or projects: ${customersWithoutActivity.length}`);
 
-    // Delete customers without jobs or projects
+    // Delete customers without jobs or projects in batches
     const deletedIds = [];
-    for (const customer of customersWithoutActivity) {
-      try {
-        await base44.asServiceRole.entities.Customer.delete(customer.id);
-        deletedIds.push(customer.id);
-        console.log(`Deleted customer: ${customer.name} (${customer.id})`);
-      } catch (error) {
-        console.error(`Failed to delete customer ${customer.id}:`, error.message);
-      }
+    const batchSize = 10;
+    
+    for (let i = 0; i < customersWithoutActivity.length; i += batchSize) {
+      const batch = customersWithoutActivity.slice(i, i + batchSize);
+      const deletePromises = batch.map(customer => 
+        base44.asServiceRole.entities.Customer.delete(customer.id)
+          .then(() => {
+            deletedIds.push(customer.id);
+            return customer;
+          })
+          .catch(error => {
+            console.error(`Failed to delete customer ${customer.id}:`, error.message);
+            return null;
+          })
+      );
+      
+      const results = await Promise.all(deletePromises);
+      const successfulDeletes = results.filter(r => r !== null);
+      console.log(`Batch ${Math.floor(i / batchSize) + 1}: Deleted ${successfulDeletes.length}/${batch.length} customers`);
     }
 
     return Response.json({
