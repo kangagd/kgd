@@ -58,6 +58,7 @@ import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChatModal from "./ProjectChatModal";
 import { PROJECT_STAGE_AUTOMATION } from "@/components/domain/projectStageAutomationConfig";
+import { PROJECT_TYPE } from "@/components/domain/projectConfig";
 import ProjectPartsPanel from "./ProjectPartsPanel";
 import HandoverReportModal from "../handover/HandoverReportModal";
 import ProjectContactsPanel from "./ProjectContactsPanel";
@@ -515,8 +516,66 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
 
 
-  const handleAddJob = () => {
-    navigate(createPageUrl("Jobs") + `?action=new&projectId=${project.id}`);
+  const handleAddJob = async () => {
+    try {
+      // Get next job number
+      const allJobs = await base44.entities.Job.list('-job_number', 1);
+      const nextJobNumber = allJobs.length > 0 ? (allJobs[0].job_number || 5000) + 1 : 5000;
+
+      // Map project type to product
+      const productMapping = {
+        [PROJECT_TYPE.GARAGE_DOOR_INSTALL]: "Garage Door",
+        [PROJECT_TYPE.GATE_INSTALL]: "Gate",
+        [PROJECT_TYPE.ROLLER_SHUTTER_INSTALL]: "Roller Shutter",
+        [PROJECT_TYPE.MULTIPLE]: "Multiple"
+      };
+      const autoProduct = productMapping[project.project_type] || null;
+
+      // Create the job with project data
+      const createJobResponse = await base44.functions.invoke('manageJob', { 
+        action: 'create', 
+        data: {
+          job_number: nextJobNumber,
+          project_id: project.id,
+          project_name: project.title,
+          customer_id: project.customer_id,
+          customer_name: project.customer_name,
+          customer_phone: project.customer_phone,
+          customer_email: project.customer_email,
+          customer_type: project.customer_type,
+          address: project.address,
+          address_full: project.address_full,
+          address_street: project.address_street,
+          address_suburb: project.address_suburb,
+          address_state: project.address_state,
+          address_postcode: project.address_postcode,
+          address_country: project.address_country,
+          google_place_id: project.google_place_id,
+          latitude: project.latitude,
+          longitude: project.longitude,
+          product: autoProduct,
+          status: "Open",
+          additional_info: project.description || "",
+          notes: project.notes || "",
+          image_urls: project.image_urls || [],
+          quote_url: project.quote_url || null,
+          invoice_url: project.invoice_url || null
+        }
+      });
+      
+      const newJob = createJobResponse.data.job;
+
+      // Refresh jobs and navigate to the new job
+      await queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      await queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      
+      // Navigate to the new job
+      navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
+      toast.success(`Job #${nextJobNumber} created`);
+    } catch (error) {
+      toast.error('Failed to create job');
+      console.error('Job creation error:', error);
+    }
   };
 
   const handleJobClick = (jobId) => {
