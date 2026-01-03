@@ -196,7 +196,22 @@ async function checkOrganisationDuplicates(base44, record, excludeId) {
       matchReasons.push('phone');
     }
     
-    if (matchScore > 0) {
+    // For organisations, flag as duplicate if:
+    // - Name + Email match, OR
+    // - Name + Phone match, OR
+    // - Email + Phone match, OR
+    // - Just name matches (common for organisations without contact details)
+    const hasNameMatch = matchReasons.includes('name');
+    const hasEmailMatch = matchReasons.includes('email');
+    const hasPhoneMatch = matchReasons.includes('phone');
+    
+    const isDuplicate = 
+      (hasNameMatch && hasEmailMatch) ||
+      (hasNameMatch && hasPhoneMatch) ||
+      (hasEmailMatch && hasPhoneMatch) ||
+      (hasNameMatch && !normalizedEmail && !normalizedPhone && !otherNormalizedEmail && !otherNormalizedPhone);
+    
+    if (isDuplicate) {
       matches.push({
         id: other.id,
         name: other.name,
