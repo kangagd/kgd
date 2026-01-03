@@ -35,13 +35,56 @@ export default function ActivityTab({ project, onComposeEmail }) {
     enabled: !!project.id
   });
 
-  // Fetch project emails
-  const { data: projectEmails = [] } = useQuery({
-    queryKey: ['projectEmails', project.id],
-    queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
+  // Fetch email threads linked to this project (primary method)
+  const { data: linkedThreads = [] } = useQuery({
+    queryKey: ['projectEmailThreads', project.id],
+    queryFn: async () => {
+      const threads = await base44.entities.EmailThread.filter({ project_id: project.id });
+      // Sort by last_message_date descending
+      return threads.sort((a, b) => 
+        new Date(b.last_message_date || b.created_date) - new Date(a.last_message_date || a.created_date)
+      );
+    },
     enabled: !!project.id,
     refetchOnMount: true
   });
+
+  // Fallback: Fetch source email thread if exists and not already in linkedThreads
+  const { data: sourceThread } = useQuery({
+    queryKey: ['sourceEmailThread', project.source_email_thread_id],
+    queryFn: async () => {
+      if (!project.source_email_thread_id) return null;
+      // Only fetch if not already in linkedThreads
+      if (linkedThreads.some(t => t.id === project.source_email_thread_id)) return null;
+      return await base44.entities.EmailThread.get(project.source_email_thread_id).catch(() => null);
+    },
+    enabled: !!project.source_email_thread_id && linkedThreads.length >= 0
+  });
+
+  // Combine threads: linkedThreads + sourceThread (if not already included)
+  const allProjectThreads = React.useMemo(() => {
+    const threads = [...linkedThreads];
+    if (sourceThread && !threads.some(t => t.id === sourceThread.id)) {
+      threads.push(sourceThread);
+    }
+    // Sort combined list by last_message_date descending
+    return threads.sort((a, b) => 
+      new Date(b.last_message_date || b.created_date) - new Date(a.last_message_date || a.created_date)
+    );
+  }, [linkedThreads, sourceThread]);
+
+  // Build projectEmails from threads for backward compatibility
+  const projectEmails = React.useMemo(() => 
+    allProjectThreads.map(thread => ({
+      project_id: project.id,
+      thread_id: thread.id,
+      subject: thread.subject,
+      snippet: thread.last_message_snippet,
+      from_email: thread.from_address,
+      sent_at: thread.last_message_date
+    })),
+    [allProjectThreads, project.id]
+  );
 
   // Fetch draft emails for this project
   const { data: draftEmails = [] } = useQuery({
