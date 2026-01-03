@@ -415,13 +415,13 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                           {filteredCustomers.map((customer) => (
                             <CommandItem
                               key={customer.id}
-                              value={`${customer.name} ${customer.email || ''} ${customer.phone || ''}`}
-                              onSelect={() => {
-                                handleCustomerChange(customer.id);
+                              value={customer.id}
+                              keywords={[customer.name, customer.email, customer.phone]}
+                              onSelect={(value) => {
+                                handleCustomerChange(value);
                                 setCustomerSearchOpen(false);
                                 setCustomerSearchQuery("");
                               }}
-                              className="cursor-pointer"
                             >
                               <div className="flex flex-col w-full">
                                 <span className="font-medium">{customer.name}</span>
