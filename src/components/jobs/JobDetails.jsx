@@ -1838,7 +1838,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                               onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
                             />
                             <div className="flex-1">
-                              <span className="text-[14px] font-medium text-[#111827]">{part.category}</span>
+                              <span className="text-[14px] font-medium text-[#111827]">{part.item_name || part.category}</span>
                               {part.quantity_required && (
                                 <span className="text-[14px] text-[#6B7280] ml-2">× {part.quantity_required}</span>
                               )}
