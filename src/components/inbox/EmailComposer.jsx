@@ -45,12 +45,46 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const [currentUser, setCurrentUser] = useState(null);
   const [isReplyAll, setIsReplyAll] = useState(false);
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  
+  // State - start empty, will be initialized in useEffect
+  const [to, setTo] = useState("");
+  const [toSearchTerm, setToSearchTerm] = useState("");
+  const [showToDropdown, setShowToDropdown] = useState(false);
+  const [cc, setCc] = useState("");
+  const [bcc, setBcc] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [isSending, setIsSending] = useState(false);
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
+  const [draftId, setDraftId] = useState(existingDraft?.id || null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
+  const toInputRef = useRef(null);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+
+  // Load current user for signature
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    };
+    loadUser();
+  }, []);
   
   // Smart recipient calculation for replies
   const getReplyRecipients = (replyAll = false) => {
-    if (mode !== "reply" || !message) return { to: defaultTo || "", cc: "" };
+    if (mode !== "reply" || !message || !currentUser) return { to: defaultTo || "", cc: "" };
     
-    const userEmail = currentUser?.email?.toLowerCase();
+    const userEmail = currentUser.email?.toLowerCase();
     const fromAddress = message.from_address;
     const toAddresses = message.to_addresses || [];
     const ccAddresses = message.cc_addresses || [];
@@ -78,35 +112,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     
     return { to: replyTo, cc: "" };
   };
-  
-  const initialRecipients = existingDraft ? {
-    to: existingDraft?.to_addresses?.join(', ') || existingDraft?.to || "",
-    cc: existingDraft?.cc_addresses?.join(', ') || existingDraft?.cc || ""
-  } : getReplyRecipients(false);
-  
-  const [to, setTo] = useState(initialRecipients.to);
-  const [toSearchTerm, setToSearchTerm] = useState("");
-  const [showToDropdown, setShowToDropdown] = useState(false);
-  const [cc, setCc] = useState(initialRecipients.cc);
-  const [bcc, setBcc] = useState(existingDraft?.bcc_addresses?.join(', ') || existingDraft?.bcc || "");
-  const [subject, setSubject] = useState(
-    existingDraft?.subject || 
-    (mode === "reply" ? `Re: ${thread?.subject?.replace(/^Re:\s*/i, '') || ""}` : 
-    mode === "forward" ? `Fwd: ${thread?.subject || ""}` : "")
-  );
-
-  // Load current user for signature
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error('Error loading user:', error);
-      }
-    };
-    loadUser();
-  }, []);
   
   // Handle reply all toggle
   const handleToggleReplyAll = () => {
@@ -164,32 +169,39 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     return signature;
   };
   
-  const [body, setBody] = useState(() => {
-    // If there's an existing draft, use it as-is (already has signature)
-    if (existingDraft?.body_html || existingDraft?.body) {
-      return existingDraft.body_html || existingDraft.body;
-    }
-    return "";
-  });
-  
-  // Set initial body with signature once user is loaded (for new emails only)
+  // Initialize form when currentUser loads
   useEffect(() => {
-    if (currentUser && !existingDraft && !body) {
-      const initialBody = getInitialBody();
-      setBody(initialBody);
+    if (!currentUser || initialized) return;
+
+    // Handle existing draft
+    if (existingDraft) {
+      setTo(existingDraft?.to_addresses?.join(', ') || existingDraft?.to || "");
+      setCc(existingDraft?.cc_addresses?.join(', ') || existingDraft?.cc || "");
+      setBcc(existingDraft?.bcc_addresses?.join(', ') || existingDraft?.bcc || "");
+      setSubject(existingDraft?.subject || "");
+      setBody(existingDraft?.body_html || existingDraft?.body || "");
+      if (existingDraft?.cc_addresses?.length || existingDraft?.cc) setShowCc(true);
+      if (existingDraft?.bcc_addresses?.length || existingDraft?.bcc) setShowBcc(true);
+      setInitialized(true);
+      return;
     }
-  }, [currentUser, mode, message, thread]);
-  const [attachments, setAttachments] = useState([]);
-  const [isSending, setIsSending] = useState(false);
-  const [showCc, setShowCc] = useState(!!(existingDraft?.cc_addresses?.length || existingDraft?.cc));
-  const [showBcc, setShowBcc] = useState(!!(existingDraft?.bcc_addresses?.length || existingDraft?.bcc));
-  const [draftId, setDraftId] = useState(existingDraft?.id || null);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
-  const [lastSaved, setLastSaved] = useState(null);
-  const fileInputRef = useRef(null);
-  const textareaRef = useRef(null);
-  const toInputRef = useRef(null);
-  const [selectedTemplate, setSelectedTemplate] = useState("");
+
+    // Handle new compose/reply/forward
+    const recipients = getReplyRecipients(isReplyAll);
+    setTo(recipients.to || defaultTo || "");
+    setCc(recipients.cc);
+    if (recipients.cc) setShowCc(true);
+
+    let newSubject = "";
+    if (mode === "reply") {
+      newSubject = `Re: ${thread?.subject?.replace(/^Re:\s*/i, '') || ""}`;
+    } else if (mode === "forward") {
+      newSubject = `Fwd: ${thread?.subject || ""}`;
+    }
+    setSubject(newSubject);
+    setBody(getInitialBody());
+    setInitialized(true);
+  }, [currentUser, initialized]);
 
   // Fetch customers for email autocomplete
   const { data: customers = [] } = useQuery({
@@ -363,11 +375,11 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         bcc: bcc || undefined,
         subject,
         body,
-        threadId: mode === "reply" ? thread?.id : undefined,
+        threadId: mode === "reply" ? thread?.gmail_thread_id : undefined,
         inReplyTo: mode === "reply" ? message?.message_id : undefined,
         references: mode === "reply" ? message?.message_id : undefined,
         attachments: attachments.length > 0 ? attachments : undefined,
-        projectId: projectId || thread?.linked_project_id || undefined,
+        projectId: projectId || thread?.project_id || undefined,
         jobId: jobId || thread?.linked_job_id || undefined
       });
 
