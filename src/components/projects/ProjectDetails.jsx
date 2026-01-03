@@ -239,8 +239,22 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   const { data: customer } = useQuery({
     queryKey: ['customer', project.customer_id],
-    queryFn: () => base44.entities.Customer.get(project.customer_id),
-    enabled: !!project.customer_id
+    queryFn: async () => {
+      try {
+        return await base44.entities.Customer.get(project.customer_id);
+      } catch (error) {
+        // Return cached customer data from project if fetch fails
+        return {
+          id: project.customer_id,
+          name: project.customer_name,
+          phone: project.customer_phone,
+          email: project.customer_email,
+          customer_type: project.customer_type
+        };
+      }
+    },
+    enabled: !!project.customer_id,
+    staleTime: 0 // Always refetch to get latest deleted_at status
   });
 
   const { data: technicians = [] } = useQuery({

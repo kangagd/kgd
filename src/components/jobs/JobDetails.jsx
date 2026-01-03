@@ -246,8 +246,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: customer } = useQuery({
     queryKey: ['customer', job.customer_id],
-    queryFn: () => base44.entities.Customer.get(job.customer_id),
-    enabled: !!job.customer_id
+    queryFn: async () => {
+      try {
+        return await base44.entities.Customer.get(job.customer_id);
+      } catch (error) {
+        // Return cached customer data from job if fetch fails
+        return {
+          id: job.customer_id,
+          name: job.customer_name,
+          phone: job.customer_phone,
+          email: job.customer_email,
+          customer_type: job.customer_type
+        };
+      }
+    },
+    enabled: !!job.customer_id,
+    staleTime: 0 // Always refetch to get latest deleted_at status
   });
 
   const { data: contract } = useQuery({
