@@ -396,8 +396,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                       variant="outline"
                       role="combobox"
                       aria-expanded={customerSearchOpen}
-                      disabled={false}
-                      className="w-full justify-between border-2 border-slate-300 focus:border-[#fae008] h-10 disabled:opacity-50"
+                      className="w-full justify-between border-2 border-slate-300 focus:border-[#fae008] h-10"
                     >
                       {selectedCustomer ? selectedCustomer.name : "Select customer"}
                       <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
