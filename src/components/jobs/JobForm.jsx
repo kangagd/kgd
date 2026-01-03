@@ -185,8 +185,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
     const autoProduct = productMapping[project.project_type] || "";
 
-    setFormData({
-      job_number: null,
+    setFormData(prev => ({
+      ...prev,
       project_id: projectId,
       project_name: project.title,
       customer_id: project.customer_id,
@@ -205,23 +205,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       latitude: project.latitude || null,
       longitude: project.longitude || null,
       product: autoProduct,
-      job_type_id: "",
-      job_type: "",
-      assigned_to: [],
-      assigned_to_name: [],
-      scheduled_date: "",
-      scheduled_time: "",
-      expected_duration: null,
-      status: JOB_STATUS.OPEN,
-      outcome: "",
-      notes: "",
-      pricing_provided: "",
       additional_info: project.description || "",
-      measurements: null,
       image_urls: project.image_urls || [],
-      quote_url: project.quote_url || "",
-      invoice_url: project.invoice_url || ""
-    });
+    }));
   }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
   const handleAutoSave = async () => {
