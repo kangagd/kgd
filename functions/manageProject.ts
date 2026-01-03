@@ -65,6 +65,36 @@ Deno.serve(async (req) => {
             
             project = await base44.asServiceRole.entities.Project.update(id, data);
             
+            // Sync cached fields to related jobs
+            const fieldsToSync = {};
+            if (data.title !== undefined) fieldsToSync.project_name = data.title;
+            if (data.customer_name !== undefined) fieldsToSync.customer_name = data.customer_name;
+            if (data.customer_phone !== undefined) fieldsToSync.customer_phone = data.customer_phone;
+            if (data.customer_email !== undefined) fieldsToSync.customer_email = data.customer_email;
+            if (data.customer_type !== undefined) fieldsToSync.customer_type = data.customer_type;
+            if (data.address_full !== undefined) fieldsToSync.address_full = data.address_full;
+            if (data.address_street !== undefined) fieldsToSync.address_street = data.address_street;
+            if (data.address_suburb !== undefined) fieldsToSync.address_suburb = data.address_suburb;
+            if (data.address_state !== undefined) fieldsToSync.address_state = data.address_state;
+            if (data.address_postcode !== undefined) fieldsToSync.address_postcode = data.address_postcode;
+            if (data.address_country !== undefined) fieldsToSync.address_country = data.address_country;
+            if (data.google_place_id !== undefined) fieldsToSync.google_place_id = data.google_place_id;
+            if (data.latitude !== undefined) fieldsToSync.latitude = data.latitude;
+            if (data.longitude !== undefined) fieldsToSync.longitude = data.longitude;
+            
+            if (Object.keys(fieldsToSync).length > 0) {
+                try {
+                    const relatedJobs = await base44.asServiceRole.entities.Job.filter({ project_id: id });
+                    await Promise.all(
+                        relatedJobs.map(job => 
+                            base44.asServiceRole.entities.Job.update(job.id, fieldsToSync)
+                        )
+                    );
+                } catch (e) {
+                    console.error("Error syncing project fields to jobs:", e);
+                }
+            }
+            
             // Update related job numbers if project number changed
             if (oldProjectNumber && newProjectNumber && oldProjectNumber !== newProjectNumber) {
                 console.log(`Updating job numbers: ${oldProjectNumber} -> ${newProjectNumber}`);
