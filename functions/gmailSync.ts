@@ -291,6 +291,52 @@ Deno.serve(async (req) => {
             message_count: 1
           });
           threadId = newThread.id;
+          
+          // Auto-link to customer and project based on email addresses
+          try {
+            const fromEmail = parseEmailAddress(from).toLowerCase();
+            const allEmails = [fromEmail, ...to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase())];
+            
+            // Find matching customers
+            const customers = await base44.asServiceRole.entities.Customer.list();
+            const matchingCustomer = customers.find(c => 
+              c.email && allEmails.includes(c.email.toLowerCase())
+            );
+            
+            if (matchingCustomer) {
+              // Find most recent open project for this customer
+              const projects = await base44.asServiceRole.entities.Project.filter({
+                customer_id: matchingCustomer.id
+              });
+              
+              const openProjects = projects.filter(p => 
+                !['Completed', 'Lost', 'Cancelled'].includes(p.status)
+              ).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+              
+              const projectToLink = openProjects[0];
+              
+              if (projectToLink) {
+                await base44.asServiceRole.entities.EmailThread.update(threadId, {
+                  customer_id: matchingCustomer.id,
+                  customer_name: matchingCustomer.name,
+                  project_id: projectToLink.id,
+                  project_number: projectToLink.project_number,
+                  project_title: projectToLink.title,
+                  linked_to_project_at: new Date().toISOString(),
+                  linked_to_project_by: 'system'
+                });
+                console.log(`Auto-linked thread ${threadId} to project ${projectToLink.id}`);
+              } else {
+                await base44.asServiceRole.entities.EmailThread.update(threadId, {
+                  customer_id: matchingCustomer.id,
+                  customer_name: matchingCustomer.name
+                });
+                console.log(`Auto-linked thread ${threadId} to customer ${matchingCustomer.id}`);
+              }
+            }
+          } catch (linkError) {
+            console.error('Auto-link error:', linkError.message);
+          }
         }
 
         // Double check check message existence (race condition safety)
