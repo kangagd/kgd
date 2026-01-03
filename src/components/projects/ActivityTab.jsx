@@ -98,7 +98,9 @@ export default function ActivityTab({ project, onComposeEmail }) {
       );
       return allMessages.flat();
     },
-    enabled: linkedThreads.length > 0
+    enabled: linkedThreads.length > 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000 // Refetch every 10 seconds to catch new messages
   });
 
   // Fetch draft emails related to linked threads
@@ -108,29 +110,29 @@ export default function ActivityTab({ project, onComposeEmail }) {
     queryFn: async () => {
       // No linked threads = no drafts shown
       if (linkedThreads.length === 0) return [];
-      
+
       const user = await base44.auth.me();
       const allDrafts = await base44.entities.EmailDraft.filter({ 
         created_by: user.email 
       }, '-updated_date');
-      
+
       const threadIds = new Set(linkedThreads.map(t => t.id));
-      
+
       // STRICT FILTER: Draft must have thread_id AND that thread must be linked
       const linkedDrafts = allDrafts.filter(draft => {
         // No thread_id = not shown
         if (!draft.thread_id) {
           return false;
         }
-        
+
         // Thread not linked to project = not shown
         if (!threadIds.has(draft.thread_id)) {
           return false;
         }
-        
+
         return true;
       });
-      
+
       // Defensive logging for any drafts without proper links
       allDrafts.forEach(draft => {
         if (!draft.thread_id) {
@@ -139,10 +141,12 @@ export default function ActivityTab({ project, onComposeEmail }) {
           console.log('[ActivityTab] Skipping draft with unlinked thread:', draft.id, draft.thread_id);
         }
       });
-      
+
       return linkedDrafts;
     },
-    enabled: linkedThreads.length > 0
+    enabled: linkedThreads.length > 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 5000 // Refetch every 5 seconds to catch new/updated drafts
   });
 
   // Link email thread mutation
