@@ -58,10 +58,10 @@ function isInlineImageInHtml(attachment, bodyHtml) {
   return false;
 }
 
-export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId, onReply, onForward, thread }) {
+export default function EmailMessageView({ message, isFirst, isLast, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId, onReply, onForward, thread }) {
   // Use message's own gmail_message_id first, then fall back to prop
   const gmailMessageId = message.gmail_message_id || propGmailMessageId;
-  const [expanded, setExpanded] = useState(isFirst);
+  const [expanded, setExpanded] = useState(isLast);
   const [inlineImageUrls, setInlineImageUrls] = useState({});
   const [loadingInlineImages, setLoadingInlineImages] = useState(false);
   const [inlineImagesAttempted, setInlineImagesAttempted] = useState(false);
@@ -182,102 +182,92 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        {/* Message Header */}
+      <div className={`bg-white rounded-lg border border-[#E5E7EB] overflow-hidden transition-all ${expanded ? 'shadow-sm' : ''}`}>
+        {/* Message Header - Compact when collapsed, full when expanded */}
         <div
-          className="p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors border-b border-[#F3F4F6]"
+          className={`cursor-pointer transition-all ${expanded ? 'p-4 border-b border-[#F3F4F6]' : 'px-4 py-3 hover:bg-[#F9FAFB]'}`}
           onClick={() => setExpanded(!expanded)}
         >
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[15px] font-semibold text-[#111827]">
-                {message.from_name || message.from_address}
-              </span>
-              {message.isHistorical && (
-                <Badge variant="secondary" className="bg-gray-100 text-gray-600 border-gray-200 text-[11px] h-5">
-                  Historical
-                </Badge>
-              )}
-              {message.is_outbound && (
-                <Badge className="bg-green-50 text-green-700 border-green-200 text-[11px] h-5">
-                  Sent
-                </Badge>
-              )}
-              {regularAttachments.length > 0 && (
-                <Badge variant="outline" className="text-[11px] h-5 flex items-center gap-1">
-                  <Paperclip className="w-3 h-3" />
-                  {regularAttachments.length}
-                </Badge>
-              )}
-              <span className="text-[12px] text-[#9CA3AF] ml-auto">
-                {message.sent_at && format(parseISO(message.sent_at), 'MMM d • h:mm a')}
+          <div className="flex-1 min-w-0 flex items-center gap-3">
+            {/* Avatar */}
+            <div className="w-9 h-9 rounded-full bg-[#FAE008]/20 flex items-center justify-center flex-shrink-0 border border-[#FAE008]/30">
+              <span className="text-[13px] font-semibold text-[#111827]">
+                {(message.from_name || message.from_address)?.charAt(0)?.toUpperCase() || '?'}
               </span>
             </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[14px] font-semibold text-[#111827]">
+                  {message.from_name || message.from_address}
+                </span>
+                {!expanded && (
+                  <span className="text-[13px] text-[#6B7280] truncate">
+                    {message.subject}
+                  </span>
+                )}
+                {message.is_outbound && (
+                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] h-5">
+                    You
+                  </Badge>
+                )}
+              </div>
+              
+              {!expanded && (
+                <div className="text-[12px] text-[#9CA3AF] truncate mt-0.5">
+                  {stripHtml(message.body_html || message.body_text || '').substring(0, 100)}...
+                </div>
+              )}
+            </div>
           </div>
-          <button className="text-[#6B7280] hover:text-[#111827] flex-shrink-0">
-            {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          </button>
+          
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {regularAttachments.length > 0 && (
+              <Badge variant="outline" className="text-[11px] h-5 flex items-center gap-1">
+                <Paperclip className="w-3 h-3" />
+                {regularAttachments.length}
+              </Badge>
+            )}
+            <span className="text-[12px] text-[#6B7280] whitespace-nowrap">
+              {message.sent_at && format(parseISO(message.sent_at), expanded ? 'MMM d, h:mm a' : 'MMM d')}
+            </span>
+            <button className="text-[#9CA3AF] hover:text-[#111827] flex-shrink-0">
+              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Message Body */}
       {expanded && (
-        <div className="p-5">
-          {/* Email Metadata */}
-          <div className="mb-5 pb-4 border-b border-[#F3F4F6] space-y-2">
-            <div className="flex items-start gap-2">
-              <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">From:</span>
-              <div className="flex-1">
-                <div className="text-[13px] text-[#111827] font-medium">
-                  {message.from_name || message.from_address}
+        <div className="px-5 pt-3 pb-5">
+          {/* Compact Metadata - Gmail style */}
+          <div className="mb-4 space-y-1">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] text-[#111827]">
+                  <span className="font-semibold">{message.from_name || message.from_address}</span>
+                  {message.from_name && (
+                    <span className="text-[#6B7280] ml-1">&lt;{message.from_address}&gt;</span>
+                  )}
                 </div>
-                <div className="text-[12px] text-[#6B7280]">{message.from_address}</div>
-              </div>
-            </div>
-
-            {message.to_addresses?.length > 0 && (
-              <div className="flex items-start gap-2">
-                <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">To:</span>
-                <div className="flex-1 flex flex-wrap gap-1">
-                  {message.to_addresses.map((addr, idx) => (
-                    <Badge key={idx} variant="outline" className="text-[12px] font-normal">
-                      {addr}
-                    </Badge>
-                  ))}
+                <div className="text-[12px] text-[#6B7280] mt-0.5">
+                  to {message.to_addresses?.join(', ') || 'me'}
+                  {message.cc_addresses?.length > 0 && (
+                    <span className="ml-1">• cc: {message.cc_addresses.join(', ')}</span>
+                  )}
                 </div>
               </div>
-            )}
-
-            {message.cc_addresses?.length > 0 && (
-              <div className="flex items-start gap-2">
-                <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">CC:</span>
-                <div className="flex-1 flex flex-wrap gap-1">
-                  {message.cc_addresses.map((addr, idx) => (
-                    <Badge key={idx} variant="outline" className="text-[12px] font-normal bg-[#F9FAFB]">
-                      {addr}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">Date:</span>
-              <span className="text-[13px] text-[#111827]">
-                {message.sent_at && format(parseISO(message.sent_at), 'EEEE, MMMM d, yyyy • h:mm a')}
+              <span className="text-[12px] text-[#6B7280] whitespace-nowrap">
+                {message.sent_at && format(parseISO(message.sent_at), 'MMM d, yyyy, h:mm a')}
               </span>
             </div>
+          </div>
 
-            {message.subject && (
-              <div className="flex items-start gap-2">
-                <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">Subject:</span>
-                <span className="text-[13px] text-[#111827] font-medium">{message.subject}</span>
-              </div>
-            )}
-
-            {/* Attachments - Collapsible (only non-inline attachments) */}
-            {regularAttachments.length > 0 && (
+          {/* Attachments - Above content like Gmail */}
+          {regularAttachments.length > 0 && (
+            <div className="mb-4">
               <AttachmentsSection 
                 attachments={regularAttachments}
                 linkedJobId={linkedJobId}
@@ -285,11 +275,11 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 threadSubject={threadSubject}
                 gmailMessageId={gmailMessageId}
               />
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Email Body - Gmail-style rendering with inline images */}
-          <div className="mb-5">
+          <div className="mb-4">
             {loadingFullContent && (
               <div className="text-[13px] text-[#6B7280] mb-3 flex items-center gap-2 bg-[#F9FAFB] px-3 py-2 rounded-lg border border-[#E5E7EB]">
                 <div className="w-4 h-4 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
@@ -320,20 +310,20 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             )}
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons - More compact */}
           {(onReply || onForward) && (
-            <div className="flex gap-2 pt-3 border-t border-[#F3F4F6]">
+            <div className="flex gap-1.5 pt-2">
               {onReply && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
                     onReply(message, thread);
                   }}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1.5 h-8 text-[13px] hover:bg-[#F3F4F6]"
                 >
-                  <Reply className="w-4 h-4" />
+                  <Reply className="w-3.5 h-3.5" />
                   Reply
                 </Button>
               )}
@@ -343,11 +333,11 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                     e.stopPropagation();
                     onForward(message, thread);
                   }}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1.5 h-8 text-[13px] hover:bg-[#F3F4F6]"
                 >
-                  <Forward className="w-4 h-4" />
+                  <Forward className="w-3.5 h-3.5" />
                   Forward
                 </Button>
               )}
@@ -358,10 +348,10 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 }}
                 variant="ghost"
                 size="sm"
-                className="ml-auto"
-                title="Open in modal"
+                className="ml-auto h-8 hover:bg-[#F3F4F6]"
+                title="Open in full view"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-3.5 h-3.5" />
               </Button>
             </div>
           )}

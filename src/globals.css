@@ -197,7 +197,9 @@ css
     color: #2563EB;
     text-decoration: none;
     cursor: pointer;
-    word-break: break-all;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    display: inline;
   }
 
   .gmail-email-body a:hover {
@@ -232,7 +234,7 @@ css
 
   /* Preserve paragraph spacing */
   .gmail-email-body p {
-    margin: 0.75em 0;
+    margin: 0.5em 0;
     line-height: 1.6;
   }
 
@@ -247,6 +249,12 @@ css
   /* Divs that act as paragraphs */
   .gmail-email-body div {
     line-height: 1.6;
+    margin: 0.25em 0;
+  }
+
+  /* Fix spacing between inline elements */
+  .gmail-email-body span {
+    line-height: inherit;
   }
 
   /* Lists */
@@ -261,19 +269,27 @@ css
     margin: 0.25em 0;
   }
 
-  /* Blockquotes */
+  /* Blockquotes - quoted text styling */
   .gmail-email-body blockquote {
     margin: 0.75em 0;
-    padding-left: 1em;
-    border-left: 3px solid #E5E7EB;
+    padding: 0.75em 1em;
+    border-left: 3px solid #D1D5DB;
+    background-color: #F9FAFB;
     color: #6B7280;
+    border-radius: 4px;
   }
 
   /* Fix spacing issues from email clients */
-  .gmail-email-body br + br {
+  .gmail-email-body br {
     display: block;
+    margin: 0.25em 0;
     content: "";
-    margin-top: 0.5em;
+  }
+
+  /* Better spacing for signature blocks */
+  .gmail-email-body [style*="border-top"] {
+    margin-top: 1em;
+    padding-top: 0.75em;
   }
 
   /* Chip Container Scrolling */

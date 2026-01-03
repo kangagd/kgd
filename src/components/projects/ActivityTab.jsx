@@ -532,6 +532,7 @@ function EmailThreadViewerModal({
 }) {
   const messagesEndRef = useRef(null);
   const threadId = selectedActivity?.threadId;
+  const [showAllMessages, setShowAllMessages] = useState(false);
   
   // B) Dedicated query for the selected thread (more reliable than linkedThreads)
   const { data: threadById, isLoading: threadLoading } = useQuery({
@@ -550,6 +551,21 @@ function EmailThreadViewerModal({
       .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at)); // oldest → newest
   }, [threadId, emailMessages]);
 
+  // B) Collapse logic: show only first and last 2 messages by default
+  const [showAllMessages, setShowAllMessages] = useState(false);
+  const displayMessages = React.useMemo(() => {
+    if (threadMessages.length <= 4 || showAllMessages) {
+      return threadMessages;
+    }
+    // Show first message and last 2 messages
+    return [
+      threadMessages[0],
+      ...threadMessages.slice(-2)
+    ];
+  }, [threadMessages, showAllMessages]);
+  
+  const hiddenMessageCount = threadMessages.length - displayMessages.length;
+
   // Use linkedThreads as primary source (working data), fall back to threadById for display
   const threadFromList = linkedThreads.find(t => t.id === threadId);
   const thread = threadFromList || threadById || null;
@@ -557,6 +573,20 @@ function EmailThreadViewerModal({
   // D) Safety: define latestMessage and canCompose
   const latestMessage = threadMessages.length > 0 ? threadMessages[threadMessages.length - 1] : null;
   const canCompose = !!threadFromList && !!latestMessage;
+
+  // E) Collapse logic for modal: show only first and last 2 messages by default
+  const displayMessages = React.useMemo(() => {
+    if (threadMessages.length <= 4 || showAllMessages) {
+      return threadMessages;
+    }
+    // Show first message and last 2 messages
+    return [
+      threadMessages[0],
+      ...threadMessages.slice(-2)
+    ];
+  }, [threadMessages, showAllMessages]);
+  
+  const hiddenMessageCount = threadMessages.length - displayMessages.length;
 
   // E) Auto-scroll to latest message on open
   useEffect(() => {
@@ -664,7 +694,7 @@ function EmailThreadViewerModal({
             </div>
 
             {/* Message list - scrollable area */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="flex-1 overflow-y-auto px-6 py-4 bg-[#F9FAFB]">
               {/* F) Empty state */}
               {!threadLoading && threadMessages.length === 0 ? (
                 <div className="text-center py-8 text-[#9CA3AF]">
@@ -672,42 +702,64 @@ function EmailThreadViewerModal({
                   <p className="text-[14px]">No messages found for this thread.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {threadMessages.map((msg, idx) => (
-                    <EmailMessageView
-                      key={msg.id}
-                      message={msg}
-                      isFirst={idx === 0}  // A) Fix: oldest message gets isFirst
-                      linkedProjectId={project.id}
-                      threadSubject={thread?.subject}
-                      gmailMessageId={msg.gmail_message_id}
-                      onReply={(message) => {
-                        if (!message || !threadFromList) {
-                          toast.error('No message available to reply to.');
-                          return;
-                        }
-                        onClose();
-                        onComposeEmail?.({
-                          mode: 'reply',
-                          thread: threadFromList,
-                          message: message
-                        });
-                      }}
-                      onForward={(message) => {
-                        if (!message || !threadFromList) {
-                          toast.error('No message available to forward.');
-                          return;
-                        }
-                        onClose();
-                        onComposeEmail?.({
-                          mode: 'forward',
-                          thread: threadFromList,
-                          message: message
-                        });
-                      }}
-                      thread={threadFromList}
-                    />
-                  ))}
+                <div className="space-y-2">
+                  {displayMessages.map((msg, idx) => {
+                    const isFirst = threadMessages[0]?.id === msg.id;
+                    const isLast = threadMessages[threadMessages.length - 1]?.id === msg.id;
+                    
+                    return (
+                      <React.Fragment key={msg.id}>
+                        {/* Show "expand messages" button before the last messages if some are hidden */}
+                        {!showAllMessages && hiddenMessageCount > 0 && idx === 1 && (
+                          <div className="flex justify-center my-3">
+                            <Button
+                              onClick={() => setShowAllMessages(true)}
+                              variant="ghost"
+                              size="sm"
+                              className="text-[13px] text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] gap-2"
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                              Show {hiddenMessageCount} earlier message{hiddenMessageCount !== 1 ? 's' : ''}
+                            </Button>
+                          </div>
+                        )}
+                        
+                        <EmailMessageView
+                          message={msg}
+                          isFirst={isFirst}
+                          isLast={isLast}
+                          linkedProjectId={project.id}
+                          threadSubject={thread?.subject}
+                          gmailMessageId={msg.gmail_message_id}
+                          onReply={(message) => {
+                            if (!message || !threadFromList) {
+                              toast.error('No message available to reply to.');
+                              return;
+                            }
+                            onClose();
+                            onComposeEmail?.({
+                              mode: 'reply',
+                              thread: threadFromList,
+                              message: message
+                            });
+                          }}
+                          onForward={(message) => {
+                            if (!message || !threadFromList) {
+                              toast.error('No message available to forward.');
+                              return;
+                            }
+                            onClose();
+                            onComposeEmail?.({
+                              mode: 'forward',
+                              thread: threadFromList,
+                              message: message
+                            });
+                          }}
+                          thread={threadFromList}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
                   {/* E) Auto-scroll anchor */}
                   <div ref={messagesEndRef} />
                 </div>
