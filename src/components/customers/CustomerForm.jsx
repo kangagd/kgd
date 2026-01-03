@@ -124,7 +124,7 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     orgTypeFilter === "all" || org.organisation_type === orgTypeFilter
   );
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Ensure organisation_name is included if organisation_id is set
@@ -137,7 +137,20 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
     // Add normalized fields
     const normalizedFields = getNormalizedFields('Customer', submitData);
     
-    onSubmit({ ...submitData, ...normalizedFields });
+    const result = await onSubmit({ ...submitData, ...normalizedFields });
+    
+    // If we have matches from duplicate check, re-evaluate those records after save
+    if (result && duplicateWarning?.matches?.length > 0) {
+      try {
+        const matchIds = duplicateWarning.matches.map(m => m.id);
+        await base44.functions.invoke('reevaluateDuplicatesAfterDeletion', {
+          entity_type: 'Customer',
+          record_ids: matchIds
+        });
+      } catch (error) {
+        console.error('Error re-evaluating duplicates:', error);
+      }
+    }
   };
 
   const handleOrganisationChange = (orgId) => {
