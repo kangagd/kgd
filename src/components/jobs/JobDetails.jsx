@@ -2968,7 +2968,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             {!isLogisticsJob && (
               <TabsContent value="invoicing" className="mt-2">
               <div className="space-y-6">
-                {/* PandaDoc Quotes */}
+                {/* PandaDoc Quotes - Shows both project-level and job-specific quotes */}
                 <QuotesSection 
                   job={job}
                   customer={customer}
