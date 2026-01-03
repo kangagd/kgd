@@ -315,11 +315,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnWindowFocus: true
   });
 
-  // Detect logistics job (includes Material Pick Up jobs)
+  // Detect logistics job (includes Material Pick Up/Pickup jobs)
   const isLogisticsJob = !!(
     job.job_type === 'Logistics' || 
-    job.job_type === 'Material Pick Up' ||
-    job.job_type_name === 'Material Pick Up' ||
+    job.job_type?.includes('Material Pick') ||
+    job.job_type_name?.includes('Material Pick') ||
     job.vehicle_id || 
     job.purchase_order_id || 
     job.third_party_trade_id
