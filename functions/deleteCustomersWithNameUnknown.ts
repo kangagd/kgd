@@ -9,8 +9,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    // Fetch ALL customers (same as deleteCustomersWithoutJobs.js)
-    const allCustomers = await base44.asServiceRole.entities.Customer.list();
+    // Fetch ALL customers
+    const response = await base44.asServiceRole.entities.Customer.list();
+    const allCustomers = Array.isArray(response) ? response : (response?.data || []);
     
     console.log(`Total customers fetched: ${allCustomers.length}`);
 
