@@ -117,13 +117,13 @@ export default function Inbox() {
   useEffect(() => {
     if (threadIdFromUrl && threads.length > 0) {
       const thread = threads.find(t => t.id === threadIdFromUrl);
-      if (thread) {
+      if (thread && (!selectedThread || selectedThread.id !== thread.id)) {
         setSelectedThread(thread);
       }
     } else if (!threadIdFromUrl && selectedThread) {
       setSelectedThread(null);
     }
-  }, [threadIdFromUrl, threads]);
+  }, [threadIdFromUrl, threads, selectedThread?.id]);
 
   const { data: messages = [] } = useQuery({
     queryKey: ['allEmailMessages'],
@@ -197,10 +197,6 @@ export default function Inbox() {
     mutationFn: ({ id, data }) => base44.entities.EmailThread.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-      if (selectedThread) {
-        const updated = threads.find(t => t.id === selectedThread.id);
-        if (updated) setSelectedThread(updated);
-      }
     }
   });
 
