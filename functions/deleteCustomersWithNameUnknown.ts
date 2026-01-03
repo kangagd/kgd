@@ -9,25 +9,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    // Fetch ALL customers
-    const response = await base44.asServiceRole.entities.Customer.list();
-    const allCustomers = Array.isArray(response) ? response : (response?.data || []);
-    
-    console.log(`Total customers fetched: ${allCustomers.length}`);
-
-    // Filter for customers with name "unknown" (case-insensitive)
-    const unknownCustomers = allCustomers.filter(c => 
-      c.name && c.name.toLowerCase().trim() === 'unknown'
+    // Use filter() instead of list() to get customers with name "unknown"
+    const unknownCustomers = await base44.asServiceRole.entities.Customer.filter(
+      { name: 'Unknown' }
     );
 
-    console.log(`Found ${unknownCustomers.length} customers with name "unknown"`);
+    console.log(`Found ${unknownCustomers.length} customers with name "Unknown"`);
 
     if (unknownCustomers.length === 0) {
       return Response.json({
         success: true,
-        message: 'No customers with name "unknown" found',
-        deleted: 0,
-        total_fetched: allCustomers.length
+        message: 'No customers with name "Unknown" found',
+        deleted: 0
       });
     }
 
@@ -63,7 +56,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      message: `Deleted ${unknownCustomers.length} customer(s) with name "unknown"`,
+      message: `Deleted ${unknownCustomers.length} customer(s) with name "Unknown"`,
       deleted: unknownCustomers.length
     });
 
