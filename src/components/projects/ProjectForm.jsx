@@ -23,9 +23,9 @@ import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 import { handleEnterToNextField } from "../common/formNavigator";
 
-export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting }) {
+export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting }) {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState(project || {
+  const [formData, setFormData] = useState(initialData || project || {
     customer_id: "",
     customer_name: "",
     customer_phone: "",
