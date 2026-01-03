@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import AttachmentCard from "./AttachmentCard";
 import { processEmailForDisplay } from "@/components/utils/emailFormatting";
+import { sanitizeForDisplay } from "@/components/utils/emailSanitization";
 
 function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -170,26 +171,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
     });
   }, [processedBodyHtml, displayMessage.body_text]);
 
-  // Minimal sanitization - preserve Gmail layout and styling
-  const sanitizeBodyHtml = (html) => {
-    if (!html) return html;
-    
-    let sanitized = html;
-    
-    // Only remove dangerous executable content
-    sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
-    sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
-    sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, '');
-    sanitized = sanitized.replace(/<embed[^>]*>/gi, '');
-    sanitized = sanitized.replace(/<form[^>]*>.*?<\/form>/gi, '');
-    sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, ''); // Remove event handlers
-    
-    // Keep inline styles - they're needed for Gmail layout
-    // Keep tables and their structure
-    // Keep images (including inline/signature images)
-    
-    return sanitized;
-  };
+
 
   return (
     <>
@@ -323,7 +305,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                   wordWrap: 'break-word',
                   overflowWrap: 'anywhere'
                 }}
-                dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(formattedEmailContent.html) }} 
+                dangerouslySetInnerHTML={{ __html: sanitizeForDisplay(formattedEmailContent.html) }} 
               />
             ) : (
               <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
@@ -451,7 +433,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                     wordWrap: 'break-word',
                     overflowWrap: 'anywhere'
                   }}
-                  dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(formattedEmailContent.html) }} 
+                  dangerouslySetInnerHTML={{ __html: sanitizeForDisplay(formattedEmailContent.html) }} 
                 />
               ) : (
                 <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">

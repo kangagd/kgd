@@ -11,35 +11,7 @@ import debounce from "lodash/debounce";
 import ReactQuill from "react-quill";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { renderTemplate, buildTemplateContext } from "@/components/utils/templateHelpers";
-
-const sanitizeBodyHtml = (html) => {
-  if (!html) return html;
-  
-  let sanitized = html;
-  
-  // Remove outer HTML document wrappers
-  sanitized = sanitized.replace(/<\!DOCTYPE[^>]*>/gi, '');
-  sanitized = sanitized.replace(/<html[^>]*>/gi, '');
-  sanitized = sanitized.replace(/<\/html>/gi, '');
-  sanitized = sanitized.replace(/<head[^>]*>.*?<\/head>/gis, '');
-  sanitized = sanitized.replace(/<meta[^>]*>/gi, '');
-  
-  // Extract body content if wrapped in <body> tags
-  const bodyMatch = sanitized.match(/<body[^>]*>(.*?)<\/body>/is);
-  if (bodyMatch) {
-    sanitized = bodyMatch[1];
-  }
-  
-  // Remove dangerous elements
-  sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
-  sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
-  sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, '');
-  sanitized = sanitized.replace(/<embed[^>]*>/gi, '');
-  sanitized = sanitized.replace(/<form[^>]*>.*?<\/form>/gi, '');
-  sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-  
-  return sanitized.trim();
-};
+import { sanitizeForCompose } from "@/components/utils/emailSanitization";
 
 export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, onDraftSaved, existingDraft = null, projectId = null, jobId = null, defaultTo = null }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -142,7 +114,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     if (mode === "reply") {
       let quotedContent = "";
       if (message?.body_html) {
-        quotedContent = sanitizeBodyHtml(message.body_html);
+        quotedContent = sanitizeForCompose(message.body_html);
       } else if (message?.body_text) {
         quotedContent = message.body_text.replace(/\n/g, '<br>');
       }
@@ -158,7 +130,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     if (mode === "forward") {
       let forwardedContent = "";
       if (message?.body_html) {
-        forwardedContent = sanitizeBodyHtml(message.body_html);
+        forwardedContent = sanitizeForCompose(message.body_html);
       } else if (message?.body_text) {
         forwardedContent = message.body_text.replace(/\n/g, '<br>');
       }
