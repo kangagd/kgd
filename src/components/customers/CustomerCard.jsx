@@ -69,10 +69,10 @@ export default function CustomerCard({ customer, onClick, onViewDetails }) {
                   <span className="text-[14px] text-[#4B5563] leading-[1.4]">{customer.address_full || customer.address}</span>
                 </div>
               )}
-              {customer.phone && (
+              {(customer.normalized_phone || customer.phone) && (
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
-                  <span className="text-[14px] text-[#4B5563] leading-[1.4]">{customer.phone}</span>
+                  <span className="text-[14px] text-[#4B5563] leading-[1.4]">{customer.normalized_phone || customer.phone}</span>
                 </div>
               )}
               {customer.email && (
