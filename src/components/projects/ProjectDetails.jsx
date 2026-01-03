@@ -1679,12 +1679,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UpcomingVisitsCard 
                 jobs={jobs}
-                onScheduleVisit={() => {
-                  setActiveTab('requirements');
-                  setTimeout(() => {
-                    document.getElementById('tab-requirements')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 100);
-                }}
+                onScheduleVisit={handleAddJob}
               />
               <LatestVisitCard 
                 jobs={jobs}
