@@ -53,7 +53,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Fetch email messages for linked threads
-  const { data: emailMessages = [], refetch: refetchMessages } = useQuery({
+  const { data: emailMessages = [], refetch: refetchEmailMessages } = useQuery({
     queryKey: ['projectEmailMessages', linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
       if (linkedThreads.length === 0) return [];
