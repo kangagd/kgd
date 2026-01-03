@@ -74,6 +74,9 @@ Deno.serve(async (req) => {
               new: targetQuantity
             });
             totalUpdates++;
+            
+            // Add delay to avoid rate limits
+            await new Promise(resolve => setTimeout(resolve, 100));
           }
         } else {
           // Create new stock entry
@@ -108,6 +111,9 @@ Deno.serve(async (req) => {
             new: targetQuantity
           });
           totalUpdates++;
+          
+          // Add delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
         } catch (itemError) {
           console.error('[fillAllVehicleStock] Error processing item', item.item, 'for vehicle', vehicle.name, ':', itemError.message);
