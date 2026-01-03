@@ -47,6 +47,7 @@ import NotificationBell from "./components/notifications/NotificationBell";
 import CommandPalette from "@/components/common/CommandPalette";
 import ActiveCheckInBanner from "@/components/common/ActiveCheckInBanner";
 import PullToRefresh from "@/components/common/PullToRefresh";
+import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -157,13 +158,20 @@ export default function Layout({ children, currentPageName }) {
   const [recentPagesOpen, setRecentPagesOpen] = useState(false);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [activeCheckIn, setActiveCheckIn] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setUser(await base44.auth.me());
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+        
+        // Check if user needs onboarding
+        if (currentUser && !currentUser.onboarding_completed) {
+          setShowOnboarding(true);
+        }
       } catch (error) {
         console.error("Error loading user:", error);
       }
@@ -897,7 +905,13 @@ export default function Layout({ children, currentPageName }) {
         </div>
 
         <CommandPalette open={isCommandOpen} onOpenChange={setIsCommandOpen} />
-      </div>
-    </PermissionsProvider>
-  );
-}
+
+        <OnboardingFlow 
+          open={showOnboarding} 
+          onComplete={() => setShowOnboarding(false)}
+          userRole={effectiveRole}
+        />
+        </div>
+        </PermissionsProvider>
+        );
+        }
