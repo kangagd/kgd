@@ -48,17 +48,27 @@ Deno.serve(async (req) => {
       // Check for duplicates
       const duplicateChecks = await Promise.all(
         records_to_import.map(async (record) => {
-          const response = await base44.asServiceRole.functions.invoke('checkDuplicates', {
-            entity_type: 'Customer',
-            record: record,
-            auto_update: false
-          });
-          
-          return {
-            record,
-            has_duplicates: response.data?.has_duplicates || false,
-            matches: response.data?.matches || []
-          };
+          try {
+            const response = await base44.asServiceRole.functions.invoke('checkDuplicates', {
+              entity_type: 'Customer',
+              record: record,
+              auto_update: false
+            });
+            
+            return {
+              record,
+              has_duplicates: response.data?.has_duplicates || false,
+              matches: response.data?.matches || []
+            };
+          } catch (error) {
+            console.error('Error checking duplicates for record:', record, error);
+            // Return no duplicates on error to allow import to continue
+            return {
+              record,
+              has_duplicates: false,
+              matches: []
+            };
+          }
         })
       );
 
