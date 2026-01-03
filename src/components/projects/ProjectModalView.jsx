@@ -6,6 +6,7 @@ import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { ProjectStatusBadge, ProjectTypeBadge } from "../common/StatusBadge";
 import FreshnessBadge from "../common/FreshnessBadge";
 import { computeSimpleFreshness } from "../utils/computeFreshness";
+import ReplyStatusBadge from "./ReplyStatusBadge";
 
 export default function ProjectModalView({ project, jobCount = 0 }) {
   const handleCall = () => {
@@ -32,6 +33,7 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
           {project.project_type && (
             <ProjectTypeBadge value={project.project_type} />
           )}
+          <ReplyStatusBadge project={project} />
         </div>
 
         <div className="text-[16px] font-medium text-[#4B5563]">
