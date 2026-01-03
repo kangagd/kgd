@@ -524,12 +524,13 @@ function EmailThreadViewerModal({
       .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at)); // oldest → newest
   }, [threadId, emailMessages]);
 
-  // Use threadById as primary source, fall back to linkedThreads
-  const thread = threadById || linkedThreads.find(t => t.id === threadId) || null;
+  // Use linkedThreads as primary source (working data), fall back to threadById for display
+  const threadFromList = linkedThreads.find(t => t.id === threadId);
+  const thread = threadFromList || threadById || null;
   
   // D) Safety: define latestMessage and canCompose
   const latestMessage = threadMessages.length > 0 ? threadMessages[threadMessages.length - 1] : null;
-  const canCompose = !!threadId && !!latestMessage;
+  const canCompose = !!threadFromList && !!latestMessage;
 
   // E) Auto-scroll to latest message on open
   useEffect(() => {
@@ -546,7 +547,7 @@ function EmailThreadViewerModal({
     onClose();
     onComposeEmail?.({
       mode: 'reply',
-      thread: thread,
+      thread: threadFromList,
       message: latestMessage
     });
   };
@@ -559,7 +560,7 @@ function EmailThreadViewerModal({
     onClose();
     onComposeEmail?.({
       mode: 'forward',
-      thread: thread,
+      thread: threadFromList,
       message: latestMessage
     });
   };
@@ -652,31 +653,31 @@ function EmailThreadViewerModal({
                       linkedProjectId={project.id}
                       threadSubject={thread?.subject}
                       gmailMessageId={msg.gmail_message_id}
-                      onReply={(message, thread) => {
-                        if (!message || !thread) {
+                      onReply={(message) => {
+                        if (!message || !threadFromList) {
                           toast.error('No message available to reply to.');
                           return;
                         }
                         onClose();
                         onComposeEmail?.({
                           mode: 'reply',
-                          thread: thread,
+                          thread: threadFromList,
                           message: message
                         });
                       }}
-                      onForward={(message, thread) => {
-                        if (!message || !thread) {
+                      onForward={(message) => {
+                        if (!message || !threadFromList) {
                           toast.error('No message available to forward.');
                           return;
                         }
                         onClose();
                         onComposeEmail?.({
                           mode: 'forward',
-                          thread: thread,
+                          thread: threadFromList,
                           message: message
                         });
                       }}
-                      thread={thread}
+                      thread={threadFromList}
                     />
                   ))}
                   {/* E) Auto-scroll anchor */}
