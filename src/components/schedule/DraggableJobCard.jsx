@@ -13,7 +13,8 @@ export default function DraggableJobCard({
   onProjectClick,
   isDragging = false,
   techniciansLookup = {},
-  hasActiveCheckIn = false
+  hasActiveCheckIn = false,
+  visitLabel = null
 }) {
   return (
     <Card
@@ -68,6 +69,7 @@ export default function DraggableJobCard({
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-[#111827]">
                   Job #{job.job_number}
+                  {visitLabel && <span className="text-[#6B7280] ml-1">({visitLabel})</span>}
                 </div>
                 <div className="text-sm text-[#4B5563]">
                   {job.customer_name}
