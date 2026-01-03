@@ -45,7 +45,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const [currentUser, setCurrentUser] = useState(null);
   const [isReplyAll, setIsReplyAll] = useState(false);
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
-  const [initialized, setInitialized] = useState(false);
   
   // State - start empty, will be initialized in useEffect
   const [to, setTo] = useState("");
@@ -169,9 +168,11 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     return signature;
   };
   
-  // Initialize form when currentUser loads
+  // Initialize form when currentUser, mode, thread, or message changes
   useEffect(() => {
-    if (!currentUser || initialized) return;
+    if (!currentUser) return;
+
+    console.log('[EmailComposer] Initializing with:', { mode, threadSubject: thread?.subject, messageId: message?.id });
 
     // Handle existing draft
     if (existingDraft) {
@@ -182,7 +183,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       setBody(existingDraft?.body_html || existingDraft?.body || "");
       if (existingDraft?.cc_addresses?.length || existingDraft?.cc) setShowCc(true);
       if (existingDraft?.bcc_addresses?.length || existingDraft?.bcc) setShowBcc(true);
-      setInitialized(true);
       return;
     }
 
@@ -190,6 +190,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     const recipients = getReplyRecipients(isReplyAll);
     setTo(recipients.to || defaultTo || "");
     setCc(recipients.cc);
+    setBcc("");
     if (recipients.cc) setShowCc(true);
 
     let newSubject = "";
@@ -200,8 +201,8 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     }
     setSubject(newSubject);
     setBody(getInitialBody());
-    setInitialized(true);
-  }, [currentUser, initialized]);
+
+  }, [currentUser, mode, thread?.id, message?.id, existingDraft?.id, isReplyAll, defaultTo]);
 
   // Fetch customers for email autocomplete
   const { data: customers = [] } = useQuery({
