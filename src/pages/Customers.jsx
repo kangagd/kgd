@@ -130,7 +130,18 @@ export default function Customers() {
   });
 
   const deleteCustomerMutation = useMutation({
-    mutationFn: (customerId) => base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() }),
+    mutationFn: async (customerId) => {
+      const updated = await base44.entities.Customer.update(customerId, { deleted_at: new Date().toISOString() });
+      // Re-evaluate other customers that might have been marked as duplicates to this one
+      try {
+        await base44.functions.invoke('reevaluateDuplicatesAfterDeletion', {
+          entity_type: 'Customer'
+        });
+      } catch (error) {
+        console.error('Error re-evaluating duplicates after deletion:', error);
+      }
+      return updated;
+    },
     onSuccess: (updatedCustomer, deletedId) => {
       queryClient.setQueryData(['allCustomers'], (old) => 
         (old || []).map(c => c.id === deletedId ? { ...c, deleted_at: updatedCustomer.deleted_at } : c)
@@ -143,12 +154,13 @@ export default function Customers() {
     }
   });
 
-  const handleSubmit = (data) => {
+  const handleSubmit = async (data) => {
     if (editingCustomer) {
-      updateCustomerMutation.mutate({ id: editingCustomer.id, data });
+      await updateCustomerMutation.mutateAsync({ id: editingCustomer.id, data });
     } else {
-      createCustomerMutation.mutate(data);
+      await createCustomerMutation.mutateAsync(data);
     }
+    return true;
   };
 
   const handleEdit = (customer) => {
