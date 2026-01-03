@@ -238,7 +238,22 @@ Deno.serve(async (req) => {
         } else if (action === 'update') {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
-            job = await base44.asServiceRole.entities.Job.update(id, data);
+            
+            // GUARDRAIL: Prevent logistics jobs from having customer_name/address manually overridden
+            const isLogisticsJob = previousJob.purchase_order_id || 
+                                  previousJob.vehicle_id || 
+                                  previousJob.third_party_trade_id ||
+                                  (previousJob.job_type_name || '').toLowerCase().includes('material pick') ||
+                                  (previousJob.job_type_name || '').toLowerCase().includes('material delivery') ||
+                                  (previousJob.job_type_name || '').toLowerCase().includes('stock delivery');
+            
+            if (isLogisticsJob && (data.customer_name || data.address || data.address_full)) {
+                // Strip out these fields to prevent manual override
+                const { customer_name, address, address_full, ...safeData } = data;
+                job = await base44.asServiceRole.entities.Job.update(id, safeData);
+            } else {
+                job = await base44.asServiceRole.entities.Job.update(id, data);
+            }
             
             // Update project activity when job is updated
             if (job.project_id) {
