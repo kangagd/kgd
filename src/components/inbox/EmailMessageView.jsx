@@ -57,7 +57,7 @@ function isInlineImageInHtml(attachment, bodyHtml) {
   return false;
 }
 
-export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId, onReply, onForward }) {
+export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId, onReply, onForward, thread }) {
   // Use message's own gmail_message_id first, then fall back to prop
   const gmailMessageId = message.gmail_message_id || propGmailMessageId;
   const [expanded, setExpanded] = useState(isFirst);
@@ -339,7 +339,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onReply(message);
+                    onReply(message, thread);
                   }}
                   variant="outline"
                   size="sm"
@@ -353,7 +353,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onForward(message);
+                    onForward(message, thread);
                   }}
                   variant="outline"
                   size="sm"
@@ -491,7 +491,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
               <Button
                 onClick={() => {
                   setShowModal(false);
-                  onReply(message);
+                  onReply(message, thread);
                 }}
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
               >
@@ -503,7 +503,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
               <Button
                 onClick={() => {
                   setShowModal(false);
-                  onForward(message);
+                  onForward(message, thread);
                 }}
                 variant="outline"
               >

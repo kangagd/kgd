@@ -15,7 +15,7 @@ import GmailHistorySearch from "../inbox/GmailHistorySearch";
 export default function ProjectEmailSection({ project, onThreadLinked }) {
   const queryClient = useQueryClient();
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [composerMode, setComposerMode] = useState(null); // null | 'compose' | 'reply' | 'forward'
+  const [composerMode, setComposerMode] = useState(null); // null | 'compose' | { type: 'reply', thread: any } | { type: 'forward', thread: any }
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [editingDraft, setEditingDraft] = useState(null);
@@ -326,14 +326,14 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     toast.success('Emails refreshed');
   };
 
-  const handleReply = (message) => {
+  const handleReply = (message, thread) => {
     setSelectedMessage(message);
-    setComposerMode('reply');
+    setComposerMode({ type: 'reply', thread: thread });
   };
 
-  const handleForward = (message) => {
+  const handleForward = (message, thread) => {
     setSelectedMessage(message);
-    setComposerMode('forward');
+    setComposerMode({ type: 'forward', thread: thread });
   };
 
   const handleCompose = () => {
@@ -564,8 +564,8 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       {/* Email Composer */}
       {composerMode && (
         <EmailComposer
-          mode={composerMode}
-          thread={emailThread}
+          mode={composerMode?.type || composerMode}
+          thread={composerMode?.thread || emailThread}
           message={selectedMessage}
           existingDraft={editingDraft}
           onClose={() => {
@@ -575,7 +575,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
           }}
           onSent={handleEmailSent}
           onDraftSaved={handleDraftSaved}
-          defaultTo={composerMode === 'compose' ? project.customer_email : undefined}
+          defaultTo={composerMode?.type === 'compose' ? project.customer_email : undefined}
           projectId={project.id}
         />
       )}
@@ -675,7 +675,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                     {threadMessages.length > 0 && (
                       <>
                         <Button
-                          onClick={() => handleReply(threadMessages[threadMessages.length - 1])}
+                          onClick={() => handleReply(threadMessages[threadMessages.length - 1], thread)}
                           variant="outline"
                           size="sm"
                           className="h-9"
@@ -684,7 +684,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                           Reply
                         </Button>
                         <Button
-                          onClick={() => handleForward(threadMessages[threadMessages.length - 1])}
+                          onClick={() => handleForward(threadMessages[threadMessages.length - 1], thread)}
                           variant="outline"
                           size="sm"
                           className="h-9"
@@ -721,6 +721,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                             gmailMessageId={message.gmail_message_id}
                             onReply={handleReply}
                             onForward={handleForward}
+                            thread={thread}
                           />
                         );
                       })}
