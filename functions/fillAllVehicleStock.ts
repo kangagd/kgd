@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     // Get all active vehicles
     const vehicles = await base44.entities.Vehicle.list();
-    const activeVehicles = vehicles.filter(v => v.status === 'active');
+    const activeVehicles = vehicles.filter(v => v.status === 'Active' || v.status === 'active');
 
     // Get all price list items with car_quantity > 0
     const priceListItems = await base44.entities.PriceListItem.list();
