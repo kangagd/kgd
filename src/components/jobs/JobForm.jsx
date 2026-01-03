@@ -820,53 +820,6 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assigned_to" className="text-[14px] font-medium text-[#111827] leading-[1.4]">
-                  Assign Technicians (Legacy - for single visit)
-                </Label>
-                <MultiTechnicianSelect
-                  selectedEmails={formData.assigned_to}
-                  technicians={technicians}
-                  onChange={handleTechnicianChange}
-                />
-                {formData.assigned_to && formData.assigned_to.length > 0 && (
-                  <div className="flex items-center gap-2 mt-2">
-                    {formData.assigned_to.map((email, idx) => {
-                      const tech = technicians.find(t => t.email === email);
-                      const name = tech?.display_name || tech?.full_name || formData.assigned_to_name[idx] || email;
-                      const getInitials = (name) => {
-                        if (!name) return "?";
-                        return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-                      };
-                      const avatarColors = [
-                        "bg-blue-500",
-                        "bg-purple-500",
-                        "bg-green-500",
-                        "bg-orange-500",
-                        "bg-pink-500",
-                        "bg-indigo-500",
-                        "bg-red-500",
-                        "bg-teal-500"
-                      ];
-                      const getAvatarColor = (name) => {
-                        if (!name) return avatarColors[0];
-                        const index = name.charCodeAt(0) % avatarColors.length;
-                        return avatarColors[index];
-                      };
-                      return (
-                        <div
-                          key={email}
-                          className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                          title={name}
-                        >
-                          {getInitials(name)}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="status" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Status</Label>
                 <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">

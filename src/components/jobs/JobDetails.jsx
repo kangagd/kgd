@@ -1081,72 +1081,72 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           </div>
 
           <div className="space-y-3">
-            {/* New Horizontal Layout: Left | Middle */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              {/* Left Group: Customer Name + Job Number + Customer Type */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <CardTitle
-                  className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
-                  onClick={() => setShowCustomerEdit(true)}>
-                  {job.customer_name}
-                </CardTitle>
-                <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
-                  #{job.job_number}
+          {/* New Horizontal Layout: Left | Middle */}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            {/* Left Group: Customer Name + Job Number + Customer Type */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <CardTitle
+                className="text-[22px] font-semibold text-[#111827] leading-[1.2] cursor-pointer hover:text-[#FAE008] transition-colors"
+                onClick={() => setShowCustomerEdit(true)}>
+                {job.customer_name}
+              </CardTitle>
+              <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
+                #{job.job_number}
+              </Badge>
+              {job.customer_type && (
+                <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:opacity-100`}>
+                  {job.customer_type}
                 </Badge>
-                {job.customer_type && (
-                  <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:opacity-100`}>
-                    {job.customer_type}
+              )}
+              <DuplicateBadge record={job} />
+              {contract && (
+                <Link to={createPageUrl("Contracts")}>
+                  <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 cursor-pointer text-[12px] px-2.5 py-0.5 rounded-lg">
+                    Contract: {contract.name}
                   </Badge>
-                )}
-                <DuplicateBadge record={job} />
-                {contract && (
-                  <Link to={createPageUrl("Contracts")}>
-                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200 cursor-pointer text-[12px] px-2.5 py-0.5 rounded-lg">
-                      Contract: {contract.name}
-                    </Badge>
-                  </Link>
-                )}
-              </div>
-
-              {/* Middle Group: Job Type + Product Chips */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <EditableField
-                  value={job.job_type_id}
-                  onSave={handleJobTypeChange}
-                  type="select"
-                  options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
-                  displayFormat={(val) => {
-                    const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
-                    return (
-                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
-                        {typeName}
-                      </Badge>
-                    );
-                  }}
-                  placeholder="Job type"
-                />
-                <EditableField
-                  value={job.product}
-                  onSave={(val) => handleFieldSave('product', job.product, val)}
-                  type="select"
-                  options={[
-                    { value: "Garage Door", label: "Garage Door" },
-                    { value: "Gate", label: "Gate" },
-                    { value: "Roller Shutter", label: "Roller Shutter" },
-                    { value: "Multiple", label: "Multiple" },
-                    { value: "Custom Garage Door", label: "Custom Garage Door" }
-                  ]}
-                  displayFormat={(val) => (
-                    <Badge className={`${productColors[val] || 'bg-blue-100 text-blue-700'} font-medium border-0 px-3 py-1 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
-                      {val}
-                    </Badge>
-                  )}
-                  placeholder="Product"
-                />
-              </div>
+                </Link>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* Middle Group: Job Type + Product Chips */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <EditableField
+                value={job.job_type_id}
+                onSave={handleJobTypeChange}
+                type="select"
+                options={jobTypes.map((jt) => ({ value: jt.id, label: jt.name }))}
+                displayFormat={(val) => {
+                  const typeName = jobTypes.find((jt) => jt.id === val)?.name || val;
+                  return (
+                    <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-[12px] leading-[1.35] px-3 py-1 rounded-lg hover:bg-[#EDE9FE]">
+                      {typeName}
+                    </Badge>
+                  );
+                }}
+                placeholder="Job type"
+              />
+              <EditableField
+                value={job.product}
+                onSave={(val) => handleFieldSave('product', job.product, val)}
+                type="select"
+                options={[
+                  { value: "Garage Door", label: "Garage Door" },
+                  { value: "Gate", label: "Gate" },
+                  { value: "Roller Shutter", label: "Roller Shutter" },
+                  { value: "Multiple", label: "Multiple" },
+                  { value: "Custom Garage Door", label: "Custom Garage Door" }
+                ]}
+                displayFormat={(val) => (
+                  <Badge className={`${productColors[val] || 'bg-blue-100 text-blue-700'} font-medium border-0 px-3 py-1 rounded-lg text-[12px] leading-[1.35] hover:opacity-100`}>
+                    {val}
+                  </Badge>
+                )}
+                placeholder="Product"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="flex items-start gap-2.5">
                 <Navigation className="text-green-600 w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
@@ -1175,46 +1175,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
                 </div>
               </div>
-              <div className="flex items-start gap-2.5">
-                <User className="text-purple-600 w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Assigned</div>
-                  <EditableField
-                    value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
-                    onSave={handleAssignedToChange}
-                    type="multi-select"
-                    options={technicians.map((t) => ({ value: t.email, label: t.display_name || t.full_name }))}
-                    displayFormat={(val) => {
-                      const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
-                      const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
 
-                      if (namesToDisplay.length === 0) {
-                        return (
-                          <TechnicianAvatar
-                            technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
-                            size="sm"
-                            showPlaceholder={true}
-                          />
-                        );
-                      }
-
-                      return (
-                        <TechnicianAvatarGroup
-                          technicians={emailsToDisplay.map((email, idx) => ({
-                            email,
-                            display_name: namesToDisplay[idx] || email,
-                            full_name: namesToDisplay[idx] || email,
-                            id: email
-                          }))}
-                          maxDisplay={3}
-                          size="sm"
-                        />
-                      );
-                    }}
-                    placeholder="Assign"
-                  />
-                </div>
-              </div>
             </div>
 
             <Collapsible defaultOpen={true} className="bg-white rounded-lg border border-[#E5E7EB]">
@@ -1292,7 +1253,49 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         />
                       </div>
                     </div>
-                  </div>
+                    </div>
+
+                    {/* Assigned Technicians for Visit 1 */}
+                    <div className="col-span-full flex items-center gap-2.5 pt-2 border-t border-[#E5E7EB]">
+                    <User className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Assigned</div>
+                      <EditableField
+                        value={Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : []}
+                        onSave={handleAssignedToChange}
+                        type="multi-select"
+                        options={technicians.map((t) => ({ value: t.email, label: t.display_name || t.full_name }))}
+                        displayFormat={(val) => {
+                          const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                          const namesToDisplay = Array.isArray(job.assigned_to_name) ? job.assigned_to_name : job.assigned_to_name ? [job.assigned_to_name] : [];
+
+                          if (namesToDisplay.length === 0) {
+                            return (
+                              <TechnicianAvatar
+                                technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
+                                size="sm"
+                                showPlaceholder={true}
+                              />
+                            );
+                          }
+
+                          return (
+                            <TechnicianAvatarGroup
+                              technicians={emailsToDisplay.map((email, idx) => ({
+                                email,
+                                display_name: namesToDisplay[idx] || email,
+                                full_name: namesToDisplay[idx] || email,
+                                id: email
+                              }))}
+                              maxDisplay={3}
+                              size="sm"
+                            />
+                          );
+                        }}
+                        placeholder="Assign"
+                      />
+                    </div>
+                    </div>
 
                   {/* Additional Visits */}
                   {job.scheduled_visits && job.scheduled_visits.length > 0 && (
@@ -1369,13 +1372,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                   className="text-[14px] font-medium text-[#111827] leading-[1.4]"
                                 />
                               </div>
-                            </div>
-                          </div>
+                              </div>
+                              </div>
 
-                          {/* Assigned Technicians for this Visit */}
-                          <div className="flex items-center gap-2.5 pt-2 border-t border-[#E5E7EB]">
-                            <User className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
+                              {/* Assigned Technicians for this Visit */}
+                              <div className="col-span-full flex items-center gap-2.5 pt-2 border-t border-[#E5E7EB]">
+                              <User className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
                               <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Assigned</div>
                               <EditableField
                                 value={Array.isArray(visit.assigned_to) ? visit.assigned_to : visit.assigned_to ? [visit.assigned_to] : []}
@@ -1426,8 +1429,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                 }}
                                 placeholder="Assign"
                               />
-                            </div>
-                          </div>
+                              </div>
+                              </div>
                         </div>
                       ))}
                     </div>
