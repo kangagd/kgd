@@ -28,7 +28,6 @@ import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
-import ImportsReview from './pages/ImportsReview';
 import __Layout from './Layout.jsx';
 
 
@@ -63,7 +62,6 @@ export const PAGES = {
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
-    "ImportsReview": ImportsReview,
 }
 
 export const pagesConfig = {
