@@ -11,7 +11,8 @@ Deno.serve(async (req) => {
 
     // Fetch all customers with name "unknown" (case-insensitive)
     // Include both deleted and non-deleted to catch everything
-    const allCustomers = await base44.asServiceRole.entities.Customer.list();
+    const allCustomersResponse = await base44.asServiceRole.entities.Customer.list();
+    const allCustomers = Array.isArray(allCustomersResponse) ? allCustomersResponse : [];
 
     const unknownCustomers = allCustomers.filter(c => 
       c.name && c.name.toLowerCase().trim() === 'unknown'
