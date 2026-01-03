@@ -277,6 +277,9 @@ Deno.serve(async (req) => {
           if (!existingThreads[0].last_message_date || new Date(messageDate) > new Date(existingThreads[0].last_message_date)) {
             updateData.last_message_date = messageDate;
           }
+          
+          // FIX: Inherit project/job links for replies - don't overwrite existing links
+          // This ensures replies to linked threads show the project/job link
           await base44.asServiceRole.entities.EmailThread.update(threadId, updateData);
         } else {
           // Create new thread with Gmail thread ID

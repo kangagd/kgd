@@ -150,6 +150,9 @@ export default function EmailDetailView({
     // Wait a moment for the backend to finish saving
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // Auto-close thread after sending reply (backend already does this, but refresh UI)
+    // The gmailSendEmail function sets status to 'Closed' after sending
+    
     // Invalidate all related queries
     await queryClient.invalidateQueries({ queryKey: ['emailMessages'] });
     await queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
@@ -161,6 +164,10 @@ export default function EmailDetailView({
     if (onThreadUpdate) {
       onThreadUpdate();
     }
+    
+    // Close composer
+    setComposerMode(null);
+    setSelectedMessage(null);
   };
 
   const handlePriorityChange = async (newPriority) => {

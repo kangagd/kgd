@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, X, Save, Star, Trash2 } from "lucide-react";
+import { Search, Filter, X, Save, Star, Trash2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
@@ -34,6 +34,7 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
   const [savedSearches, setSavedSearches] = useState([]);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [searchName, setSearchName] = useState("");
+  const [isSearchingGmail, setIsSearchingGmail] = useState(false);
 
   useEffect(() => {
     loadSavedSearches();
@@ -160,6 +161,37 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
     statusFilter !== "all"
   ].filter(Boolean).length;
 
+  const searchGmailHistory = async () => {
+    if (!searchText.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
+
+    setIsSearchingGmail(true);
+    try {
+      const result = await base44.functions.invoke('searchGmailHistory', {
+        query: searchText,
+        sender: sender || undefined,
+        recipient: recipient || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined
+      });
+
+      if (result.data?.error) {
+        toast.error(result.data.error);
+      } else {
+        toast.success(`Found and synced ${result.data?.synced || 0} emails from Gmail`);
+        // Trigger parent to refresh thread list
+        onSearchChange({ ...currentFilters, searchText });
+      }
+    } catch (error) {
+      toast.error("Failed to search Gmail history");
+      console.error(error);
+    } finally {
+      setIsSearchingGmail(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="relative">
@@ -181,7 +213,12 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
               statusFilter
             });
           }}
-          className="pl-10 pr-24"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+              searchGmailHistory();
+            }
+          }}
+          className="pl-10 pr-32"
         />
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           {activeFiltersCount > 0 && (
@@ -189,6 +226,20 @@ export default function AdvancedSearch({ onSearchChange, currentFilters }) {
               {activeFiltersCount}
             </Badge>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={searchGmailHistory}
+            disabled={isSearchingGmail || !searchText.trim()}
+            title="Search Gmail history (Ctrl+Enter)"
+          >
+            {isSearchingGmail ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Search className="w-4 h-4" />
+            )}
+          </Button>
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 px-2">
