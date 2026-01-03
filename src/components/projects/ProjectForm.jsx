@@ -415,13 +415,17 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                           {filteredCustomers.map((customer) => (
                             <CommandItem
                               key={customer.id}
-                              value={customer.id}
+                              value={`${customer.name ?? ""} ${customer.email ?? ""} ${customer.phone ?? ""}`.trim()}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
                               onSelect={() => {
                                 handleCustomerChange(customer.id);
                                 setCustomerSearchOpen(false);
                                 setCustomerSearchQuery("");
                               }}
-                              className="cursor-pointer"
+                              className="cursor-pointer aria-disabled:opacity-100 data-[disabled=true]:opacity-100"
                             >
                               <div className="flex flex-col w-full">
                                 <span className="font-medium">{customer.name}</span>
