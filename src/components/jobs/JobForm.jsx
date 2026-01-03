@@ -58,6 +58,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     scheduled_date: "",
     scheduled_time: "",
     expected_duration: null,
+    scheduled_visits: [],
     status: JOB_STATUS.OPEN,
     outcome: "",
     notes: "",
@@ -79,6 +80,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const [potentialDuplicates, setPotentialDuplicates] = useState([]);
   const [liveDuplicates, setLiveDuplicates] = useState([]);
   const hasInitializedFromProject = React.useRef(false);
+  const [editingVisitIndex, setEditingVisitIndex] = useState(null);
 
 
   const queryClient = useQueryClient();
@@ -230,8 +232,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
       quote_url: project.quote_url || "",
       invoice_url: project.invoice_url || "",
-    });
-  }, [preselectedProjectId, projectIdFromUrl, projects, job]);
+      scheduled_visits: [],
+      });
+      }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
 
 
@@ -524,6 +527,56 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     });
   };
 
+  const addScheduledVisit = () => {
+    const newVisit = {
+      id: Date.now().toString(),
+      date: formData.scheduled_date || "",
+      time: formData.scheduled_time || "",
+      duration: formData.expected_duration || null,
+      assigned_to: [],
+      assigned_to_name: [],
+      notes: "",
+      status: "scheduled"
+    };
+    setFormData({
+      ...formData,
+      scheduled_visits: [...(formData.scheduled_visits || []), newVisit]
+    });
+    setEditingVisitIndex((formData.scheduled_visits || []).length);
+  };
+
+  const updateScheduledVisit = (index, updates) => {
+    const updatedVisits = [...(formData.scheduled_visits || [])];
+    updatedVisits[index] = { ...updatedVisits[index], ...updates };
+    setFormData({
+      ...formData,
+      scheduled_visits: updatedVisits
+    });
+  };
+
+  const removeScheduledVisit = (index) => {
+    const updatedVisits = (formData.scheduled_visits || []).filter((_, i) => i !== index);
+    setFormData({
+      ...formData,
+      scheduled_visits: updatedVisits
+    });
+    if (editingVisitIndex === index) {
+      setEditingVisitIndex(null);
+    }
+  };
+
+  const handleVisitTechnicianChange = (index, techEmails) => {
+    const emailsArray = Array.isArray(techEmails) ? techEmails : [];
+    const techNames = emailsArray.map(email => {
+      const tech = technicians.find(t => t.email === email);
+      return tech?.display_name || tech?.full_name || "";
+    }).filter(Boolean);
+    updateScheduledVisit(index, {
+      assigned_to: emailsArray,
+      assigned_to_name: techNames
+    });
+  };
+
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -766,7 +819,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="assigned_to" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Assign Technicians</Label>
+                <Label htmlFor="assigned_to" className="text-[14px] font-medium text-[#111827] leading-[1.4]">
+                  Assign Technicians (Legacy - for single visit)
+                </Label>
                 <MultiTechnicianSelect
                   selectedEmails={formData.assigned_to}
                   technicians={technicians}
@@ -869,7 +924,133 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
               </div>
-            </div>
+              </div>
+
+              {/* Scheduled Visits Section */}
+              <div className="space-y-4 pt-4 border-t-2 border-slate-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Scheduled Visits</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addScheduledVisit}
+                  className="border-2 hover:bg-slate-100"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Visit
+                </Button>
+              </div>
+
+              {formData.scheduled_visits && formData.scheduled_visits.length > 0 ? (
+                <div className="space-y-3">
+                  {formData.scheduled_visits.map((visit, index) => (
+                    <div key={visit.id} className="p-4 border-2 border-slate-200 rounded-xl bg-slate-50">
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className="text-[16px] font-medium text-[#111827]">Visit {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeScheduledVisit(index)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-[13px]">Date</Label>
+                          <Input
+                            type="date"
+                            value={visit.date || ""}
+                            onChange={(e) => updateScheduledVisit(index, { date: e.target.value })}
+                            className="border-2 border-slate-300"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[13px]">Time</Label>
+                          <Input
+                            type="time"
+                            value={visit.time || ""}
+                            onChange={(e) => updateScheduledVisit(index, { time: e.target.value })}
+                            className="border-2 border-slate-300"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[13px]">Duration (hours)</Label>
+                          <Input
+                            type="number"
+                            step="0.5"
+                            value={visit.duration || ""}
+                            onChange={(e) => updateScheduledVisit(index, { duration: e.target.value ? parseFloat(e.target.value) : null })}
+                            placeholder="Hours"
+                            className="border-2 border-slate-300"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mt-4">
+                        <Label className="text-[13px]">Assigned Technicians</Label>
+                        <MultiTechnicianSelect
+                          selectedEmails={visit.assigned_to || []}
+                          technicians={technicians}
+                          onChange={(emails) => handleVisitTechnicianChange(index, emails)}
+                        />
+                        {visit.assigned_to && visit.assigned_to.length > 0 && (
+                          <div className="flex items-center gap-2 mt-2">
+                            {visit.assigned_to.map((email, idx) => {
+                              const tech = technicians.find(t => t.email === email);
+                              const name = tech?.display_name || tech?.full_name || visit.assigned_to_name?.[idx] || email;
+                              const getInitials = (name) => {
+                                if (!name) return "?";
+                                return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+                              };
+                              const avatarColors = [
+                                "bg-blue-500",
+                                "bg-purple-500",
+                                "bg-green-500",
+                                "bg-orange-500",
+                                "bg-pink-500",
+                                "bg-indigo-500",
+                                "bg-red-500",
+                                "bg-teal-500"
+                              ];
+                              const getAvatarColor = (name) => {
+                                if (!name) return avatarColors[0];
+                                const index = name.charCodeAt(0) % avatarColors.length;
+                                return avatarColors[index];
+                              };
+                              return (
+                                <div
+                                  key={email}
+                                  className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                                  title={name}
+                                >
+                                  {getInitials(name)}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 mt-4">
+                        <Label className="text-[13px]">Visit Notes</Label>
+                        <Input
+                          value={visit.notes || ""}
+                          onChange={(e) => updateScheduledVisit(index, { notes: e.target.value })}
+                          placeholder="Any specific notes for this visit..."
+                          className="border-2 border-slate-300"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[14px] text-slate-500 italic">No scheduled visits yet. Click "Add Visit" to schedule.</p>
+              )}
+              </div>
 
             <RichTextField
               label="Notes & Instructions"
