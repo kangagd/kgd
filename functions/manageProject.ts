@@ -36,6 +36,18 @@ Deno.serve(async (req) => {
                 }
             }
 
+            // Resolve and cache organisation_name if organisation_id is present
+            if (projectData.organisation_id) {
+                try {
+                    const organisation = await base44.asServiceRole.entities.Organisation.get(projectData.organisation_id);
+                    if (organisation) {
+                        projectData.organisation_name = organisation.name;
+                    }
+                } catch (e) {
+                    console.error("Error resolving organisation name:", e);
+                }
+            }
+
             project = await base44.asServiceRole.entities.Project.create(projectData);
             
             // Set last_activity_at to created_date

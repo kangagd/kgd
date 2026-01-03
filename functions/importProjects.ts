@@ -82,12 +82,27 @@ Deno.serve(async (req) => {
             }
           }
 
+          // Resolve and cache organisation_name if organisation_id is present
+          let organisationName = null;
+          if (record.organisation_id) {
+            try {
+              const organisation = await base44.asServiceRole.entities.Organisation.get(record.organisation_id);
+              if (organisation) {
+                organisationName = organisation.name;
+              }
+            } catch (e) {
+              console.error("Error resolving organisation name for import:", e);
+            }
+          }
+
           // Explicitly set duplicate detection flags to false/0 for imports
           // Preserve legacy fields verbatim without transformation
           const projectData = {
             ...record,
             is_potential_duplicate: false,
             duplicate_score: 0,
+            // Cache organisation_name for display
+            organisation_name: organisationName,
             // Preserve legacy fields as-is
             pipedrive_deal_id: record.pipedrive_deal_id || null,
             legacy_xero_invoice_url: record.legacy_xero_invoice_url || null,
