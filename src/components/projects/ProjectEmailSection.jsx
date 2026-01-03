@@ -244,20 +244,21 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   // Link thread mutation
   const linkThreadMutation = useMutation({
     mutationFn: async (threadId) => {
-      const thread = await base44.entities.EmailThread.get(threadId);
-      
-      // Update thread with project link
-      await base44.entities.EmailThread.update(threadId, {
-        linked_project_id: project.id,
-        linked_project_title: project.title
+      // Use centralized linking function
+      await base44.functions.invoke('linkEmailThreadToProject', {
+        email_thread_id: threadId,
+        project_id: project.id,
+        set_as_primary: !project.primary_email_thread_id && !project.source_email_thread_id
       });
       
-      // Update project with thread link
-      await base44.entities.Project.update(project.id, {
-        source_email_thread_id: threadId
-      });
+      // Maintain backward compatibility with source_email_thread_id
+      if (!project.source_email_thread_id) {
+        await base44.entities.Project.update(project.id, {
+          source_email_thread_id: threadId
+        });
+      }
       
-      return thread;
+      return await base44.entities.EmailThread.get(threadId);
     },
     onSuccess: async (data, variables) => {
       // Run resync to ensure all attachments have IDs before rendering
@@ -284,10 +285,12 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       }
       
       queryClient.invalidateQueries({ queryKey: ['emailThread'] });
+      queryClient.invalidateQueries({ queryKey: ['emailThread', variables] });
       queryClient.invalidateQueries({ queryKey: ['emailMessages'] });
       queryClient.invalidateQueries({ queryKey: ['projectEmailThreads'] });
       queryClient.invalidateQueries({ queryKey: ['projectEmailMessages'] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
       setShowLinkModal(false);
       toast.success('Email thread linked to project');
       if (onThreadLinked) onThreadLinked();

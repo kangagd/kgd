@@ -53,10 +53,11 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
       return response.data.project;
     },
     onSuccess: async (newProject) => {
-      // Link the email thread to the new project
-      await base44.entities.EmailThread.update(thread.id, {
-        linked_project_id: newProject.id,
-        linked_project_title: newProject.title
+      // Link the email thread to the new project using centralized function
+      await base44.functions.invoke('linkEmailThreadToProject', {
+        email_thread_id: thread.id,
+        project_id: newProject.id,
+        set_as_primary: true
       });
 
       // Create ProjectEmail record for activity timeline
@@ -73,6 +74,8 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
       
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      queryClient.invalidateQueries({ queryKey: ['project', newProject.id] });
+      queryClient.invalidateQueries({ queryKey: ['emailThread', thread.id] });
       
       onSuccess(newProject.id, newProject.title);
       onClose();
