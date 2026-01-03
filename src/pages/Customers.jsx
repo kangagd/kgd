@@ -160,38 +160,15 @@ export default function Customers() {
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (customerIds) => {
-      const deletedAt = new Date().toISOString();
-      const batchSize = 50;
-      const totalBatches = Math.ceil(customerIds.length / batchSize);
-      let processed = 0;
-
-      for (let i = 0; i < customerIds.length; i += batchSize) {
-        const batch = customerIds.slice(i, i + batchSize);
-        await Promise.all(
-          batch.map(id => base44.entities.Customer.update(id, { deleted_at: deletedAt }))
-        );
-        processed += batch.length;
-        setDeleteProgress({ current: processed, total: customerIds.length });
-        
-        // Small delay to avoid rate limits
-        if (i + batchSize < customerIds.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-
-      try {
-        await base44.functions.invoke('reevaluateDuplicatesAfterDeletion', {
-          entity_type: 'Customer'
-        });
-      } catch (error) {
-        console.error('Error re-evaluating duplicates after deletion:', error);
-      }
+      // Use backend function for large deletions to avoid rate limits
+      const result = await base44.functions.invoke('deleteCustomersWithNameUnknown');
+      return result.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
       setSelectedForDeletion(new Set());
       setDeleteProgress(null);
-      toast.success("Customers deleted successfully");
+      toast.success(`Deleted ${data.deleted} customers successfully${data.skipped_with_links > 0 ? `. ${data.skipped_with_links} customers with links were skipped.` : ''}`);
     },
     onError: (error) => {
       setDeleteProgress(null);
