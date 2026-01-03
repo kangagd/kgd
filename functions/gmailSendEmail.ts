@@ -151,6 +151,34 @@ Deno.serve(async (req) => {
     
     const result = await response.json();
     
+    // Upload attachments and get URLs for storage
+    const uploadedAttachments = [];
+    if (attachments && attachments.length > 0) {
+      for (const att of attachments) {
+        try {
+          // Convert base64 back to file blob for upload
+          const binaryString = atob(att.data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: att.mimeType });
+          const file = new File([blob], att.filename, { type: att.mimeType });
+          
+          // Upload file and get URL
+          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          uploadedAttachments.push({
+            filename: att.filename,
+            url: file_url,
+            size: att.size,
+            mime_type: att.mimeType
+          });
+        } catch (err) {
+          console.error(`Failed to upload attachment ${att.filename}:`, err);
+        }
+      }
+    }
+    
     // C) Persist reply under the SAME EmailThread (use base44_thread_id)
     let emailThreadId = base44_thread_id;
     
@@ -218,7 +246,8 @@ Deno.serve(async (req) => {
       sent_at: new Date().toISOString(),
       message_id: gmailMessageId,
       // B) Preserve reply headers for proper threading
-      in_reply_to: inReplyTo || null
+      in_reply_to: inReplyTo || null,
+      attachments: uploadedAttachments.length > 0 ? uploadedAttachments : []
     });
     
     // Update project activity if email is linked to a project
