@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'import') {
-      // Import customers
+      // Import customers with validation
       const results = {
         created: 0,
         skipped: 0,
@@ -78,6 +78,27 @@ Deno.serve(async (req) => {
 
       for (const record of records_to_import) {
         try {
+          // Validation: Skip if name is blank/whitespace
+          const trimmedName = (record.name || '').trim();
+          if (!trimmedName) {
+            results.skipped++;
+            results.errors.push({
+              record: 'Row with blank name',
+              error: 'Skipped - name is required'
+            });
+            continue;
+          }
+
+          // Validation: Reject "Unknown" as customer name
+          if (trimmedName.toLowerCase() === 'unknown') {
+            results.skipped++;
+            results.errors.push({
+              record: trimmedName,
+              error: 'Skipped - "Unknown" is not allowed as customer name'
+            });
+            continue;
+          }
+
           const newCustomer = await base44.asServiceRole.entities.Customer.create(record);
           
           // Run duplicate check
