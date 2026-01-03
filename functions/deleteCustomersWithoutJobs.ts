@@ -10,17 +10,14 @@ Deno.serve(async (req) => {
     }
 
     // Fetch all customers, jobs, and projects
-    const customers = await base44.asServiceRole.entities.Customer.filter({
-      deleted_at: { $exists: false }
-    });
+    const allCustomers = await base44.asServiceRole.entities.Customer.list();
+    const allJobs = await base44.asServiceRole.entities.Job.list();
+    const allProjects = await base44.asServiceRole.entities.Project.list();
 
-    const jobs = await base44.asServiceRole.entities.Job.filter({
-      deleted_at: { $exists: false }
-    });
-
-    const projects = await base44.asServiceRole.entities.Project.filter({
-      deleted_at: { $exists: false }
-    });
+    // Filter out soft-deleted records
+    const customers = allCustomers.filter(c => !c.deleted_at);
+    const jobs = allJobs.filter(j => !j.deleted_at);
+    const projects = allProjects.filter(p => !p.deleted_at);
 
     // Create a set of customer IDs that have jobs or projects
     const customerIdsWithJobs = new Set(jobs.map(job => job.customer_id).filter(Boolean));
