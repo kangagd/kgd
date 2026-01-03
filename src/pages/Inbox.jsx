@@ -308,27 +308,36 @@ export default function Inbox() {
     updateThreadMutation.mutate({ id: threadId, data: { status: newStatus } });
   }, [updateThreadMutation]);
 
-  const handleLinkProject = useCallback((projectId, projectTitle) => {
-    updateThreadMutation.mutate({
-      id: selectedThread.id,
-      data: { linked_project_id: projectId, linked_project_title: projectTitle }
-    }, {
-      onSuccess: () => {
-        // Auto-save attachments
-        toast.info('Processing attachments...');
-        base44.functions.invoke('saveThreadAttachments', {
-          thread_id: selectedThread.id,
-          target_type: 'project',
-          target_id: projectId
-        }).then(res => {
-          if (res.data?.saved_count > 0) {
-            toast.success(`Saved ${res.data.saved_count} attachments to project`);
-          }
-        }).catch(console.error);
+  const handleLinkProject = useCallback(async (projectId, projectTitle) => {
+    try {
+      // Use centralized linking function
+      await base44.functions.invoke('linkEmailThreadToProject', {
+        email_thread_id: selectedThread.id,
+        project_id: projectId,
+        set_as_primary: true
+      });
+
+      // Auto-save attachments
+      toast.info('Processing attachments...');
+      const res = await base44.functions.invoke('saveThreadAttachments', {
+        thread_id: selectedThread.id,
+        target_type: 'project',
+        target_id: projectId
+      });
+      if (res.data?.saved_count > 0) {
+        toast.success(`Saved ${res.data.saved_count} attachments to project`);
       }
-    });
+
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      queryClient.invalidateQueries({ queryKey: ['emailThread', selectedThread.id] });
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      toast.success('Email thread linked to project');
+    } catch (error) {
+      toast.error('Failed to link email thread');
+      console.error('Link error:', error);
+    }
     setLinkModalOpen(false);
-  }, [selectedThread, updateThreadMutation]);
+  }, [selectedThread, queryClient]);
 
   const handleLinkJob = useCallback((jobId, jobNumber) => {
     updateThreadMutation.mutate({
