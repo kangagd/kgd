@@ -4,13 +4,13 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MessageSquare, User, Calendar, FileText, Plus, Paperclip, Link2, X, Unlink, FileEdit } from "lucide-react";
+import { Mail, Phone, MessageSquare, User, Calendar, Plus, Paperclip, Link2, Unlink, FileEdit } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { processEmailForDisplay } from "@/components/utils/emailFormatting";
 import EmailMessageView from "../inbox/EmailMessageView";
+import LinkThreadModal from "../inbox/LinkThreadModal";
 import {
   Dialog,
   DialogContent,
@@ -18,13 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 
 export default function ActivityTab({ project, onComposeEmail }) {
   const [filter, setFilter] = useState("all");
   const [showLogModal, setShowLogModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedActivity, setSelectedActivity] = useState(null);
   const queryClient = useQueryClient();
 
@@ -35,208 +33,83 @@ export default function ActivityTab({ project, onComposeEmail }) {
     enabled: !!project.id
   });
 
-  // Fetch email threads linked to this project (primary method)
+  // Fetch email threads linked to this project
   const { data: linkedThreads = [] } = useQuery({
     queryKey: ['projectEmailThreads', project.id],
     queryFn: async () => {
-      const threads = await base44.entities.EmailThread.filter({ project_id: project.id });
-      // Sort by last_message_date descending
-      return threads.sort((a, b) => 
-        new Date(b.last_message_date || b.created_date) - new Date(a.last_message_date || a.created_date)
-      );
+      const threads = await base44.entities.EmailThread.filter({ project_id: project.id }, '-last_message_date');
+      return threads;
     },
     enabled: !!project.id,
     refetchOnMount: true
   });
 
-  // Fallback: Fetch source email thread if exists and not already in linkedThreads
-  const { data: sourceThread } = useQuery({
-    queryKey: ['sourceEmailThread', project.source_email_thread_id],
-    queryFn: async () => {
-      if (!project.source_email_thread_id) return null;
-      // Only fetch if not already in linkedThreads
-      if (linkedThreads.some(t => t.id === project.source_email_thread_id)) return null;
-      return await base44.entities.EmailThread.get(project.source_email_thread_id).catch(() => null);
-    },
-    enabled: !!project.source_email_thread_id && linkedThreads.length >= 0
-  });
-
-  // Combine threads: linkedThreads + sourceThread (if not already included)
-  const allProjectThreads = React.useMemo(() => {
-    const threads = [...linkedThreads];
-    if (sourceThread && !threads.some(t => t.id === sourceThread.id)) {
-      threads.push(sourceThread);
-    }
-    // Sort combined list by last_message_date descending
-    return threads.sort((a, b) => 
-      new Date(b.last_message_date || b.created_date) - new Date(a.last_message_date || a.created_date)
-    );
-  }, [linkedThreads, sourceThread]);
-
-  // Build projectEmails from threads for backward compatibility
-  const projectEmails = React.useMemo(() => 
-    allProjectThreads.map(thread => ({
-      project_id: project.id,
-      thread_id: thread.id,
-      subject: thread.subject,
-      snippet: thread.last_message_snippet,
-      from_email: thread.from_address,
-      sent_at: thread.last_message_date
-    })),
-    [allProjectThreads, project.id]
-  );
-
   // Fetch draft emails for this project
   const { data: draftEmails = [] } = useQuery({
     queryKey: ['emailDrafts', project.id],
     queryFn: async () => {
-      const allDrafts = await base44.entities.EmailDraft.list('-created_date');
-      // Filter drafts that have project context or are related to project emails
-      return allDrafts.filter(draft => {
-        // Check if draft has thread_id that matches any project email
-        if (draft.thread_id) {
-          return projectEmails.some(pe => pe.thread_id === draft.thread_id);
-        }
-        return false;
-      });
+      const user = await base44.auth.me();
+      const allDrafts = await base44.entities.EmailDraft.filter({ created_by: user.email }, '-updated_date');
+      const threadIds = linkedThreads.map(t => t.id);
+      return allDrafts.filter(d => threadIds.includes(d.thread_id));
     },
-    enabled: !!project.id && projectEmails.length > 0
+    enabled: !!project.id && linkedThreads.length > 0
   });
-
-  // Fetch all email threads for linking (last 6 months)
-  const { data: allEmailThreads = [] } = useQuery({
-    queryKey: ['allEmailThreads'],
-    queryFn: async () => {
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-      
-      const threads = await base44.entities.EmailThread.list('-created_date', 500);
-      
-      // Filter by date and exclude automatic replies
-      return threads.filter(thread => {
-        const threadDate = new Date(thread.last_message_date || thread.created_date);
-        if (threadDate < sixMonthsAgo) return false;
-        
-        // Exclude automatic replies
-        const subject = (thread.subject || '').toLowerCase();
-        const autoReplyPatterns = [
-          'auto-reply',
-          'automatic reply',
-          'out of office',
-          'out of the office',
-          'away from office',
-          'delivery status notification',
-          'undeliverable',
-          'mail delivery failed',
-          'returned mail',
-          'auto response',
-          'vacation reply',
-          'absence notification'
-        ];
-        
-        return !autoReplyPatterns.some(pattern => subject.includes(pattern));
-      });
-    },
-    enabled: showLinkModal
-  });
-
-  // Filter email threads based on search
-  const filteredEmailThreads = React.useMemo(() => {
-    if (!searchTerm) return allEmailThreads.slice(0, 20);
-    const term = searchTerm.toLowerCase();
-    return allEmailThreads.filter(thread =>
-      thread.subject?.toLowerCase().includes(term) ||
-      thread.from_address?.toLowerCase().includes(term)
-    ).slice(0, 20);
-  }, [allEmailThreads, searchTerm]);
 
   // Link email thread mutation
   const linkEmailMutation = useMutation({
-    mutationFn: async (thread) => {
-      // Fetch the first message from this thread to get gmail_message_id
-      const messages = await base44.entities.EmailMessage.filter({ thread_id: thread.id });
-      if (messages.length === 0) {
-        throw new Error("No messages found in this thread");
-      }
-      
-      const firstMessage = messages[0];
-      
-      await base44.entities.ProjectEmail.create({
+    mutationFn: async (threadId) => {
+      await base44.functions.invoke('linkEmailThreadToProject', {
+        email_thread_id: threadId,
         project_id: project.id,
-        gmail_message_id: firstMessage.gmail_message_id,
-        thread_id: thread.id,
-        subject: thread.subject,
-        snippet: thread.last_message_snippet,
-        from_email: thread.from_address,
-        sent_at: thread.last_message_date,
-        is_historical: true
+        set_as_primary: linkedThreads.length === 0
       });
     },
-    onSuccess: async () => {
-      // Force immediate refetch
-      await queryClient.refetchQueries({ 
-        queryKey: ['projectEmails', project.id],
-        type: 'active'
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       setShowLinkModal(false);
-      setSearchTerm("");
-      toast.success("Email thread linked to project");
+      toast.success('Email thread linked');
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to link email thread");
+      toast.error(`Failed to link: ${error.message}`);
     }
   });
 
   // Unlink email thread mutation
   const unlinkEmailMutation = useMutation({
     mutationFn: async (threadId) => {
-      const projectEmail = projectEmails.find(pe => pe.thread_id === threadId);
-      if (projectEmail) {
-        await base44.entities.ProjectEmail.delete(projectEmail.id);
-      }
-    },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ 
-        queryKey: ['projectEmails', project.id],
-        type: 'active'
+      await base44.entities.EmailThread.update(threadId, {
+        project_id: null,
+        project_number: null,
+        project_title: null
       });
-      toast.success("Email thread unlinked");
     },
-    onError: () => {
-      toast.error("Failed to unlink email thread");
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+      toast.success('Email thread unlinked');
+    },
+    onError: (error) => {
+      toast.error(`Failed to unlink: ${error.message}`);
     }
   });
 
-  // Fetch email threads for those emails
+  // Fetch email messages for linked threads
   const emailThreadIds = React.useMemo(() => 
-    [...new Set(projectEmails.map(pe => pe.thread_id).filter(Boolean))],
-    [projectEmails]
+    linkedThreads.map(thread => thread.id),
+    [linkedThreads]
   );
-  const { data: emailThreads = [] } = useQuery({
-    queryKey: ['emailThreads', ...emailThreadIds],
-    queryFn: async () => {
-      if (emailThreadIds.length === 0) return [];
-      const threads = await Promise.all(
-        emailThreadIds.map(id => base44.entities.EmailThread.get(id).catch(() => null))
-      );
-      return threads.filter(Boolean);
-    },
-    enabled: emailThreadIds.length > 0
-  });
 
-  // Fetch email messages for those threads
   const { data: emailMessages = [] } = useQuery({
     queryKey: ['emailMessages', ...emailThreadIds],
     queryFn: async () => {
       if (emailThreadIds.length === 0) return [];
       const messages = await Promise.all(
         emailThreadIds.map(threadId => 
-          base44.entities.EmailMessage.filter({ thread_id: threadId })
+          base44.entities.EmailMessage.filter({ thread_id: threadId }, '-sent_at')
         )
       );
-      return messages.flat().sort((a, b) => 
-        new Date(a.sent_at || a.created_date) - new Date(b.sent_at || b.created_date)
-      );
+      return messages.flat();
     },
     enabled: emailThreadIds.length > 0
   });
@@ -247,7 +120,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
     // Add email activities
     emailMessages.forEach(msg => {
-      const thread = emailThreads.find(t => t.id === msg.thread_id);
+      const thread = linkedThreads.find(t => t.id === msg.thread_id);
       activities.push({
         id: `email-${msg.id}`,
         type: 'email',
@@ -256,13 +129,13 @@ export default function ActivityTab({ project, onComposeEmail }) {
         subject: msg.subject || thread?.subject,
         content: msg.body_text || msg.body_html,
         attachments: msg.attachments || [],
-        isOutbound: msg.is_outbound
+        isOutbound: msg.is_outbound,
+        threadId: msg.thread_id
       });
     });
 
     // Add draft emails
     draftEmails.forEach(draft => {
-      const thread = emailThreads.find(t => t.id === draft.thread_id);
       activities.push({
         id: `draft-${draft.id}`,
         type: 'draft',
@@ -282,7 +155,6 @@ export default function ActivityTab({ project, onComposeEmail }) {
     projectMessages
       .filter(msg => msg.message_type === 'manual_activity')
       .forEach(msg => {
-        // Parse activity type from content
         const typeMatch = msg.content?.match(/^\*\*\[(.+?)\]\*\*/);
         const activityType = typeMatch ? typeMatch[1].toLowerCase() : 'other';
         
@@ -297,9 +169,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
         });
       });
 
-    // Sort by date, newest first
     return activities.sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [emailMessages, projectMessages, emailThreads, draftEmails]);
+  }, [emailMessages, projectMessages, linkedThreads, draftEmails]);
 
   // Filter activities
   const filteredActivities = React.useMemo(() => {
@@ -338,18 +209,6 @@ export default function ActivityTab({ project, onComposeEmail }) {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
-  };
-
-  const formatEmailForModal = (content) => {
-    if (!content) return '';
-    
-    const formatted = processEmailForDisplay(content, {
-      isHtml: content.includes('<'),
-      includeSignature: true,
-      collapseQuotes: true
-    });
-    
-    return formatted.html;
   };
 
   return (
@@ -497,10 +356,9 @@ export default function ActivityTab({ project, onComposeEmail }) {
       <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           {selectedActivity?.type === 'email' && (() => {
-            const emailMessage = emailMessages.find(msg => `email-${msg.id}` === selectedActivity.id);
-            const threadId = emailMessage?.thread_id;
+            const threadId = selectedActivity?.threadId;
             const threadMessages = threadId ? emailMessages.filter(msg => msg.thread_id === threadId) : [];
-            const thread = threadId ? emailThreads.find(t => t.id === threadId) : null;
+            const thread = threadId ? linkedThreads.find(t => t.id === threadId) : null;
             
             return (
               <>
@@ -585,96 +443,13 @@ export default function ActivityTab({ project, onComposeEmail }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showLinkModal} onOpenChange={setShowLinkModal}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Link Email Thread to Project</DialogTitle>
-            <DialogDescription>
-              Search and select an email thread to link to this project
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4">
-            <Input
-              placeholder="Search by subject or sender..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mb-4"
-            />
-            
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {filteredEmailThreads.length === 0 ? (
-                <div className="text-center py-8 text-[#9CA3AF]">
-                  <Mail className="w-12 h-12 mx-auto mb-3 text-[#E5E7EB]" />
-                  <p className="text-[14px]">No email threads found</p>
-                </div>
-              ) : (
-                filteredEmailThreads.map((thread) => {
-                  const alreadyLinked = projectEmails.some(pe => pe.thread_id === thread.id);
-                  
-                  return (
-                    <button
-                      key={thread.id}
-                      onClick={() => {
-                        if (!alreadyLinked) {
-                          linkEmailMutation.mutate(thread);
-                        }
-                      }}
-                      disabled={alreadyLinked || linkEmailMutation.isPending}
-                      className={`w-full text-left p-3 rounded-lg border transition-all ${
-                        alreadyLinked 
-                          ? 'bg-[#F3F4F6] border-[#E5E7EB] cursor-not-allowed opacity-50' 
-                          : 'bg-white border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] cursor-pointer'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-[14px] text-[#111827] mb-1 truncate">
-                            {thread.subject || '(No subject)'}
-                          </div>
-                          <div className="text-[13px] text-[#6B7280] mb-1 truncate">
-                            From: {thread.from_address}
-                          </div>
-                          {thread.last_message_snippet && (
-                            <div className="text-[12px] text-[#9CA3AF] line-clamp-2">
-                              {thread.last_message_snippet}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-shrink-0 flex items-center gap-2">
-                          {alreadyLinked ? (
-                            <>
-                              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                Linked
-                              </Badge>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 hover:bg-red-50 hover:text-red-600"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  unlinkEmailMutation.mutate(thread.id);
-                                }}
-                                disabled={unlinkEmailMutation.isPending}
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </>
-                          ) : (
-                            <span className="text-[12px] text-[#9CA3AF]">
-                              {format(new Date(thread.last_message_date), 'MMM d')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <LinkThreadModal
+        open={showLinkModal}
+        onClose={() => setShowLinkModal(false)}
+        projectId={project.id}
+        onLink={(threadId) => linkEmailMutation.mutate(threadId)}
+        isLinking={linkEmailMutation.isPending}
+      />
     </div>
   );
 }
