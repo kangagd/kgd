@@ -9,14 +9,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    // Fetch all customers with name "unknown" (case-insensitive)
-    // Include both deleted and non-deleted to catch everything
-    const allCustomersResponse = await base44.asServiceRole.entities.Customer.list();
-    const allCustomers = Array.isArray(allCustomersResponse) ? allCustomersResponse : [];
+    // Fetch ALL customers using filter to get everything (no limit)
+    const allCustomers = await base44.asServiceRole.entities.Customer.filter({});
+    
+    console.log(`Total customers fetched: ${allCustomers.length}`);
 
     const unknownCustomers = allCustomers.filter(c => 
       c.name && c.name.toLowerCase().trim() === 'unknown'
     );
+    
+    console.log(`Found ${unknownCustomers.length} customers with name "unknown"`);
 
     if (unknownCustomers.length === 0) {
       return Response.json({
