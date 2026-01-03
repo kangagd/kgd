@@ -6,8 +6,8 @@ import { CustomerTypeBadge } from "../common/StatusBadge";
 
 export default function CustomerModalView({ customer, jobCount = 0, projectCount = 0 }) {
   const handleCall = () => {
-    if (customer.phone) {
-      window.location.href = `tel:${customer.phone}`;
+    if (customer.normalized_phone || customer.phone) {
+      window.location.href = `tel:${customer.normalized_phone || customer.phone}`;
     }
   };
 
@@ -48,12 +48,12 @@ export default function CustomerModalView({ customer, jobCount = 0, projectCount
       )}
 
       {/* Contact Info */}
-      {customer.phone && (
+      {(customer.normalized_phone || customer.phone) && (
         <div className="flex items-start gap-2.5 p-3 bg-[#F8F9FA] rounded-lg">
           <Phone className="w-5 h-5 text-[#6B7280] flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <div className="text-[12px] text-[#6B7280] font-medium mb-0.5">Phone</div>
-            <div className="text-[14px] text-[#111827]">{customer.phone}</div>
+            <div className="text-[14px] text-[#111827]">{customer.normalized_phone || customer.phone}</div>
           </div>
         </div>
       )}
@@ -115,7 +115,7 @@ export default function CustomerModalView({ customer, jobCount = 0, projectCount
 
       {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-2 pt-2">
-        {customer.phone && (
+        {(customer.normalized_phone || customer.phone) && (
           <Button
             onClick={handleCall}
             variant="outline"

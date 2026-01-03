@@ -199,13 +199,13 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 </div>
               )}
               
-              {customer.phone && (
+              {(customer.normalized_phone || customer.phone) && (
                 <div className="flex items-start gap-3">
                   <Phone className="text-blue-600 w-6 h-6 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0 flex flex-col gap-1">
                     <div className="text-sm font-medium text-[#6B7280]">Phone</div>
-                    <a href={`tel:${customer.phone}`} className="text-base text-[#111827] leading-normal hover:text-blue-600 transition-colors">
-                      {customer.phone}
+                    <a href={`tel:${customer.normalized_phone || customer.phone}`} className="text-base text-[#111827] leading-normal hover:text-blue-600 transition-colors">
+                      {customer.normalized_phone || customer.phone}
                     </a>
                   </div>
                 </div>
