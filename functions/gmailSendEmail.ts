@@ -184,14 +184,14 @@ Deno.serve(async (req) => {
     
     if (!emailThreadId) {
       // Create new thread for this sent email
-      const newThread = await base44.entities.EmailThread.create({
+      const newThread = await base44.asServiceRole.entities.EmailThread.create({
         subject: subject,
         gmail_thread_id: result.threadId,
         from_address: user.gmail_email || user.email,
         to_addresses: to.split(',').map(e => e.trim()),
         last_message_date: new Date().toISOString(),
         last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
-        status: 'Open',
+        status: 'Closed',
         priority: 'Normal',
         is_read: true,
         message_count: 1,

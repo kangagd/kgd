@@ -1975,8 +1975,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <div className="mb-4">
                 <EmailComposer
                   mode={composerMode}
-                  thread={null}
-                  message={composerMessage}
+                  thread={composerMessage?.thread}
+                  message={composerMessage?.message}
                   onClose={() => {
                     setComposerMode(null);
                     setComposerMessage(null);
