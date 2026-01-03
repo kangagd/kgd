@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
 
           // Validate date fields - must be YYYY-MM-DD format only
           const dateFields = ['opened_date', 'completed_date', 'lost_date'];
+          let hasInvalidDate = false;
           for (const field of dateFields) {
             if (record[field]) {
               const dateValue = String(record[field]).trim();
@@ -86,10 +87,12 @@ Deno.serve(async (req) => {
                   record: trimmedTitle,
                   error: `Invalid ${field} format: "${dateValue}". Must be YYYY-MM-DD (e.g., 2025-01-15)`
                 });
-                continue;
+                hasInvalidDate = true;
+                break;
               }
             }
           }
+          if (hasInvalidDate) continue;
 
           // Validate status field against allowed enum values
           const allowedStatuses = [
