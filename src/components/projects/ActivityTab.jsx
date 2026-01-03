@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MessageSquare, User, Calendar, Plus, Paperclip, Link2, Unlink, FileEdit, Forward, Reply, Loader2 } from "lucide-react";
+import { Mail, Phone, MessageSquare, User, Calendar, Plus, Paperclip, Link2, Unlink, FileEdit, Forward, Reply, Loader2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
@@ -552,7 +552,6 @@ function EmailThreadViewerModal({
   }, [threadId, emailMessages]);
 
   // B) Collapse logic: show only first and last 2 messages by default
-  const [showAllMessages, setShowAllMessages] = useState(false);
   const displayMessages = React.useMemo(() => {
     if (threadMessages.length <= 4 || showAllMessages) {
       return threadMessages;
@@ -574,21 +573,7 @@ function EmailThreadViewerModal({
   const latestMessage = threadMessages.length > 0 ? threadMessages[threadMessages.length - 1] : null;
   const canCompose = !!threadFromList && !!latestMessage;
 
-  // E) Collapse logic for modal: show only first and last 2 messages by default
-  const displayMessages = React.useMemo(() => {
-    if (threadMessages.length <= 4 || showAllMessages) {
-      return threadMessages;
-    }
-    // Show first message and last 2 messages
-    return [
-      threadMessages[0],
-      ...threadMessages.slice(-2)
-    ];
-  }, [threadMessages, showAllMessages]);
-  
-  const hiddenMessageCount = threadMessages.length - displayMessages.length;
-
-  // E) Auto-scroll to latest message on open
+  // Auto-scroll to latest message on open
   useEffect(() => {
     if (threadMessages.length > 0 && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'instant' });
@@ -711,17 +696,17 @@ function EmailThreadViewerModal({
                       <React.Fragment key={msg.id}>
                         {/* Show "expand messages" button before the last messages if some are hidden */}
                         {!showAllMessages && hiddenMessageCount > 0 && idx === 1 && (
-                          <div className="flex justify-center my-3">
-                            <Button
-                              onClick={() => setShowAllMessages(true)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-[13px] text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] gap-2"
-                            >
-                              <ChevronDown className="w-4 h-4" />
-                              Show {hiddenMessageCount} earlier message{hiddenMessageCount !== 1 ? 's' : ''}
-                            </Button>
-                          </div>
+                         <div className="flex justify-center my-3">
+                           <Button
+                             onClick={() => setShowAllMessages(true)}
+                             variant="ghost"
+                             size="sm"
+                             className="text-[13px] text-[#6B7280] hover:text-[#111827] hover:bg-white gap-2 shadow-sm border border-[#E5E7EB]"
+                           >
+                             <ChevronDown className="w-4 h-4" />
+                             Show {hiddenMessageCount} earlier message{hiddenMessageCount !== 1 ? 's' : ''}
+                           </Button>
+                         </div>
                         )}
                         
                         <EmailMessageView

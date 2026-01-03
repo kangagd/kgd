@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp, Paperclip, ChevronRight, Reply, Forward, ExternalLink, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Paperclip, ChevronRight, Reply, Forward, ExternalLink, X, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
@@ -40,6 +40,14 @@ function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadS
       )}
     </div>
   );
+}
+
+// Helper to strip HTML for preview
+function stripHtml(html) {
+  if (!html) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
 }
 
 // Helper to check if an attachment is referenced as inline in the HTML
