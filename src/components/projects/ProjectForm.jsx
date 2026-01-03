@@ -101,7 +101,13 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
     queryFn: () => base44.entities.Customer.list()
   });
 
-  const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
+  const customers = allCustomers
+    .filter(c => c.status === 'active' && !c.deleted_at)
+    .map(c => ({
+      ...c,
+      id: c.id || c._id || c.customer_id || null
+    }))
+    .filter(c => !!c.id);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -166,24 +172,27 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   };
 
   const handleCustomerChange = (customerId) => {
+    if (!customerId) return;
     const customer = customers.find(c => c.id === customerId);
-    setFormData({
-      ...formData,
+    if (!customer) return;
+
+    setFormData(prev => ({
+      ...prev,
       customer_id: customerId,
       customer_name: customer?.name || "",
       customer_phone: customer?.phone || "",
       customer_email: customer?.email || "",
-      address: customer?.address_full || customer?.address || formData.address,
-      address_full: customer?.address_full || customer?.address || formData.address_full,
-      address_street: customer?.address_street || formData.address_street,
-      address_suburb: customer?.address_suburb || formData.address_suburb,
-      address_state: customer?.address_state || formData.address_state,
-      address_postcode: customer?.address_postcode || formData.address_postcode,
-      address_country: customer?.address_country || formData.address_country || "Australia",
-      google_place_id: customer?.google_place_id || formData.google_place_id,
-      latitude: customer?.latitude || formData.latitude,
-      longitude: customer?.longitude || formData.longitude
-    });
+      address: customer?.address_full || customer?.address || prev.address,
+      address_full: customer?.address_full || customer?.address || prev.address_full,
+      address_street: customer?.address_street || prev.address_street,
+      address_suburb: customer?.address_suburb || prev.address_suburb,
+      address_state: customer?.address_state || prev.address_state,
+      address_postcode: customer?.address_postcode || prev.address_postcode,
+      address_country: customer?.address_country || prev.address_country || "Australia",
+      google_place_id: customer?.google_place_id || prev.google_place_id,
+      latitude: customer?.latitude || prev.latitude,
+      longitude: customer?.longitude || prev.longitude
+    }));
   };
 
   const handleTechnicianToggle = (techEmail) => {
@@ -412,29 +421,30 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                       <CommandList>
                         <CommandEmpty>No customer found.</CommandEmpty>
                         <CommandGroup>
-                          {filteredCustomers.map((customer) => (
-                            <CommandItem
-                              key={customer.id}
-                              value={`${customer.name ?? ""} ${customer.email ?? ""} ${customer.phone ?? ""}`.trim()}
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                              }}
-                              onSelect={() => {
-                                handleCustomerChange(customer.id);
-                                setCustomerSearchOpen(false);
-                                setCustomerSearchQuery("");
-                              }}
-                              className="cursor-pointer aria-disabled:opacity-100 data-[disabled=true]:opacity-100"
-                            >
-                              <div className="flex flex-col w-full">
-                                <span className="font-medium">{customer.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {[customer.email, customer.phone].filter(Boolean).join(" • ")}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          ))}
+                          {filteredCustomers.map((customer) => {
+                            const searchable = `${customer.name || ""} ${customer.email || ""} ${customer.phone || ""}`.trim();
+
+                            return (
+                              <CommandItem
+                                key={customer.id}
+                                value={customer.id}
+                                keywords={[searchable]}
+                                onSelect={(val) => {
+                                  handleCustomerChange(val);
+                                  setCustomerSearchOpen(false);
+                                  setCustomerSearchQuery("");
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <div className="flex flex-col w-full">
+                                  <span className="font-medium">{customer.name}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {[customer.email, customer.phone].filter(Boolean).join(" • ")}
+                                  </span>
+                                </div>
+                              </CommandItem>
+                            );
+                          })}
                         </CommandGroup>
                       </CommandList>
                     </Command>
