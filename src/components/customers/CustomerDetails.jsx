@@ -76,8 +76,8 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
 
   return (
     <>
-      <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
-        <CardHeader className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4 md:p-6">
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-xl">
+        <CardHeader className="border-b border-[#E5E7EB] bg-white p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <BackButton onClick={onClose} />
@@ -107,13 +107,13 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                 variant="ghost" 
                 size="icon"
                 onClick={() => setShowDeleteConfirm(true)} 
-                className="hover:bg-red-100 hover:text-red-600 rounded-xl transition-all"
+                className="hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
               <Button 
                 onClick={() => onEdit(customer)} 
-                className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-semibold rounded-xl shadow-md"
+                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold rounded-lg shadow-sm hover:shadow-md"
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
@@ -138,14 +138,14 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
 
           {/* Contract Banner */}
           {contract && (
-            <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4 flex justify-between items-center">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex justify-between items-center">
               <div>
-                <div className="text-sm font-bold text-purple-700 uppercase tracking-wide mb-1">Linked Contract</div>
-                <h3 className="text-lg font-bold text-purple-900">{contract.name}</h3>
+                <div className="text-xs font-semibold text-purple-700 uppercase tracking-wide mb-1">Linked Contract</div>
+                <h3 className="text-base font-semibold text-purple-900">{contract.name}</h3>
                 <p className="text-sm text-purple-800">{contract.contract_type}</p>
                 </div>
                 <Link to={createPageUrl("Contracts") + `?contractId=${contract.id}`}>
-                <Button variant="outline" className="bg-white text-purple-700 border-purple-200 hover:bg-purple-50">
+                <Button variant="outline" className="bg-white text-purple-700 border-purple-200 hover:bg-purple-50 rounded-lg">
                   View Contract
                 </Button>
                 </Link>
@@ -153,7 +153,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
           )}
 
           {organisation && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-blue-900 mb-2">
@@ -172,7 +172,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-2 font-semibold"
+                    className="border font-semibold rounded-lg"
                   >
                     View
                   </Button>
@@ -239,7 +239,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
 
           {customer.source && (
             <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
-              <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-4">Source</h3>
+              <h3 className="text-sm font-semibold text-[#111827] mb-3">Source</h3>
               <div className="flex items-start gap-3">
                 <Users className="text-indigo-600 w-6 h-6 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -259,15 +259,15 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
 
           {customer.notes && (
             <div>
-              <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4] mb-2">Notes</h3>
-              <div className="text-[14px] text-slate-700 leading-[1.4] whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border-2 border-slate-200">
+              <h3 className="text-sm font-semibold text-[#111827] mb-2">Notes</h3>
+              <div className="text-sm text-[#4B5563] whitespace-pre-wrap bg-[#F9FAFB] p-4 rounded-lg border border-[#E5E7EB]">
                 {customer.notes}
               </div>
             </div>
           )}
 
           {/* Tasks Panel */}
-          <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
+          <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
             <TasksPanel
               entityType="customer"
               entityId={customer.id}
@@ -275,13 +275,13 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
             />
           </div>
 
-          <div className="pt-4 border-t-2 border-slate-200 space-y-6">
+          <div className="pt-4 border-t border-[#E5E7EB] space-y-6">
             {/* Projects Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Projects ({projects.length})</h3>
+                <h3 className="text-sm font-semibold text-[#111827]">Projects ({projects.length})</h3>
                 <Link to={createPageUrl("Projects") + `?action=create&customer_id=${customer.id}`}>
-                  <Button size="sm" variant="outline" className="border-2 font-semibold hover:bg-slate-100 rounded-xl">
+                  <Button size="sm" variant="outline" className="border font-semibold hover:bg-[#F3F4F6] rounded-lg">
                     <Plus className="w-4 h-4 mr-2" />
                     New Project
                   </Button>
@@ -289,9 +289,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
               </div>
 
               {projects.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  <FolderKanban className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p className="text-[14px] font-normal leading-[1.4]">No projects yet</p>
+                <div className="text-center py-12 text-[#6B7280]">
+                  <FolderKanban className="w-12 h-12 mx-auto mb-3 text-[#D1D5DB]" />
+                  <p className="text-sm">No projects yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -299,7 +299,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                     <Link 
                       key={project.id} 
                       to={createPageUrl("Projects") + `?projectId=${project.id}`}
-                      className="block p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-[#fae008] hover:shadow-md transition-all"
+                      className="block p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-md transition-all"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
@@ -322,9 +322,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
             {/* Jobs Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[14px] font-semibold text-[#111827] leading-[1.4]">Jobs ({jobs.length})</h3>
+                <h3 className="text-sm font-semibold text-[#111827]">Jobs ({jobs.length})</h3>
                 <Link to={createPageUrl("Jobs") + `?action=new&customer_id=${customer.id}`}>
-                  <Button size="sm" variant="outline" className="border-2 font-semibold hover:bg-slate-100 rounded-xl">
+                  <Button size="sm" variant="outline" className="border font-semibold hover:bg-[#F3F4F6] rounded-lg">
                     <Plus className="w-4 h-4 mr-2" />
                     New Job
                   </Button>
@@ -332,9 +332,9 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
               </div>
 
               {jobs.length === 0 ? (
-                <div className="text-center py-12 text-slate-500">
-                  <Briefcase className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p className="text-[14px] font-normal leading-[1.4]">No jobs yet</p>
+                <div className="text-center py-12 text-[#6B7280]">
+                  <Briefcase className="w-12 h-12 mx-auto mb-3 text-[#D1D5DB]" />
+                  <p className="text-sm">No jobs yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -342,7 +342,7 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
                     <Link 
                       key={job.id} 
                       to={createPageUrl("Jobs") + `?id=${job.id}`}
-                      className="block p-4 bg-white border-2 border-slate-200 rounded-xl hover:border-[#fae008] hover:shadow-md transition-all"
+                      className="block p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:shadow-md transition-all"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
@@ -365,18 +365,18 @@ export default function CustomerDetails({ customer, onClose, onEdit, onDelete })
       </Card>
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
+        <AlertDialogContent className="rounded-lg border border-[#E5E7EB]">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Delete Customer?</AlertDialogTitle>
-            <AlertDialogDescription className="text-[14px] text-slate-600 leading-[1.4]">
+            <AlertDialogTitle className="text-lg font-semibold text-[#111827]">Delete Customer?</AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-[#6B7280]">
               This customer will be moved to the archive. You can restore them within 30 days.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-lg font-semibold border">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700 rounded-xl font-semibold"
+              className="bg-red-600 hover:bg-red-700 rounded-lg font-semibold"
             >
               Delete
             </AlertDialogAction>
