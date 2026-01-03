@@ -428,6 +428,13 @@ Deno.serve(async (req) => {
             await updateProjectActivity(base44, currentThread.linked_project_id);
           }
 
+          // Update project last contact timestamps
+          if (currentThread.project_id) {
+            base44.functions.invoke('updateProjectLastContactFromThread', {
+              email_thread_id: threadId
+            }).catch(err => console.error('Update project contact failed:', err));
+          }
+
           if (processedAttachments.length > 0) {
             if (currentThread.linked_project_id) {
               base44.functions.invoke('saveThreadAttachments', {
