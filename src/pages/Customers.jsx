@@ -68,7 +68,7 @@ export default function Customers() {
         setSelectedCustomer(customer);
       }
     }
-  }, [customers, selectedCustomer]);
+  }, [customers]);
 
   const { data: allJobs = [] } = useQuery({
     queryKey: ['allJobs'],
