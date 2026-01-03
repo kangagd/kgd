@@ -32,7 +32,8 @@ import {
     Shield,
     Truck,
     Car,
-    Package
+    Package,
+    AlertTriangle
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
