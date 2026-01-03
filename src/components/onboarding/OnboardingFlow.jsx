@@ -50,7 +50,7 @@ export default function OnboardingFlow({ open, onComplete, userRole }) {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="max-w-3xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
         {showWelcome ? (
           <div className="p-8 flex flex-col items-center text-center">
             <div className="w-20 h-20 bg-[#FAE008] rounded-full flex items-center justify-center mb-6">
