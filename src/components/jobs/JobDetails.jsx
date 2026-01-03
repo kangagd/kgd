@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -888,8 +887,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   };
 
   const allItemsChecked = () => {
-    if (purchaseOrderLines.length === 0 && jobParts.length === 0) return true;
-    const totalItems = purchaseOrderLines.length + jobParts.length;
+    if (jobParts.length === 0) return true;
+    const totalItems = jobParts.length;
     const checkedCount = Object.values(checkedItems).filter(Boolean).length;
     return checkedCount === totalItems;
   };
@@ -1811,7 +1810,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {isLogisticsJob ? (
                 <>
                   {/* Order Items Checklist for Logistics Jobs */}
-                  {(purchaseOrderLines.length > 0 || jobParts.length > 0) && (
+                  {jobParts.length > 0 && (
                     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                       <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                         <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
@@ -1819,18 +1818,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-4 space-y-2">
-                        {purchaseOrderLines.map((line) => (
-                          <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
-                            <Checkbox
-                              checked={checkedItems[line.id] || false}
-                              onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
-                            />
-                            <div className="flex-1">
-                              <span className="text-[14px] font-medium text-[#111827]">{line.item_name || line.description || "Item"}</span>
-                              <span className="text-[14px] text-[#6B7280] ml-2">× {line.qty_ordered}</span>
-                            </div>
-                          </div>
-                        ))}
                         {jobParts.map((part) => (
                           <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
                             <Checkbox
