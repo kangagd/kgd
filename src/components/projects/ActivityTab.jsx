@@ -77,22 +77,41 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Fetch draft emails related to linked threads
-  // ONLY show drafts if their thread has a project_id link
+  // STRICT RULE: ONLY show drafts with thread_id that is linked to this project
   const { data: draftEmails = [] } = useQuery({
     queryKey: ['projectEmailDrafts', linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
+      // No linked threads = no drafts shown
       if (linkedThreads.length === 0) return [];
+      
       const user = await base44.auth.me();
       const allDrafts = await base44.entities.EmailDraft.filter({ 
         created_by: user.email 
       }, '-updated_date');
-      const threadIds = linkedThreads.map(t => t.id);
-      const linkedDrafts = allDrafts.filter(d => d.thread_id && threadIds.includes(d.thread_id));
       
-      // Defensive logging: verify drafts are only for linked threads
-      linkedDrafts.forEach(draft => {
-        if (!threadIds.includes(draft.thread_id)) {
-          console.warn('[ActivityTab] Draft rendered for unlinked thread:', draft.id, draft.thread_id);
+      const threadIds = new Set(linkedThreads.map(t => t.id));
+      
+      // STRICT FILTER: Draft must have thread_id AND that thread must be linked
+      const linkedDrafts = allDrafts.filter(draft => {
+        // No thread_id = not shown
+        if (!draft.thread_id) {
+          return false;
+        }
+        
+        // Thread not linked to project = not shown
+        if (!threadIds.has(draft.thread_id)) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // Defensive logging for any drafts without proper links
+      allDrafts.forEach(draft => {
+        if (!draft.thread_id) {
+          console.log('[ActivityTab] Skipping draft without thread_id:', draft.id);
+        } else if (!threadIds.has(draft.thread_id)) {
+          console.log('[ActivityTab] Skipping draft with unlinked thread:', draft.id, draft.thread_id);
         }
       });
       
@@ -184,12 +203,19 @@ export default function ActivityTab({ project, onComposeEmail }) {
       });
     });
 
-    // Add draft emails - ONLY if their thread is linked
+    // Add draft emails - already filtered to only linked threads in query
+    // Double-check: drafts should already be validated, but verify again
     draftEmails.forEach(draft => {
-      const threadIsLinked = linkedThreads.some(t => t.id === draft.thread_id);
+      // Defensive: skip if no thread_id (should never happen due to query filter)
+      if (!draft.thread_id) {
+        console.error('[ActivityTab] Draft without thread_id in filtered results:', draft.id);
+        return;
+      }
       
-      if (!threadIsLinked && draft.thread_id) {
-        console.warn('[ActivityTab] Draft rendered for unlinked thread:', draft.id, draft.thread_id);
+      // Defensive: verify thread is actually linked
+      const thread = linkedThreads.find(t => t.id === draft.thread_id);
+      if (!thread) {
+        console.error('[ActivityTab] Draft thread not found in linked threads:', draft.id, draft.thread_id);
         return;
       }
       
