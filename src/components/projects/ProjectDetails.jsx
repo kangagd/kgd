@@ -1995,9 +1995,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             )}
             <ActivityTab 
               project={project}
-              onComposeEmail={() => {
-                setComposerMode('compose');
-                setComposerMessage(null);
+              onComposeEmail={(params) => {
+                setComposerMode(params?.mode || 'compose');
+                setComposerMessage(params);
               }}
             />
           </TabsContent>
