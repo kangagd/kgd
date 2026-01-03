@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { updateProjectActivity } from './updateProjectActivity.js';
 
 async function refreshXeroTokenIfNeeded(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
@@ -91,8 +92,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { invoicePayload } = await req.json();
+    const { invoicePayload, project_id } = await req.json();
     const result = await createXeroInvoice(base44, invoicePayload);
+
+    // Update project activity if linked to a project
+    if (project_id) {
+      await updateProjectActivity(base44, project_id, 'Invoice Created');
+    }
 
     return Response.json(result);
 

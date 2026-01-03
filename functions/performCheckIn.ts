@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { updateProjectActivity } from './updateProjectActivity.js';
-import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
     try {
@@ -122,7 +121,7 @@ Deno.serve(async (req) => {
 
         // 8. Update project activity if job is linked to a project
         if (job.project_id) {
-            await updateProjectActivity(base44, job.project_id);
+            await updateProjectActivity(base44, job.project_id, 'Visit Started');
         }
 
         return Response.json(checkIn);
