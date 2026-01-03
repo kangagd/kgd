@@ -14,12 +14,14 @@ Deno.serve(async (req) => {
         if (action === 'create') {
             let projectData = { ...data };
 
-            // Auto-assign project number
-            const existingProjects = await base44.asServiceRole.entities.Project.list('-project_number', 1);
-            const lastProjectNumber = existingProjects.length > 0 && existingProjects[0].project_number 
-                ? existingProjects[0].project_number 
-                : 4999;
-            projectData.project_number = lastProjectNumber + 1;
+            // Auto-assign project number only if not provided
+            if (!projectData.project_number) {
+                const existingProjects = await base44.asServiceRole.entities.Project.list('-project_number', 1);
+                const lastProjectNumber = existingProjects.length > 0 && existingProjects[0].project_number 
+                    ? existingProjects[0].project_number 
+                    : 4999;
+                projectData.project_number = lastProjectNumber + 1;
+            }
 
             // Auto-link contract logic
             if (projectData.customer_id) {
