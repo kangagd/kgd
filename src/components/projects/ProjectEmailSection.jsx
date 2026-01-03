@@ -10,6 +10,7 @@ import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
 import EmailComposer from "../inbox/EmailComposer";
 import LinkThreadModal from "../inbox/LinkThreadModal";
+import GmailHistorySearch from "../inbox/GmailHistorySearch";
 
 export default function ProjectEmailSection({ project, onThreadLinked }) {
   const queryClient = useQueryClient();
@@ -21,6 +22,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   
   // Historical Search State
   const [showHistorySearch, setShowHistorySearch] = useState(false);
+  const [showGmailHistoryModal, setShowGmailHistoryModal] = useState(false);
   const [historySearchInput, setHistorySearchInput] = useState("");
   const [isSearchingHistory, setIsSearchingHistory] = useState(false);
 
@@ -506,18 +508,31 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       {/* Historical Search Panel */}
       <Card className="border border-[#E5E7EB] shadow-sm">
         <div 
-          className="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
-          onClick={() => setShowHistorySearch(!showHistorySearch)}
+        className="p-3 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors"
+        onClick={() => setShowHistorySearch(!showHistorySearch)}
         >
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-            <div className="bg-slate-100 p-1.5 rounded-md">
-              <RefreshCw className={`w-4 h-4 text-slate-500 ${isSearchingHistory ? 'animate-spin' : ''}`} />
-            </div>
-            Load older emails
+        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
+          <div className="bg-slate-100 p-1.5 rounded-md">
+            <RefreshCw className={`w-4 h-4 text-slate-500 ${isSearchingHistory ? 'animate-spin' : ''}`} />
           </div>
+          Load older emails
+        </div>
+        <div className="flex items-center gap-2">
           <div className="text-xs text-slate-500">
             {savedEmails.length > 0 ? `${savedEmails.length} loaded` : 'Search Gmail'}
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowGmailHistoryModal(true);
+            }}
+            className="h-7 text-xs"
+          >
+            Advanced Search
+          </Button>
+        </div>
         </div>
         
         {showHistorySearch && (
@@ -738,6 +753,17 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         threads={availableThreads}
         onSelect={(threadId) => linkThreadMutation.mutate(threadId)}
         isLinking={linkThreadMutation.isPending}
+      />
+
+      {/* Gmail History Search Modal */}
+      <GmailHistorySearch
+        open={showGmailHistoryModal}
+        onClose={() => {
+          setShowGmailHistoryModal(false);
+          // Refresh threads after closing modal
+          setRefreshKey(k => k + 1);
+        }}
+        projectId={project.id}
       />
     </div>
   );

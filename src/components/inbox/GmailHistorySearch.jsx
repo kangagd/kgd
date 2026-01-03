@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
-export default function GmailHistorySearch({ open, onClose }) {
+export default function GmailHistorySearch({ open, onClose, projectId = null }) {
   const [email, setEmail] = useState("");
   const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -50,7 +50,21 @@ export default function GmailHistorySearch({ open, onClose }) {
       });
 
       if (response.data?.thread_id) {
-        toast.success("Email synced successfully");
+        // If projectId is provided, link the thread to the project
+        if (projectId) {
+          try {
+            await base44.entities.EmailThread.update(response.data.thread_id, {
+              linked_project_id: projectId
+            });
+            toast.success("Email synced and linked to project");
+          } catch (linkError) {
+            console.error('Failed to link thread:', linkError);
+            toast.success("Email synced (but linking failed)");
+          }
+        } else {
+          toast.success("Email synced successfully");
+        }
+        
         // Update the result to show it's synced
         setResults(prev => prev.map(t => 
           t.gmail_thread_id === thread.gmail_thread_id 
