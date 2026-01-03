@@ -88,6 +88,15 @@ Deno.serve(async (req) => {
 
       for (const record of records_to_import) {
         try {
+          // Skip completely blank rows
+          const hasAnyData = Object.values(record).some(val => 
+            val !== null && val !== undefined && String(val).trim() !== ''
+          );
+          if (!hasAnyData) {
+            results.skipped++;
+            continue;
+          }
+
           // Validation: Skip if name is blank/whitespace
           const trimmedName = (record.name || '').trim();
           if (!trimmedName) {
