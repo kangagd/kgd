@@ -266,15 +266,15 @@ export default function AttachmentCard({
       {/* File Info */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-9 h-9 rounded-lg bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
-            <AttachmentIcon className="w-4 h-4 text-[#6B7280]" />
+          <div className="w-10 h-10 rounded-lg bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
+            <AttachmentIcon className="w-5 h-5 text-[#6B7280]" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] text-[#111827] font-medium truncate">
+            <p className="text-[13px] text-[#111827] font-semibold truncate">
               {attachment.filename}
             </p>
             {attachment.size > 0 && (
-              <p className="text-[11px] text-[#6B7280] mt-0.5">
+              <p className="text-[11px] text-[#9CA3AF] mt-0.5">
                 {formatFileSize(attachment.size)}
               </p>
             )}
@@ -283,7 +283,7 @@ export default function AttachmentCard({
         <div className="flex items-center gap-1 flex-shrink-0 ml-2">
           {(linkedJobId || linkedProjectId) && (
             saved ? (
-              <div className="h-8 w-8 flex items-center justify-center text-green-600" title="Saved to project">
+              <div className="h-8 w-8 flex items-center justify-center text-green-600" title="Saved">
                 <Check className="w-4 h-4" />
               </div>
             ) : (
@@ -293,7 +293,7 @@ export default function AttachmentCard({
                 onClick={handleSave}
                 disabled={saving}
                 title={`Save to ${linkedJobId ? 'Job' : 'Project'}`}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-[#F3F4F6]"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               </Button>
@@ -337,7 +337,7 @@ export default function AttachmentCard({
                 console.error('Missing attachment data:', { attachment, effectiveGmailMessageId });
               }
             }}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 hover:bg-[#F3F4F6]"
           >
             {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           </Button>
