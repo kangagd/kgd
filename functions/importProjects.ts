@@ -55,24 +55,11 @@ Deno.serve(async (req) => {
 
       for (const record of records_to_import) {
         try {
-          // Skip completely blank rows
-          const hasAnyData = Object.values(record).some(val => 
-            val !== null && val !== undefined && String(val).trim() !== ''
-          );
-          if (!hasAnyData) {
-            results.skipped++;
-            continue;
-          }
-
-          // Validation: Skip if title is blank
+          // CRITICAL: Skip if title is blank or missing - this is the #1 requirement
           const trimmedTitle = (record.title || '').trim();
           if (!trimmedTitle) {
             results.skipped++;
-            results.errors.push({
-              record: 'Row with blank title',
-              error: 'Skipped - title is required'
-            });
-            continue;
+            continue; // Skip silently - blank rows don't need error messages
           }
 
           // Validate date fields - must be YYYY-MM-DD format only
