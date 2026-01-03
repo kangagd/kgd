@@ -190,7 +190,9 @@ export default function ActivityTab({ project, onComposeEmail }) {
           base44.entities.EmailMessage.filter({ thread_id: threadId })
         )
       );
-      return messages.flat();
+      return messages.flat().sort((a, b) => 
+        new Date(a.sent_at || a.created_date) - new Date(b.sent_at || b.created_date)
+      );
     },
     enabled: emailThreadIds.length > 0
   });
@@ -450,69 +452,103 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
       <Dialog open={!!selectedActivity} onOpenChange={() => setSelectedActivity(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          {selectedActivity?.type === 'email' && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                const emailMessage = emailMessages.find(msg => `email-${msg.id}` === selectedActivity.id);
-                if (emailMessage) {
-                  unlinkEmailMutation.mutate(emailMessage.thread_id);
-                  setSelectedActivity(null);
-                }
-              }}
-              disabled={unlinkEmailMutation.isPending}
-              className="absolute right-12 top-4 text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 z-50"
-              title="Unlink email from project"
-            >
-              <Unlink className="w-4 h-4" />
-            </Button>
-          )}
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Mail className="w-5 h-5" />
-              {selectedActivity?.subject || 'Email'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedActivity && (
-                <div className="flex items-center gap-2 text-[13px]">
-                  <span>From: {selectedActivity.from}</span>
-                  <span>•</span>
-                  <span>{format(new Date(selectedActivity.date), 'MMM d, yyyy h:mm a')}</span>
-                  {selectedActivity.isOutbound && (
-                    <Badge variant="default" className="bg-blue-100 text-blue-700 ml-2">Sent</Badge>
-                  )}
-                </div>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto py-4">
-            {selectedActivity?.attachments?.length > 0 && (
-              <div className="mb-4 p-3 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                <div className="flex items-center gap-2 text-[13px] font-medium text-[#4B5563] mb-2">
-                  <Paperclip className="w-4 h-4" />
-                  Attachments ({selectedActivity.attachments.length})
-                </div>
-                <div className="space-y-1">
-                  {selectedActivity.attachments.map((att, idx) => (
-                    <div key={idx} className="text-[13px] text-[#6B7280]">
-                      {att.filename || `Attachment ${idx + 1}`}
+          {selectedActivity?.type === 'email' && (() => {
+            const emailMessage = emailMessages.find(msg => `email-${msg.id}` === selectedActivity.id);
+            const threadId = emailMessage?.thread_id;
+            const threadMessages = threadId ? emailMessages.filter(msg => msg.thread_id === threadId) : [];
+            const thread = threadId ? emailThreads.find(t => t.id === threadId) : null;
+            
+            return (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    if (threadId) {
+                      unlinkEmailMutation.mutate(threadId);
+                      setSelectedActivity(null);
+                    }
+                  }}
+                  disabled={unlinkEmailMutation.isPending}
+                  className="absolute right-12 top-4 text-red-600 hover:text-red-700 hover:bg-red-50 h-6 w-6 z-50"
+                  title="Unlink email from project"
+                >
+                  <Unlink className="w-4 h-4" />
+                </Button>
+                
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 pr-8">
+                    <Mail className="w-5 h-5" />
+                    {thread?.subject || selectedActivity?.subject || 'Email Thread'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    <div className="text-[13px] text-[#6B7280]">
+                      {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''} in this thread
+                    </div>
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="flex-1 overflow-y-auto py-4 space-y-6">
+                  {threadMessages.map((msg, idx) => (
+                    <div key={msg.id} className={`border-l-2 pl-4 ${idx === threadMessages.length - 1 ? '' : 'pb-6'}`} style={{ borderColor: msg.is_outbound ? '#3B82F6' : '#10B981' }}>
+                      <div className="mb-3">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[14px] text-[#111827]">
+                              {msg.from_name || msg.from_address}
+                            </span>
+                            {msg.is_outbound ? (
+                              <Badge variant="default" className="bg-blue-100 text-blue-700">Sent</Badge>
+                            ) : (
+                              <Badge variant="default" className="bg-green-100 text-green-700">Received</Badge>
+                            )}
+                          </div>
+                          <span className="text-[12px] text-[#9CA3AF]">
+                            {format(new Date(msg.sent_at || msg.created_date), 'MMM d, yyyy h:mm a')}
+                          </span>
+                        </div>
+                        
+                        {msg.to_addresses?.length > 0 && (
+                          <div className="text-[12px] text-[#6B7280] mb-1">
+                            To: {msg.to_addresses.join(', ')}
+                          </div>
+                        )}
+                        
+                        {msg.cc_addresses?.length > 0 && (
+                          <div className="text-[12px] text-[#6B7280]">
+                            Cc: {msg.cc_addresses.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {msg.attachments?.length > 0 && (
+                        <div className="mb-3 p-2 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
+                          <div className="flex items-center gap-2 text-[12px] font-medium text-[#4B5563] mb-1">
+                            <Paperclip className="w-3 h-3" />
+                            {msg.attachments.length} attachment{msg.attachments.length !== 1 ? 's' : ''}
+                          </div>
+                          <div className="space-y-1">
+                            {msg.attachments.map((att, idx) => (
+                              <div key={idx} className="text-[12px] text-[#6B7280]">
+                                {att.filename || `Attachment ${idx + 1}`}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div 
+                        className="gmail-email-body prose prose-sm max-w-none text-[14px]"
+                        dangerouslySetInnerHTML={{ 
+                          __html: formatEmailForModal(msg.body_html || msg.body_text || '')
+                        }}
+                      />
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-            
-            {selectedActivity?.content && (
-              <div 
-                className="gmail-email-body prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ 
-                  __html: formatEmailForModal(selectedActivity.content)
-                }}
-              />
-            )}
-          </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
