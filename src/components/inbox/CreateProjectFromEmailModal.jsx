@@ -99,7 +99,7 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, onS
         </DialogHeader>
         <div className="px-6 pb-6">
           <ProjectForm
-            project={initialData}
+            initialData={initialData}
             onSubmit={handleSubmit}
             onCancel={onClose}
             isSubmitting={createProjectMutation.isPending}
