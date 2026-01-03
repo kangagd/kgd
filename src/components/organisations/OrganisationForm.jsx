@@ -39,7 +39,11 @@ export default function OrganisationForm({ organisation, onSubmit, onCancel, isS
     if (!submitData.notes) {
       delete submitData.notes;
     }
-    onSubmit(submitData);
+    
+    // Add normalized fields
+    const normalizedFields = getNormalizedFields('Organisation', submitData);
+    
+    onSubmit({ ...submitData, ...normalizedFields });
   };
 
   return (
