@@ -25,8 +25,6 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [customerTypeFilter, setCustomerTypeFilter] = useState("all");
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
-  const [showCleanupView, setShowCleanupView] = useState(false);
-  const [selectedForDeletion, setSelectedForDeletion] = useState(new Set());
   const [showForm, setShowForm] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -156,26 +154,6 @@ export default function Customers() {
     }
   });
 
-  const [deleteProgress, setDeleteProgress] = useState(null);
-
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async (customerIds) => {
-      // Use backend function for large deletions to avoid rate limits
-      const result = await base44.functions.invoke('deleteCustomersWithNameUnknown');
-      return result.data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-      setSelectedForDeletion(new Set());
-      setDeleteProgress(null);
-      toast.success(`Deleted ${data.deleted} customers successfully${data.skipped_with_links > 0 ? `. ${data.skipped_with_links} customers with links were skipped.` : ''}`);
-    },
-    onError: (error) => {
-      setDeleteProgress(null);
-      toast.error("Failed to delete customers. Please try again.");
-    }
-  });
-
   const handleSubmit = async (data) => {
     if (editingCustomer) {
       await updateCustomerMutation.mutateAsync({ id: editingCustomer.id, data });
@@ -195,32 +173,6 @@ export default function Customers() {
     deleteCustomerMutation.mutate(customerId);
   };
 
-  const handleBulkDelete = () => {
-    if (selectedForDeletion.size === 0) return;
-    const idsToDelete = Array.from(selectedForDeletion);
-    bulkDeleteMutation.mutate(idsToDelete);
-  };
-
-  const toggleSelection = (customerId) => {
-    setSelectedForDeletion(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(customerId)) {
-        newSet.delete(customerId);
-      } else {
-        newSet.add(customerId);
-      }
-      return newSet;
-    });
-  };
-
-  const selectAllUnlinked = () => {
-    setSelectedForDeletion(new Set(unknownWithoutLinks.map(c => c.id)));
-  };
-
-  const clearSelection = () => {
-    setSelectedForDeletion(new Set());
-  };
-
   const handleOpenFullCustomer = (customer) => {
     setModalCustomer(null);
     setSelectedCustomer(customer);
@@ -228,21 +180,6 @@ export default function Customers() {
 
   // Memoized customer filtering to avoid re-computation on every render
   // Potential optimisation: Debounce searchTerm for large customer lists
-  const unknownCustomers = React.useMemo(() => {
-    return customers.filter(c => c.name === "Unknown").map(customer => {
-      const counts = getCustomerCounts(customer.id);
-      return { ...customer, ...counts };
-    });
-  }, [customers, allJobs, allProjects]);
-
-  const unknownWithLinks = React.useMemo(() => {
-    return unknownCustomers.filter(c => c.jobCount > 0 || c.projectCount > 0);
-  }, [unknownCustomers]);
-
-  const unknownWithoutLinks = React.useMemo(() => {
-    return unknownCustomers.filter(c => c.jobCount === 0 && c.projectCount === 0);
-  }, [unknownCustomers]);
-
   const filteredCustomers = React.useMemo(() => customers.filter((customer) => {
     const matchesSearch =
       customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -337,39 +274,19 @@ export default function Customers() {
             </Tabs>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="duplicates-filter"
-                checked={showDuplicatesOnly}
-                onCheckedChange={setShowDuplicatesOnly}
-              />
-              <label
-                htmlFor="duplicates-filter"
-                className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
-              >
-                <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
-                Show only potential duplicates
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="cleanup-filter"
-                checked={showCleanupView}
-                onCheckedChange={(checked) => {
-                  setShowCleanupView(checked);
-                  if (!checked) {
-                    setSelectedForDeletion(new Set());
-                  }
-                }}
-              />
-              <label
-                htmlFor="cleanup-filter"
-                className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
-              >
-                Cleanup – Unknown Customers
-              </label>
-            </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="duplicates-filter"
+              checked={showDuplicatesOnly}
+              onCheckedChange={setShowDuplicatesOnly}
+            />
+            <label
+              htmlFor="duplicates-filter"
+              className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
+              Show only potential duplicates
+            </label>
           </div>
         </div>
 
@@ -384,143 +301,6 @@ export default function Customers() {
                 </CardContent>
               </Card>
             ))}
-          </div>
-        ) : showCleanupView ? (
-          <div className="space-y-6">
-            {/* Unknown Customers Without Links */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-[#111827]">
-                    Unknown Customers Without Links ({unknownWithoutLinks.length})
-                  </h3>
-                  <p className="text-sm text-[#6B7280]">Safe to delete - no associated jobs or projects</p>
-                </div>
-                {unknownWithoutLinks.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    {selectedForDeletion.size > 0 && (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={clearSelection}
-                          className="h-9"
-                        >
-                          Clear ({selectedForDeletion.size})
-                        </Button>
-                        <Button
-                          onClick={handleBulkDelete}
-                          className="bg-[#DC2626] text-white hover:bg-[#B91C1C] h-9"
-                          disabled={bulkDeleteMutation.isPending}
-                        >
-                          {deleteProgress 
-                            ? `Deleting ${deleteProgress.current}/${deleteProgress.total}...` 
-                            : bulkDeleteMutation.isPending 
-                              ? "Deleting..." 
-                              : `Delete ${selectedForDeletion.size} Selected`
-                          }
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      variant="outline"
-                      onClick={selectAllUnlinked}
-                      className="h-9"
-                    >
-                      Select All
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {unknownWithoutLinks.length === 0 ? (
-                <Card className="p-8 text-center">
-                  <p className="text-[#6B7280]">No unknown customers without links found</p>
-                </Card>
-              ) : (
-                <div className="grid gap-3">
-                  {unknownWithoutLinks.map((customer) => (
-                    <Card 
-                      key={customer.id}
-                      className={`border transition-all ${selectedForDeletion.has(customer.id) ? 'border-[#FAE008] bg-[#FAE008]/5' : 'border-[#E5E7EB]'}`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <Checkbox
-                            checked={selectedForDeletion.has(customer.id)}
-                            onCheckedChange={() => toggleSelection(customer.id)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="text-[16px] font-semibold text-[#111827]">Unknown</h3>
-                              <div className="flex items-center gap-2 text-xs text-[#6B7280]">
-                                <span>Jobs: {customer.jobCount}</span>
-                                <span>Projects: {customer.projectCount}</span>
-                              </div>
-                            </div>
-                            <div className="space-y-1 text-sm text-[#4B5563]">
-                              {customer.phone && <div>Phone: {customer.phone}</div>}
-                              {customer.email && <div>Email: {customer.email}</div>}
-                              <div className="text-xs text-[#9CA3AF]">
-                                Created: {new Date(customer.created_date).toLocaleDateString()}
-                                {customer.updated_date && ` • Updated: ${new Date(customer.updated_date).toLocaleDateString()}`}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Unknown Customers With Links */}
-            {unknownWithLinks.length > 0 && (
-              <div>
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-[#111827]">
-                    Unknown Customers With Links ({unknownWithLinks.length})
-                  </h3>
-                  <p className="text-sm text-[#DC2626]">Cannot delete - have associated jobs or projects. Manual review required.</p>
-                </div>
-                <div className="grid gap-3">
-                  {unknownWithLinks.map((customer) => (
-                    <Card 
-                      key={customer.id}
-                      className="border border-[#FCA5A5] bg-[#FEF2F2] cursor-pointer hover:shadow-md transition-all"
-                      onClick={() => setSelectedCustomer(customer)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertTriangle className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h3 className="text-[16px] font-semibold text-[#111827]">Unknown</h3>
-                              <div className="flex items-center gap-2 text-xs font-medium">
-                                <Badge className="bg-[#DC2626] text-white">
-                                  {customer.jobCount} Jobs
-                                </Badge>
-                                <Badge className="bg-[#DC2626] text-white">
-                                  {customer.projectCount} Projects
-                                </Badge>
-                              </div>
-                            </div>
-                            <div className="space-y-1 text-sm text-[#4B5563]">
-                              {customer.phone && <div>Phone: {customer.phone}</div>}
-                              {customer.email && <div>Email: {customer.email}</div>}
-                              <div className="text-xs text-[#9CA3AF]">
-                                Created: {new Date(customer.created_date).toLocaleDateString()}
-                                {customer.updated_date && ` • Updated: ${new Date(customer.updated_date).toLocaleDateString()}`}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : filteredCustomers.length === 0 ? (
           <Card className="p-12 text-center rounded-2xl border-2 border-[hsl(32,15%,88%)]">

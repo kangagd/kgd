@@ -9,10 +9,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    // Fetch all customers and filter for "Unknown" (case-sensitive)
-    const response = await base44.asServiceRole.entities.Customer.list();
-    const allCustomers = Array.isArray(response) ? response : (response?.data || []);
-    const unknownCustomers = allCustomers.filter(c => c.name === 'Unknown' && !c.deleted_at);
+    // Use filter() instead of list() to get customers with name "unknown"
+    const response = await base44.asServiceRole.entities.Customer.filter(
+      { name: 'Unknown' }
+    );
+    const unknownCustomers = Array.isArray(response) ? response : (response?.data || []);
 
     console.log(`Found ${unknownCustomers.length} customers with name "Unknown"`);
 
@@ -24,36 +25,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get all jobs and projects to check for links
-    const jobsResponse = await base44.asServiceRole.entities.Job.list();
-    const allJobs = Array.isArray(jobsResponse) ? jobsResponse : (jobsResponse?.data || []);
-    
-    const projectsResponse = await base44.asServiceRole.entities.Project.list();
-    const allProjects = Array.isArray(projectsResponse) ? projectsResponse : (projectsResponse?.data || []);
-
-    // Filter to only delete customers without any links
-    const customersToDelete = unknownCustomers.filter(customer => {
-      const hasJobs = allJobs.some(j => j.customer_id === customer.id && !j.deleted_at);
-      const hasProjects = allProjects.some(p => p.customer_id === customer.id && !p.deleted_at);
-      return !hasJobs && !hasProjects;
-    });
-
-    const customersWithLinks = unknownCustomers.filter(customer => {
-      const hasJobs = allJobs.some(j => j.customer_id === customer.id && !j.deleted_at);
-      const hasProjects = allProjects.some(p => p.customer_id === customer.id && !p.deleted_at);
-      return hasJobs || hasProjects;
-    });
-
-    console.log(`${customersToDelete.length} customers can be deleted (no links)`);
-    console.log(`${customersWithLinks.length} customers have links (skipping)`);
-
-    // Soft delete customers without links in batches
+    // Soft delete all unknown customers in batches
     const deletedAt = new Date().toISOString();
-    const batchSize = 100;
+    const batchSize = 50;
     let deleted = 0;
 
-    for (let i = 0; i < customersToDelete.length; i += batchSize) {
-      const batch = customersToDelete.slice(i, i + batchSize);
+    for (let i = 0; i < unknownCustomers.length; i += batchSize) {
+      const batch = unknownCustomers.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}, batch type: ${typeof batch}, isArray: ${Array.isArray(batch)}`);
       
       await Promise.all(
         batch.map(customer => 
@@ -64,7 +43,7 @@ Deno.serve(async (req) => {
       );
       
       deleted += batch.length;
-      console.log(`Deleted ${deleted}/${customersToDelete.length} customers...`);
+      console.log(`Deleted ${deleted}/${unknownCustomers.length} customers...`);
     }
 
     // Re-evaluate duplicates after deletion
@@ -79,10 +58,8 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      message: `Deleted ${deleted} customer(s) with name "Unknown"`,
-      deleted: deleted,
-      skipped_with_links: customersWithLinks.length,
-      total_unknown_found: unknownCustomers.length
+      message: `Deleted ${unknownCustomers.length} customer(s) with name "Unknown"`,
+      deleted: unknownCustomers.length
     });
 
   } catch (error) {
