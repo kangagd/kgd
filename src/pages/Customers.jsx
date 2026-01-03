@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, User, AlertTriangle, Phone, Mail, MapPin, Building2, ChevronDown, Eye, Upload } from "lucide-react";
+import { Plus, Search, User, AlertTriangle, Phone, Mail, MapPin, Building2, ChevronDown, Eye } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CustomerTypeBadge } from "../components/common/StatusBadge";
 import CustomerForm from "../components/customers/CustomerForm";
@@ -15,7 +15,7 @@ import CustomerDetails from "../components/customers/CustomerDetails";
 import CustomerCard from "../components/customers/CustomerCard";
 import EntityModal from "../components/common/EntityModal.jsx";
 import CustomerModalView from "../components/customers/CustomerModalView";
-import CustomerImportWizard from "../components/customers/CustomerImportWizard";
+
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 import BackButton from "../components/common/BackButton";
@@ -30,7 +30,7 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [modalCustomer, setModalCustomer] = useState(null);
-  const [showImportWizard, setShowImportWizard] = useState(false);
+
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -241,23 +241,13 @@ export default function Customers() {
             <p className="text-sm text-[#4B5563] mt-1">Manage customer information</p>
           </div>
           {canEditCustomers && (
-            <div className="flex gap-2 w-full md:w-auto">
-              <Button
-                onClick={() => setShowImportWizard(true)}
-                variant="outline"
-                className="border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] font-semibold h-10 px-4 text-sm rounded-xl flex-1 md:flex-initial"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Import CSV
-              </Button>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl flex-1 md:flex-initial"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                New Customer
-              </Button>
-            </div>
+            <Button
+              onClick={() => setShowForm(true)}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Customer
+            </Button>
           )}
         </div>
 
@@ -446,14 +436,7 @@ export default function Customers() {
           )}
         </EntityModal>
 
-        <CustomerImportWizard
-          open={showImportWizard}
-          onClose={() => setShowImportWizard(false)}
-          onComplete={() => {
-            queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
-            toast.success('Customers imported successfully');
-          }}
-        />
+
         </div>
         </div>
         );
