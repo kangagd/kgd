@@ -110,6 +110,9 @@ Deno.serve(async (req) => {
       attachments, projectId, jobId 
     } = await req.json();
     
+    // Debug: Log attachments to verify they're received
+    console.log('Received attachments:', attachments ? attachments.length : 0, attachments);
+    
     if (!to || !subject || !body) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
