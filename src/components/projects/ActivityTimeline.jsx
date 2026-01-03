@@ -7,9 +7,6 @@ import {
   DollarSign, 
   Calendar, 
   CheckCircle2, 
-  Mail, 
-  MessageCircle,
-  TrendingUp,
   Clock,
   AlertCircle
 } from "lucide-react";
@@ -41,18 +38,6 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
   const { data: changeHistory = [] } = useQuery({
     queryKey: ['projectChangeHistory', project.id],
     queryFn: () => base44.entities.ChangeHistory.filter({ project_id: project.id }, '-created_date', 50),
-    enabled: !!project.id
-  });
-
-  const { data: projectMessages = [] } = useQuery({
-    queryKey: ['projectMessages', project.id],
-    queryFn: () => base44.entities.ProjectMessage?.filter({ project_id: project.id }, '-created_date', 50) || [],
-    enabled: !!project.id
-  });
-
-  const { data: projectEmails = [] } = useQuery({
-    queryKey: ['projectEmails', project.id],
-    queryFn: () => base44.entities.ProjectEmail?.filter({ project_id: project.id }, '-created_date', 50) || [],
     enabled: !!project.id
   });
 
@@ -204,47 +189,11 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
       }
     });
 
-    // Email events (client-facing only)
-    projectEmails.forEach(email => {
-      if (email.created_date) {
-        events.push({
-          id: `email-${email.id}`,
-          timestamp: parseISO(email.created_date),
-          type: 'email',
-          category: 'comms',
-          action: email.is_outbound ? 'sent' : 'received',
-          title: email.is_outbound ? 'Email Sent' : 'Email Received',
-          description: email.subject || 'No subject',
-          icon: Mail,
-          color: email.is_outbound ? 'purple' : 'blue',
-          metadata: { emailId: email.id, threadId: email.thread_id }
-        });
-      }
-    });
-
-    // Manual communication logged
-    projectMessages.forEach(msg => {
-      if (msg.created_date) {
-        events.push({
-          id: `message-${msg.id}`,
-          timestamp: parseISO(msg.created_date),
-          type: 'message',
-          category: 'comms',
-          action: 'logged',
-          title: 'Communication Logged',
-          description: `${msg.sender_name || 'Team member'} added a note`,
-          icon: MessageCircle,
-          color: 'purple',
-          metadata: { messageId: msg.id }
-        });
-      }
-    });
-
     // Sort by timestamp descending and take top 12
     return events
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 12);
-  }, [quotes, invoices, jobs, projectEmails, projectMessages]);
+  }, [quotes, invoices, jobs, changeHistory]);
 
   // Filter events
   const filteredEvents = React.useMemo(() => {
@@ -286,8 +235,6 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
       onNavigateToTab('invoicing');
     } else if (event.type === 'visit') {
       onNavigateToTab('requirements');
-    } else if (event.type === 'email' || event.type === 'message') {
-      onNavigateToTab('activity');
     }
   };
 
@@ -299,7 +246,6 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
           <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
           <TabsTrigger value="sales" className="flex-1">Sales</TabsTrigger>
           <TabsTrigger value="ops" className="flex-1">Ops</TabsTrigger>
-          <TabsTrigger value="comms" className="flex-1">Comms</TabsTrigger>
         </TabsList>
       </Tabs>
 
