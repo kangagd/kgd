@@ -403,7 +403,7 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[400px] p-0" align="start">
-                    <Command>
+                    <Command shouldFilter={false}>
                       <CommandInput 
                         placeholder="Search customers..." 
                         value={customerSearchQuery}
