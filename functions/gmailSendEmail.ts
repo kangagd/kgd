@@ -55,8 +55,12 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
   
   if (cc) message.push(`Cc: ${cc}`);
   if (bcc) message.push(`Bcc: ${bcc}`);
-  if (inReplyTo) message.push(`In-Reply-To: ${inReplyTo}`);
-  if (references) message.push(`References: ${references}`);
+  
+  // Fix MIME headers for proper Gmail threading
+  if (inReplyTo) {
+    message.push(`In-Reply-To: ${inReplyTo}`);
+    message.push(`References: ${references ? `${references} ${inReplyTo}` : inReplyTo}`);
+  }
   
   message.push(`MIME-Version: 1.0`);
   message.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
@@ -108,6 +112,14 @@ Deno.serve(async (req) => {
     
     if (!to || !subject || !body) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    // Enforce reply safety check
+    if (gmail_thread_id && !inReplyTo) {
+      return Response.json(
+        { error: 'Reply requires RFC Message-ID (inReplyTo)' },
+        { status: 400 }
+      );
     }
     
     const accessToken = await refreshTokenIfNeeded(base44, user);
