@@ -55,6 +55,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Update project last contact timestamps
+    base44.functions.invoke('updateProjectLastContactFromThread', {
+      email_thread_id: email_thread_id
+    }).catch(err => console.error('Update project contact failed:', err));
+
     return Response.json({ success: true });
 
   } catch (error) {
