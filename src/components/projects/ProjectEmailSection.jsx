@@ -700,37 +700,18 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                           })));
                         }
                         return (
-                        <div key={message.id} className="relative">
                           <EmailMessageView
+                            key={message.id}
                             message={message}
                             isFirst={true}
                             linkedProjectId={project.id}
                             threadSubject={thread.subject}
                             gmailMessageId={message.gmail_message_id}
+                            onReply={handleReply}
+                            onForward={handleForward}
                           />
-                          {/* Quick actions */}
-                          <div className="absolute top-3 right-12 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleReply(message)}
-                              className="h-7 w-7 hover:bg-[#F3F4F6]"
-                              title="Reply"
-                            >
-                              <Reply className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleForward(message)}
-                              className="h-7 w-7 hover:bg-[#F3F4F6]"
-                              title="Forward"
-                            >
-                              <Forward className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );})}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>

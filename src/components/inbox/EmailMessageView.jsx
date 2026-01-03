@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp, Paperclip, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronUp, Paperclip, ChevronRight, Reply, Forward, ExternalLink, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import AttachmentCard from "./AttachmentCard";
 import { processEmailForDisplay } from "@/components/utils/emailFormatting";
@@ -56,7 +57,7 @@ function isInlineImageInHtml(attachment, bodyHtml) {
   return false;
 }
 
-export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId }) {
+export default function EmailMessageView({ message, isFirst, linkedJobId, linkedProjectId, threadSubject, gmailMessageId: propGmailMessageId, onReply, onForward }) {
   // Use message's own gmail_message_id first, then fall back to prop
   const gmailMessageId = message.gmail_message_id || propGmailMessageId;
   const [expanded, setExpanded] = useState(isFirst);
@@ -65,6 +66,7 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
   const [inlineImagesAttempted, setInlineImagesAttempted] = useState(false);
   const [fullContent, setFullContent] = useState(null);
   const [loadingFullContent, setLoadingFullContent] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   // Fetch full content for historical messages on expand
   useEffect(() => {
@@ -190,12 +192,13 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
   };
 
   return (
-    <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-      {/* Message Header */}
-      <div
-        className="p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors border-b border-[#F3F4F6]"
-        onClick={() => setExpanded(!expanded)}
-      >
+    <>
+      <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+        {/* Message Header */}
+        <div
+          className="p-4 cursor-pointer hover:bg-[#F9FAFB] transition-colors border-b border-[#F3F4F6]"
+          onClick={() => setExpanded(!expanded)}
+        >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -329,8 +332,189 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
             )}
           </div>
 
-          </div>
+          {/* Action Buttons */}
+          {(onReply || onForward) && (
+            <div className="flex gap-2 pt-3 border-t border-[#F3F4F6]">
+              {onReply && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReply(message);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Reply className="w-4 h-4" />
+                  Reply
+                </Button>
+              )}
+              {onForward && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onForward(message);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Forward className="w-4 h-4" />
+                  Forward
+                </Button>
+              )}
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowModal(true);
+                }}
+                variant="ghost"
+                size="sm"
+                className="ml-auto"
+                title="Open in modal"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
           )}
+        </div>
+      )}
     </div>
+
+    {/* Full Screen Modal */}
+    {showModal && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
+        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-xl" onClick={(e) => e.stopPropagation()}>
+          {/* Modal Header */}
+          <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB]">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-[16px] font-semibold text-[#111827] truncate">
+                  {message.subject || 'Email Message'}
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowModal(false)}
+              className="flex-shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          {/* Modal Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            {/* Email Metadata */}
+            <div className="mb-5 pb-4 border-b border-[#F3F4F6] space-y-2">
+              <div className="flex items-start gap-2">
+                <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">From:</span>
+                <div className="flex-1">
+                  <div className="text-[13px] text-[#111827] font-medium">
+                    {message.from_name || message.from_address}
+                  </div>
+                  <div className="text-[12px] text-[#6B7280]">{message.from_address}</div>
+                </div>
+              </div>
+
+              {message.to_addresses?.length > 0 && (
+                <div className="flex items-start gap-2">
+                  <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">To:</span>
+                  <div className="flex-1 flex flex-wrap gap-1">
+                    {message.to_addresses.map((addr, idx) => (
+                      <Badge key={idx} variant="outline" className="text-[12px] font-normal">
+                        {addr}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] text-[#6B7280] font-medium min-w-[60px]">Date:</span>
+                <span className="text-[13px] text-[#111827]">
+                  {message.sent_at && format(parseISO(message.sent_at), 'EEEE, MMMM d, yyyy • h:mm a')}
+                </span>
+              </div>
+            </div>
+
+            {/* Email Body */}
+            <div className="mb-5">
+              {formattedEmailContent ? (
+                <div 
+                  className="gmail-email-body"
+                  style={{
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    color: '#111827',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'anywhere'
+                  }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(formattedEmailContent.html) }} 
+                />
+              ) : (
+                <div className="whitespace-pre-wrap text-[14px] text-[#111827] leading-[1.6] break-words overflow-wrap-anywhere">
+                  {displayMessage.body_text || displayMessage.subject || '(No content)'}
+                </div>
+              )}
+            </div>
+
+            {/* Attachments in Modal */}
+            {regularAttachments.length > 0 && (
+              <div className="pt-4 border-t border-[#F3F4F6]">
+                <div className="flex items-center gap-2 mb-3">
+                  <Paperclip className="w-4 h-4 text-[#6B7280]" />
+                  <span className="text-[13px] font-medium text-[#6B7280]">
+                    {regularAttachments.length} Attachment{regularAttachments.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {regularAttachments.map((attachment, idx) => (
+                    <AttachmentCard
+                      key={idx}
+                      attachment={attachment}
+                      linkedJobId={linkedJobId}
+                      linkedProjectId={linkedProjectId}
+                      threadSubject={threadSubject}
+                      gmailMessageId={attachment.gmail_message_id || gmailMessageId}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Modal Footer with Actions */}
+          <div className="flex gap-2 p-4 border-t border-[#E5E7EB] bg-[#F9FAFB]">
+            {onReply && (
+              <Button
+                onClick={() => {
+                  setShowModal(false);
+                  onReply(message);
+                }}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+              >
+                <Reply className="w-4 h-4 mr-2" />
+                Reply
+              </Button>
+            )}
+            {onForward && (
+              <Button
+                onClick={() => {
+                  setShowModal(false);
+                  onForward(message);
+                }}
+                variant="outline"
+              >
+                <Forward className="w-4 h-4 mr-2" />
+                Forward
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
