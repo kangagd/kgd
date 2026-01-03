@@ -9,12 +9,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin only' }, { status: 403 });
     }
 
-    // Fetch ALL customers (list() returns all records)
-    const allCustomersData = await base44.asServiceRole.entities.Customer.list();
-    const allCustomers = Array.isArray(allCustomersData) ? allCustomersData : (allCustomersData?.data || []);
+    // Fetch ALL customers - use empty sort and high limit
+    const allCustomers = await base44.asServiceRole.entities.Customer.list('', 50000);
     
     console.log(`Total customers fetched: ${allCustomers.length}`);
-    console.log(`Type of allCustomers: ${typeof allCustomers}, isArray: ${Array.isArray(allCustomers)}`);
 
     // Filter for customers with name "unknown" (case-insensitive)
     const unknownCustomers = allCustomers.filter(c => 
@@ -27,7 +25,8 @@ Deno.serve(async (req) => {
       return Response.json({
         success: true,
         message: 'No customers with name "unknown" found',
-        deleted: 0
+        deleted: 0,
+        total_fetched: allCustomers.length
       });
     }
 
@@ -56,6 +55,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.functions.invoke('reevaluateDuplicatesAfterDeletion', {
         entity_type: 'Customer'
       });
+      console.log('Successfully re-evaluated duplicates');
     } catch (error) {
       console.error('Error re-evaluating duplicates:', error);
     }
@@ -63,8 +63,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       message: `Deleted ${unknownCustomers.length} customer(s) with name "unknown"`,
-      deleted: unknownCustomers.length,
-      customer_ids: unknownCustomers.map(c => c.id)
+      deleted: unknownCustomers.length
     });
 
   } catch (error) {
