@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, FileText, X, Image as ImageIcon, Upload, Trash2, Search } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -89,6 +91,8 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
   });
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -332,6 +336,19 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
 
   const isInstallType = formData.project_type && (formData.project_type.includes("Install") || formData.project_type === "Multiple");
 
+  // Filter customers based on search query
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearchQuery.trim()) return customers;
+    const query = customerSearchQuery.toLowerCase();
+    return customers.filter(c => 
+      c.name?.toLowerCase().includes(query) ||
+      c.email?.toLowerCase().includes(query) ||
+      c.phone?.includes(query)
+    );
+  }, [customers, customerSearchQuery]);
+
+  const selectedCustomer = customers.find(c => c.id === formData.customer_id);
+
   return (
     <>
       <Card className="border-2 border-slate-200 shadow-lg rounded-2xl">
@@ -372,18 +389,52 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
             <div className="space-y-2">
               <Label htmlFor="customer_id">Customer *</Label>
               <div className="flex gap-2">
-                <Select value={formData.customer_id} onValueChange={handleCustomerChange} required>
-                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008]">
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={customerSearchOpen}
+                      className="w-full justify-between border-2 border-slate-300 focus:border-[#fae008] h-10"
+                    >
+                      {selectedCustomer ? selectedCustomer.name : "Select customer"}
+                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0" align="start">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Search customers..." 
+                        value={customerSearchQuery}
+                        onValueChange={setCustomerSearchQuery}
+                      />
+                      <CommandList>
+                        <CommandEmpty>No customer found.</CommandEmpty>
+                        <CommandGroup>
+                          {filteredCustomers.map((customer) => (
+                            <CommandItem
+                              key={customer.id}
+                              value={customer.id}
+                              onSelect={() => {
+                                handleCustomerChange(customer.id);
+                                setCustomerSearchOpen(false);
+                                setCustomerSearchQuery("");
+                              }}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{customer.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {[customer.email, customer.phone].filter(Boolean).join(" • ")}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Button
                   type="button"
                   variant="outline"
