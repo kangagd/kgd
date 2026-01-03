@@ -87,11 +87,18 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Set job address based on delivery method
+        // Set job title and address based on delivery method
+        let jobTitle, jobAddress;
+        const warehouseAddress = "866 Bourke Street, Waterloo";
+        
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+            // Material Pick Up from Supplier
+            jobTitle = supplierName;
             jobAddress = supplierAddress || supplierName;
         } else {
-            jobAddress = "866 Bourke Street, Waterloo";
+            // Material Delivery to Warehouse
+            jobTitle = "Warehouse";
+            jobAddress = warehouseAddress;
         }
 
         // Create the Job
@@ -107,7 +114,7 @@ Deno.serve(async (req) => {
             notes: `Logistics job for PO from ${supplierName}\nOrigin: ${origin}\nDestination: ${destination}`,
             address: jobAddress,
             address_full: jobAddress,
-            customer_name: supplierName,
+            customer_name: jobTitle,
         };
 
         const job = await base44.asServiceRole.entities.Job.create(jobData);
