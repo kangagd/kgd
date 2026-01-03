@@ -421,8 +421,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                                 setCustomerSearchOpen(false);
                                 setCustomerSearchQuery("");
                               }}
+                              className="cursor-pointer"
                             >
-                              <div className="flex flex-col">
+                              <div className="flex flex-col w-full">
                                 <span className="font-medium">{customer.name}</span>
                                 <span className="text-xs text-muted-foreground">
                                   {[customer.email, customer.phone].filter(Boolean).join(" • ")}
