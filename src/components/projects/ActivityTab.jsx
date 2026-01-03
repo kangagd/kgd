@@ -19,6 +19,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+/**
+ * ActivityTab: Customer Communication ONLY
+ * 
+ * SCOPE RULES:
+ * ✅ Email threads (via EmailThread.project_id)
+ * ✅ Email messages (via EmailMessage)
+ * ✅ Email drafts (only if thread is linked)
+ * ✅ Manual communication logs (ProjectMessage with type='manual_activity')
+ * 
+ * ❌ NO system events (quotes, invoices, jobs, POs)
+ * ❌ NO operational history (stage changes, completions)
+ * ❌ NO change history or audits
+ * 
+ * System events belong in: ActivityTimeline or Overview tab
+ */
 export default function ActivityTab({ project, onComposeEmail }) {
   const [filter, setFilter] = useState("all");
   const [showLogModal, setShowLogModal] = useState(false);
@@ -27,6 +42,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const queryClient = useQueryClient();
 
   // Fetch manual communication activities only
+  // SCOPE: Only manual_activity type - these are customer communications
+  // NOT for system events, status changes, or automated logs
   const { data: projectMessages = [], refetch: refetchMessages } = useQuery({
     queryKey: ['projectMessages', project.id],
     queryFn: async () => {
@@ -34,6 +51,14 @@ export default function ActivityTab({ project, onComposeEmail }) {
         project_id: project.id,
         message_type: 'manual_activity'
       }, '-created_date');
+      
+      // Guardrail: warn if any non-communication messages slip through
+      messages.forEach(msg => {
+        if (msg.message_type !== 'manual_activity') {
+          console.warn('[ActivityTab] Non-communication message detected:', msg.id, msg.message_type);
+        }
+      });
+      
       return messages;
     },
     enabled: !!project.id
@@ -177,8 +202,24 @@ export default function ActivityTab({ project, onComposeEmail }) {
   });
 
   // Combine communication activities only
+  // GUARDRAIL: This is ONLY for customer communication
+  // DO NOT add: Quote events, Invoice events, Job events, PO events, Stage changes
   const allActivities = React.useMemo(() => {
     const activities = [];
+    
+    // ASSERTION: Verify no system entities leaked into this component
+    if (typeof quotes !== 'undefined') {
+      console.error('[ActivityTab] SCOPE VIOLATION: Quote data detected. Quotes belong in ActivityTimeline.');
+    }
+    if (typeof jobs !== 'undefined') {
+      console.error('[ActivityTab] SCOPE VIOLATION: Job data detected. Jobs belong in ActivityTimeline.');
+    }
+    if (typeof invoices !== 'undefined') {
+      console.error('[ActivityTab] SCOPE VIOLATION: Invoice data detected. Invoices belong in ActivityTimeline.');
+    }
+    if (typeof changeHistory !== 'undefined') {
+      console.error('[ActivityTab] SCOPE VIOLATION: ChangeHistory detected. System history belongs in ActivityTimeline.');
+    }
 
     // Add email messages - ONLY from threads with project_id set
     emailMessages.forEach(msg => {
@@ -249,6 +290,14 @@ export default function ActivityTab({ project, onComposeEmail }) {
       });
     });
 
+    // Final guardrail: verify all activities are communication-related
+    const validTypes = new Set(['email', 'draft', 'manual']);
+    activities.forEach(activity => {
+      if (!validTypes.has(activity.type)) {
+        console.error('[ActivityTab] SCOPE VIOLATION: Invalid activity type detected:', activity.type, activity.id);
+      }
+    });
+    
     return activities.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [emailMessages, projectMessages, linkedThreads, draftEmails]);
 
