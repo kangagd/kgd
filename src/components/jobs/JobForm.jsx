@@ -25,6 +25,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   // Detect logistics context from URL params or props
   const urlParams = new URLSearchParams(window.location.search);
   const sourceParam = urlParams.get('source');
+  const projectIdFromUrl = urlParams.get('projectId');
   const isLogisticsContext = createJobContext === 'purchase_order' || 
                              createJobContext === 'logistics_timeline' ||
                              sourceParam === 'purchase_order' || 
@@ -32,7 +33,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const [formData, setFormData] = useState(job || {
     job_number: null,
-    project_id: preselectedProjectId || "",
+    project_id: preselectedProjectId || projectIdFromUrl || "",
     project_name: "",
     customer_id: preselectedCustomerId || "",
     customer_name: "",
@@ -166,8 +167,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
 
   useEffect(() => {
-    if (preselectedProjectId && projects.length > 0 && !job) {
-      const project = projects.find(p => p.id === preselectedProjectId);
+    const projectId = preselectedProjectId || projectIdFromUrl;
+    if (projectId && projects.length > 0 && !job) {
+      const project = projects.find(p => p.id === projectId);
       if (project) {
         const productMapping = {
           [PROJECT_TYPE.GARAGE_DOOR_INSTALL]: "Garage Door",
@@ -180,13 +182,23 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
         setFormData(prev => ({
           ...prev,
-          project_id: preselectedProjectId,
+          project_id: projectId,
           project_name: project.title,
           customer_id: project.customer_id,
           customer_name: project.customer_name,
           customer_phone: project.customer_phone || "",
           customer_email: project.customer_email || "",
-          address: project.address || prev.address,
+          customer_type: project.customer_type || "",
+          address: project.address_full || project.address || prev.address,
+          address_full: project.address_full || project.address || prev.address_full,
+          address_street: project.address_street || prev.address_street,
+          address_suburb: project.address_suburb || prev.address_suburb,
+          address_state: project.address_state || prev.address_state,
+          address_postcode: project.address_postcode || prev.address_postcode,
+          address_country: project.address_country || "Australia",
+          google_place_id: project.google_place_id || prev.google_place_id,
+          latitude: project.latitude || prev.latitude,
+          longitude: project.longitude || prev.longitude,
           product: autoProduct,
           additional_info: project.description || "",
           image_urls: project.image_urls || [],
@@ -195,7 +207,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [preselectedProjectId, projects.length, job]);
+  }, [preselectedProjectId, projectIdFromUrl, projects.length, job]);
 
   const handleAutoSave = async () => {
     if (!job && !formData.customer_id) {
