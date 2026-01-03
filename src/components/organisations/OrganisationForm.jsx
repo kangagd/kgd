@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft } from "lucide-react";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
+import { getNormalizedFields } from "@/components/utils/normalize";
 
 export default function OrganisationForm({ organisation, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(organisation || {

@@ -21,6 +21,7 @@ import {
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import _ from "lodash";
+import { getNormalizedFields } from "@/components/utils/normalize";
 
 export default function CustomerForm({ customer, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState(customer || {
@@ -133,7 +134,10 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
       submitData.organisation_name = org?.name || "";
     }
     
-    onSubmit(submitData);
+    // Add normalized fields
+    const normalizedFields = getNormalizedFields('Customer', submitData);
+    
+    onSubmit({ ...submitData, ...normalizedFields });
   };
 
   const handleOrganisationChange = (orgId) => {
@@ -180,7 +184,10 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
         submitData.longitude = newOrgData.longitude;
       }
       
-      const newOrg = await base44.entities.Organisation.create(submitData);
+      // Add normalized fields for organisation
+      const normalizedFields = getNormalizedFields('Organisation', submitData);
+      
+      const newOrg = await base44.entities.Organisation.create({ ...submitData, ...normalizedFields });
       
       // Close dialog first
       setShowNewOrgDialog(false);
