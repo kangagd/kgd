@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash, Eye } from "lucide-react";
+import { Building2, Search, Plus, Phone, Mail, MapPin, Users, Hash, Eye, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import OrganisationForm from "../components/organisations/OrganisationForm";
@@ -14,6 +14,8 @@ import OrganisationModalView from "../components/organisations/OrganisationModal
 import { createPageUrl } from "@/utils";
 import BackButton from "../components/common/BackButton";
 import { OrganisationTypeBadge } from "../components/common/StatusBadge";
+import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Organisations() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +24,7 @@ export default function Organisations() {
   const [selectedOrganisation, setSelectedOrganisation] = useState(null);
   const [editingOrganisation, setEditingOrganisation] = useState(null);
   const [modalOrganisation, setModalOrganisation] = useState(null);
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: allOrganisations = [], isLoading, refetch } = useQuery({
@@ -117,7 +120,9 @@ export default function Organisations() {
     
     const matchesType = organisationTypeFilter === "all" || org.organisation_type === organisationTypeFilter;
     
-    return matchesSearch && matchesType;
+    const matchesDuplicateFilter = !showDuplicatesOnly || org.is_potential_duplicate;
+    
+    return matchesSearch && matchesType && matchesDuplicateFilter;
   });
 
   const getCustomerCount = (orgId, orgName) => {
@@ -202,6 +207,21 @@ export default function Organisations() {
               </TabsList>
             </Tabs>
           </div>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="org-duplicates-filter"
+              checked={showDuplicatesOnly}
+              onCheckedChange={setShowDuplicatesOnly}
+            />
+            <label
+              htmlFor="org-duplicates-filter"
+              className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
+              Show only potential duplicates
+            </label>
+          </div>
         </div>
 
       {isLoading ? (
@@ -261,6 +281,7 @@ export default function Organisations() {
                       <h3 className="text-[18px] font-semibold text-[#111827]">
                         {org.name}
                       </h3>
+                      <DuplicateBadge record={org} size="sm" />
                       {org.organisation_type && (
                         <OrganisationTypeBadge value={org.organisation_type} />
                       )}
