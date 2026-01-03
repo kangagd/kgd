@@ -669,7 +669,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="product" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Product</Label>
-                <Select value={formData.product} onValueChange={(val) => setFormData({ ...formData, product: val })}>
+                <Select value={formData.product || undefined} onValueChange={(val) => setFormData({ ...formData, product: val })}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select product" />
                   </SelectTrigger>
@@ -685,7 +685,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
               <div className="space-y-2">
                 <Label htmlFor="job_type_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Job Type</Label>
-                <Select value={formData.job_type_id} onValueChange={handleJobTypeChange}>
+                <Select value={formData.job_type_id || undefined} onValueChange={handleJobTypeChange}>
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
