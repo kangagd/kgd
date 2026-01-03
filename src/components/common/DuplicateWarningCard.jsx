@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ExternalLink, Users, FolderKanban, Briefcase } from "lucide-react";
+import { AlertTriangle, ExternalLink, Users, FolderKanban, Briefcase, Building2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -43,6 +43,18 @@ const entityConfig = {
       { label: "Customer", value: match.customer_name },
       { label: "Type", value: match.job_type_name },
       { label: "Address", value: match.address_full }
+    ]
+  },
+  Organisation: {
+    icon: Building2,
+    title: "Possible duplicate organisations",
+    urlParam: "organisationId",
+    page: "Organisations",
+    getDisplayFields: (match) => [
+      { label: "Name", value: match.name },
+      { label: "Type", value: match.organisation_type },
+      { label: "Email", value: match.email },
+      { label: "Phone", value: match.phone }
     ]
   }
 };
