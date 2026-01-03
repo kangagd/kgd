@@ -50,6 +50,9 @@ Deno.serve(async (req) => {
         errors: []
       };
 
+      // Strict YYYY-MM-DD validation regex
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
       for (const record of records_to_import) {
         try {
           // Validation: Skip if title is blank
@@ -61,6 +64,22 @@ Deno.serve(async (req) => {
               error: 'Skipped - title is required'
             });
             continue;
+          }
+
+          // Validate date fields - must be YYYY-MM-DD format only
+          const dateFields = ['opened_date', 'completed_date', 'lost_date'];
+          for (const field of dateFields) {
+            if (record[field]) {
+              const dateValue = String(record[field]).trim();
+              if (dateValue && !dateRegex.test(dateValue)) {
+                results.skipped++;
+                results.errors.push({
+                  record: trimmedTitle,
+                  error: `Invalid ${field} format: "${dateValue}". Must be YYYY-MM-DD (e.g., 2025-01-15)`
+                });
+                continue;
+              }
+            }
           }
 
           // Explicitly set duplicate detection flags to false/0 for imports
