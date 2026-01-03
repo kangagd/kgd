@@ -37,10 +37,11 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
   });
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
 
-  const { data: customer, isLoading } = useQuery({
+  const { data: customer, isLoading, isError } = useQuery({
     queryKey: ['customer', customerId],
     queryFn: () => base44.entities.Customer.get(customerId),
-    enabled: !!customerId
+    enabled: !!customerId,
+    retry: false
   });
 
   const { data: organisations = [] } = useQuery({
@@ -196,11 +197,24 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
     }
   };
 
-  if (isLoading || !customer) {
+  if (isLoading) {
     return (
       <div className="space-y-3 animate-pulse">
         <div className="h-6 bg-[#F3F4F6] rounded w-3/4"></div>
         <div className="h-4 bg-[#F3F4F6] rounded w-1/2"></div>
+      </div>
+    );
+  }
+
+  if (isError || !customer) {
+    return (
+      <div className="space-y-3">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="text-[14px] font-medium text-red-700 mb-1">Customer Not Found</div>
+          <div className="text-[13px] text-red-600">
+            This customer record may have been deleted. Please select a different customer for this project.
+          </div>
+        </div>
       </div>
     );
   }
