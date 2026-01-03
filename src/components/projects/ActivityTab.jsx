@@ -10,6 +10,7 @@ import LogManualActivityModal from "./LogManualActivityModal";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { processEmailForDisplay } from "@/components/utils/emailFormatting";
+import EmailMessageView from "../inbox/EmailMessageView";
 import {
   Dialog,
   DialogContent,
@@ -308,25 +309,6 @@ export default function ActivityTab({ project, onComposeEmail }) {
     return formatted.html;
   };
 
-  const handleComposeFromActivity = (activityData) => {
-    if (activityData?.mode === 'reply' && activityData?.thread && activityData?.message) {
-      // Find the full thread from emailThreads
-      const fullThread = emailThreads.find(t => t.id === activityData.thread.id);
-      // Reply to specific message in thread
-      onComposeEmail?.({
-        mode: 'reply',
-        thread: fullThread || activityData.thread,
-        message: activityData.message
-      });
-    } else if (activityData?.isDraft) {
-      // Open draft
-      onComposeEmail?.(activityData);
-    } else {
-      // Compose new
-      onComposeEmail?.();
-    }
-  };
-
   return (
     <div className="space-y-4">
       {/* Header with Actions */}
@@ -511,7 +493,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
                     <Button
                       onClick={() => {
                         setSelectedActivity(null);
-                        handleComposeFromActivity({
+                        onComposeEmail?.({
                           mode: 'reply',
                           thread: thread,
                           message: threadMessages[threadMessages.length - 1]
@@ -525,62 +507,33 @@ export default function ActivityTab({ project, onComposeEmail }) {
                   </div>
                 </DialogHeader>
                 
-                <div className="flex-1 overflow-y-auto py-4 space-y-6">
+                <div className="flex-1 overflow-y-auto py-4 space-y-3">
                   {threadMessages.map((msg, idx) => (
-                    <div key={msg.id} className={`border-l-2 pl-4 ${idx === threadMessages.length - 1 ? '' : 'pb-6'}`} style={{ borderColor: msg.is_outbound ? '#3B82F6' : '#10B981' }}>
-                      <div className="mb-3">
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[14px] text-[#111827]">
-                              {msg.from_name || msg.from_address}
-                            </span>
-                            {msg.is_outbound ? (
-                              <Badge variant="default" className="bg-blue-100 text-blue-700">Sent</Badge>
-                            ) : (
-                              <Badge variant="default" className="bg-green-100 text-green-700">Received</Badge>
-                            )}
-                          </div>
-                          <span className="text-[12px] text-[#9CA3AF]">
-                            {format(new Date(msg.sent_at || msg.created_date), 'MMM d, yyyy h:mm a')}
-                          </span>
-                        </div>
-                        
-                        {msg.to_addresses?.length > 0 && (
-                          <div className="text-[12px] text-[#6B7280] mb-1">
-                            To: {msg.to_addresses.join(', ')}
-                          </div>
-                        )}
-                        
-                        {msg.cc_addresses?.length > 0 && (
-                          <div className="text-[12px] text-[#6B7280]">
-                            Cc: {msg.cc_addresses.join(', ')}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {msg.attachments?.length > 0 && (
-                        <div className="mb-3 p-2 bg-[#F9FAFB] rounded-lg border border-[#E5E7EB]">
-                          <div className="flex items-center gap-2 text-[12px] font-medium text-[#4B5563] mb-1">
-                            <Paperclip className="w-3 h-3" />
-                            {msg.attachments.length} attachment{msg.attachments.length !== 1 ? 's' : ''}
-                          </div>
-                          <div className="space-y-1">
-                            {msg.attachments.map((att, idx) => (
-                              <div key={idx} className="text-[12px] text-[#6B7280]">
-                                {att.filename || `Attachment ${idx + 1}`}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div 
-                        className="gmail-email-body prose prose-sm max-w-none text-[14px]"
-                        dangerouslySetInnerHTML={{ 
-                          __html: formatEmailForModal(msg.body_html || msg.body_text || '')
-                        }}
-                      />
-                    </div>
+                    <EmailMessageView
+                      key={msg.id}
+                      message={msg}
+                      isFirst={idx === threadMessages.length - 1}
+                      linkedProjectId={project.id}
+                      threadSubject={thread?.subject}
+                      gmailMessageId={msg.gmail_message_id}
+                      onReply={(message, thread) => {
+                        setSelectedActivity(null);
+                        onComposeEmail?.({
+                          mode: 'reply',
+                          thread: thread,
+                          message: message
+                        });
+                      }}
+                      onForward={(message, thread) => {
+                        setSelectedActivity(null);
+                        onComposeEmail?.({
+                          mode: 'forward',
+                          thread: thread,
+                          message: message
+                        });
+                      }}
+                      thread={thread}
+                    />
                   ))}
                 </div>
               </>
