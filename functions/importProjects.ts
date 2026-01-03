@@ -15,6 +15,94 @@ Deno.serve(async (req) => {
 
     const { action, file_url, records_to_import } = await req.json();
 
+    if (action === 'validate') {
+      // Validate all records without creating them
+      const validation = {
+        valid: [],
+        invalid: [],
+        warnings: []
+      };
+
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      const allowedStatuses = [
+        'Lead', 'Initial Site Visit', 'Create Quote', 'Quote Sent', 
+        'Quote Approved', 'Final Measure', 'Parts Ordered', 
+        'Scheduled', 'Completed', 'Warranty', 'Lost'
+      ];
+
+      for (const record of records_to_import) {
+        const issues = [];
+        const warnings = [];
+
+        // Check title
+        const trimmedTitle = (record.title || '').trim();
+        if (!trimmedTitle) {
+          validation.invalid.push({
+            record,
+            reason: 'Missing title'
+          });
+          continue;
+        }
+
+        // Check date formats
+        const dateFields = ['opened_date', 'completed_date', 'lost_date'];
+        for (const field of dateFields) {
+          if (record[field]) {
+            const dateValue = String(record[field]).trim();
+            if (dateValue && !dateRegex.test(dateValue)) {
+              issues.push(`Invalid ${field}: "${dateValue}" (must be YYYY-MM-DD)`);
+            }
+          }
+        }
+
+        // Check status
+        if (record.status) {
+          const providedStatus = String(record.status).trim();
+          if (!allowedStatuses.includes(providedStatus)) {
+            warnings.push(`Status "${providedStatus}" will default to "Lead"`);
+          }
+        }
+
+        // Check customer resolution
+        if (record.customer_id) {
+          try {
+            const customer = await base44.asServiceRole.entities.Customer.get(record.customer_id);
+            if (!customer) {
+              warnings.push(`Customer ID "${record.customer_id}" not found - will store as unlinked`);
+            }
+          } catch (e) {
+            warnings.push(`Customer ID "${record.customer_id}" not found - will store as unlinked`);
+          }
+        } else if (!record.customer_name) {
+          warnings.push('No customer information provided');
+        }
+
+        if (issues.length > 0) {
+          validation.invalid.push({
+            record,
+            title: trimmedTitle,
+            issues
+          });
+        } else if (warnings.length > 0) {
+          validation.warnings.push({
+            record,
+            title: trimmedTitle,
+            warnings
+          });
+        } else {
+          validation.valid.push({
+            record,
+            title: trimmedTitle
+          });
+        }
+      }
+
+      return Response.json({
+        success: true,
+        validation
+      });
+    }
+
     if (action === 'parse_csv') {
       // Parse CSV and return preview
       const response = await fetch(file_url);
