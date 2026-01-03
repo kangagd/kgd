@@ -250,6 +250,11 @@ Deno.serve(async (req) => {
       attachments: uploadedAttachments.length > 0 ? uploadedAttachments : []
     });
     
+    // Mark thread as closed after sending reply
+    if (emailThreadId) {
+      await base44.asServiceRole.entities.EmailThread.update(emailThreadId, { status: 'Closed' });
+    }
+    
     // Update project activity if email is linked to a project
     // D) Use project_id from thread if not explicitly provided
     const finalProjectId = projectId || (await base44.asServiceRole.entities.EmailThread.get(emailThreadId)).project_id;
