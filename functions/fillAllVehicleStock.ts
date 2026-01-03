@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       });
 
       for (const item of stockItems) {
-        const existing = existingStock.find(vs => vs.price_list_item_id === item.id);
+        const existing = existingStock.find(vs => vs.product_id === item.id);
         const targetQuantity = item.car_quantity;
 
         if (existing) {
@@ -73,8 +73,8 @@ Deno.serve(async (req) => {
             vehicle_id: vehicle.id,
             product_id: item.id,
             product_name: item.item,
-            sku: item.sku,
-            category: item.category,
+            sku: item.sku || '',
+            category: item.category || '',
             quantity_on_hand: targetQuantity,
             minimum_target_quantity: targetQuantity
           });
