@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -153,8 +154,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
   const addTradeRef = React.useRef(null);
-  const [composerMode, setComposerMode] = useState(null);
-  const [composerMessage, setComposerMessage] = useState(null);
+  const [composerData, setComposerData] = useState(null);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
@@ -1018,6 +1018,25 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     new Date(m.created_date) > new Date(lastReadChat) && 
     m.sender_email !== user?.email
   ).length;
+
+  // Fixed onComposeEmail handler to properly pass thread and message
+  const handleComposeEmail = (emailData) => {
+    if (!emailData) {
+      // New compose
+      setComposerData({ mode: 'compose' });
+    } else if (emailData.mode === 'reply' || emailData.mode === 'forward') {
+      // Reply or forward - pass thread and message
+      setComposerData({
+        mode: emailData.mode,
+        thread: emailData.thread,
+        message: emailData.message,
+        existingDraft: emailData.draft || null
+      });
+    } else {
+      // Existing draft or custom data
+      setComposerData(emailData);
+    }
+  };
 
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
@@ -1971,19 +1990,18 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="activity" className="mt-3">
-            {composerMode && (
+            {composerData && (
               <div className="mb-4">
                 <EmailComposer
-                  mode={composerMode}
-                  thread={null}
-                  message={composerMessage}
+                  mode={composerData.mode}
+                  thread={composerData.thread || null}
+                  message={composerData.message || null}
+                  existingDraft={composerData.existingDraft || null}
                   onClose={() => {
-                    setComposerMode(null);
-                    setComposerMessage(null);
+                    setComposerData(null);
                   }}
                   onSent={() => {
-                    setComposerMode(null);
-                    setComposerMessage(null);
+                    setComposerData(null);
                     queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
                     queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
                     toast.success('Email sent successfully');
@@ -1995,10 +2013,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             )}
             <ActivityTab 
               project={project}
-              onComposeEmail={() => {
-                setComposerMode('compose');
-                setComposerMessage(null);
-              }}
+              onComposeEmail={handleComposeEmail}
             />
           </TabsContent>
 
