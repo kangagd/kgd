@@ -57,15 +57,12 @@ Deno.serve(async (req) => {
             // Record movement
             await base44.asServiceRole.entities.VehicleStockMovement.create({
               vehicle_id: vehicle.id,
-              price_list_item_id: item.id,
-              item_name: item.item,
-              movement_type: 'adjustment',
+              product_id: item.id,
+              movement_type: 'Adjustment',
               quantity_change: targetQuantity - currentQty,
-              previous_quantity: currentQty,
-              new_quantity: targetQuantity,
-              notes: 'Auto-fill to car_quantity (bulk operation)',
-              moved_by: user.email,
-              moved_by_name: user.full_name
+              reason: 'Auto-fill to car_quantity (bulk operation)',
+              performed_by_user_id: user.id,
+              performed_by_user_name: user.full_name
             });
 
             vehicleUpdates.push({
@@ -94,15 +91,12 @@ Deno.serve(async (req) => {
           // Record movement
           await base44.asServiceRole.entities.VehicleStockMovement.create({
             vehicle_id: vehicle.id,
-            price_list_item_id: item.id,
-            item_name: item.item,
-            movement_type: 'adjustment',
+            product_id: item.id,
+            movement_type: 'Adjustment',
             quantity_change: targetQuantity,
-            previous_quantity: 0,
-            new_quantity: targetQuantity,
-            notes: 'Auto-fill to car_quantity (bulk operation)',
-            moved_by: user.email,
-            moved_by_name: user.full_name
+            reason: 'Auto-fill to car_quantity (bulk operation)',
+            performed_by_user_id: user.id,
+            performed_by_user_name: user.full_name
           });
 
           vehicleUpdates.push({
