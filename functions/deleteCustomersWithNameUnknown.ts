@@ -10,7 +10,8 @@ Deno.serve(async (req) => {
     }
 
     // Fetch all customers and filter for "Unknown" (case-sensitive)
-    const allCustomers = await base44.asServiceRole.entities.Customer.list();
+    const response = await base44.asServiceRole.entities.Customer.list();
+    const allCustomers = Array.isArray(response) ? response : (response?.data || []);
     const unknownCustomers = allCustomers.filter(c => c.name === 'Unknown' && !c.deleted_at);
 
     console.log(`Found ${unknownCustomers.length} customers with name "Unknown"`);
@@ -24,8 +25,11 @@ Deno.serve(async (req) => {
     }
 
     // Get all jobs and projects to check for links
-    const allJobs = await base44.asServiceRole.entities.Job.list();
-    const allProjects = await base44.asServiceRole.entities.Project.list();
+    const jobsResponse = await base44.asServiceRole.entities.Job.list();
+    const allJobs = Array.isArray(jobsResponse) ? jobsResponse : (jobsResponse?.data || []);
+    
+    const projectsResponse = await base44.asServiceRole.entities.Project.list();
+    const allProjects = Array.isArray(projectsResponse) ? projectsResponse : (projectsResponse?.data || []);
 
     // Filter to only delete customers without any links
     const customersToDelete = unknownCustomers.filter(customer => {
