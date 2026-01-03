@@ -195,6 +195,11 @@ Deno.serve(async (req) => {
     // Update project activity if email is linked to a project
     if (projectId) {
       await updateProjectActivity(base44, projectId);
+      
+      // Update project last contact timestamps
+      base44.functions.invoke('updateProjectLastContactFromThread', {
+        email_thread_id: emailThreadId
+      }).catch(err => console.error('Update project contact failed:', err));
     }
     
     return Response.json({ success: true, messageId: result.id, threadId: emailThreadId });
