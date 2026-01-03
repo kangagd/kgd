@@ -911,7 +911,7 @@ export default function FinancialsTab({ project, onUpdate }) {
               <FileText className="w-5 h-5" />
               Linked Documents
             </CardTitle>
-            {((project.legacy_pandadoc_url && !primaryQuote) || ((project.legacy_xero_invoice_url || project.xero_payment_url) && !primaryInvoice)) && (
+            {((project.legacy_pandadoc_url && !primaryQuote) || (project.legacy_xero_invoice_url && !primaryInvoice)) && (
               <Button 
                 type="button"
                 variant="outline" 
@@ -930,7 +930,7 @@ export default function FinancialsTab({ project, onUpdate }) {
           </div>
         </CardHeader>
         <CardContent className="p-3 md:p-4 space-y-4">
-          {projectQuotes.length === 0 && projectXeroInvoices.length === 0 && !project.legacy_pandadoc_url && !project.legacy_xero_invoice_url && !project.xero_payment_url && (
+          {projectQuotes.length === 0 && projectXeroInvoices.length === 0 && !project.legacy_pandadoc_url && !project.legacy_xero_invoice_url && (
              <div className="text-center py-4 text-[#6B7280] text-[14px]">
                No linked documents
              </div>
@@ -1064,7 +1064,7 @@ export default function FinancialsTab({ project, onUpdate }) {
           )}
 
           {/* Legacy Invoice */}
-          {projectXeroInvoices.length === 0 && (project.legacy_xero_invoice_url || project.xero_payment_url) && (
+          {projectXeroInvoices.length === 0 && project.legacy_xero_invoice_url && (
              <div className="bg-white border border-[#E5E7EB] rounded-lg p-3">
                <div className="flex justify-between items-center">
                  <div>
@@ -1072,7 +1072,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                    <div className="text-[13px] text-[#4B5563]">Legacy Xero link available</div>
                  </div>
                  <a 
-                    href={project.xero_payment_url || project.legacy_xero_invoice_url} 
+                    href={project.legacy_xero_invoice_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline"
