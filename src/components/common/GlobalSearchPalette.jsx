@@ -115,7 +115,7 @@ export default function GlobalSearchPalette({ open, onOpenChange }) {
                   <CommandItem
                     key={job.id}
                     value={`job-${job.id}-${job.job_number}`}
-                    onSelect={() => handleSelect("job", job)}
+                    onSelect={(_value) => handleSelect("job", job)}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
                   >
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600">
@@ -145,7 +145,7 @@ export default function GlobalSearchPalette({ open, onOpenChange }) {
                   <CommandItem
                     key={project.id}
                     value={`project-${project.id}-${project.title}`}
-                    onSelect={() => handleSelect("project", project)}
+                    onSelect={(_value) => handleSelect("project", project)}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
                   >
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-purple-50 text-purple-600">
@@ -173,7 +173,7 @@ export default function GlobalSearchPalette({ open, onOpenChange }) {
                   <CommandItem
                     key={customer.id}
                     value={`customer-${customer.id}-${customer.name}`}
-                    onSelect={() => handleSelect("customer", customer)}
+                    onSelect={(_value) => handleSelect("customer", customer)}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
                   >
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600">

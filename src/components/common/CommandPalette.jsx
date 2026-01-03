@@ -57,56 +57,56 @@ export default function CommandPalette({ open, onOpenChange }) {
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup heading="Pages">
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Dashboard")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Dashboard")))}
                 className="cursor-pointer"
               >
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 <span>Dashboard</span>
               </CommandItem>
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Inbox")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Inbox")))}
                 className="cursor-pointer"
               >
                 <Mail className="mr-2 h-4 w-4" />
                 <span>Inbox</span>
               </CommandItem>
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Tasks")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Tasks")))}
                 className="cursor-pointer"
               >
                 <CheckSquare className="mr-2 h-4 w-4" />
                 <span>Tasks</span>
               </CommandItem>
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Schedule")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Schedule")))}
                 className="cursor-pointer"
               >
                 <Calendar className="mr-2 h-4 w-4" />
                 <span>Schedule</span>
               </CommandItem>
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Projects")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Projects")))}
                 className="cursor-pointer"
               >
                 <FolderKanban className="mr-2 h-4 w-4" />
                 <span>Projects</span>
               </CommandItem>
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Jobs")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Jobs")))}
                 className="cursor-pointer"
               >
                 <Briefcase className="mr-2 h-4 w-4" />
                 <span>Jobs</span>
               </CommandItem>
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Customers")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Customers")))}
                 className="cursor-pointer"
               >
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>Customers</span>
               </CommandItem>
               <CommandItem
-                onSelect={() => runCommand(() => navigate(createPageUrl("Contracts")))}
+                onSelect={(_value) => runCommand(() => navigate(createPageUrl("Contracts")))}
                 className="cursor-pointer"
               >
                 <FileText className="mr-2 h-4 w-4" />
