@@ -416,11 +416,12 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             <CommandItem
                               key={customer.id}
                               value={customer.id}
-                              onSelect={(value) => {
-                                handleCustomerChange(value);
+                              onSelect={() => {
+                                handleCustomerChange(customer.id);
                                 setCustomerSearchOpen(false);
                                 setCustomerSearchQuery("");
                               }}
+                              className="cursor-pointer"
                             >
                               <div className="flex flex-col w-full">
                                 <span className="font-medium">{customer.name}</span>
