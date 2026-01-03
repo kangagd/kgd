@@ -40,10 +40,10 @@ Deno.serve(async (req) => {
 
         if (existing) {
           // Update existing stock
-          if (existing.quantity !== targetQuantity) {
-            const previousQty = existing.quantity || 0;
+          const currentQty = existing.quantity_on_hand || 0;
+          if (currentQty !== targetQuantity) {
             await base44.asServiceRole.entities.VehicleStock.update(existing.id, {
-              quantity: targetQuantity
+              quantity_on_hand: targetQuantity
             });
 
             // Record movement
@@ -52,8 +52,8 @@ Deno.serve(async (req) => {
               price_list_item_id: item.id,
               item_name: item.item,
               movement_type: 'adjustment',
-              quantity_change: targetQuantity - previousQty,
-              previous_quantity: previousQty,
+              quantity_change: targetQuantity - currentQty,
+              previous_quantity: currentQty,
               new_quantity: targetQuantity,
               notes: 'Auto-fill to car_quantity (bulk operation)',
               moved_by: user.email,
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
             vehicleUpdates.push({
               item: item.item,
-              old: previousQty,
+              old: currentQty,
               new: targetQuantity
             });
             totalUpdates++;
@@ -71,9 +71,12 @@ Deno.serve(async (req) => {
           // Create new stock entry
           await base44.asServiceRole.entities.VehicleStock.create({
             vehicle_id: vehicle.id,
-            price_list_item_id: item.id,
-            item_name: item.item,
-            quantity: targetQuantity
+            product_id: item.id,
+            product_name: item.item,
+            sku: item.sku,
+            category: item.category,
+            quantity_on_hand: targetQuantity,
+            minimum_target_quantity: targetQuantity
           });
 
           // Record movement
