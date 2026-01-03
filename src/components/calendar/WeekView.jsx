@@ -285,7 +285,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                             </div>
 
                             {job.job_type_name && (
-                              <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-2 py-0.5 rounded-lg">
+                              <Badge className={`${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${getJobTypeColor(job.job_type_name, uniqueJobTypes).replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} border-0 font-semibold text-xs px-2 py-0.5 rounded-lg`}>
                                 {job.job_type_name}
                               </Badge>
                             )}
@@ -416,7 +416,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                                       )}
 
                                       {job.job_type_name && (
-                                        <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-[9px] px-1.5 py-0.5 rounded truncate w-full justify-start">
+                                        <Badge className={`${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${getJobTypeColor(job.job_type_name, uniqueJobTypes).replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} border-0 font-semibold text-[9px] px-1.5 py-0.5 rounded truncate w-full justify-start`}>
                                           <Briefcase className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
                                           <span className="truncate">{job.job_type_name}</span>
                                         </Badge>
