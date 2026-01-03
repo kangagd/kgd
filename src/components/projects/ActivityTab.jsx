@@ -396,16 +396,38 @@ export default function ActivityTab({ project, onComposeEmail }) {
       <Card className="border border-[#E5E7EB] shadow-sm">
         <CardContent className="p-4">
           {filteredActivities.length === 0 ? (
-            <div className="text-center py-8 text-[#9CA3AF]">
-              <Calendar className="w-12 h-12 mx-auto mb-3 text-[#E5E7EB]" />
-              <p className="text-[14px]">No communication logged yet</p>
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#F3F4F6] mb-4">
+                <Mail className="w-8 h-8 text-[#9CA3AF]" />
+              </div>
+              <h3 className="text-[15px] font-semibold text-[#111827] mb-1">No communication yet</h3>
+              <p className="text-[13px] text-[#6B7280] mb-4">Start by composing an email or logging an activity</p>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  onClick={() => onComposeEmail?.()}
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Mail className="w-4 h-4" />
+                  Compose Email
+                </Button>
+                <Button
+                  onClick={() => setShowLogModal(true)}
+                  size="sm"
+                  className="gap-2 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                >
+                  <Plus className="w-4 h-4" />
+                  Log Activity
+                </Button>
+              </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredActivities.map((activity) => (
                 <div
                   key={activity.id}
-                  className={`border-l-2 border-[#E5E7EB] pl-4 pb-4 last:pb-0 relative ${(activity.type === 'email' || activity.type === 'draft') ? 'cursor-pointer hover:bg-[#F9FAFB] -mx-4 px-8 py-2 rounded-lg transition-colors' : ''}`}
+                  className={`border-l-2 border-[#E5E7EB] pl-5 pb-3 last:pb-0 relative ${(activity.type === 'email' || activity.type === 'draft') ? 'cursor-pointer hover:bg-[#F9FAFB] -mx-4 px-9 py-3 rounded-lg transition-colors' : ''}`}
                   onClick={() => {
                     if (activity.type === 'email') {
                       setSelectedActivity(activity);
@@ -419,29 +441,29 @@ export default function ActivityTab({ project, onComposeEmail }) {
                   </div>
 
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <div className="text-[#6B7280]">
                         {getActivityIcon(activity)}
                       </div>
-                      <span className="font-medium text-[14px] text-[#111827]">
+                      <span className="font-semibold text-[14px] text-[#111827]">
                         {activity.from}
                       </span>
                       {getActivityBadge(activity)}
                     </div>
-                    <span className="text-[12px] text-[#9CA3AF]">
-                      {format(new Date(activity.date), 'MMM d, yyyy h:mm a')}
+                    <span className="text-[12px] text-[#9CA3AF] whitespace-nowrap">
+                      {format(new Date(activity.date), 'MMM d, h:mm a')}
                     </span>
                   </div>
 
                   {activity.subject && (
-                    <div className="font-medium text-[13px] text-[#4B5563] mb-1">
+                    <div className="font-semibold text-[13px] text-[#111827] mb-1.5">
                       {activity.subject}
                     </div>
                   )}
 
                   {activity.content && (
                     <div 
-                      className="text-[13px] text-[#6B7280] line-clamp-3"
+                      className="text-[13px] text-[#6B7280] line-clamp-2 leading-relaxed"
                       dangerouslySetInnerHTML={{ 
                         __html: activity.type === 'email' || activity.type === 'draft'
                           ? stripHtml(activity.content).substring(0, 200) + '...'

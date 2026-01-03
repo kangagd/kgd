@@ -284,14 +284,14 @@ export default function EmailMessageView({ message, isFirst, linkedJobId, linked
           {/* Email Body - Gmail-style rendering with inline images */}
           <div className="mb-5">
             {loadingFullContent && (
-              <div className="text-[12px] text-[#6B7280] mb-2 flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
+              <div className="text-[13px] text-[#6B7280] mb-3 flex items-center gap-2 bg-[#F9FAFB] px-3 py-2 rounded-lg border border-[#E5E7EB]">
+                <div className="w-4 h-4 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
                 Loading message content...
               </div>
             )}
             {loadingInlineImages && inlineAttachments.length > 0 && (
-              <div className="text-[12px] text-[#6B7280] mb-2 flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
+              <div className="text-[13px] text-[#6B7280] mb-3 flex items-center gap-2 bg-[#F9FAFB] px-3 py-2 rounded-lg border border-[#E5E7EB]">
+                <div className="w-4 h-4 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
                 Loading images...
               </div>
             )}

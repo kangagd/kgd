@@ -398,7 +398,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       <CardContent className="p-4 space-y-3">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-                <label className="text-[14px] font-medium w-12">To:</label>
+                <label className="text-[13px] font-semibold text-[#4B5563] w-12 flex-shrink-0">To:</label>
                 <div className="flex-1 relative">
                   <Input
                     ref={toInputRef}
@@ -407,6 +407,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
                     onFocus={() => toSearchTerm.length >= 2 && setShowToDropdown(true)}
                     onBlur={() => setTimeout(() => setShowToDropdown(false), 200)}
                     placeholder="recipient@example.com"
+                    className="text-[14px]"
                   />
                   {showToDropdown && filteredCustomers.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto">
@@ -446,43 +447,43 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
 
           {showCc && (
             <div className="flex items-center gap-2">
-              <label className="text-[14px] font-medium w-12">Cc:</label>
+              <label className="text-[13px] font-semibold text-[#4B5563] w-12 flex-shrink-0">Cc:</label>
               <Input
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
                 placeholder="cc@example.com"
-                className="flex-1"
+                className="flex-1 text-[14px]"
               />
             </div>
           )}
 
           {showBcc && (
             <div className="flex items-center gap-2">
-              <label className="text-[14px] font-medium w-12">Bcc:</label>
+              <label className="text-[13px] font-semibold text-[#4B5563] w-12 flex-shrink-0">Bcc:</label>
               <Input
                 value={bcc}
                 onChange={(e) => setBcc(e.target.value)}
                 placeholder="bcc@example.com"
-                className="flex-1"
+                className="flex-1 text-[14px]"
               />
             </div>
           )}
 
           <div className="flex items-center gap-2">
-            <label className="text-[14px] font-medium w-12">Subject:</label>
+            <label className="text-[13px] font-semibold text-[#4B5563] w-12 flex-shrink-0">Subject:</label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Email subject"
-              className="flex-1"
+              className="flex-1 text-[14px] font-medium"
             />
           </div>
 
           {templates.length > 0 && (
             <div className="flex items-center gap-2">
-              <label className="text-[14px] font-medium w-12">Template:</label>
+              <label className="text-[13px] font-semibold text-[#4B5563] w-12 flex-shrink-0">Template:</label>
               <Select value={selectedTemplate} onValueChange={handleApplyTemplate}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="flex-1 text-[14px]">
                   <SelectValue placeholder="Use template..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -575,23 +576,28 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         </div>
 
         {attachments.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-[13px] font-medium text-[#4B5563]">Attachments:</label>
-            <div className="space-y-1">
+          <div className="space-y-2 bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+            <div className="flex items-center gap-2 mb-2">
+              <Paperclip className="w-4 h-4 text-[#6B7280]" />
+              <label className="text-[13px] font-semibold text-[#4B5563]">{attachments.length} Attachment{attachments.length !== 1 ? 's' : ''}</label>
+            </div>
+            <div className="space-y-2">
               {attachments.map((att, idx) => (
-                <div key={idx} className="flex items-center justify-between bg-[#F3F4F6] rounded-lg px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <Paperclip className="w-4 h-4 text-[#6B7280]" />
-                    <span className="text-[13px] text-[#111827]">{att.filename}</span>
-                    <span className="text-[12px] text-[#6B7280]">
-                      ({(att.size / 1024).toFixed(1)} KB)
-                    </span>
+                <div key={idx} className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-[#E5E7EB] hover:border-[#D1D5DB] transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Paperclip className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[13px] font-medium text-[#111827] block truncate">{att.filename}</span>
+                      <span className="text-[11px] text-[#9CA3AF]">
+                        {(att.size / 1024).toFixed(1)} KB
+                      </span>
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => removeAttachment(idx)}
-                    className="h-6 w-6"
+                    className="h-8 w-8 flex-shrink-0 hover:bg-red-50 hover:text-red-600"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -607,29 +613,29 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1">
+        <div className="flex items-center justify-between pt-3 border-t border-[#E5E7EB]">
+          <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1.5">
             {isSavingDraft && (
               <>
-                <Save className="w-3 h-3 animate-pulse" />
-                Saving...
+                <div className="w-3 h-3 border-2 border-[#FAE008] border-t-transparent rounded-full animate-spin" />
+                <span>Saving draft...</span>
               </>
             )}
             {!isSavingDraft && lastSaved && (
               <>
-                <Save className="w-3 h-3" />
-                Draft saved
+                <Save className="w-3 h-3 text-green-600" />
+                <span className="text-green-600">Draft saved</span>
               </>
             )}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} className="min-w-[80px]">
               Cancel
             </Button>
             <Button
               onClick={handleSend}
               disabled={isSending || !to || !subject || !body || isReplyContextMissing}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2"
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2 min-w-[100px] font-semibold"
             >
               <Send className="w-4 h-4" />
               {isSending ? "Sending..." : "Send"}
