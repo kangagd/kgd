@@ -31,11 +31,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                              sourceParam === 'purchase_order' || 
                              sourceParam === 'logistics_timeline';
 
-  const [formData, setFormData] = useState(job || {
+  const initialFormData = job || {
     job_number: null,
-    project_id: preselectedProjectId || projectIdFromUrl || "",
+    project_id: "",
     project_name: "",
-    customer_id: preselectedCustomerId || "",
+    customer_id: "",
     customer_name: "",
     customer_phone: "",
     customer_email: "",
@@ -67,7 +67,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     image_urls: [],
     quote_url: "",
     invoice_url: "",
-  });
+  };
+  
+  const [formData, setFormData] = useState(initialFormData);
 
   const [isLogisticsJob, setIsLogisticsJob] = useState(isLogisticsContext);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -108,6 +110,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   ).sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999)) : allJobTypes;
 
   useEffect(() => {
+    // Only apply preselectedCustomerId if no project is being used
+    const projectId = preselectedProjectId || projectIdFromUrl;
+    if (projectId) return; // Skip if project-based
+    
     if (preselectedCustomerId && customers.length > 0 && !job) {
       const customer = customers.find(c => c.id === preselectedCustomerId);
       if (customer) {
@@ -122,7 +128,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         }));
       }
     }
-  }, [preselectedCustomerId, customers.length, job]);
+  }, [preselectedCustomerId, customers.length, job, preselectedProjectId, projectIdFromUrl]);
 
   const generateNotes = async (project, jobTypeId) => {
     if (!project || !jobTypeId) return;
@@ -169,16 +175,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   useEffect(() => {
     const projectId = preselectedProjectId || projectIdFromUrl;
-    if (!projectId || job) return;
+    if (!projectId || job || hasInitializedFromProject.current) return;
     
-    // Wait for projects to load
     if (projects.length === 0) return;
     
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
     
-    // Only initialize once
-    if (hasInitializedFromProject.current) return;
     hasInitializedFromProject.current = true;
     
     const productMapping = {
@@ -190,10 +193,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
     const autoProduct = productMapping[project.project_type] || "";
 
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      ...initialFormData,
       project_id: projectId,
-      project_name: project.title,
+      project_name: project.title || "",
       customer_id: project.customer_id || "",
       customer_name: project.customer_name || "",
       customer_phone: project.customer_phone || "",
@@ -212,7 +215,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       product: autoProduct,
       additional_info: project.description || "",
       image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
-    }));
+    });
   }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
   const handleAutoSave = async () => {
@@ -332,15 +335,15 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const handleJobTypeChange = async (jobTypeId) => {
     const jobType = jobTypes.find(jt => jt.id === jobTypeId);
     if (jobType) {
-      setFormData({
-        ...formData,
+      setFormData(prev => ({
+        ...prev,
         job_type_id: jobTypeId,
         job_type: jobType.name,
-        expected_duration: jobType.estimated_duration || formData.expected_duration
-      });
+        expected_duration: jobType.estimated_duration || prev.expected_duration
+      }));
 
-      // Generate notes if we have a project
-      if (formData.project_id && !job) {
+      // Generate notes if we have a project and notes are currently empty
+      if (formData.project_id && !job && !formData.notes) {
         const project = projects.find(p => p.id === formData.project_id);
         if (project) {
           await generateNotes(project, jobTypeId);
