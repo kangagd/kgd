@@ -169,6 +169,70 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     }
   };
 
+  // Pre-populate form from project when creating new job
+  useEffect(() => {
+    if (job) return; // Skip for edit mode
+    
+    const projectId = preselectedProjectId || projectIdFromUrl;
+    if (!projectId) return;
+    
+    if (projects.length === 0) return; // Wait for projects to load
+    if (hasInitializedFromProject.current) return; // Only initialize once
+    
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    hasInitializedFromProject.current = true;
+    
+    // Map project type to product
+    const productMapping = {
+      [PROJECT_TYPE.GARAGE_DOOR_INSTALL]: "Garage Door",
+      [PROJECT_TYPE.GATE_INSTALL]: "Gate",
+      [PROJECT_TYPE.ROLLER_SHUTTER_INSTALL]: "Roller Shutter",
+      [PROJECT_TYPE.MULTIPLE]: "Multiple"
+    };
+    const autoProduct = productMapping[project.project_type] || "";
+
+    // Populate form with all project data
+    setFormData({
+      job_number: null,
+      project_id: projectId,
+      project_name: project.title || "",
+      customer_id: project.customer_id || "",
+      customer_name: project.customer_name || "",
+      customer_phone: project.customer_phone || "",
+      customer_email: project.customer_email || "",
+      customer_type: project.customer_type || "",
+      address: project.address_full || project.address || "",
+      address_full: project.address_full || project.address || "",
+      address_street: project.address_street || "",
+      address_suburb: project.address_suburb || "",
+      address_state: project.address_state || "",
+      address_postcode: project.address_postcode || "",
+      address_country: project.address_country || "Australia",
+      google_place_id: project.google_place_id || "",
+      latitude: project.latitude || null,
+      longitude: project.longitude || null,
+      product: autoProduct,
+      job_type_id: "",
+      job_type: "",
+      assigned_to: [],
+      assigned_to_name: [],
+      scheduled_date: "",
+      scheduled_time: "",
+      expected_duration: null,
+      status: JOB_STATUS.OPEN,
+      outcome: "",
+      notes: "",
+      pricing_provided: "",
+      additional_info: project.description || "",
+      measurements: null,
+      image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
+      quote_url: "",
+      invoice_url: "",
+    });
+  }, [preselectedProjectId, projectIdFromUrl, projects, job]);
+
 
 
   useEffect(() => {
