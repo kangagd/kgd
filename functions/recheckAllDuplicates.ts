@@ -42,7 +42,10 @@ Deno.serve(async (req) => {
       projects_cleared: 0,
       jobs_checked: 0,
       jobs_with_duplicates: 0,
-      jobs_cleared: 0
+      jobs_cleared: 0,
+      organisations_checked: 0,
+      organisations_with_duplicates: 0,
+      organisations_cleared: 0
     };
 
     // Recheck all Customers
@@ -179,6 +182,49 @@ Deno.serve(async (req) => {
         results.jobs_with_duplicates++;
       } else if (job.is_potential_duplicate) {
         results.jobs_cleared++;
+      }
+    }
+
+    // Recheck all Organisations
+    const allOrganisations = await base44.asServiceRole.entities.Organisation.list();
+    const organisations = allOrganisations.filter(o => !o.deleted_at);
+
+    for (const organisation of organisations) {
+      const normalizedName = organisation.normalized_name || normalizeString(organisation.name);
+      const normalizedEmail = organisation.normalized_email || (organisation.email ? organisation.email.toLowerCase().trim() : '');
+      const normalizedPhone = organisation.normalized_phone || normalizePhone(organisation.phone);
+      
+      // Find duplicates
+      const otherOrganisations = organisations.filter(o => o.id !== organisation.id);
+      let hasDuplicate = false;
+      let maxScore = 0;
+      
+      for (const other of otherOrganisations) {
+        const otherNormalizedName = other.normalized_name || normalizeString(other.name);
+        const otherNormalizedEmail = other.normalized_email || (other.email ? other.email.toLowerCase().trim() : '');
+        const otherNormalizedPhone = other.normalized_phone || normalizePhone(other.phone);
+        
+        let score = 0;
+        if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName) score++;
+        if (normalizedEmail && otherNormalizedEmail && normalizedEmail === otherNormalizedEmail) score++;
+        if (normalizedPhone && otherNormalizedPhone && normalizedPhone === otherNormalizedPhone) score++;
+        
+        if (score > 0) {
+          hasDuplicate = true;
+          maxScore = Math.max(maxScore, score);
+        }
+      }
+      
+      await base44.asServiceRole.entities.Organisation.update(organisation.id, {
+        is_potential_duplicate: hasDuplicate,
+        duplicate_score: maxScore
+      });
+      
+      results.organisations_checked++;
+      if (hasDuplicate) {
+        results.organisations_with_duplicates++;
+      } else if (organisation.is_potential_duplicate) {
+        results.organisations_cleared++;
       }
     }
 

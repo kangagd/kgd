@@ -154,6 +154,72 @@ async function checkProjectDuplicates(base44, record, excludeId) {
   };
 }
 
+// Check duplicates for Organisation
+async function checkOrganisationDuplicates(base44, record, excludeId) {
+  const matches = [];
+  let score = 0;
+  
+  const normalizedName = normalizeString(record.name);
+  const normalizedEmail = record.email ? record.email.toLowerCase().trim() : '';
+  const normalizedPhone = normalizePhone(record.phone);
+  
+  // Get all organisations (excluding deleted and current record)
+  const allOrganisations = await base44.asServiceRole.entities.Organisation.filter({
+    deleted_at: { $exists: false }
+  });
+  
+  const otherOrganisations = allOrganisations.filter(o => o.id !== excludeId);
+  
+  for (const other of otherOrganisations) {
+    const otherNormalizedName = other.normalized_name || normalizeString(other.name);
+    const otherNormalizedEmail = other.normalized_email || (other.email ? other.email.toLowerCase().trim() : '');
+    const otherNormalizedPhone = other.normalized_phone || normalizePhone(other.phone);
+    
+    let matchScore = 0;
+    const matchReasons = [];
+    
+    // Rule 1: Same normalized name
+    if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName) {
+      matchScore++;
+      matchReasons.push('name');
+    }
+    
+    // Rule 2: Same normalized email
+    if (normalizedEmail && otherNormalizedEmail && normalizedEmail === otherNormalizedEmail) {
+      matchScore++;
+      matchReasons.push('email');
+    }
+    
+    // Rule 3: Same normalized phone
+    if (normalizedPhone && otherNormalizedPhone && normalizedPhone === otherNormalizedPhone) {
+      matchScore++;
+      matchReasons.push('phone');
+    }
+    
+    if (matchScore > 0) {
+      matches.push({
+        id: other.id,
+        name: other.name,
+        email: other.email,
+        phone: other.phone,
+        organisation_type: other.organisation_type,
+        match_score: matchScore,
+        match_reasons: matchReasons
+      });
+      score = Math.max(score, matchScore);
+    }
+  }
+  
+  return {
+    normalized_name: normalizedName,
+    normalized_email: normalizedEmail || null,
+    normalized_phone: normalizedPhone || null,
+    is_potential_duplicate: matches.length > 0,
+    duplicate_score: score,
+    matches
+  };
+}
+
 // Check duplicates for Job
 async function checkJobDuplicates(base44, record, excludeId) {
   const matches = [];
@@ -249,6 +315,9 @@ Deno.serve(async (req) => {
       case 'Job':
         result = await checkJobDuplicates(base44, record, exclude_id);
         break;
+      case 'Organisation':
+        result = await checkOrganisationDuplicates(base44, record, exclude_id);
+        break;
       default:
         return Response.json({ error: `Unknown entity type: ${entity_type}` }, { status: 400 });
     }
@@ -271,6 +340,10 @@ Deno.serve(async (req) => {
         updateData.normalized_address = result.normalized_address;
       } else if (entity_type === 'Job') {
         updateData.normalized_address = result.normalized_address;
+      } else if (entity_type === 'Organisation') {
+        updateData.normalized_name = result.normalized_name;
+        updateData.normalized_email = result.normalized_email;
+        updateData.normalized_phone = result.normalized_phone;
       }
 
       await base44.asServiceRole.entities[entity_type].update(exclude_id, updateData);
