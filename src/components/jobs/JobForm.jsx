@@ -169,11 +169,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   useEffect(() => {
     const projectId = preselectedProjectId || projectIdFromUrl;
-    if (!projectId || job || projects.length === 0 || hasInitializedFromProject.current) return;
+    if (!projectId || job) return;
+    
+    // Wait for projects to load
+    if (projects.length === 0) return;
     
     const project = projects.find(p => p.id === projectId);
     if (!project) return;
     
+    // Only initialize once
+    if (hasInitializedFromProject.current) return;
     hasInitializedFromProject.current = true;
     
     const productMapping = {
@@ -189,8 +194,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       ...prev,
       project_id: projectId,
       project_name: project.title,
-      customer_id: project.customer_id,
-      customer_name: project.customer_name,
+      customer_id: project.customer_id || "",
+      customer_name: project.customer_name || "",
       customer_phone: project.customer_phone || "",
       customer_email: project.customer_email || "",
       customer_type: project.customer_type || "",
@@ -206,7 +211,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       longitude: project.longitude || null,
       product: autoProduct,
       additional_info: project.description || "",
-      image_urls: project.image_urls || [],
+      image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
     }));
   }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
