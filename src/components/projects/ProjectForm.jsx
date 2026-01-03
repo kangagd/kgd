@@ -415,8 +415,9 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                           {filteredCustomers.map((customer) => (
                             <CommandItem
                               key={customer.id}
-                              onSelect={(_value) => {
-                                handleCustomerChange(customer.id);
+                              value={customer.id}
+                              onSelect={(value) => {
+                                handleCustomerChange(value);
                                 setCustomerSearchOpen(false);
                                 setCustomerSearchQuery("");
                               }}
