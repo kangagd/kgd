@@ -1293,7 +1293,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Additional Visits */}
                   {job.scheduled_visits && job.scheduled_visits.length > 0 && (
                     <div className="space-y-3 pt-3 border-t border-[#E5E7EB]">
@@ -1369,6 +1369,63 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                   className="text-[14px] font-medium text-[#111827] leading-[1.4]"
                                 />
                               </div>
+                            </div>
+                          </div>
+
+                          {/* Assigned Technicians for this Visit */}
+                          <div className="flex items-center gap-2.5 pt-2 border-t border-[#E5E7EB]">
+                            <User className="w-5 h-5 text-[#4B5563] flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Assigned</div>
+                              <EditableField
+                                value={Array.isArray(visit.assigned_to) ? visit.assigned_to : visit.assigned_to ? [visit.assigned_to] : []}
+                                onSave={(emails) => {
+                                  const emailsArray = Array.isArray(emails) ? emails : emails ? [emails] : [];
+                                  const techNames = emailsArray.map(email => {
+                                    const tech = technicians.find(t => t.email === email);
+                                    return tech?.display_name || tech?.full_name || "";
+                                  }).filter(Boolean);
+
+                                  const updatedVisits = job.scheduled_visits.map(v => 
+                                    v.id === visit.id ? { 
+                                      ...v, 
+                                      assigned_to: emailsArray,
+                                      assigned_to_name: techNames
+                                    } : v
+                                  );
+                                  updateJobMutation.mutate({ field: 'scheduled_visits', value: updatedVisits });
+                                }}
+                                type="multi-select"
+                                options={technicians.map((t) => ({ value: t.email, label: t.display_name || t.full_name }))}
+                                displayFormat={(val) => {
+                                  const emailsToDisplay = Array.isArray(val) ? val : val ? [val] : [];
+                                  const namesToDisplay = Array.isArray(visit.assigned_to_name) ? visit.assigned_to_name : visit.assigned_to_name ? [visit.assigned_to_name] : [];
+
+                                  if (namesToDisplay.length === 0) {
+                                    return (
+                                      <TechnicianAvatar
+                                        technician={{ email: '', full_name: 'Unassigned', id: 'unassigned' }}
+                                        size="sm"
+                                        showPlaceholder={true}
+                                      />
+                                    );
+                                  }
+
+                                  return (
+                                    <TechnicianAvatarGroup
+                                      technicians={emailsToDisplay.map((email, idx) => ({
+                                        email,
+                                        display_name: namesToDisplay[idx] || email,
+                                        full_name: namesToDisplay[idx] || email,
+                                        id: email
+                                      }))}
+                                      maxDisplay={3}
+                                      size="sm"
+                                    />
+                                  );
+                                }}
+                                placeholder="Assign"
+                              />
                             </div>
                           </div>
                         </div>
