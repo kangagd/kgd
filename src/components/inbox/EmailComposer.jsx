@@ -48,7 +48,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   
   // A) Enforce reply contract: validate required props
   const isReplyMode = mode === "reply";
-  const hasValidThreadContext = thread?.id && message?.gmail_message_id;
+  const hasValidThreadContext = thread?.id && thread?.gmail_thread_id && message?.message_id;
   const isReplyContextMissing = isReplyMode && !hasValidThreadContext;
   
   // Smart recipient calculation for replies
@@ -94,12 +94,11 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const [showToDropdown, setShowToDropdown] = useState(false);
   const [cc, setCc] = useState(initialRecipients.cc);
   const [bcc, setBcc] = useState(existingDraft?.bcc_addresses?.join(', ') || existingDraft?.bcc || "");
-  // B) Set proper subject without duplicating "Re:" prefix
+  
   const getInitialSubject = () => {
     if (existingDraft?.subject) return existingDraft.subject;
     if (mode === "reply") {
       const threadSubject = thread?.subject || "";
-      // Remove any existing Re: prefix before adding it once
       const cleanSubject = threadSubject.replace(/^Re:\s*/i, '');
       return cleanSubject ? `Re: ${cleanSubject}` : "";
     }
@@ -141,24 +140,19 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     const signature = getSignature();
     
     if (mode === "reply") {
-      // Get the original message content
       let quotedContent = "";
       if (message?.body_html) {
-        // Sanitize and strip outer HTML wrappers
         quotedContent = sanitizeBodyHtml(message.body_html);
       } else if (message?.body_text) {
-        // Convert plain text to HTML
         quotedContent = message.body_text.replace(/\n/g, '<br>');
       }
       
-      // Format date in Gmail style
       const dateStr = message?.sent_at 
         ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
         : new Date().toLocaleString();
       
       const sender = message?.from_name || message?.from_address;
       
-      // Gmail-style quote block with signature before the quote
       return `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quotedContent}</blockquote></div>`;
     }
     if (mode === "forward") {
@@ -179,20 +173,19 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   };
   
   const [body, setBody] = useState(() => {
-    // If there's an existing draft, use it as-is (already has signature)
     if (existingDraft?.body_html || existingDraft?.body) {
       return existingDraft.body_html || existingDraft.body;
     }
     return "";
   });
   
-  // Set initial body with signature once user is loaded (for new emails only)
   useEffect(() => {
     if (currentUser && !existingDraft && !body) {
       const initialBody = getInitialBody();
       setBody(initialBody);
     }
   }, [currentUser, mode, message, thread]);
+  
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const [showCc, setShowCc] = useState(!!(existingDraft?.cc_addresses?.length || existingDraft?.cc));
@@ -205,21 +198,18 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const toInputRef = useRef(null);
   const [selectedTemplate, setSelectedTemplate] = useState("");
 
-  // Fetch customers for email autocomplete
   const { data: customers = [] } = useQuery({
     queryKey: ['customersForEmail'],
     queryFn: () => base44.entities.Customer.filter({ status: 'active' }),
     staleTime: 60000
   });
 
-  // Fetch email templates
   const { data: templates = [] } = useQuery({
     queryKey: ['messageTemplates', 'email'],
     queryFn: () => base44.entities.MessageTemplate.filter({ channel: 'email', active: true }),
     staleTime: 120000
   });
 
-  // Fetch context entities for template rendering
   const { data: linkedProject } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => base44.entities.Project.get(projectId),
@@ -236,17 +226,14 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     const template = templates.find(t => t.id === templateId);
     if (!template) return;
 
-    // Build context
     const context = buildTemplateContext({
       project: linkedProject,
       job: linkedJob,
       customer: customers.find(c => c.email === to)
     });
 
-    // Render template
     const rendered = renderTemplate(template, context);
     
-    // Apply to form
     if (rendered.subject && !subject) {
       setSubject(rendered.subject);
     }
@@ -258,7 +245,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     toast.success(`Template "${template.name}" applied`);
   };
 
-  // Filter customers based on search term
   const filteredCustomers = customers.filter(customer => {
     if (!toSearchTerm || toSearchTerm.length < 2) return false;
     const searchLower = toSearchTerm.toLowerCase();
@@ -281,9 +267,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     setShowToDropdown(false);
   };
 
-  // Auto-save draft function
   const saveDraft = useCallback(async (draftData) => {
-    // Don't save empty drafts
     if (!draftData.to && !draftData.subject && !draftData.body) return;
     
     setIsSavingDraft(true);
@@ -314,19 +298,16 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     }
   }, [draftId, thread?.id, message?.message_id, mode, onDraftSaved]);
 
-  // Debounced auto-save (save after 2 seconds of inactivity)
   const debouncedSave = useCallback(
     debounce((data) => saveDraft(data), 2000),
     [saveDraft]
   );
 
-  // Auto-save when content changes
   useEffect(() => {
     debouncedSave({ to, cc, bcc, subject, body });
     return () => debouncedSave.cancel();
   }, [to, cc, bcc, subject, body, debouncedSave]);
 
-  // Delete draft on successful send
   const deleteDraft = async () => {
     if (draftId) {
       try {
@@ -369,7 +350,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       return;
     }
     
-    // A) Block sending if reply context is missing
     if (isReplyContextMissing) {
       toast.error("Cannot reply — thread context missing");
       return;
@@ -377,7 +357,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
 
     setIsSending(true);
     try {
-      // B) Build proper reply payload with email headers
       const payload = {
         to,
         cc: cc || undefined,
@@ -385,18 +364,22 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         subject,
         body,
         attachments: attachments.length > 0 ? attachments : undefined,
-        // D) Preserve project linkage
         projectId: projectId || thread?.project_id || undefined,
         jobId: jobId || thread?.linked_job_id || undefined
       };
       
-      // B) Add threading headers for replies
-      if (mode === "reply" && thread?.id && message?.gmail_message_id) {
-        payload.threadId = thread.id;
-        payload.inReplyTo = message.gmail_message_id;
-        // Build references chain
-        const existingReferences = message.references || thread.references || [];
-        payload.references = [...existingReferences, message.gmail_message_id].join(' ');
+      // Pass separate Base44 and Gmail thread IDs for replies
+      if (mode === "reply" && thread?.id && thread?.gmail_thread_id && message?.message_id) {
+        payload.base44_thread_id = thread.id;
+        payload.gmail_thread_id = thread.gmail_thread_id;
+        payload.inReplyTo = message.message_id;
+        
+        // Build references chain from existing references
+        const existingReferences = message.in_reply_to 
+          ? (message.references ? `${message.references} ${message.in_reply_to}` : message.in_reply_to)
+          : (message.references || '');
+        
+        payload.references = existingReferences;
       }
       
       await base44.functions.invoke('gmailSendEmail', payload);
@@ -542,7 +525,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           )}
         </div>
 
-        {/* Original Message Context (for replies) */}
         {(mode === "reply" || mode === "forward") && message && (
           <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
             <button
@@ -647,7 +629,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           </div>
         )}
 
-        {/* E) UI safety guardrail: show error if reply context missing */}
         {isReplyContextMissing && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-[13px] text-red-700">
             <strong>Cannot reply:</strong> Thread context missing. Please ensure the original email is properly loaded.
