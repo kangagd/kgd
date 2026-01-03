@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { Upload, X } from "lucide-react";
 import EditableFileUpload from "../jobs/EditableFileUpload";
+import { filterBase44TeamMembers } from "../utils/userFilters";
 
 export default function VehicleFormModal({ open, onClose, vehicle }) {
   const queryClient = useQueryClient();
@@ -36,6 +37,12 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list()
   });
+
+  // Filter out Base44 team members
+  const assignableUsers = useMemo(() => 
+    filterBase44TeamMembers(users), 
+    [users]
+  );
 
   useEffect(() => {
     if (open) {
@@ -68,7 +75,7 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
       // Handle assigned_user_name denormalization
       let assigned_user_name = null;
       if (data.assigned_user_id && data.assigned_user_id !== "unassigned") {
-        const user = users.find(u => u.id === data.assigned_user_id);
+        const user = assignableUsers.find(u => u.id === data.assigned_user_id);
         assigned_user_name = user ? (user.display_name || user.full_name) : null;
       }
 
@@ -222,7 +229,7 @@ export default function VehicleFormModal({ open, onClose, vehicle }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {users.map(u => (
+                {assignableUsers.map(u => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.display_name || u.full_name || u.email}
                   </SelectItem>

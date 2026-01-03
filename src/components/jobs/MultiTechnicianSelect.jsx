@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, UserPlus } from "lucide-react";
@@ -8,12 +8,19 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
+import { filterBase44TeamMembers } from "../utils/userFilters";
 
 export default function MultiTechnicianSelect({ selectedEmails = [], technicians = [], onChange }) {
   const [open, setOpen] = useState(false);
 
+  // Filter out Base44 team members
+  const assignableTechnicians = useMemo(() => 
+    filterBase44TeamMembers(technicians), 
+    [technicians]
+  );
+
   const selectedTechs = selectedEmails
-    .map(email => technicians.find(t => t.email === email))
+    .map(email => assignableTechnicians.find(t => t.email === email))
     .filter(Boolean);
 
   const toggleTechnician = (techEmail) => {
@@ -64,7 +71,7 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
           <div className="space-y-3">
             <h4 className="font-medium text-sm">Select Technicians</h4>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {technicians.map((tech) => (
+              {assignableTechnicians.map((tech) => (
                 <div key={tech.email} className="flex items-center space-x-2">
                   <Checkbox
                     id={tech.email}
