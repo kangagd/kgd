@@ -43,14 +43,55 @@ const sanitizeBodyHtml = (html) => {
 
 export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, onDraftSaved, existingDraft = null, projectId = null, jobId = null, defaultTo = null }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [to, setTo] = useState(existingDraft?.to_addresses?.join(', ') || existingDraft?.to || (mode === "reply" ? message?.from_address : (defaultTo || "")));
+  const [isReplyAll, setIsReplyAll] = useState(false);
+  const [showOriginalMessage, setShowOriginalMessage] = useState(false);
+  
+  // Smart recipient calculation for replies
+  const getReplyRecipients = (replyAll = false) => {
+    if (mode !== "reply" || !message) return { to: defaultTo || "", cc: "" };
+    
+    const userEmail = currentUser?.email?.toLowerCase();
+    const fromAddress = message.from_address;
+    const toAddresses = message.to_addresses || [];
+    const ccAddresses = message.cc_addresses || [];
+    
+    // If we sent the original message, reply to the first recipient
+    if (fromAddress?.toLowerCase() === userEmail) {
+      return {
+        to: toAddresses[0] || "",
+        cc: replyAll ? [...toAddresses.slice(1), ...ccAddresses].filter(e => e.toLowerCase() !== userEmail).join(', ') : ""
+      };
+    }
+    
+    // Reply to sender
+    const replyTo = fromAddress;
+    
+    if (replyAll) {
+      // Include all recipients except ourselves
+      const allRecipients = [...toAddresses, ...ccAddresses]
+        .filter(e => e.toLowerCase() !== userEmail && e.toLowerCase() !== fromAddress?.toLowerCase());
+      return {
+        to: replyTo,
+        cc: allRecipients.join(', ')
+      };
+    }
+    
+    return { to: replyTo, cc: "" };
+  };
+  
+  const initialRecipients = existingDraft ? {
+    to: existingDraft?.to_addresses?.join(', ') || existingDraft?.to || "",
+    cc: existingDraft?.cc_addresses?.join(', ') || existingDraft?.cc || ""
+  } : getReplyRecipients(false);
+  
+  const [to, setTo] = useState(initialRecipients.to);
   const [toSearchTerm, setToSearchTerm] = useState("");
   const [showToDropdown, setShowToDropdown] = useState(false);
-  const [cc, setCc] = useState(existingDraft?.cc_addresses?.join(', ') || existingDraft?.cc || "");
+  const [cc, setCc] = useState(initialRecipients.cc);
   const [bcc, setBcc] = useState(existingDraft?.bcc_addresses?.join(', ') || existingDraft?.bcc || "");
   const [subject, setSubject] = useState(
     existingDraft?.subject || 
-    (mode === "reply" ? `Re: ${thread?.subject || ""}` : 
+    (mode === "reply" ? `Re: ${thread?.subject?.replace(/^Re:\s*/i, '') || ""}` : 
     mode === "forward" ? `Fwd: ${thread?.subject || ""}` : "")
   );
 
@@ -66,6 +107,16 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     };
     loadUser();
   }, []);
+  
+  // Handle reply all toggle
+  const handleToggleReplyAll = () => {
+    const newReplyAll = !isReplyAll;
+    setIsReplyAll(newReplyAll);
+    const recipients = getReplyRecipients(newReplyAll);
+    setTo(recipients.to);
+    setCc(recipients.cc);
+    if (recipients.cc) setShowCc(true);
+  };
   
   const getSignature = () => {
     if (!currentUser?.email_signature) return '';
@@ -337,11 +388,23 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     <Card className="border-2 border-[#FAE008] shadow-lg">
       <CardHeader className="bg-[#FAE008]/10 border-b border-[#E5E7EB]">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-[18px] font-semibold">
-            {mode === "compose" && "New Email"}
-            {mode === "reply" && "Reply"}
-            {mode === "forward" && "Forward"}
-          </CardTitle>
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-[18px] font-semibold">
+              {mode === "compose" && "New Email"}
+              {mode === "reply" && (isReplyAll ? "Reply All" : "Reply")}
+              {mode === "forward" && "Forward"}
+            </CardTitle>
+            {mode === "reply" && !existingDraft && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToggleReplyAll}
+                className="h-7 text-[12px]"
+              >
+                {isReplyAll ? "Reply to Sender Only" : "Reply All"}
+              </Button>
+            )}
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
@@ -359,7 +422,6 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
                     onFocus={() => toSearchTerm.length >= 2 && setShowToDropdown(true)}
                     onBlur={() => setTimeout(() => setShowToDropdown(false), 200)}
                     placeholder="recipient@example.com"
-                    disabled={mode === "reply"}
                   />
                   {showToDropdown && filteredCustomers.length > 0 && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 max-h-[200px] overflow-y-auto">
@@ -449,6 +511,43 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
             </div>
           )}
         </div>
+
+        {/* Original Message Context (for replies) */}
+        {(mode === "reply" || mode === "forward") && message && (
+          <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+            <button
+              onClick={() => setShowOriginalMessage(!showOriginalMessage)}
+              className="w-full flex items-center justify-between p-3 bg-[#F9FAFB] hover:bg-[#F3F4F6] transition-colors text-left"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-medium text-[#6B7280]">
+                  Original message from {message.from_name || message.from_address}
+                </span>
+                <span className="text-[11px] text-[#9CA3AF]">
+                  {message.sent_at ? format(parseISO(message.sent_at), "MMM d, yyyy") : ""}
+                </span>
+              </div>
+              <div className={`text-[#6B7280] transform transition-transform ${showOriginalMessage ? 'rotate-180' : ''}`}>
+                ▼
+              </div>
+            </button>
+            {showOriginalMessage && (
+              <div className="p-4 bg-white border-t border-[#E5E7EB] max-h-[300px] overflow-y-auto">
+                <div className="text-[12px] text-[#6B7280] mb-2">
+                  <strong>From:</strong> {message.from_name || message.from_address}
+                  <br />
+                  <strong>Date:</strong> {message.sent_at ? format(parseISO(message.sent_at), "PPpp") : ""}
+                  <br />
+                  <strong>Subject:</strong> {message.subject}
+                </div>
+                <div 
+                  className="text-[13px] text-[#111827] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: message.body_html || message.body_text?.replace(/\n/g, '<br>') || '' }}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2">
           <div className="flex items-center gap-1 border-b border-[#E5E7EB] pb-2">
