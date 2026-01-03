@@ -10,9 +10,10 @@ Deno.serve(async (req) => {
     }
 
     // Use filter() instead of list() to get customers with name "unknown"
-    const unknownCustomers = await base44.asServiceRole.entities.Customer.filter(
+    const response = await base44.asServiceRole.entities.Customer.filter(
       { name: 'Unknown' }
     );
+    const unknownCustomers = Array.isArray(response) ? response : (response?.data || []);
 
     console.log(`Found ${unknownCustomers.length} customers with name "Unknown"`);
 
@@ -31,6 +32,7 @@ Deno.serve(async (req) => {
 
     for (let i = 0; i < unknownCustomers.length; i += batchSize) {
       const batch = unknownCustomers.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}, batch type: ${typeof batch}, isArray: ${Array.isArray(batch)}`);
       
       await Promise.all(
         batch.map(customer => 
