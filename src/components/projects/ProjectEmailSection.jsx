@@ -91,15 +91,12 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   // For backward compatibility - use first thread as "emailThread"
   const emailThread = linkedThreads[0];
 
-  // Fetch unlinked email threads for linking
+  // Fetch all email threads for linking (not just unlinked)
   const { data: availableThreads = [] } = useQuery({
-    queryKey: ['unlinkedEmailThreads'],
+    queryKey: ['allEmailThreads'],
     queryFn: async () => {
-      // Fetch threads where linked_project_id is null
-      // Fetching up to 500 most recent unlinked threads
-      const threads = await base44.entities.EmailThread.filter({ 
-        linked_project_id: null 
-      }, '-last_message_date', 500);
+      // Fetch all threads (up to 500 most recent) to allow searching
+      const threads = await base44.entities.EmailThread.list('-last_message_date', 500);
       return threads;
     },
     enabled: showLinkModal
@@ -773,10 +770,16 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 function LinkEmailThreadModal({ open, onClose, threads, onSelect, isLinking }) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredThreads = threads.filter(thread => 
-    thread.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    thread.from_address?.toLowerCase().includes(searchTerm.toLowerCase())
-  ).slice(0, 30);
+  const filteredThreads = threads.filter(thread => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      thread.subject?.toLowerCase().includes(searchLower) ||
+      thread.from_address?.toLowerCase().includes(searchLower) ||
+      thread.to_addresses?.some(addr => addr.toLowerCase().includes(searchLower)) ||
+      thread.last_message_snippet?.toLowerCase().includes(searchLower)
+    );
+  }).slice(0, 30);
 
   if (!open) return null;
 
@@ -788,36 +791,68 @@ function LinkEmailThreadModal({ open, onClose, threads, onSelect, isLinking }) {
       >
         <div className="p-4 border-b border-[#E5E7EB]">
           <h3 className="text-[18px] font-semibold text-[#111827] mb-3">Link Email Thread</h3>
+          <p className="text-[13px] text-[#6B7280] mb-3">
+            Search by email address, subject, or sender to find threads
+          </p>
           <input
             type="text"
-            placeholder="Search by subject or sender..."
+            placeholder="Search by email address, subject, or sender..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg focus:outline-none focus:border-[#FAE008] text-[14px]"
+            autoFocus
           />
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {filteredThreads.length === 0 ? (
-            <p className="text-center text-[#6B7280] py-8">No unlinked email threads found</p>
+            <div className="text-center py-8">
+              <p className="text-[#6B7280] mb-2">
+                {searchTerm ? 'No threads found matching your search' : 'Loading threads...'}
+              </p>
+              {searchTerm && (
+                <p className="text-[12px] text-[#9CA3AF]">
+                  Try searching by email address or subject
+                </p>
+              )}
+            </div>
           ) : (
-            filteredThreads.map(thread => (
-              <div
-                key={thread.id}
-                onClick={() => !isLinking && onSelect(thread.id)}
-                className={`p-3 border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] hover:bg-[#FFFEF5] cursor-pointer transition-all ${isLinking ? 'opacity-50 pointer-events-none' : ''}`}
-              >
-                <h4 className="text-[14px] font-semibold text-[#111827] truncate mb-1">
-                  {thread.subject || '(No subject)'}
-                </h4>
-                <p className="text-[13px] text-[#6B7280]">
-                  From: {thread.from_address}
-                </p>
-                <p className="text-[12px] text-[#9CA3AF] mt-1">
-                  {thread.message_count || 0} message{(thread.message_count || 0) !== 1 ? 's' : ''} • {thread.last_message_date ? new Date(thread.last_message_date).toLocaleDateString() : ''}
-                </p>
-              </div>
-            ))
+            filteredThreads.map(thread => {
+              const isAlreadyLinked = thread.linked_project_id;
+              return (
+                <div
+                  key={thread.id}
+                  onClick={() => !isLinking && onSelect(thread.id)}
+                  className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                    isAlreadyLinked 
+                      ? 'border-amber-200 bg-amber-50 hover:border-amber-300' 
+                      : 'border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]'
+                  } ${isLinking ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <h4 className="text-[14px] font-semibold text-[#111827] truncate flex-1">
+                      {thread.subject || '(No subject)'}
+                    </h4>
+                    {isAlreadyLinked && (
+                      <span className="text-[10px] bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full flex-shrink-0">
+                        Linked
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[13px] text-[#6B7280]">
+                    From: {thread.from_address}
+                  </p>
+                  <p className="text-[12px] text-[#9CA3AF] mt-1">
+                    {thread.message_count || 0} message{(thread.message_count || 0) !== 1 ? 's' : ''} • {thread.last_message_date ? new Date(thread.last_message_date).toLocaleDateString() : ''}
+                  </p>
+                  {isAlreadyLinked && thread.linked_project_title && (
+                    <p className="text-[11px] text-amber-700 mt-1">
+                      Currently linked to: {thread.linked_project_title}
+                    </p>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 
