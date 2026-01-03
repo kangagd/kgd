@@ -10,9 +10,8 @@ Deno.serve(async (req) => {
     }
 
     // Fetch all customers with name "unknown" (case-insensitive)
-    const allCustomers = await base44.asServiceRole.entities.Customer.filter({
-      deleted_at: { $exists: false }
-    });
+    // Include both deleted and non-deleted to catch everything
+    const allCustomers = await base44.asServiceRole.entities.Customer.list();
 
     const unknownCustomers = allCustomers.filter(c => 
       c.name && c.name.toLowerCase().trim() === 'unknown'
@@ -26,12 +25,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Soft delete all unknown customers
+    // Soft delete all unknown customers in batches
     const deletedAt = new Date().toISOString();
-    for (const customer of unknownCustomers) {
-      await base44.asServiceRole.entities.Customer.update(customer.id, {
-        deleted_at: deletedAt
-      });
+    const batchSize = 50;
+    let deleted = 0;
+
+    for (let i = 0; i < unknownCustomers.length; i += batchSize) {
+      const batch = unknownCustomers.slice(i, i + batchSize);
+      
+      await Promise.all(
+        batch.map(customer => 
+          base44.asServiceRole.entities.Customer.update(customer.id, {
+            deleted_at: deletedAt
+          })
+        )
+      );
+      
+      deleted += batch.length;
+      console.log(`Deleted ${deleted}/${unknownCustomers.length} customers...`);
     }
 
     // Re-evaluate duplicates after deletion
