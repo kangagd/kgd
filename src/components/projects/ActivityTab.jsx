@@ -26,34 +26,60 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const queryClient = useQueryClient();
 
-  // Fetch project messages (manual activities)
+  // Fetch manual communication activities only
   const { data: projectMessages = [], refetch: refetchMessages } = useQuery({
     queryKey: ['projectMessages', project.id],
-    queryFn: () => base44.entities.ProjectMessage.filter({ project_id: project.id }),
+    queryFn: async () => {
+      const messages = await base44.entities.ProjectMessage.filter({ 
+        project_id: project.id,
+        message_type: 'manual_activity'
+      }, '-created_date');
+      return messages;
+    },
     enabled: !!project.id
   });
 
   // Fetch email threads linked to this project
-  const { data: linkedThreads = [] } = useQuery({
+  const { data: linkedThreads = [], refetch: refetchThreads } = useQuery({
     queryKey: ['projectEmailThreads', project.id],
     queryFn: async () => {
-      const threads = await base44.entities.EmailThread.filter({ project_id: project.id }, '-last_message_date');
+      const threads = await base44.entities.EmailThread.filter({ 
+        project_id: project.id 
+      }, '-last_message_date');
       return threads;
     },
     enabled: !!project.id,
     refetchOnMount: true
   });
 
-  // Fetch draft emails for this project
-  const { data: draftEmails = [] } = useQuery({
-    queryKey: ['emailDrafts', project.id],
+  // Fetch email messages for linked threads
+  const { data: emailMessages = [], refetch: refetchMessages } = useQuery({
+    queryKey: ['projectEmailMessages', linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
-      const user = await base44.auth.me();
-      const allDrafts = await base44.entities.EmailDraft.filter({ created_by: user.email }, '-updated_date');
-      const threadIds = linkedThreads.map(t => t.id);
-      return allDrafts.filter(d => threadIds.includes(d.thread_id));
+      if (linkedThreads.length === 0) return [];
+      const allMessages = await Promise.all(
+        linkedThreads.map(thread => 
+          base44.entities.EmailMessage.filter({ thread_id: thread.id }, '-sent_at')
+        )
+      );
+      return allMessages.flat();
     },
-    enabled: !!project.id && linkedThreads.length > 0
+    enabled: linkedThreads.length > 0
+  });
+
+  // Fetch draft emails related to linked threads
+  const { data: draftEmails = [] } = useQuery({
+    queryKey: ['projectEmailDrafts', linkedThreads.map(t => t.id).join(',')],
+    queryFn: async () => {
+      if (linkedThreads.length === 0) return [];
+      const user = await base44.auth.me();
+      const allDrafts = await base44.entities.EmailDraft.filter({ 
+        created_by: user.email 
+      }, '-updated_date');
+      const threadIds = linkedThreads.map(t => t.id);
+      return allDrafts.filter(d => d.thread_id && threadIds.includes(d.thread_id));
+    },
+    enabled: linkedThreads.length > 0
   });
 
   // Link email thread mutation
@@ -65,8 +91,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
         set_as_primary: linkedThreads.length === 0
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+    onSuccess: async () => {
+      await refetchThreads();
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       setShowLinkModal(false);
       toast.success('Email thread linked');
@@ -85,8 +111,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
         project_title: null
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+    onSuccess: async () => {
+      await refetchThreads();
       toast.success('Email thread unlinked');
     },
     onError: (error) => {
@@ -94,31 +120,11 @@ export default function ActivityTab({ project, onComposeEmail }) {
     }
   });
 
-  // Fetch email messages for linked threads
-  const emailThreadIds = React.useMemo(() => 
-    linkedThreads.map(thread => thread.id),
-    [linkedThreads]
-  );
-
-  const { data: emailMessages = [] } = useQuery({
-    queryKey: ['emailMessages', ...emailThreadIds],
-    queryFn: async () => {
-      if (emailThreadIds.length === 0) return [];
-      const messages = await Promise.all(
-        emailThreadIds.map(threadId => 
-          base44.entities.EmailMessage.filter({ thread_id: threadId }, '-sent_at')
-        )
-      );
-      return messages.flat();
-    },
-    enabled: emailThreadIds.length > 0
-  });
-
-  // Combine all activities
+  // Combine communication activities only
   const allActivities = React.useMemo(() => {
     const activities = [];
 
-    // Add email activities
+    // Add email messages
     emailMessages.forEach(msg => {
       const thread = linkedThreads.find(t => t.id === msg.thread_id);
       activities.push({
@@ -144,7 +150,6 @@ export default function ActivityTab({ project, onComposeEmail }) {
         subject: draft.subject || '(No subject)',
         content: draft.body_html || draft.body,
         toAddresses: draft.to_addresses || [],
-        isDraft: true,
         draftId: draft.id,
         threadId: draft.thread_id,
         mode: draft.mode || 'compose'
@@ -152,22 +157,20 @@ export default function ActivityTab({ project, onComposeEmail }) {
     });
 
     // Add manual activities
-    projectMessages
-      .filter(msg => msg.message_type === 'manual_activity')
-      .forEach(msg => {
-        const typeMatch = msg.content?.match(/^\*\*\[(.+?)\]\*\*/);
-        const activityType = typeMatch ? typeMatch[1].toLowerCase() : 'other';
-        
-        activities.push({
-          id: `manual-${msg.id}`,
-          type: 'manual',
-          subType: activityType,
-          date: msg.created_date,
-          from: msg.sender_name,
-          content: msg.content,
-          attachments: msg.attachments || []
-        });
+    projectMessages.forEach(msg => {
+      const typeMatch = msg.content?.match(/^\*\*\[(.+?)\]\*\*/);
+      const activityType = typeMatch ? typeMatch[1].toLowerCase() : 'other';
+      
+      activities.push({
+        id: `manual-${msg.id}`,
+        type: 'manual',
+        subType: activityType,
+        date: msg.created_date,
+        from: msg.sender_name,
+        content: msg.content,
+        attachments: msg.attachments || []
       });
+    });
 
     return activities.sort((a, b) => new Date(b.date) - new Date(a.date));
   }, [emailMessages, projectMessages, linkedThreads, draftEmails]);
@@ -217,13 +220,10 @@ export default function ActivityTab({ project, onComposeEmail }) {
       <Card className="border border-[#E5E7EB] shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-[16px] font-semibold text-[#111827]">Activity Timeline</CardTitle>
+            <CardTitle className="text-[16px] font-semibold text-[#111827]">Customer Communication</CardTitle>
             <div className="flex gap-2 flex-wrap">
               <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowLinkModal(true);
-                }}
+                onClick={() => setShowLinkModal(true)}
                 size="sm"
                 variant="outline"
                 className="gap-2"
@@ -232,10 +232,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
                 Link Email
               </Button>
               <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onComposeEmail?.();
-                }}
+                onClick={() => onComposeEmail?.()}
                 size="sm"
                 variant="outline"
                 className="gap-2"
@@ -244,15 +241,12 @@ export default function ActivityTab({ project, onComposeEmail }) {
                 Compose Email
               </Button>
               <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowLogModal(true);
-                }}
+                onClick={() => setShowLogModal(true)}
                 size="sm"
                 className="gap-2 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
               >
                 <Plus className="w-4 h-4" />
-                Log Manual Update
+                Log Activity
               </Button>
             </div>
           </div>
@@ -268,13 +262,13 @@ export default function ActivityTab({ project, onComposeEmail }) {
         </TabsList>
       </Tabs>
 
-      {/* Timeline */}
+      {/* Communication Timeline */}
       <Card className="border border-[#E5E7EB] shadow-sm">
         <CardContent className="p-4">
           {filteredActivities.length === 0 ? (
             <div className="text-center py-8 text-[#9CA3AF]">
               <Calendar className="w-12 h-12 mx-auto mb-3 text-[#E5E7EB]" />
-              <p className="text-[14px]">No activities logged yet</p>
+              <p className="text-[14px]">No communication logged yet</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -357,7 +351,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           {selectedActivity?.type === 'email' && (() => {
             const threadId = selectedActivity?.threadId;
-            const threadMessages = threadId ? emailMessages.filter(msg => msg.thread_id === threadId) : [];
+            const threadMessages = threadId ? emailMessages.filter(msg => msg.thread_id === threadId).sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at)) : [];
             const thread = threadId ? linkedThreads.find(t => t.id === threadId) : null;
             
             return (
