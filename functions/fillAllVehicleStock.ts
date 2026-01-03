@@ -5,6 +5,8 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
+    console.log('[fillAllVehicleStock] Starting, user:', user?.email);
+
     if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
       return Response.json({ error: 'Forbidden: Admin or Manager access required' }, { status: 403 });
     }
@@ -12,6 +14,7 @@ Deno.serve(async (req) => {
     // Get all active vehicles
     const vehicles = await base44.entities.Vehicle.list();
     const activeVehicles = vehicles.filter(v => v.status === 'Active' || v.status === 'active');
+    console.log('[fillAllVehicleStock] Found', activeVehicles.length, 'active vehicles');
 
     // Get all price list items with car_quantity > 0
     const priceListItems = await base44.entities.PriceListItem.list();
@@ -21,30 +24,35 @@ Deno.serve(async (req) => {
       item.car_quantity > 0 &&
       item.is_active !== false
     );
+    console.log('[fillAllVehicleStock] Found', stockItems.length, 'items with car_quantity set');
 
     let totalUpdates = 0;
     const results = [];
 
     // For each vehicle, set stock to car_quantity
     for (const vehicle of activeVehicles) {
+      console.log('[fillAllVehicleStock] Processing vehicle:', vehicle.name);
       const vehicleUpdates = [];
       
       // Get existing stock for this vehicle
       const existingStock = await base44.asServiceRole.entities.VehicleStock.filter({ 
         vehicle_id: vehicle.id 
       });
+      console.log('[fillAllVehicleStock] Vehicle', vehicle.name, 'has', existingStock.length, 'existing stock records');
 
       for (const item of stockItems) {
-        const existing = existingStock.find(vs => vs.product_id === item.id);
-        const targetQuantity = item.car_quantity;
+        try {
+          const existing = existingStock.find(vs => vs.product_id === item.id);
+          const targetQuantity = item.car_quantity;
 
-        if (existing) {
-          // Update existing stock
-          const currentQty = existing.quantity_on_hand || 0;
-          if (currentQty !== targetQuantity) {
-            await base44.asServiceRole.entities.VehicleStock.update(existing.id, {
-              quantity_on_hand: targetQuantity
-            });
+          if (existing) {
+            // Update existing stock
+            const currentQty = existing.quantity_on_hand || 0;
+            if (currentQty !== targetQuantity) {
+              console.log('[fillAllVehicleStock] Updating', item.item, 'from', currentQty, 'to', targetQuantity);
+              await base44.asServiceRole.entities.VehicleStock.update(existing.id, {
+                quantity_on_hand: targetQuantity
+              });
 
             // Record movement
             await base44.asServiceRole.entities.VehicleStockMovement.create({
@@ -69,6 +77,7 @@ Deno.serve(async (req) => {
           }
         } else {
           // Create new stock entry
+          console.log('[fillAllVehicleStock] Creating new stock for', item.item, 'with quantity', targetQuantity);
           await base44.asServiceRole.entities.VehicleStock.create({
             vehicle_id: vehicle.id,
             product_id: item.id,
@@ -100,6 +109,10 @@ Deno.serve(async (req) => {
           });
           totalUpdates++;
         }
+        } catch (itemError) {
+          console.error('[fillAllVehicleStock] Error processing item', item.item, 'for vehicle', vehicle.name, ':', itemError.message);
+          throw itemError;
+        }
       }
 
       results.push({
@@ -108,6 +121,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log('[fillAllVehicleStock] Complete! Total updates:', totalUpdates);
     return Response.json({ 
       success: true,
       vehicles_processed: activeVehicles.length,
@@ -115,6 +129,8 @@ Deno.serve(async (req) => {
       results
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[fillAllVehicleStock] Fatal error:', error.message);
+    console.error('[fillAllVehicleStock] Stack:', error.stack);
+    return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
   }
 });
