@@ -280,8 +280,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       product: autoProduct,
       additional_info: project.description || "",
       image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
-    });
-  }, [preselectedProjectId, projectIdFromUrl, projects, job]);
+      scheduled_visits: [],
+      });
+      }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
   const handleAutoSave = async () => {
     if (!job && !formData.customer_id) {
