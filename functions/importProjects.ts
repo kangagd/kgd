@@ -83,10 +83,17 @@ Deno.serve(async (req) => {
           }
 
           // Explicitly set duplicate detection flags to false/0 for imports
+          // Preserve legacy fields verbatim without transformation
           const projectData = {
             ...record,
             is_potential_duplicate: false,
-            duplicate_score: 0
+            duplicate_score: 0,
+            // Preserve legacy fields as-is
+            pipedrive_deal_id: record.pipedrive_deal_id || null,
+            legacy_xero_invoice_url: record.legacy_xero_invoice_url || null,
+            legacy_pandadoc_url: record.legacy_pandadoc_url || null,
+            // Notes field preserved verbatim (may contain legacy stage text)
+            notes: record.notes || null
           };
 
           // Create project without duplicate detection
