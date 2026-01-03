@@ -308,6 +308,25 @@ export default function ActivityTab({ project, onComposeEmail }) {
     return formatted.html;
   };
 
+  const handleComposeFromActivity = (activityData) => {
+    if (activityData?.mode === 'reply' && activityData?.thread && activityData?.message) {
+      // Find the full thread from emailThreads
+      const fullThread = emailThreads.find(t => t.id === activityData.thread.id);
+      // Reply to specific message in thread
+      onComposeEmail?.({
+        mode: 'reply',
+        thread: fullThread || activityData.thread,
+        message: activityData.message
+      });
+    } else if (activityData?.isDraft) {
+      // Open draft
+      onComposeEmail?.(activityData);
+    } else {
+      // Compose new
+      onComposeEmail?.();
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header with Actions */}
@@ -492,7 +511,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
                     <Button
                       onClick={() => {
                         setSelectedActivity(null);
-                        onComposeEmail?.({
+                        handleComposeFromActivity({
                           mode: 'reply',
                           thread: thread,
                           message: threadMessages[threadMessages.length - 1]
