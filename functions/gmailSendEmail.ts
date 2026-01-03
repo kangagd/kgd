@@ -55,8 +55,12 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
   
   if (cc) message.push(`Cc: ${cc}`);
   if (bcc) message.push(`Bcc: ${bcc}`);
-  if (inReplyTo) message.push(`In-Reply-To: ${inReplyTo}`);
-  if (references) message.push(`References: ${references}`);
+  
+  // 3️⃣ Fix MIME headers for proper Gmail threading
+  if (inReplyTo) {
+    message.push(`In-Reply-To: ${inReplyTo}`);
+    message.push(`References: ${references ? `${references} ${inReplyTo}` : inReplyTo}`);
+  }
   
   message.push(`MIME-Version: 1.0`);
   message.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
@@ -98,22 +102,46 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Gmail not connected. Please connect Gmail first.' }, { status: 401 });
     }
     
-    const { to, cc, bcc, subject, body, threadId, inReplyTo, references, attachments, projectId, jobId } = await req.json();
+    // 1️⃣ Update request parsing - separate Base44 thread ID from Gmail thread ID
+    const {
+      to,
+      cc,
+      bcc,
+      subject,
+      body,
+      base44_thread_id,
+      gmail_thread_id,
+      inReplyTo,
+      references,
+      attachments,
+      projectId,
+      jobId
+    } = await req.json();
     
     if (!to || !subject || !body) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+    
+    // 2️⃣ Enforce reply safety checks
+    if (gmail_thread_id && !inReplyTo) {
+      return Response.json(
+        { error: 'Reply requires RFC Message-ID (inReplyTo)' },
+        { status: 400 }
+      );
     }
     
     const accessToken = await refreshTokenIfNeeded(base44, user);
     
     const encodedMessage = createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, attachments);
     
-    const sendUrl = threadId 
-      ? `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`
-      : `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`;
+    const sendUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`;
     
     const sendBody = { raw: encodedMessage };
-    if (threadId) sendBody.threadId = threadId;
+    
+    // 4️⃣ Fix Gmail API call - NEVER pass Base44 IDs to Gmail
+    if (gmail_thread_id) {
+      sendBody.threadId = gmail_thread_id;
+    }
     
     const response = await fetch(sendUrl, {
       method: 'POST',
@@ -131,8 +159,8 @@ Deno.serve(async (req) => {
     
     const result = await response.json();
     
-    // C) Persist reply under the SAME EmailThread
-    let emailThreadId = threadId;
+    // 5️⃣ Fix EmailThread persistence logic
+    let emailThreadId = base44_thread_id;
     
     if (!emailThreadId) {
       // Create new thread for this sent email
@@ -152,7 +180,7 @@ Deno.serve(async (req) => {
       });
       emailThreadId = newThread.id;
     } else {
-      // C) Update existing thread with reply activity
+      // Update existing thread with reply activity
       const existingThread = await base44.asServiceRole.entities.EmailThread.get(emailThreadId);
       const updates = {
         last_message_date: new Date().toISOString(),
@@ -160,7 +188,7 @@ Deno.serve(async (req) => {
         message_count: (existingThread?.message_count || 0) + 1
       };
       
-      // D) Preserve project linkage - DO NOT overwrite if already linked
+      // Preserve project linkage - DO NOT overwrite if already linked
       if (!existingThread.project_id && projectId) {
         updates.project_id = projectId;
       }
@@ -183,7 +211,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // C) Store sent message with proper threading metadata
+    // Store sent message with proper threading metadata
     await base44.entities.EmailMessage.create({
       thread_id: emailThreadId,
       gmail_message_id: result.id,
@@ -197,17 +225,14 @@ Deno.serve(async (req) => {
       is_outbound: true,
       sent_at: new Date().toISOString(),
       message_id: gmailMessageId,
-      // B) Preserve reply headers for proper threading
       in_reply_to: inReplyTo || null
     });
     
     // Update project activity if email is linked to a project
-    // D) Use project_id from thread if not explicitly provided
     const finalProjectId = projectId || (await base44.asServiceRole.entities.EmailThread.get(emailThreadId)).project_id;
     
     if (finalProjectId) {
-      // C) Update activity type based on whether this is a reply
-      const activityType = threadId ? 'Email Reply Sent' : 'Email Sent';
+      const activityType = base44_thread_id ? 'Email Reply Sent' : 'Email Sent';
       await updateProjectActivity(base44, finalProjectId, activityType);
       
       // Update project last contact timestamps
