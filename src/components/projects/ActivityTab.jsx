@@ -613,24 +613,26 @@ function EmailThreadViewerModal({
                     <Unlink className="w-4 h-4" />
                   </Button>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleForward}
-                    disabled={!canCompose}
-                    className="gap-1"
-                  >
-                    <Forward className="w-4 h-4" />
-                    Forward
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleReply}
-                    disabled={!canCompose}
-                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-1"
-                  >
-                    <Reply className="w-4 h-4" />
-                    Reply
-                  </Button>
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleForward}
+                                    disabled={!canCompose}
+                                    className="gap-1"
+                                    title={!canCompose ? "No message available to forward" : "Forward this message"}
+                                  >
+                                    <Forward className="w-4 h-4" />
+                                    Forward
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={handleReply}
+                                    disabled={!canCompose}
+                                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-1"
+                                    title={!canCompose ? "No message available to reply to" : "Reply to this message"}
+                                  >
+                                    <Reply className="w-4 h-4" />
+                                    Reply
+                                  </Button>
                 </div>
               </div>
             </div>

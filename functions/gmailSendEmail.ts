@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     
     const result = await response.json();
     
-    // Get or create email thread
+    // C) Persist reply under the SAME EmailThread
     let emailThreadId = threadId;
     
     if (!emailThreadId) {
@@ -147,18 +147,25 @@ Deno.serve(async (req) => {
         priority: 'Normal',
         is_read: true,
         message_count: 1,
-        linked_project_id: projectId || null,
+        project_id: projectId || null,
         linked_job_id: jobId || null
       });
       emailThreadId = newThread.id;
     } else {
-      // Update existing thread - increment message count
+      // C) Update existing thread with reply activity
       const existingThread = await base44.asServiceRole.entities.EmailThread.get(emailThreadId);
-      await base44.asServiceRole.entities.EmailThread.update(emailThreadId, {
+      const updates = {
         last_message_date: new Date().toISOString(),
         last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
         message_count: (existingThread?.message_count || 0) + 1
-      });
+      };
+      
+      // D) Preserve project linkage - DO NOT overwrite if already linked
+      if (!existingThread.project_id && projectId) {
+        updates.project_id = projectId;
+      }
+      
+      await base44.asServiceRole.entities.EmailThread.update(emailThreadId, updates);
     }
     
     // Fetch the sent message to get its proper Message-ID header
@@ -176,7 +183,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Store sent message in EmailMessage entity
+    // C) Store sent message with proper threading metadata
     await base44.entities.EmailMessage.create({
       thread_id: emailThreadId,
       gmail_message_id: result.id,
@@ -189,12 +196,19 @@ Deno.serve(async (req) => {
       body_html: body,
       is_outbound: true,
       sent_at: new Date().toISOString(),
-      message_id: gmailMessageId
+      message_id: gmailMessageId,
+      // B) Preserve reply headers for proper threading
+      in_reply_to: inReplyTo || null
     });
     
     // Update project activity if email is linked to a project
-    if (projectId) {
-      await updateProjectActivity(base44, projectId);
+    // D) Use project_id from thread if not explicitly provided
+    const finalProjectId = projectId || (await base44.asServiceRole.entities.EmailThread.get(emailThreadId)).project_id;
+    
+    if (finalProjectId) {
+      // C) Update activity type based on whether this is a reply
+      const activityType = threadId ? 'Email Reply Sent' : 'Email Sent';
+      await updateProjectActivity(base44, finalProjectId, activityType);
       
       // Update project last contact timestamps
       base44.functions.invoke('updateProjectLastContactFromThread', {

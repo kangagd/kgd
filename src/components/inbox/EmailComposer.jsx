@@ -46,6 +46,11 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const [isReplyAll, setIsReplyAll] = useState(false);
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
   
+  // A) Enforce reply contract: validate required props
+  const isReplyMode = mode === "reply";
+  const hasValidThreadContext = thread?.id && message?.gmail_message_id;
+  const isReplyContextMissing = isReplyMode && !hasValidThreadContext;
+  
   // Smart recipient calculation for replies
   const getReplyRecipients = (replyAll = false) => {
     if (mode !== "reply" || !message) return { to: defaultTo || "", cc: "" };
@@ -89,11 +94,20 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const [showToDropdown, setShowToDropdown] = useState(false);
   const [cc, setCc] = useState(initialRecipients.cc);
   const [bcc, setBcc] = useState(existingDraft?.bcc_addresses?.join(', ') || existingDraft?.bcc || "");
-  const [subject, setSubject] = useState(
-    existingDraft?.subject || 
-    (mode === "reply" ? `Re: ${thread?.subject?.replace(/^Re:\s*/i, '') || ""}` : 
-    mode === "forward" ? `Fwd: ${thread?.subject || ""}` : "")
-  );
+  // B) Set proper subject without duplicating "Re:" prefix
+  const getInitialSubject = () => {
+    if (existingDraft?.subject) return existingDraft.subject;
+    if (mode === "reply") {
+      const threadSubject = thread?.subject || "";
+      // Remove any existing Re: prefix before adding it once
+      const cleanSubject = threadSubject.replace(/^Re:\s*/i, '');
+      return cleanSubject ? `Re: ${cleanSubject}` : "";
+    }
+    if (mode === "forward") return `Fwd: ${thread?.subject || ""}`;
+    return "";
+  };
+  
+  const [subject, setSubject] = useState(getInitialSubject());
 
   // Load current user for signature
   useEffect(() => {
@@ -354,22 +368,38 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       toast.error("Please fill in all required fields");
       return;
     }
+    
+    // A) Block sending if reply context is missing
+    if (isReplyContextMissing) {
+      toast.error("Cannot reply — thread context missing");
+      return;
+    }
 
     setIsSending(true);
     try {
-      await base44.functions.invoke('gmailSendEmail', {
+      // B) Build proper reply payload with email headers
+      const payload = {
         to,
         cc: cc || undefined,
         bcc: bcc || undefined,
         subject,
         body,
-        threadId: mode === "reply" ? thread?.id : undefined,
-        inReplyTo: mode === "reply" ? message?.message_id : undefined,
-        references: mode === "reply" ? message?.message_id : undefined,
         attachments: attachments.length > 0 ? attachments : undefined,
-        projectId: projectId || thread?.linked_project_id || undefined,
+        // D) Preserve project linkage
+        projectId: projectId || thread?.project_id || undefined,
         jobId: jobId || thread?.linked_job_id || undefined
-      });
+      };
+      
+      // B) Add threading headers for replies
+      if (mode === "reply" && thread?.id && message?.gmail_message_id) {
+        payload.threadId = thread.id;
+        payload.inReplyTo = message.gmail_message_id;
+        // Build references chain
+        const existingReferences = message.references || thread.references || [];
+        payload.references = [...existingReferences, message.gmail_message_id].join(' ');
+      }
+      
+      await base44.functions.invoke('gmailSendEmail', payload);
 
       toast.success("Email sent successfully");
       await deleteDraft();
@@ -617,6 +647,13 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           </div>
         )}
 
+        {/* E) UI safety guardrail: show error if reply context missing */}
+        {isReplyContextMissing && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-[13px] text-red-700">
+            <strong>Cannot reply:</strong> Thread context missing. Please ensure the original email is properly loaded.
+          </div>
+        )}
+
         <div className="flex items-center justify-between pt-2">
           <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1">
             {isSavingDraft && (
@@ -638,7 +675,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
             </Button>
             <Button
               onClick={handleSend}
-              disabled={isSending || !to || !subject || !body}
+              disabled={isSending || !to || !subject || !body || isReplyContextMissing}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2"
             >
               <Send className="w-4 h-4" />
