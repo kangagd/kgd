@@ -886,9 +886,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setCheckedItems(prev => ({ ...prev, [itemId]: checked }));
   };
 
+  // GUARDRAIL: Only count Parts, not PO lines (Parts are the source of truth)
   const allItemsChecked = () => {
     if (jobParts.length === 0) return true;
-    const totalItems = jobParts.length;
+    const totalItems = jobParts.length; // Only Parts, never include purchaseOrderLines
     const checkedCount = Object.values(checkedItems).filter(Boolean).length;
     return checkedCount === totalItems;
   };
@@ -1810,6 +1811,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {isLogisticsJob ? (
                 <>
                   {/* Order Items Checklist for Logistics Jobs */}
+                  {/* CRITICAL GUARDRAIL: Only show Parts, NOT PurchaseOrderLines */}
+                  {/* Parts are the canonical source - PO lines are already converted to Parts */}
+                  {/* Showing both causes duplicates. DO NOT ADD purchaseOrderLines back here. */}
                   {jobParts.length > 0 && (
                     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                       <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
