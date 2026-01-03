@@ -477,15 +477,33 @@ export default function ActivityTab({ project, onComposeEmail }) {
                 </Button>
                 
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 pr-8">
-                    <Mail className="w-5 h-5" />
-                    {thread?.subject || selectedActivity?.subject || 'Email Thread'}
-                  </DialogTitle>
-                  <DialogDescription>
-                    <div className="text-[13px] text-[#6B7280]">
-                      {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''} in this thread
+                  <div className="flex items-center justify-between pr-8">
+                    <div className="flex-1">
+                      <DialogTitle className="flex items-center gap-2">
+                        <Mail className="w-5 h-5" />
+                        {thread?.subject || selectedActivity?.subject || 'Email Thread'}
+                      </DialogTitle>
+                      <DialogDescription>
+                        <div className="text-[13px] text-[#6B7280]">
+                          {threadMessages.length} message{threadMessages.length !== 1 ? 's' : ''} in this thread
+                        </div>
+                      </DialogDescription>
                     </div>
-                  </DialogDescription>
+                    <Button
+                      onClick={() => {
+                        setSelectedActivity(null);
+                        onComposeEmail?.({
+                          mode: 'reply',
+                          thread: thread,
+                          message: threadMessages[threadMessages.length - 1]
+                        });
+                      }}
+                      size="sm"
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                    >
+                      Reply
+                    </Button>
+                  </div>
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto py-4 space-y-6">
