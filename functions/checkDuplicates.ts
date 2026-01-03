@@ -178,22 +178,25 @@ async function checkOrganisationDuplicates(base44, record, excludeId) {
     let matchScore = 0;
     const matchReasons = [];
     
-    // Rule 1: Same normalized name
-    if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName) {
+    // Rule 1: Same normalized name AND same email
+    if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName &&
+        normalizedEmail && otherNormalizedEmail && normalizedEmail === otherNormalizedEmail) {
       matchScore++;
-      matchReasons.push('name');
+      matchReasons.push('name+email');
     }
     
-    // Rule 2: Same normalized email
-    if (normalizedEmail && otherNormalizedEmail && normalizedEmail === otherNormalizedEmail) {
+    // Rule 2: Same normalized name AND same phone
+    if (normalizedName && otherNormalizedName && normalizedName === otherNormalizedName &&
+        normalizedPhone && otherNormalizedPhone && normalizedPhone === otherNormalizedPhone) {
       matchScore++;
-      matchReasons.push('email');
+      matchReasons.push('name+phone');
     }
     
-    // Rule 3: Same normalized phone
-    if (normalizedPhone && otherNormalizedPhone && normalizedPhone === otherNormalizedPhone) {
+    // Rule 3: Same email AND same phone (both exist)
+    if (normalizedEmail && otherNormalizedEmail && normalizedEmail === otherNormalizedEmail &&
+        normalizedPhone && otherNormalizedPhone && normalizedPhone === otherNormalizedPhone) {
       matchScore++;
-      matchReasons.push('phone');
+      matchReasons.push('email+phone');
     }
     
     if (matchScore > 0) {
