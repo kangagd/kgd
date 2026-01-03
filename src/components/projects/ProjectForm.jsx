@@ -416,7 +416,6 @@ export default function ProjectForm({ project, onSubmit, onCancel, isSubmitting 
                             <CommandItem
                               key={customer.id}
                               value={customer.id}
-                              keywords={[customer.name, customer.email, customer.phone]}
                               onSelect={(value) => {
                                 handleCustomerChange(value);
                                 setCustomerSearchOpen(false);
