@@ -10,9 +10,11 @@ Deno.serve(async (req) => {
     }
 
     // Fetch ALL customers (list() returns all records)
-    const allCustomers = await base44.asServiceRole.entities.Customer.list();
+    const allCustomersData = await base44.asServiceRole.entities.Customer.list();
+    const allCustomers = Array.isArray(allCustomersData) ? allCustomersData : (allCustomersData?.data || []);
     
     console.log(`Total customers fetched: ${allCustomers.length}`);
+    console.log(`Type of allCustomers: ${typeof allCustomers}, isArray: ${Array.isArray(allCustomers)}`);
 
     // Filter for customers with name "unknown" (case-insensitive)
     const unknownCustomers = allCustomers.filter(c => 
