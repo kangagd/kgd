@@ -136,8 +136,6 @@ Deno.serve(async (req) => {
         });
 
         if (existingThreads.length > 0) {
-          if (existingThreads[0].is_deleted) continue;
-          
           threadId = existingThreads[0].id;
           const messageDate = new Date(date).toISOString();
           const updateData = {

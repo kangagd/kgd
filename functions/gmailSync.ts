@@ -263,10 +263,6 @@ Deno.serve(async (req) => {
         let threadId;
 
         if (existingThreads.length > 0) {
-          // Skip if thread was deleted by user
-          if (existingThreads[0].is_deleted) {
-            return false;
-          }
           threadId = existingThreads[0].id;
           // Update last message date and message count
           const messageDate = new Date(date).toISOString();
