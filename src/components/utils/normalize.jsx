@@ -7,7 +7,26 @@ export function normalizeString(str) {
 
 export function normalizePhone(phone) {
   if (!phone) return '';
-  return phone.replace(/[\s\+\(\)\-\.]/g, '');
+  
+  // Remove all formatting characters
+  const digitsOnly = phone.replace(/[\s\+\(\)\-\.]/g, '');
+  
+  // If it starts with 4 and has 9 digits (Australian mobile without country code)
+  if (/^4\d{8}$/.test(digitsOnly)) {
+    return '+61' + digitsOnly;
+  }
+  
+  // If it already starts with 61 (country code without +)
+  if (/^61\d{9}$/.test(digitsOnly)) {
+    return '+' + digitsOnly;
+  }
+  
+  // If it starts with + followed by digits, keep as is
+  if (phone.trim().startsWith('+')) {
+    return phone.replace(/[\s\(\)\-\.]/g, '');
+  }
+  
+  return digitsOnly;
 }
 
 export function normalizeAddress(record) {
