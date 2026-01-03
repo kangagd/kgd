@@ -68,8 +68,12 @@ Deno.serve(async (req) => {
         }
 
         threadsProcessed++;
+        
+        // Add delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         console.error(`Error processing thread ${thread.id}:`, error);
+        // Continue processing other threads
       }
     }
 
