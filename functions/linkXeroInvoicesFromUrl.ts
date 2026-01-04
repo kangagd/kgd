@@ -51,6 +51,9 @@ Deno.serve(async (req) => {
     const failed = [];
 
     for (const project of projectsNeedingInvoices) {
+      console.log(`\n--- Processing project ${project.project_number} ---`);
+      console.log(`Payment URL: ${project.xero_payment_url}`);
+
       try {
         // Extract invoice ID from URL (format: https://in.xero.com/{shortCode})
         const urlMatch = project.xero_payment_url.match(/xero\.com\/([A-Za-z0-9]+)/);
