@@ -23,8 +23,28 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
     setIsEditingNotes(false);
   };
 
-  const completionDate = project.completed_date 
-    ? new Date(project.completed_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+  const parseCompletedDate = (dateStr) => {
+    if (!dateStr) return null;
+    
+    // Handle DD/MM/YYYY format (e.g., "29/4/2025")
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+        const year = parseInt(parts[2], 10);
+        return new Date(year, month, day);
+      }
+    }
+    
+    // Try standard date parsing
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
+  const completedDateObj = parseCompletedDate(project.completed_date);
+  const completionDate = completedDateObj
+    ? completedDateObj.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
     : project.status === "Completed" && project.updated_date
     ? new Date(project.updated_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
     : "N/A";

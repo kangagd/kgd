@@ -21,10 +21,23 @@ Deno.serve(async (req) => {
     let skippedCount = 0;
 
     for (const project of warrantyProjects) {
-      const completedDate = new Date(project.completed_date);
+      let completedDate;
+      
+      // Handle DD/MM/YYYY format (e.g., "29/4/2025")
+      if (project.completed_date.includes('/')) {
+        const parts = project.completed_date.split('/');
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+          const year = parseInt(parts[2], 10);
+          completedDate = new Date(year, month, day);
+        }
+      } else {
+        completedDate = new Date(project.completed_date);
+      }
       
       // Skip if invalid date
-      if (isNaN(completedDate.getTime())) {
+      if (!completedDate || isNaN(completedDate.getTime())) {
         console.log(`Skipping project ${project.id}: invalid completed_date`);
         skippedCount++;
         continue;
@@ -38,7 +51,7 @@ Deno.serve(async (req) => {
       const isActive = warrantyEndDate > today;
 
       const updates = {
-        warranty_start_date: project.completed_date,
+        warranty_start_date: completedDate.toISOString().split('T')[0],
         warranty_end_date: warrantyEndDate.toISOString().split('T')[0],
         warranty_status: isActive ? 'Active' : 'Expired'
       };
