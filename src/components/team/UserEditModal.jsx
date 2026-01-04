@@ -58,7 +58,7 @@ export default function UserEditModal({ user, open, onClose, onSave, isSaving })
     onSave(user.id, {
       full_name: formData.full_name,
       display_name: formData.display_name,
-      role: formData.role,
+      extended_role: formData.role,
       is_field_technician: formData.is_field_technician,
       phone: formData.phone,
       status: formData.status,
