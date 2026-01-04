@@ -49,7 +49,11 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
   // --- Queries ---
   const { data: leaves = [], isLoading: leavesLoading } = useQuery({
     queryKey: ['technicianLeaves'],
-    queryFn: () => base44.entities.TechnicianLeave.list('-start_time'),
+    queryFn: async () => {
+      const data = await base44.entities.TechnicianLeave.list('-start_time');
+      console.log('Fetched leave records:', data);
+      return data;
+    },
     enabled: open,
     refetchOnMount: true,
     staleTime: 0
@@ -261,7 +265,9 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
               <div className="divide-y max-h-[300px] overflow-y-auto">
                 {leavesLoading ? (
                   <div className="p-4 text-center text-gray-500">Loading...</div>
-                ) : leaves.filter(leave => {
+                ) : (() => {
+                  console.log('All leaves:', leaves);
+                  const filtered = leaves.filter(leave => {
                   try {
                     const endDate = new Date(leave.end_time);
                     const today = new Date();
@@ -270,19 +276,12 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                   } catch {
                     return false;
                   }
-                }).length === 0 ? (
-                  <div className="p-4 text-center text-gray-500">No leave records found.</div>
-                ) : (
-                  leaves.filter(leave => {
-                    try {
-                      const endDate = new Date(leave.end_time);
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      return endDate >= today;
-                    } catch {
-                      return false;
-                    }
-                  }).map(leave => (
+                  });
+                  console.log('Filtered upcoming leaves:', filtered);
+                  return filtered.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">No leave records found.</div>
+                  ) : (
+                    filtered.map(leave => {
                     <div key={leave.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
                       <div>
                         <div className="font-medium text-sm">{leave.technician_name || leave.technician_email}</div>
