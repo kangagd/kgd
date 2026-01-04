@@ -182,14 +182,18 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
           {composerMode && (
             <div className="mt-6 text-left">
               <EmailComposer
-                mode={composerMode}
-                thread={null}
-                message={null}
-                onClose={() => setComposerMode(null)}
+                mode={composerMode.type || composerMode}
+                thread={composerMode.thread || null}
+                message={selectedMessage}
+                onClose={() => {
+                  setComposerMode(null);
+                  setSelectedMessage(null);
+                }}
                 onSent={handleEmailSent}
                 onDraftSaved={handleDraftSaved}
                 defaultTo={project.customer_email}
                 projectId={project.id}
+                existingDraft={editingDraft}
               />
             </div>
           )}
