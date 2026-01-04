@@ -604,6 +604,17 @@ export default function Schedule() {
     // 3. Add unassigned last
     addGroup(UNASSIGNED_KEY, techDisplayNames[UNASSIGNED_KEY]);
 
+    // Get leaves for this day
+    const dayLeaves = leaves.filter(leave => {
+      try {
+        const leaveStart = new Date(leave.start_time);
+        const leaveEnd = new Date(leave.end_time);
+        return selectedDate >= leaveStart && selectedDate <= leaveEnd;
+      } catch {
+        return false;
+      }
+    });
+
     return (
       <Droppable droppableId={`day-${dateStr}`}>
         {(provided, snapshot) => (
@@ -614,13 +625,37 @@ export default function Schedule() {
               snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' : ''
             }`}
           >
-            {groupsToRender.map(({ techName, items }) => (
-              <div key={techName}>
-                <h3 className="text-sm font-semibold text-[#4B5563] mb-3">
-                  {techName}
-                </h3>
-                <div className="space-y-3">
-                  {items.map(({ job, index }) => (
+            {groupsToRender.map(({ techName, items }) => {
+              // Find leaves for this technician
+              const techLeaves = dayLeaves.filter(leave => {
+                const techEmail = technicians.find(t => (t.display_name || t.full_name) === techName)?.email;
+                return techEmail && leave.technician_email.toLowerCase() === techEmail.toLowerCase();
+              });
+
+              return (
+                <div key={techName}>
+                  <h3 className="text-sm font-semibold text-[#4B5563] mb-3">
+                    {techName}
+                  </h3>
+                  {techLeaves.length > 0 && (
+                    <div className="mb-3 space-y-2">
+                      {techLeaves.map(leave => (
+                        <div key={leave.id} className="bg-gray-200 border-l-4 border-gray-500 p-3 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium text-gray-700">🚫 Unavailable</span>
+                            <span className="text-xs text-gray-600 capitalize px-2 py-0.5 bg-gray-300 rounded">
+                              {leave.leave_type}
+                            </span>
+                          </div>
+                          {leave.reason && (
+                            <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    {items.map(({ job, index }) => (
                     <Draggable key={job.id} draggableId={job.id} index={index}>
                       {(dragProvided, dragSnapshot) => (
                         <div
@@ -640,10 +675,11 @@ export default function Schedule() {
                         </div>
                       )}
                     </Draggable>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {provided.placeholder}
           </div>
         )}
@@ -664,6 +700,17 @@ export default function Schedule() {
           const dateStr = format(day, 'yyyy-MM-dd');
           const isToday = isSameDay(day, new Date());
 
+          // Get leaves for this day
+          const dayLeaves = leaves.filter(leave => {
+            try {
+              const leaveStart = new Date(leave.start_time);
+              const leaveEnd = new Date(leave.end_time);
+              return day >= leaveStart && day <= leaveEnd;
+            } catch {
+              return false;
+            }
+          });
+
           return (
             <Droppable key={day.toISOString()} droppableId={`day-${dateStr}`}>
               {(provided, snapshot) => (
@@ -682,13 +729,27 @@ export default function Schedule() {
                     {format(day, 'EEEE, MMM d')}
                     {isToday && <span className="ml-2 text-xs font-normal text-blue-500">(Today)</span>}
                   </h3>
+                  {dayLeaves.length > 0 && (
+                    <div className="mb-3 space-y-2">
+                      {dayLeaves.map(leave => (
+                        <div key={leave.id} className="bg-gray-200 border-l-4 border-gray-500 p-2 rounded-lg">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-medium text-gray-700">🚫 {leave.technician_name}</span>
+                            <span className="text-xs text-gray-600 capitalize px-1.5 py-0.5 bg-gray-300 rounded">
+                              {leave.leave_type}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {dayJobs.length === 0 ? (
                     <p className="text-sm text-[#9CA3AF] py-4 text-center">
                       {snapshot.isDraggingOver ? 'Drop here to schedule' : 'No jobs'}
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {items.map(({ job, index }) => {
+                      {dayJobs.map((job, index) => {
                         const dragId = job._isExpandedVisit ? `${job.id}-visit-${job._visitIndex}` : job.id;
                         return (
                           <Draggable key={dragId} draggableId={dragId} index={index}>
@@ -778,34 +839,49 @@ export default function Schedule() {
               <Droppable key={dateStr} droppableId={`day-${dateStr}`}>
                 {(provided, snapshot) => (
                   <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`min-h-[120px] border-b border-r border-[#E5E7EB] p-1.5 transition-colors ${
-                      snapshot.isDraggingOver 
-                        ? 'bg-[#FAE008]/20' 
-                        : isToday 
-                          ? 'bg-blue-50' 
-                          : !isCurrentMonth 
-                            ? 'bg-[#F9FAFB]' 
-                            : 'bg-white'
-                    } ${index % 7 === 6 ? 'border-r-0' : ''}`}
+                   ref={provided.innerRef}
+                   {...provided.droppableProps}
+                   className={`min-h-[120px] border-b border-r border-[#E5E7EB] p-1.5 transition-colors ${
+                     snapshot.isDraggingOver 
+                       ? 'bg-[#FAE008]/20' 
+                       : isToday 
+                         ? 'bg-blue-50' 
+                         : !isCurrentMonth 
+                           ? 'bg-[#F9FAFB]' 
+                           : 'bg-white'
+                   } ${index % 7 === 6 ? 'border-r-0' : ''}`}
                   >
-                    {/* Date number */}
-                    <div className={`text-right mb-1 ${
-                      isToday 
-                        ? 'text-blue-600 font-bold' 
-                        : !isCurrentMonth 
-                          ? 'text-[#9CA3AF]' 
-                          : 'text-[#111827]'
-                    }`}>
-                      <span className={`text-sm ${isToday ? 'bg-blue-600 text-white rounded-full px-1.5 py-0.5' : ''}`}>
-                        {format(day, 'd')}
-                      </span>
-                    </div>
+                   {/* Date number */}
+                   <div className={`text-right mb-1 ${
+                     isToday 
+                       ? 'text-blue-600 font-bold' 
+                       : !isCurrentMonth 
+                         ? 'text-[#9CA3AF]' 
+                         : 'text-[#111827]'
+                   }`}>
+                     <span className={`text-sm ${isToday ? 'bg-blue-600 text-white rounded-full px-1.5 py-0.5' : ''}`}>
+                       {format(day, 'd')}
+                     </span>
+                   </div>
 
-                    {/* Jobs */}
-                    <div className="space-y-1 overflow-y-auto max-h-[90px]">
-                      {dayJobs.map((job, jobIndex) => {
+                   {/* Leave indicators */}
+                   {leaves.filter(leave => {
+                     try {
+                       const leaveStart = new Date(leave.start_time);
+                       const leaveEnd = new Date(leave.end_time);
+                       return day >= leaveStart && day <= leaveEnd;
+                     } catch {
+                       return false;
+                     }
+                   }).map(leave => (
+                     <div key={leave.id} className="text-xs p-1 mb-1 rounded bg-gray-200 border-l-2 border-gray-500 truncate">
+                       🚫 {leave.technician_name?.split(' ')[0]}
+                     </div>
+                   ))}
+
+                   {/* Jobs */}
+                   <div className="space-y-1 overflow-y-auto max-h-[90px]">
+                     {dayJobs.map((job, jobIndex) => {
                         const dragId = job._isExpandedVisit ? `${job.id}-visit-${job._visitIndex}` : job.id;
                         return (
                           <Draggable key={dragId} draggableId={dragId} index={jobIndex}>
