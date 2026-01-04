@@ -444,7 +444,8 @@ export default function Projects() {
           {showFilters && (
             <Card className="border border-[#E5E7EB]">
               <CardContent className="p-4">
-                <div className="flex flex-wrap gap-3">
+                <div className="max-w-full overflow-x-auto pb-2">
+                  <div className="flex gap-3 min-w-max">
                   <Select value={stageFilter} onValueChange={setStageFilter}>
                     <SelectTrigger className="w-full md:w-[200px] h-10">
                       <SelectValue placeholder="All Stages" />
@@ -518,6 +519,7 @@ export default function Projects() {
                       Clear Filters
                     </Button>
                   )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
