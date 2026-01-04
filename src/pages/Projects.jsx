@@ -5,7 +5,8 @@ import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, SlidersHorizontal, User, Filter, Eye, AlertTriangle, UserX } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, User, Filter, Eye, AlertTriangle, UserX, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { 
   ProjectStatusBadge, 
@@ -53,6 +54,9 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [modalProject, setModalProject] = useState(null);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiFilteredProjects, setAiFilteredProjects] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -266,41 +270,109 @@ export default function Projects() {
     navigate(`${createPageUrl("Projects")}?projectId=${project.id}`);
   }, [navigate]);
 
-  const filteredProjects = useMemo(() => projects
-    .filter((project) => {
-      const matchesSearch = 
-        project.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        project.customer_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-      
-      const matchesStage = stageFilter === "all" || project.status === stageFilter;
-      
-      const projectParts = allParts.filter(p => sameId(p.project_id, project.id));
-      const matchesPartsStatus = partsStatusFilter === "all" || 
-        projectParts.some(p => p.status === partsStatusFilter);
-      
-      let matchesDateRange = true;
-      if (startDate || endDate) {
-        const createdAt = project.created_at || project.created_date || project.createdDate;
-        const projectDate = new Date(createdAt);
-        if (startDate && new Date(startDate) > projectDate) matchesDateRange = false;
-        if (endDate && new Date(endDate) < projectDate) matchesDateRange = false;
-      }
+  const handleAiSearch = async () => {
+    if (!aiQuery.trim()) {
+      setAiFilteredProjects(null);
+      return;
+    }
 
-      const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
-      
-      return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange && matchesDuplicateFilter;
-    })
-    .sort((a, b) => {
-      if (sortBy === "created_date") {
-        const dateA = a.created_at || a.created_date || a.createdDate;
-        const dateB = b.created_at || b.created_date || b.createdDate;
-        return new Date(dateB) - new Date(dateA);
-      } else if (sortBy === "stage") {
-        const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
-        return stages.indexOf(a.status) - stages.indexOf(b.status);
+    setIsAiSearching(true);
+    try {
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `You are a project filtering assistant. The user wants to filter their projects based on this query: "${aiQuery}"
+
+Here is information about the projects data structure:
+- Projects have fields like: status, financial_status, customer_name, project_type, warranty_enabled, warranty_status, etc.
+- Each project can have linked jobs, parts, email threads, and attention items
+- Available project statuses: Lead, Initial Site Visit, Create Quote, Quote Sent, Quote Approved, Final Measure, Parts Ordered, Scheduled, Completed, Warranty, Lost
+- Available financial statuses: Awaiting Payment, Initial Payment Made, Second Payment Made, Balance Paid in Full, Written Off, Cancelled
+- Projects can have email threads linked (last_customer_message_at, last_internal_message_at)
+- Projects can have attention items with priorities
+
+Based on the user's query, return an array of project IDs that match their criteria. Analyze the following projects and return only the IDs that match:
+
+${JSON.stringify(projects.map(p => ({
+  id: p.id,
+  title: p.title,
+  customer_name: p.customer_name,
+  status: p.status,
+  financial_status: p.financial_status,
+  project_type: p.project_type,
+  warranty_enabled: p.warranty_enabled,
+  warranty_status: p.warranty_status,
+  last_customer_message_at: p.last_customer_message_at,
+  last_internal_message_at: p.last_internal_message_at,
+  created_date: p.created_date,
+  total_project_value: p.total_project_value,
+  payments: p.payments
+})), null, 2)}
+
+Return ONLY an array of project IDs that match the criteria, nothing else.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            matching_project_ids: {
+              type: "array",
+              items: { type: "string" }
+            },
+            explanation: {
+              type: "string"
+            }
+          }
+        }
+      });
+
+      const matchingIds = response.matching_project_ids || [];
+      const filtered = projects.filter(p => matchingIds.includes(p.id));
+      setAiFilteredProjects(filtered);
+    } catch (error) {
+      console.error('AI search error:', error);
+      toast.error('AI search failed');
+    } finally {
+      setIsAiSearching(false);
+    }
+  };
+
+  const filteredProjects = useMemo(() => {
+    // If AI filter is active, use that instead
+    const baseProjects = aiFilteredProjects !== null ? aiFilteredProjects : projects;
+    
+    return baseProjects
+      .filter((project) => {
+        const matchesSearch = 
+          project.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          project.customer_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+        
+        const matchesStage = stageFilter === "all" || project.status === stageFilter;
+        
+        const projectParts = allParts.filter(p => sameId(p.project_id, project.id));
+        const matchesPartsStatus = partsStatusFilter === "all" || 
+          projectParts.some(p => p.status === partsStatusFilter);
+        
+        let matchesDateRange = true;
+        if (startDate || endDate) {
+          const createdAt = project.created_at || project.created_date || project.createdDate;
+          const projectDate = new Date(createdAt);
+          if (startDate && new Date(startDate) > projectDate) matchesDateRange = false;
+          if (endDate && new Date(endDate) < projectDate) matchesDateRange = false;
+        }
+
+        const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
+        
+        return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange && matchesDuplicateFilter;
+      })
+      .sort((a, b) => {
+        if (sortBy === "created_date") {
+          const dateA = a.created_at || a.created_date || a.createdDate;
+          const dateB = b.created_at || b.created_date || b.createdDate;
+          return new Date(dateB) - new Date(dateA);
+        } else if (sortBy === "stage") {
+          const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
+          return stages.indexOf(a.status) - stages.indexOf(b.status);
         }
         return 0;
-        }), [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
+      });
+  }, [aiFilteredProjects, projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
         const getJobCount = useCallback((projectId) => {
           return allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at).length;
@@ -397,6 +469,58 @@ export default function Projects() {
         </div>
 
         <div className="flex flex-col gap-3 mb-6">
+          {/* AI Search Bar */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#FAE008]" />
+              <Input
+                placeholder="Ask AI to filter projects (e.g., 'show projects with outstanding payments')"
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAiSearch();
+                  }
+                }}
+                className="pl-9 pr-3 border-2 border-[#FAE008] focus:border-[#111827] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-11 text-sm rounded-lg w-full font-medium"
+              />
+            </div>
+            <Button
+              onClick={handleAiSearch}
+              disabled={isAiSearching || !aiQuery.trim()}
+              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold h-11 px-6"
+            >
+              {isAiSearching ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-[#111827] border-t-transparent rounded-full animate-spin mr-2" />
+                  Searching...
+                </>
+              ) : (
+                'Search'
+              )}
+            </Button>
+            {aiFilteredProjects !== null && (
+              <Button
+                onClick={() => {
+                  setAiFilteredProjects(null);
+                  setAiQuery("");
+                }}
+                variant="outline"
+                className="h-11 px-4"
+              >
+                Clear AI Filter
+              </Button>
+            )}
+          </div>
+
+          {aiFilteredProjects !== null && (
+            <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
+              <p className="text-[13px] text-[#111827]">
+                <span className="font-semibold">AI Filter Active:</span> Showing {aiFilteredProjects.length} project{aiFilteredProjects.length !== 1 ? 's' : ''} matching "{aiQuery}"
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
