@@ -104,13 +104,17 @@ Deno.serve(async (req) => {
 
         // Search for invoice by project number (most reliable method)
         console.log(`Searching for invoice with number: ${project.project_number}`);
+        console.log(`Tenant ID: ${xeroConnection.tenant_id}`);
+        console.log(`Token (first 30): ${xeroConnection.access_token.substring(0, 30)}`);
+        
         const searchResponse = await fetch(
           `https://api.xero.com/api.xro/2.0/Invoices?where=InvoiceNumber=="${project.project_number}"`,
           {
             headers: {
               'Authorization': `Bearer ${xeroConnection.access_token}`,
-              'xero-tenant-id': xeroConnection.tenant_id,
-              'Accept': 'application/json'
+              'Xero-tenant-id': xeroConnection.tenant_id,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
             }
           }
         );
