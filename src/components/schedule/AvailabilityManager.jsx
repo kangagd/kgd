@@ -161,6 +161,20 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
     });
   };
 
+  // Filter upcoming leaves
+  const upcomingLeaves = leaves.filter(leave => {
+    try {
+      const endDate = new Date(leave.end_time);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return endDate >= today;
+    } catch {
+      return false;
+    }
+  });
+
+  console.log('Upcoming leaves:', upcomingLeaves);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -265,46 +279,33 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
               <div className="divide-y max-h-[300px] overflow-y-auto">
                 {leavesLoading ? (
                   <div className="p-4 text-center text-gray-500">Loading...</div>
-                ) : (() => {
-                  console.log('All leaves:', leaves);
-                  const filtered = leaves.filter(leave => {
-                  try {
-                    const endDate = new Date(leave.end_time);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    return endDate >= today;
-                  } catch {
-                    return false;
-                  }
-                  });
-                  console.log('Filtered upcoming leaves:', filtered);
-                  return filtered.length === 0 ? (
-                   <div className="p-4 text-center text-gray-500">No leave records found.</div>
-                  ) : (
-                   filtered.map(leave => (
-                     <div key={leave.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
-                       <div>
-                         <div className="font-medium text-sm">{leave.technician_name || leave.technician_email}</div>
-                         <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
-                           <span className="capitalize px-1.5 py-0.5 bg-gray-100 rounded">{leave.leave_type}</span>
-                           <span>
-                             {format(new Date(leave.start_time), "MMM d, yyyy h:mm a")} - {format(new Date(leave.end_time), "MMM d, yyyy h:mm a")}
-                           </span>
-                         </div>
-                         {leave.reason && <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>}
-                       </div>
-                       <Button 
-                         variant="ghost" 
-                         size="icon" 
-                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                         onClick={() => {
-                           if (confirm('Delete this leave record?')) deleteLeaveMutation.mutate(leave.id);
-                         }}
-                       >
-                         <Trash2 className="w-4 h-4" />
-                       </Button>
-                     </div>
-                   ))
+                ) : upcomingLeaves.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">No leave records found.</div>
+                ) : (
+                  upcomingLeaves.map(leave => (
+                    <div key={leave.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                      <div>
+                        <div className="font-medium text-sm">{leave.technician_name || leave.technician_email}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
+                          <span className="capitalize px-1.5 py-0.5 bg-gray-100 rounded">{leave.leave_type}</span>
+                          <span>
+                            {format(new Date(leave.start_time), "MMM d, yyyy h:mm a")} - {format(new Date(leave.end_time), "MMM d, yyyy h:mm a")}
+                          </span>
+                        </div>
+                        {leave.reason && <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>}
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          if (confirm('Delete this leave record?')) deleteLeaveMutation.mutate(leave.id);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
