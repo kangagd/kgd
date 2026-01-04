@@ -274,8 +274,18 @@ Deno.serve(async (req) => {
             updateData.last_message_date = messageDate;
           }
           
-          // FIX: Inherit project/job links for replies - don't overwrite existing links
-          // This ensures replies to linked threads show the project/job link
+          // Auto-link: If thread is already linked to project/customer, inherit those links
+          // This ensures new messages on existing threads automatically get the project linkage
+          if (existingThreads[0].project_id && !updateData.project_id) {
+            updateData.project_id = existingThreads[0].project_id;
+            updateData.project_number = existingThreads[0].project_number;
+            updateData.project_title = existingThreads[0].project_title;
+          }
+          if (existingThreads[0].customer_id && !updateData.customer_id) {
+            updateData.customer_id = existingThreads[0].customer_id;
+            updateData.customer_name = existingThreads[0].customer_name;
+          }
+          
           await base44.asServiceRole.entities.EmailThread.update(threadId, updateData);
         } else {
           // Create new thread with Gmail thread ID
