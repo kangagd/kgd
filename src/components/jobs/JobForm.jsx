@@ -104,6 +104,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
 
+  const { data: allSuppliers = [] } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: () => base44.entities.Supplier.list(),
+    enabled: isLogisticsJob
+  });
+
+  const suppliers = allSuppliers.filter(s => s.is_active !== false);
+
   // Filter job types based on logistics toggle (only when creating new job)
   const jobTypes = !job ? allJobTypes.filter(jt => 
     isLogisticsJob ? (jt.is_logistics === true) : (jt.is_logistics !== true)
@@ -328,6 +336,36 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     e.preventDefault();
     await handleAutoSave();
 
+  };
+
+  const handleSupplierChange = (supplierId) => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    if (supplier) {
+      // Find or create customer from supplier
+      let supplierCustomer = customers.find(c => 
+        c.name?.toLowerCase() === supplier.name?.toLowerCase()
+      );
+      
+      setFormData({
+        ...formData,
+        supplier_id: supplierId,
+        customer_id: supplierCustomer?.id || "",
+        customer_name: supplier.name,
+        customer_phone: supplier.phone || "",
+        customer_email: supplier.email || "",
+        customer_type: "Supplier",
+        address: supplier.address_full || supplier.address || formData.address,
+        address_full: supplier.address_full || supplier.address || formData.address_full,
+        address_street: supplier.address_street || formData.address_street,
+        address_suburb: supplier.address_suburb || formData.address_suburb,
+        address_state: supplier.address_state || formData.address_state,
+        address_postcode: supplier.address_postcode || formData.address_postcode,
+        address_country: supplier.address_country || formData.address_country || "Australia",
+        google_place_id: supplier.google_place_id || formData.google_place_id,
+        latitude: supplier.latitude || formData.latitude,
+        longitude: supplier.longitude || formData.longitude,
+      });
+    }
   };
 
   const handleCustomerChange = (customerId) => {
@@ -735,41 +773,68 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
-              <div className="flex gap-2">
+            {/* Supplier field for logistics jobs, Customer for normal jobs */}
+            {isLogisticsJob ? (
+              <div className="space-y-2">
+                <Label htmlFor="supplier_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Supplier *</Label>
                 <Select 
-                  value={formData.customer_id} 
-                  onValueChange={handleCustomerChange} 
+                  value={formData.supplier_id || formData.customer_id} 
+                  onValueChange={handleSupplierChange} 
                   required
                   disabled={!!formData.project_id}
                 >
                   <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                    <SelectValue placeholder="Select customer" />
+                    <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {!formData.project_id && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowNewCustomerDialog(true)}
-                    className="border-2 hover:bg-slate-100"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
+                {formData.project_id && (
+                  <p className="text-[12px] text-slate-500 leading-[1.35]">Supplier from project</p>
                 )}
               </div>
-              {formData.project_id && (
-                <p className="text-[12px] text-slate-500 leading-[1.35]">Customer from project</p>
-              )}
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
+                <div className="flex gap-2">
+                  <Select 
+                    value={formData.customer_id} 
+                    onValueChange={handleCustomerChange} 
+                    required
+                    disabled={!!formData.project_id}
+                  >
+                    <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                      <SelectValue placeholder="Select customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!formData.project_id && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowNewCustomerDialog(true)}
+                      className="border-2 hover:bg-slate-100"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                {formData.project_id && (
+                  <p className="text-[12px] text-slate-500 leading-[1.35]">Customer from project</p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="address" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Service Address *</Label>
