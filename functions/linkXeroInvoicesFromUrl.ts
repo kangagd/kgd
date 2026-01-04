@@ -9,7 +9,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Get Xero connection details
+    // Get Xero connection details - refresh token first
+    const refreshResult = await base44.asServiceRole.functions.invoke('refreshXeroToken', {});
+    if (!refreshResult.data.success) {
+      return Response.json({ error: 'Failed to refresh Xero token' }, { status: 400 });
+    }
+
     const connections = await base44.asServiceRole.entities.XeroConnection.list();
     const xeroConnection = connections[0];
     
