@@ -24,6 +24,12 @@ export default function XeroSettingsModal({ open, onClose }) {
     enabled: open
   });
 
+  const { data: xeroConnections = [] } = useQuery({
+    queryKey: ['xeroConnection'],
+    queryFn: () => base44.entities.XeroConnection.list(),
+    enabled: open
+  });
+
   const [formData, setFormData] = useState({
     default_account_code: "",
     default_tax_type: "",
