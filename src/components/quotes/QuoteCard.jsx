@@ -38,7 +38,7 @@ const statusConfig = {
   Expired: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock }
 };
 
-export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, isCompact = false, onRefreshLink }) {
+export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, isTechnician = false, isCompact = false, onRefreshLink }) {
   const [isSending, setIsSending] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingLink, setIsLoadingLink] = useState(false);
@@ -170,7 +170,10 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
   // Compact view for technicians
   if (isCompact) {
     return (
-      <div className="p-3 bg-white border border-[#E5E7EB] rounded-lg">
+      <div 
+        className="p-3 bg-white border border-[#E5E7EB] rounded-lg cursor-pointer hover:border-[#FAE008] hover:shadow-sm transition-all"
+        onClick={() => onSelect?.(quote)}
+      >
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -178,13 +181,20 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
                 {quote.name}
               </h4>
               <Badge className={`${config.color} border text-[11px]`}>
+                <StatusIcon className="w-3 h-3 mr-1" />
                 {quote.status}
               </Badge>
             </div>
             <p className="text-[13px] font-semibold text-[#111827]">
               ${quote.value?.toFixed(2) || '0.00'} {quote.currency || 'AUD'}
             </p>
+            <p className="text-[11px] text-[#9CA3AF] mt-1">
+              Click to view details
+            </p>
           </div>
+          {quote.pandadoc_document_id && (
+            <ExternalLink className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" />
+          )}
         </div>
       </div>
     );
