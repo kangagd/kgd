@@ -48,13 +48,17 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
   const { data: leaves = [], isLoading: leavesLoading } = useQuery({
     queryKey: ['technicianLeaves'],
     queryFn: () => base44.entities.TechnicianLeave.list('-start_time'),
-    enabled: open
+    enabled: open,
+    refetchOnMount: true,
+    staleTime: 0
   });
 
   const { data: closedDays = [], isLoading: closedDaysLoading } = useQuery({
     queryKey: ['businessClosedDays'],
     queryFn: () => base44.entities.BusinessClosedDay.list('-start_time'),
-    enabled: open
+    enabled: open,
+    refetchOnMount: true,
+    staleTime: 0
   });
 
   // --- Mutations ---
