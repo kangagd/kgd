@@ -170,17 +170,28 @@ export default function XeroSettingsModal({ open, onClose }) {
           </div>
         </form>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saveMutation.isPending}>
-            Cancel
-          </Button>
+        <DialogFooter className="flex justify-between items-center">
           <Button 
-            onClick={handleSubmit} 
-            disabled={saveMutation.isPending}
-            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+            variant="destructive" 
+            onClick={handleDisconnect}
+            disabled={disconnectMutation.isPending || saveMutation.isPending}
+            className="gap-2"
           >
-            {saveMutation.isPending ? 'Saving...' : 'Save Settings'}
+            <Unplug className="w-4 h-4" />
+            {disconnectMutation.isPending ? 'Disconnecting...' : 'Disconnect Xero'}
           </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} disabled={saveMutation.isPending || disconnectMutation.isPending}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={saveMutation.isPending || disconnectMutation.isPending}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+            >
+              {saveMutation.isPending ? 'Saving...' : 'Save Settings'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
