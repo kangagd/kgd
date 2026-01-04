@@ -333,6 +333,7 @@ export default function Projects() {
         }, [allTradeRequirements]);
 
         const hasCustomerIssue = useCallback((project) => {
+          if (!project) return false;
           // No customer ID or missing both phone and email
           return !project.customer_id || (!project.customer_phone && !project.customer_email);
         }, []);
