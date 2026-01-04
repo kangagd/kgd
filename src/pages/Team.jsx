@@ -116,9 +116,9 @@ export default function Team() {
 
   // Stats
   const totalUsers = users.length;
-  const adminCount = users.filter(u => u.role === 'admin').length;
-  const managerCount = users.filter(u => u.role === 'manager').length;
-  const technicianCount = users.filter(u => u.is_field_technician).length;
+  const adminCount = users.filter(u => getEffectiveRole(u) === 'admin').length;
+  const managerCount = users.filter(u => getEffectiveRole(u) === 'manager').length;
+  const technicianCount = users.filter(u => getEffectiveRole(u) === 'technician').length;
   const activeCount = users.filter(u => (u.status || 'active') === 'active').length;
 
   return (
