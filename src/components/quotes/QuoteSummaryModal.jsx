@@ -26,7 +26,7 @@ const statusConfig = {
   Expired: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: Clock, label: 'Expired' }
 };
 
-export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false, onRefreshLink }) {
+export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false, isTechnician = false, onRefreshLink }) {
   const [isLoadingLink, setIsLoadingLink] = React.useState(false);
   
   if (!quote) return null;
@@ -218,7 +218,7 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
                 )}
                 View as Client
               </Button>
-              {isAdmin && (
+              {(isAdmin || isTechnician) && (
                 <Button 
                   variant="outline" 
                   onClick={copyClientLink} 
@@ -235,7 +235,7 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
               )}
             </>
           )}
-          {isAdmin && quote.pandadoc_internal_url && (
+          {(isAdmin || isTechnician) && quote.pandadoc_internal_url && (
             <Button onClick={openInPandaDoc} className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] flex-1 min-w-[120px]">
               <ExternalLink className="w-4 h-4 mr-2" />
               PandaDoc

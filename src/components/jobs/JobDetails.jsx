@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -590,6 +589,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
   const isAdmin = user?.role === 'admin';
+  const canViewQuotes = isAdmin || isTechnician;
 
   const createInvoiceMutation = useMutation({
     mutationFn: async (invoiceData) => {
@@ -3028,6 +3028,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   job={job}
                   customer={customer}
                   isAdmin={isAdmin}
+                  isTechnician={isTechnician}
                 />
 
                 {/* Combined Invoice Section - Shows project invoices AND/OR job-specific invoice */}
