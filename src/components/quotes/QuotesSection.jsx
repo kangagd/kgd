@@ -13,7 +13,8 @@ export default function QuotesSection({
   project = null, 
   job = null, 
   customer = null,
-  isAdmin = false 
+  isAdmin = false,
+  isTechnician = false
 }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -114,7 +115,7 @@ export default function QuotesSection({
     return null;
   }
 
-  // Technician view - compact read-only
+  // Technician view - compact read-only but clickable
   if (!isAdmin) {
     if (visibleQuotes.length === 0) {
       return null; 
@@ -132,10 +133,22 @@ export default function QuotesSection({
               key={quote.id} 
               quote={quote}
               isAdmin={false}
+              isTechnician={isTechnician}
               isCompact={true}
+              onSelect={setSelectedQuote}
+              onRefreshLink={getRefreshLink}
             />
           ))}
         </div>
+        
+        <QuoteSummaryModal
+          quote={selectedQuote}
+          isOpen={!!selectedQuote}
+          onClose={() => setSelectedQuote(null)}
+          isAdmin={false}
+          isTechnician={isTechnician}
+          onRefreshLink={getRefreshLink}
+        />
       </div>
     );
   }
