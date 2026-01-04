@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
         }
 
         // Search for invoice by project number (most reliable method)
+        console.log(`Searching for invoice with number: ${project.project_number}`);
         const searchResponse = await fetch(
           `https://api.xero.com/api.xro/2.0/Invoices?where=InvoiceNumber=="${project.project_number}"`,
           {
@@ -72,9 +73,14 @@ Deno.serve(async (req) => {
           }
         );
 
+        console.log(`Xero API response status: ${searchResponse.status}`);
+
         if (!searchResponse.ok) {
           const errorText = await searchResponse.text();
-          console.error(`Xero API error for project ${project.project_number}: ${searchResponse.status} - ${errorText}`);
+          console.error(`Xero API error for project ${project.project_number}:`);
+          console.error(`Status: ${searchResponse.status}`);
+          console.error(`Response: ${errorText}`);
+          console.error(`Headers: ${JSON.stringify(Object.fromEntries(searchResponse.headers.entries()))}`);
           throw new Error(`Xero API error: ${searchResponse.status} - ${errorText}`);
         }
 
