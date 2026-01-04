@@ -100,11 +100,7 @@ export default function Team() {
       (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     
     const effectiveRole = getEffectiveRole(user);
-    const matchesRole = roleFilter === "all" || 
-      (roleFilter === "admin" && user.role === "admin") ||
-      (roleFilter === "manager" && user.role === "manager") ||
-      (roleFilter === "technician" && user.is_field_technician) ||
-      (roleFilter === "viewer" && user.role === "viewer");
+    const matchesRole = roleFilter === "all" || effectiveRole === roleFilter;
 
     return matchesSearch && matchesRole;
   });
