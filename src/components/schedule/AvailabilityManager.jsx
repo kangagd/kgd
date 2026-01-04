@@ -66,9 +66,9 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
   // --- Mutations ---
   const createLeaveMutation = useMutation({
     mutationFn: (data) => base44.entities.TechnicianLeave.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['technicianLeaves'] });
-      queryClient.invalidateQueries({ queryKey: ['scheduleConflicts'] }); // If we add this query key later
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['technicianLeaves'] });
+      await queryClient.refetchQueries({ queryKey: ['technicianLeaves'] });
       toast.success("Leave added");
       setLeaveStart("");
       setLeaveEnd("");
