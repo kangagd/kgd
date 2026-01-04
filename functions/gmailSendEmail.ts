@@ -208,8 +208,13 @@ Deno.serve(async (req) => {
         message_count: (existingThread?.message_count || 0) + 1
       };
       
-      // D) Preserve project linkage - DO NOT overwrite if already linked
-      if (!existingThread.project_id && projectId) {
+      // D) If thread is already linked to a project, inherit that linkage
+      // Also link if projectId explicitly provided but thread not yet linked
+      if (existingThread.project_id) {
+        // Thread already has a project - ensure we use it
+        updates.project_id = existingThread.project_id;
+      } else if (projectId) {
+        // No existing link but projectId provided - link it now
         updates.project_id = projectId;
       }
       
