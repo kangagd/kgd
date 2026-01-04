@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -184,10 +185,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [previousReportData, setPreviousReportData] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: jobTypes = [] } = useQuery({
+  const { data: allJobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
     queryFn: () => base44.entities.JobType.filter({ is_active: true })
   });
+
+  const jobTypes = allJobTypes;
+  const currentJobType = allJobTypes.find(jt => jt.id === job.job_type_id);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -315,15 +319,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnWindowFocus: true
   });
 
-  // Detect logistics job (includes Material Pick Up/Pickup jobs)
-  const isLogisticsJob = !!(
-    job.job_type === 'Logistics' || 
-    job.job_type?.includes('Material Pick') ||
-    job.job_type_name?.includes('Material Pick') ||
-    job.vehicle_id || 
-    job.purchase_order_id || 
-    job.third_party_trade_id
-  );
+  // Detect logistics job - check is_logistics flag on JobType entity
+  const isLogisticsJob = !!(currentJobType?.is_logistics === true || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id);
 
   // Fetch purchase order data for logistics jobs
   const { data: purchaseOrder } = useQuery({
