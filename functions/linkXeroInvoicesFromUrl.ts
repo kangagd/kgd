@@ -1,0 +1,136 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
+    // Get Xero connection details
+    const connections = await base44.asServiceRole.entities.XeroConnection.list();
+    const xeroConnection = connections[0];
+    
+    if (!xeroConnection || !xeroConnection.access_token) {
+      return Response.json({ error: 'No Xero connection found' }, { status: 400 });
+    }
+
+    // Fetch projects with xero_payment_url but no primary_xero_invoice_id
+    const allProjects = await base44.asServiceRole.entities.Project.list();
+    const projectsNeedingInvoices = allProjects.filter(p => 
+      p.xero_payment_url && !p.primary_xero_invoice_id
+    );
+
+    console.log(`Found ${projectsNeedingInvoices.length} projects with payment URLs but no linked invoices`);
+
+    let linkedCount = 0;
+    let skippedCount = 0;
+    let failedCount = 0;
+    const failed = [];
+
+    for (const project of projectsNeedingInvoices) {
+      try {
+        // Extract invoice ID from URL (format: https://in.xero.com/{shortCode})
+        const urlMatch = project.xero_payment_url.match(/xero\.com\/([A-Za-z0-9]+)/);
+        if (!urlMatch) {
+          console.log(`Could not parse URL for project ${project.project_number}`);
+          skippedCount++;
+          continue;
+        }
+
+        // Search for invoice by project number (most reliable method)
+        const searchResponse = await fetch(
+          `https://api.xero.com/api.xro/2.0/Invoices?where=InvoiceNumber=="${project.project_number}"`,
+          {
+            headers: {
+              'Authorization': `Bearer ${xeroConnection.access_token}`,
+              'xero-tenant-id': xeroConnection.tenant_id,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (!searchResponse.ok) {
+          throw new Error(`Xero API error: ${searchResponse.status}`);
+        }
+
+        const searchData = await searchResponse.json();
+        
+        if (!searchData.Invoices || searchData.Invoices.length === 0) {
+          console.log(`No invoice found in Xero for project ${project.project_number}`);
+          skippedCount++;
+          continue;
+        }
+
+        const xeroInvoice = searchData.Invoices[0];
+
+        // Check if XeroInvoice entity already exists
+        const existingInvoices = await base44.asServiceRole.entities.XeroInvoice.filter({
+          xero_invoice_id: xeroInvoice.InvoiceID
+        });
+
+        let invoiceEntityId;
+
+        if (existingInvoices.length > 0) {
+          // Use existing entity
+          invoiceEntityId = existingInvoices[0].id;
+          console.log(`Using existing XeroInvoice entity for project ${project.project_number}`);
+        } else {
+          // Create new XeroInvoice entity
+          const newInvoice = await base44.asServiceRole.entities.XeroInvoice.create({
+            xero_invoice_id: xeroInvoice.InvoiceID,
+            project_id: project.id,
+            invoice_number: xeroInvoice.InvoiceNumber,
+            total: xeroInvoice.Total,
+            amount_due: xeroInvoice.AmountDue,
+            amount_paid: xeroInvoice.AmountPaid,
+            status: xeroInvoice.Status,
+            date: xeroInvoice.Date,
+            due_date: xeroInvoice.DueDate,
+            online_payment_url: project.xero_payment_url,
+            raw_data: xeroInvoice
+          });
+          invoiceEntityId = newInvoice.id;
+          console.log(`Created new XeroInvoice entity for project ${project.project_number}`);
+        }
+
+        // Link invoice to project
+        const existingInvoices = project.xero_invoices || [];
+        await base44.asServiceRole.entities.Project.update(project.id, {
+          primary_xero_invoice_id: invoiceEntityId,
+          xero_invoices: [...existingInvoices, invoiceEntityId].filter((v, i, a) => a.indexOf(v) === i) // deduplicate
+        });
+
+        linkedCount++;
+        console.log(`Linked invoice to project ${project.project_number}`);
+
+      } catch (error) {
+        failedCount++;
+        failed.push({
+          project_id: project.id,
+          project_number: project.project_number,
+          error: error.message
+        });
+        console.error(`Failed to process project ${project.project_number}:`, error.message);
+      }
+
+      // Rate limiting
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    return Response.json({
+      success: true,
+      total_projects: projectsNeedingInvoices.length,
+      linked: linkedCount,
+      skipped: skippedCount,
+      failed: failedCount,
+      failed_details: failed
+    });
+
+  } catch (error) {
+    console.error('Error linking Xero invoices:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
