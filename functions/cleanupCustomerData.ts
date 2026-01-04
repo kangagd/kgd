@@ -73,28 +73,34 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Fix and normalize address
-        const addressParts = [
+        // Fix and normalize address - only if there's actual address data (not just country)
+        const meaningfulAddressParts = [
           customer.address_street,
           customer.address_suburb,
           customer.address_state,
-          customer.address_postcode,
-          customer.address_country
+          customer.address_postcode
         ].filter(Boolean);
         
-        const normalizedAddress = addressParts.length > 0 
-          ? addressParts.join(', ').toLowerCase() 
-          : '';
-
-        if (customer.normalized_address !== normalizedAddress) {
-          updates.normalized_address = normalizedAddress;
+        // Revert bad addresses that are just "australia" or ", australia"
+        if (customer.normalized_address === 'australia' || 
+            customer.normalized_address === ', australia' ||
+            customer.normalized_address === 'australia,' ||
+            customer.address_full === 'Australia') {
+          updates.normalized_address = '';
+          updates.address_full = null;
           needsUpdate = true;
-        }
+        } else if (meaningfulAddressParts.length > 0) {
+          // Only update if we have real address data
+          const fullAddressParts = [...meaningfulAddressParts, customer.address_country].filter(Boolean);
+          const normalizedAddress = fullAddressParts.join(', ').toLowerCase();
+          const fullAddress = fullAddressParts.join(', ');
 
-        // Also update address_full if it's different from constructed
-        if (addressParts.length > 0) {
-          const fullAddress = addressParts.join(', ');
-          if (!customer.address_full || customer.address_full !== fullAddress) {
+          if (customer.normalized_address !== normalizedAddress) {
+            updates.normalized_address = normalizedAddress;
+            needsUpdate = true;
+          }
+
+          if (customer.address_full !== fullAddress) {
             updates.address_full = fullAddress;
             needsUpdate = true;
           }
