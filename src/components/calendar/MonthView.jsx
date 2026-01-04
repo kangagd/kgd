@@ -195,7 +195,7 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                               </div>
                               
                               {job.job_type_name && (
-                                <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-[8px] px-1.5 py-0 rounded truncate w-full justify-start">
+                                <Badge className={`${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${getJobTypeColor(job.job_type_name, uniqueJobTypes).replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} border-0 font-semibold text-[8px] px-1.5 py-0 rounded truncate w-full justify-start`}>
                                   {job.job_type_name}
                                 </Badge>
                               )}
@@ -266,7 +266,7 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                     </div>
 
                     {job.job_type_name && (
-                      <Badge className="bg-[#EDE9FE] text-[#6D28D9] hover:bg-[#EDE9FE] border-0 font-semibold text-xs px-2 py-0.5 rounded-lg">
+                      <Badge className={`${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} ${getJobTypeColor(job.job_type_name, uniqueJobTypes).replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name, uniqueJobTypes)} border-0 font-semibold text-xs px-2 py-0.5 rounded-lg`}>
                         {job.job_type_name}
                       </Badge>
                     )}
