@@ -109,15 +109,38 @@ Deno.serve(async (req) => {
     // Batch mode: process all projects
     if (batchMode) {
       const allProjects = await base44.asServiceRole.entities.Project.list();
-      const validProjects = allProjects.filter(p => !p.deleted_at && p.customer_email);
+      const activeProjects = allProjects.filter(p => !p.deleted_at);
+      
+      console.log(`Total active projects: ${activeProjects.length}`);
+
+      // Fetch all customers to get emails
+      const customers = await base44.asServiceRole.entities.Customer.list();
+      const customerMap = new Map(customers.map(c => [c.id, c]));
 
       let totalLinked = 0;
       let totalSkipped = 0;
       let projectsProcessed = 0;
+      let projectsWithoutEmail = 0;
 
-      for (const project of validProjects) {
+      for (const project of activeProjects) {
         try {
-          const result = await processProject(base44, project);
+          // Get customer email from project or customer entity
+          let customerEmail = project.customer_email;
+          
+          if (!customerEmail && project.customer_id) {
+            const customer = customerMap.get(project.customer_id);
+            customerEmail = customer?.email;
+          }
+
+          if (!customerEmail) {
+            projectsWithoutEmail++;
+            continue;
+          }
+
+          // Add email to project for processing
+          const projectWithEmail = { ...project, customer_email: customerEmail };
+          
+          const result = await processProject(base44, projectWithEmail);
           totalLinked += result.linkedCount;
           totalSkipped += result.skippedCount;
           projectsProcessed++;
@@ -132,7 +155,9 @@ Deno.serve(async (req) => {
       return Response.json({
         success: true,
         batchMode: true,
+        totalProjects: activeProjects.length,
         projectsProcessed,
+        projectsWithoutEmail,
         totalLinked,
         totalSkipped
       });
