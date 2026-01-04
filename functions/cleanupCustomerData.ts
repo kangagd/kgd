@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
         if (customer.deleted_at) {
           await base44.asServiceRole.entities.Customer.delete(customer.id);
           deletedSoftDeleted++;
-          await new Promise(resolve => setTimeout(resolve, 100)); // Rate limit protection
+          await new Promise(resolve => setTimeout(resolve, 300)); // Rate limit protection
         }
       }
     }
