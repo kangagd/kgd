@@ -11,8 +11,12 @@ Deno.serve(async (req) => {
 
     // Get Xero connection details - refresh token first
     const refreshResult = await base44.asServiceRole.functions.invoke('refreshXeroToken', {});
-    if (!refreshResult.data.success) {
-      return Response.json({ error: 'Failed to refresh Xero token' }, { status: 400 });
+    if (!refreshResult.data || !refreshResult.data.success) {
+      console.error('Token refresh failed:', refreshResult.data);
+      return Response.json({ 
+        error: 'Failed to refresh Xero token', 
+        details: refreshResult.data 
+      }, { status: 400 });
     }
 
     const connections = await base44.asServiceRole.entities.XeroConnection.list();
