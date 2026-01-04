@@ -73,28 +73,28 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Fix and normalize address - exclude country-only addresses
+        // Fix and normalize address
         const addressParts = [
           customer.address_street,
           customer.address_suburb,
           customer.address_state,
-          customer.address_postcode
+          customer.address_postcode,
+          customer.address_country
         ].filter(Boolean);
         
-        // Only create normalized address if we have meaningful address data (not just country)
         const normalizedAddress = addressParts.length > 0 
           ? addressParts.join(', ').toLowerCase() 
           : '';
 
-        if (customer.normalized_address !== normalizedAddress && normalizedAddress !== '') {
+        if (customer.normalized_address !== normalizedAddress) {
           updates.normalized_address = normalizedAddress;
           needsUpdate = true;
         }
 
-        // Update address_full only if we have real address parts (not just country)
+        // Also update address_full if it's different from constructed
         if (addressParts.length > 0) {
           const fullAddress = addressParts.join(', ');
-          if (customer.address_full !== fullAddress) {
+          if (!customer.address_full || customer.address_full !== fullAddress) {
             updates.address_full = fullAddress;
             needsUpdate = true;
           }
