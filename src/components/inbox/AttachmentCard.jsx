@@ -199,9 +199,10 @@ export default function AttachmentCard({
           // Check if already saved
           const existingImages = job.image_urls || [];
           const existingDocs = job.other_documents || [];
-          const allUrls = [...existingImages, ...existingDocs];
+          const existingDocUrls = existingDocs.map(doc => typeof doc === 'string' ? doc : doc.url);
+          const allUrls = [...existingImages, ...existingDocUrls];
           
-          if (!allUrls.some(url => url.includes(attachment.filename))) {
+          if (!allUrls.some(url => url && url.includes(attachment.filename))) {
             if (isImage) {
               const updatedImageUrls = [...existingImages, urlToSave];
               // Use manageJob backend function for robust permission handling
