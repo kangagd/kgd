@@ -107,6 +107,18 @@ export default function CheckIn() {
   const handleCheckIn = () => {
     if (!selectedJobId) return;
     
+    // Check if there's already an active check-in for this job and technician
+    const existingActiveCheckIn = checkIns.find(
+      ci => ci.job_id === selectedJobId && 
+            ci.technician_email === user.email && 
+            !ci.check_out_time
+    );
+
+    if (existingActiveCheckIn) {
+      toast.error("You already have an active check-in for this job. Please check out first.");
+      return;
+    }
+    
     checkInMutation.mutate({
       job_id: selectedJobId,
       technician_email: user.email,
