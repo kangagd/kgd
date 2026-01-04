@@ -51,11 +51,11 @@ async function processProject(base44, project, gmailUser, accessToken) {
 
   console.log(`Searching Gmail history for emails with: ${customerEmail}`);
 
-  // Search Gmail for historical emails with this customer
+  // Search Gmail for historical emails with this customer (limited to prevent timeout)
   let syncedFromGmail = 0;
   try {
     const gmailQuery = customerEmail;
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(gmailQuery)}&maxResults=100`;
+    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(gmailQuery)}&maxResults=20`;
     
     const response = await fetch(searchUrl, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -178,8 +178,8 @@ async function processProject(base44, project, gmailUser, accessToken) {
             message_count: (currentThread.message_count || 0) + 1
           });
 
-          // Rate limit
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // Rate limit - reduced for speed
+          await new Promise(resolve => setTimeout(resolve, 50));
         } catch (msgError) {
           console.error(`Error processing message ${msg.id}:`, msgError);
         }
@@ -228,8 +228,6 @@ async function processProject(base44, project, gmailUser, accessToken) {
 
       linkedCount++;
       console.log(`Linked thread ${thread.id} to project ${project.id}`);
-
-      await new Promise(resolve => setTimeout(resolve, 200));
 
     } catch (error) {
       console.error(`Error processing thread ${thread.id}:`, error);
@@ -310,9 +308,9 @@ Deno.serve(async (req) => {
           totalLinked += result.linkedCount;
           totalSkipped += result.skippedCount;
           projectsProcessed++;
-          
-          // Rate limiting between projects
-          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Rate limiting between projects - reduced for batch mode
+          await new Promise(resolve => setTimeout(resolve, 200));
         } catch (error) {
           console.error(`Error processing project ${project.id}:`, error);
         }
