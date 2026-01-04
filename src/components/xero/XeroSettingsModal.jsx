@@ -100,7 +100,7 @@ export default function XeroSettingsModal({ open, onClose }) {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} id="xero-settings-form" className="space-y-4 py-4">
           <Alert className="border-blue-200 bg-blue-50">
             <AlertCircle className="w-4 h-4 text-blue-600" />
             <AlertDescription className="text-sm text-blue-900">
@@ -176,16 +176,18 @@ export default function XeroSettingsModal({ open, onClose }) {
             onClick={handleDisconnect}
             disabled={disconnectMutation.isPending || saveMutation.isPending}
             className="gap-2"
+            type="button"
           >
             <Unplug className="w-4 h-4" />
             {disconnectMutation.isPending ? 'Disconnecting...' : 'Disconnect Xero'}
           </Button>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={saveMutation.isPending || disconnectMutation.isPending}>
+            <Button variant="outline" onClick={onClose} disabled={saveMutation.isPending || disconnectMutation.isPending} type="button">
               Cancel
             </Button>
             <Button 
-              onClick={handleSubmit} 
+              type="submit"
+              form="xero-settings-form"
               disabled={saveMutation.isPending || disconnectMutation.isPending}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
             >
