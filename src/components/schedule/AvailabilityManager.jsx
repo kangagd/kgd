@@ -238,10 +238,22 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
               <div className="divide-y max-h-[300px] overflow-y-auto">
                 {leavesLoading ? (
                   <div className="p-4 text-center text-gray-500">Loading...</div>
-                ) : leaves.filter(leave => new Date(leave.end_time) >= new Date()).length === 0 ? (
+                ) : leaves.filter(leave => {
+                  try {
+                    return parseISO(leave.end_time) >= new Date();
+                  } catch {
+                    return false;
+                  }
+                }).length === 0 ? (
                   <div className="p-4 text-center text-gray-500">No leave records found.</div>
                 ) : (
-                  leaves.filter(leave => new Date(leave.end_time) >= new Date()).map(leave => (
+                  leaves.filter(leave => {
+                    try {
+                      return parseISO(leave.end_time) >= new Date();
+                    } catch {
+                      return false;
+                    }
+                  }).map(leave => (
                     <div key={leave.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
                       <div>
                         <div className="font-medium text-sm">{leave.technician_name || leave.technician_email}</div>
