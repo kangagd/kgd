@@ -36,6 +36,8 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
   const [leaveTech, setLeaveTech] = useState("");
   const [leaveStart, setLeaveStart] = useState("");
   const [leaveEnd, setLeaveEnd] = useState("");
+  const [leaveStartTime, setLeaveStartTime] = useState("00:00");
+  const [leaveEndTime, setLeaveEndTime] = useState("23:59");
   const [leaveReason, setLeaveReason] = useState("");
   const [leaveType, setLeaveType] = useState("unavailable");
 
@@ -70,6 +72,8 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
       toast.success("Leave added");
       setLeaveStart("");
       setLeaveEnd("");
+      setLeaveStartTime("00:00");
+      setLeaveEndTime("23:59");
       setLeaveReason("");
     }
   });
@@ -111,12 +115,15 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
     
     const tech = technicians.find(t => t.email === leaveTech);
     
-    // Create start and end times at beginning and end of days
+    // Create start and end times with specified times
+    const [startHour, startMin] = leaveStartTime.split(':').map(Number);
+    const [endHour, endMin] = leaveEndTime.split(':').map(Number);
+    
     const startDate = new Date(leaveStart);
-    startDate.setHours(0, 0, 0, 0);
+    startDate.setHours(startHour, startMin, 0, 0);
     
     const endDate = new Date(leaveEnd);
-    endDate.setHours(23, 59, 59, 999);
+    endDate.setHours(endHour, endMin, 59, 999);
     
     createLeaveMutation.mutate({
       technician_email: leaveTech,
@@ -217,6 +224,22 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                     onChange={e => setLeaveEnd(e.target.value)} 
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Start Time</Label>
+                  <Input 
+                    type="time" 
+                    value={leaveStartTime} 
+                    onChange={e => setLeaveStartTime(e.target.value)} 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Time</Label>
+                  <Input 
+                    type="time" 
+                    value={leaveEndTime} 
+                    onChange={e => setLeaveEndTime(e.target.value)} 
+                  />
+                </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Reason (Optional)</Label>
                   <Input 
@@ -240,7 +263,10 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                   <div className="p-4 text-center text-gray-500">Loading...</div>
                 ) : leaves.filter(leave => {
                   try {
-                    return parseISO(leave.end_time) >= new Date();
+                    const endDate = new Date(leave.end_time);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    return endDate >= today;
                   } catch {
                     return false;
                   }
@@ -249,7 +275,10 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                 ) : (
                   leaves.filter(leave => {
                     try {
-                      return parseISO(leave.end_time) >= new Date();
+                      const endDate = new Date(leave.end_time);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return endDate >= today;
                     } catch {
                       return false;
                     }
@@ -257,10 +286,10 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                     <div key={leave.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
                       <div>
                         <div className="font-medium text-sm">{leave.technician_name || leave.technician_email}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-2">
+                        <div className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
                           <span className="capitalize px-1.5 py-0.5 bg-gray-100 rounded">{leave.leave_type}</span>
                           <span>
-                            {format(parseISO(leave.start_time), "MMM d, yyyy")} - {format(parseISO(leave.end_time), "MMM d, yyyy")}
+                            {format(new Date(leave.start_time), "MMM d, yyyy h:mm a")} - {format(new Date(leave.end_time), "MMM d, yyyy h:mm a")}
                           </span>
                         </div>
                         {leave.reason && <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>}
