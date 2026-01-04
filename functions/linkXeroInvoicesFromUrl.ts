@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     console.log('Refreshing Xero token...');
     const refreshResult = await base44.asServiceRole.functions.invoke('refreshXeroToken', {});
     console.log('Refresh result:', JSON.stringify(refreshResult));
-    
+
     if (!refreshResult.data || !refreshResult.data.success) {
       console.error('Token refresh failed:', refreshResult.data);
       return Response.json({ 
@@ -24,14 +24,16 @@ Deno.serve(async (req) => {
     }
 
     // Small delay to ensure DB consistency after token refresh
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const connections = await base44.asServiceRole.entities.XeroConnection.list();
     const xeroConnection = connections[0];
-    
+
     console.log('Xero connection found:', xeroConnection ? 'yes' : 'no');
     console.log('Has access token:', xeroConnection?.access_token ? 'yes' : 'no');
+    console.log('Access token (first 20 chars):', xeroConnection?.access_token?.substring(0, 20));
     console.log('Tenant ID:', xeroConnection?.tenant_id);
+    console.log('Token expires at:', xeroConnection?.expires_at);
     
     if (!xeroConnection || !xeroConnection.access_token) {
       return Response.json({ error: 'No Xero connection found' }, { status: 400 });
