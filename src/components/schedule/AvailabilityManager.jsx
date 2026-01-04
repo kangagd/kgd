@@ -107,11 +107,18 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
     
     const tech = technicians.find(t => t.email === leaveTech);
     
+    // Create start and end times at beginning and end of days
+    const startDate = new Date(leaveStart);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(leaveEnd);
+    endDate.setHours(23, 59, 59, 999);
+    
     createLeaveMutation.mutate({
       technician_email: leaveTech,
       technician_name: tech ? (tech.full_name || tech.display_name) : leaveTech,
-      start_time: new Date(leaveStart).toISOString(),
-      end_time: new Date(leaveEnd).toISOString(),
+      start_time: startDate.toISOString(),
+      end_time: endDate.toISOString(),
       reason: leaveReason,
       leave_type: leaveType
     });
@@ -124,11 +131,18 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
       return;
     }
 
+    // Create start and end times at beginning and end of days
+    const startDate = new Date(closedStart);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(closedEnd);
+    endDate.setHours(23, 59, 59, 999);
+    
     createClosedDayMutation.mutate({
       name: closedName,
-      start_time: new Date(closedStart).toISOString(),
-      end_time: new Date(closedEnd).toISOString(),
-      is_full_day: true // Defaulting for simplicity, can be inferred from times if needed
+      start_time: startDate.toISOString(),
+      end_time: endDate.toISOString(),
+      is_full_day: true
     });
   };
 
@@ -184,17 +198,17 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Start Time</Label>
+                  <Label>Start Date</Label>
                   <Input 
-                    type="datetime-local" 
+                    type="date" 
                     value={leaveStart} 
                     onChange={e => setLeaveStart(e.target.value)} 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Time</Label>
+                  <Label>End Date</Label>
                   <Input 
-                    type="datetime-local" 
+                    type="date" 
                     value={leaveEnd} 
                     onChange={e => setLeaveEnd(e.target.value)} 
                   />
@@ -230,7 +244,7 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                         <div className="text-xs text-gray-500 flex items-center gap-2">
                           <span className="capitalize px-1.5 py-0.5 bg-gray-100 rounded">{leave.leave_type}</span>
                           <span>
-                            {format(parseISO(leave.start_time), "MMM d, h:mm a")} - {format(parseISO(leave.end_time), "MMM d, h:mm a")}
+                            {format(parseISO(leave.start_time), "MMM d, yyyy")} - {format(parseISO(leave.end_time), "MMM d, yyyy")}
                           </span>
                         </div>
                         {leave.reason && <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>}
@@ -266,17 +280,17 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Start Time</Label>
+                  <Label>Start Date</Label>
                   <Input 
-                    type="datetime-local" 
+                    type="date" 
                     value={closedStart} 
                     onChange={e => setClosedStart(e.target.value)} 
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Time</Label>
+                  <Label>End Date</Label>
                   <Input 
-                    type="datetime-local" 
+                    type="date" 
                     value={closedEnd} 
                     onChange={e => setClosedEnd(e.target.value)} 
                   />
@@ -304,7 +318,7 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
                         <div className="text-xs text-gray-500 flex items-center gap-2">
                           <Clock className="w-3 h-3" />
                           <span>
-                            {format(parseISO(day.start_time), "MMM d, h:mm a")} - {format(parseISO(day.end_time), "MMM d, h:mm a")}
+                            {format(parseISO(day.start_time), "MMM d, yyyy")} - {format(parseISO(day.end_time), "MMM d, yyyy")}
                           </span>
                         </div>
                       </div>
