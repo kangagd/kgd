@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
         if (needsUpdate) {
           await base44.asServiceRole.entities.Customer.update(customer.id, updates);
           updatedCount++;
-          await new Promise(resolve => setTimeout(resolve, 100)); // Rate limit protection
+          await new Promise(resolve => setTimeout(resolve, 300)); // Rate limit protection
         }
       }
     }
