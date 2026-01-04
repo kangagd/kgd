@@ -589,6 +589,11 @@ export default function Projects() {
                     <div className="flex items-center gap-2 mb-2 pr-8">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
                       <DuplicateBadge record={project} size="sm" />
+                      {hasCustomerIssue(project) && (
+                        <span className="inline-flex items-center gap-1" title="Customer information missing">
+                          <UserX className="w-4 h-4 text-[#DC2626]" />
+                        </span>
+                      )}
                       {allParts.filter(p => sameId(p.project_id, project.id)).some(detectShortage) && (
                         <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
                           Shortage
