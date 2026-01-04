@@ -459,7 +459,6 @@ export default function Jobs() {
                 onClick={() => setShowForm(true)}
                 title="Create New Job"
               />
-              </div>
             </div>
           )}
         </div>
