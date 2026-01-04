@@ -30,7 +30,7 @@ export default function UserEditModal({ user, open, onClose, onSave, isSaving })
         full_name: user.full_name || "",
         display_name: user.display_name || "",
         email: user.email || "",
-        role: user.role || "user",
+        role: user.extended_role || user.role || "user",
         is_field_technician: user.is_field_technician || false,
         phone: user.phone || "",
         status: user.status || "active",
