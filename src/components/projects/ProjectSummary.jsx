@@ -90,7 +90,7 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
               <Calendar className="w-4 h-4 text-[#6B7280] mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-0.5 uppercase tracking-wide">Completed On</div>
-                <div className="text-[14px] text-[#111827] leading-[1.4]">{completionDate}</div>
+                <div className="text-[14px] text-[#111827] leading-[1.4]">{completedDate}</div>
               </div>
             </div>
           </CardContent>
