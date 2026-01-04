@@ -62,7 +62,9 @@ Deno.serve(async (req) => {
         );
 
         if (!searchResponse.ok) {
-          throw new Error(`Xero API error: ${searchResponse.status}`);
+          const errorText = await searchResponse.text();
+          console.error(`Xero API error for project ${project.project_number}: ${searchResponse.status} - ${errorText}`);
+          throw new Error(`Xero API error: ${searchResponse.status} - ${errorText}`);
         }
 
         const searchData = await searchResponse.json();
