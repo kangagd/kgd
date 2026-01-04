@@ -120,6 +120,21 @@ export default function Projects() {
     queryFn: () => base44.entities.PurchaseOrder.list(),
   });
 
+  const { data: allAttentionItems = [] } = useQuery({
+    queryKey: ['allAttentionItems'],
+    queryFn: () => base44.entities.AttentionItem.list(),
+  });
+
+  const { data: allEmailThreads = [] } = useQuery({
+    queryKey: ['allEmailThreads'],
+    queryFn: () => base44.entities.EmailThread.list(),
+  });
+
+  const { data: allQuotes = [] } = useQuery({
+    queryKey: ['allQuotes'],
+    queryFn: () => base44.entities.Quote.list(),
+  });
+
   const inventoryByItem = useMemo(() => {
     const map = {};
     // Warehouse from PriceList
@@ -278,36 +293,72 @@ export default function Projects() {
 
     setIsAiSearching(true);
     try {
+      // Enrich projects with related data
+      const enrichedProjects = projects.map(p => {
+        const projectAttentionItems = allAttentionItems.filter(ai => 
+          ai.root_entity_type === 'project' && sameId(ai.root_entity_id, p.id) && ai.status === 'open'
+        );
+        
+        const projectEmailThreads = allEmailThreads.filter(et => 
+          sameId(et.project_id, p.id)
+        );
+        
+        const projectQuotes = allQuotes.filter(q => 
+          sameId(q.project_id, p.id)
+        );
+
+        const hasUnansweredEmails = projectEmailThreads.some(thread => 
+          thread.last_customer_message_at && 
+          (!thread.last_internal_message_at || 
+           new Date(thread.last_customer_message_at) > new Date(thread.last_internal_message_at))
+        );
+
+        const highPriorityAttentionItems = projectAttentionItems.filter(ai => 
+          ai.severity === 'critical' || ai.severity === 'high'
+        );
+
+        return {
+          id: p.id,
+          title: p.title,
+          customer_name: p.customer_name,
+          status: p.status,
+          financial_status: p.financial_status,
+          project_type: p.project_type,
+          total_project_value: p.total_project_value,
+          payments: p.payments,
+          warranty_enabled: p.warranty_enabled,
+          warranty_status: p.warranty_status,
+          has_attention_items: projectAttentionItems.length > 0,
+          attention_items_count: projectAttentionItems.length,
+          high_priority_attention_count: highPriorityAttentionItems.length,
+          has_unanswered_emails: hasUnansweredEmails,
+          email_threads_count: projectEmailThreads.length,
+          quotes_count: projectQuotes.length,
+          latest_quote_status: projectQuotes[0]?.status || null
+        };
+      });
+
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a project filtering assistant. The user wants to filter their projects based on this query: "${aiQuery}"
+        prompt: `You are a smart project filtering assistant. Analyze the user's query and return project IDs that match.
 
-Here is information about the projects data structure:
-- Projects have fields like: status, financial_status, customer_name, project_type, warranty_enabled, warranty_status, etc.
-- Each project can have linked jobs, parts, email threads, and attention items
-- Available project statuses: Lead, Initial Site Visit, Create Quote, Quote Sent, Quote Approved, Final Measure, Parts Ordered, Scheduled, Completed, Warranty, Lost
-- Available financial statuses: Awaiting Payment, Initial Payment Made, Second Payment Made, Balance Paid in Full, Written Off, Cancelled
-- Projects can have email threads linked (last_customer_message_at, last_internal_message_at)
-- Projects can have attention items with priorities
+User Query: "${aiQuery}"
 
-Based on the user's query, return an array of project IDs that match their criteria. Analyze the following projects and return only the IDs that match:
+Understanding common queries:
+- "outstanding payments" or "awaiting payment" → financial_status is "Awaiting Payment" or partial payments made
+- "initial balance paid" → financial_status is "Initial Payment Made"
+- "unanswered emails" → has_unanswered_emails is true
+- "attention items" or "high priority" → has_attention_items is true or high_priority_attention_count > 0
+- "warranty" → warranty_status is "Active" or status is "Warranty"
+- "quotes sent" → latest_quote_status is "Sent" or status is "Quote Sent"
+- "completed" → status is "Completed"
 
-${JSON.stringify(projects.map(p => ({
-  id: p.id,
-  title: p.title,
-  customer_name: p.customer_name,
-  status: p.status,
-  financial_status: p.financial_status,
-  project_type: p.project_type,
-  warranty_enabled: p.warranty_enabled,
-  warranty_status: p.warranty_status,
-  last_customer_message_at: p.last_customer_message_at,
-  last_internal_message_at: p.last_internal_message_at,
-  created_date: p.created_date,
-  total_project_value: p.total_project_value,
-  payments: p.payments
-})), null, 2)}
+Available financial statuses: "Awaiting Payment", "Initial Payment Made", "Second Payment Made", "Balance Paid in Full", "Written Off", "Cancelled"
+Available project statuses: "Lead", "Initial Site Visit", "Create Quote", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty", "Lost"
 
-Return ONLY an array of project IDs that match the criteria, nothing else.`,
+Projects data:
+${JSON.stringify(enrichedProjects, null, 2)}
+
+Return matching project IDs and a brief explanation.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -325,6 +376,10 @@ Return ONLY an array of project IDs that match the criteria, nothing else.`,
       const matchingIds = response.matching_project_ids || [];
       const filtered = projects.filter(p => matchingIds.includes(p.id));
       setAiFilteredProjects(filtered);
+      
+      if (filtered.length === 0) {
+        toast.info(`No projects found matching "${aiQuery}"`);
+      }
     } catch (error) {
       console.error('AI search error:', error);
       toast.error('AI search failed');
@@ -514,10 +569,37 @@ Return ONLY an array of project IDs that match the criteria, nothing else.`,
           </div>
 
           {aiFilteredProjects !== null && (
-            <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
-              <p className="text-[13px] text-[#111827]">
-                <span className="font-semibold">AI Filter Active:</span> Showing {aiFilteredProjects.length} project{aiFilteredProjects.length !== 1 ? 's' : ''} matching "{aiQuery}"
-              </p>
+            <div className="bg-[#FFFEF5] border-2 border-[#FAE008] rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-[#FAE008] mt-0.5 flex-shrink-0" />
+                <p className="text-[13px] text-[#111827] flex-1">
+                  <span className="font-semibold">AI Filter Active:</span> Showing {aiFilteredProjects.length} project{aiFilteredProjects.length !== 1 ? 's' : ''} matching "{aiQuery}"
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Filter Suggestions */}
+          {!aiFilteredProjects && (
+            <div className="flex gap-2 flex-wrap">
+              <span className="text-[12px] text-[#6B7280] self-center">Quick filters:</span>
+              {[
+                'projects with outstanding payments',
+                'projects with attention items',
+                'projects with unanswered emails',
+                'completed projects this month'
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  onClick={() => {
+                    setAiQuery(suggestion);
+                    setTimeout(() => handleAiSearch(), 100);
+                  }}
+                  className="text-[11px] px-2.5 py-1 bg-white border border-[#E5E7EB] rounded-full text-[#6B7280] hover:border-[#FAE008] hover:bg-[#FFFEF5] hover:text-[#111827] transition-colors"
+                >
+                  {suggestion}
+                </button>
+              ))}
             </div>
           )}
 
