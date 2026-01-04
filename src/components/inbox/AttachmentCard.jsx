@@ -121,9 +121,11 @@ export default function AttachmentCard({
           const freshImages = freshProject.image_urls || [];
           const freshDocs = freshProject.other_documents || [];
           
-          // Check if already saved
-          const freshAllUrls = [...freshImages, ...freshDocs];
-          if (freshAllUrls.some(url => url.includes(attachment.filename))) {
+          // Check if already saved (handle both string URLs and objects)
+          const imageUrls = freshImages;
+          const docUrls = freshDocs.map(doc => typeof doc === 'string' ? doc : doc.url);
+          const allUrls = [...imageUrls, ...docUrls];
+          if (allUrls.some(url => url && url.includes(attachment.filename))) {
             setSaved(true);
             return;
           }
@@ -232,9 +234,10 @@ export default function AttachmentCard({
           // Check if already saved (to avoid duplicates on manual click if auto-save just finished)
           const existingImages = project.image_urls || [];
           const existingDocs = project.other_documents || [];
-          const allUrls = [...existingImages, ...existingDocs];
+          const existingDocUrls = existingDocs.map(doc => typeof doc === 'string' ? doc : doc.url);
+          const allUrls = [...existingImages, ...existingDocUrls];
           
-          if (!allUrls.some(url => url.includes(attachment.filename))) {
+          if (!allUrls.some(url => url && url.includes(attachment.filename))) {
             if (isImage) {
               const updatedImageUrls = [...existingImages, urlToSave];
               await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
