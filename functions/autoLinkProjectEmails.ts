@@ -33,17 +33,20 @@ async function processProject(base44, project) {
 
   for (const thread of foundThreads) {
     try {
-      // Skip if already linked to this project
-      if (thread.project_id === project.id) {
-        console.log(`Thread ${thread.id} already linked to project`);
+      // Skip if already linked to any project
+      if (thread.project_id) {
+        console.log(`Thread ${thread.id} already linked to another project, skipping`);
         skippedCount++;
         continue;
       }
 
-      // Link the thread to the project
-      await base44.asServiceRole.functions.invoke('linkEmailThreadToProject', {
-        threadId: thread.id,
-        projectId: project.id
+      // Link the thread to the project directly without calling the function
+      await base44.asServiceRole.entities.EmailThread.update(thread.id, {
+        project_id: project.id,
+        project_number: project.project_number,
+        project_title: project.title,
+        linked_to_project_at: new Date().toISOString(),
+        linked_to_project_by: 'system'
       });
 
       linkedCount++;
