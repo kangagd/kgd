@@ -12,75 +12,50 @@ async function processProject(base44, project) {
     };
   }
 
-  console.log(`Searching Gmail for emails with: ${customerEmail}`);
+  console.log(`Searching for existing EmailThreads with customer email: ${customerEmail}`);
 
-  const searchResult = await base44.asServiceRole.functions.invoke('searchGmailHistory', {
-    query: customerEmail,
-    maxResults: 50
+  // Search existing EmailThreads in the database that match the customer email
+  const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+  const foundThreads = allThreads.filter(thread => {
+    const fromMatches = thread.from_address?.toLowerCase().includes(customerEmail.toLowerCase());
+    const toMatches = thread.to_addresses?.some(addr => 
+      addr?.toLowerCase().includes(customerEmail.toLowerCase())
+    );
+    return fromMatches || toMatches;
   });
 
-  if (!searchResult.data?.success) {
-    return { 
-      linkedCount: 0, 
-      skippedCount: 0, 
-      errorCount: 1,
-      foundThreads: 0 
-    };
-  }
-
-  const foundThreads = searchResult.data.threads || [];
-  console.log(`Found ${foundThreads.length} threads from Gmail`);
+  console.log(`Found ${foundThreads.length} threads matching customer email`);
 
   let linkedCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
   const errors = [];
 
-  for (const gmailThread of foundThreads) {
+  for (const thread of foundThreads) {
     try {
-      const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
-        gmail_thread_id: gmailThread.gmail_thread_id
-      });
-
-      let threadId;
-
-      if (existingThreads.length > 0) {
-        threadId = existingThreads[0].id;
-        
-        if (existingThreads[0].project_id === project.id) {
-          console.log(`Thread ${gmailThread.gmail_thread_id} already linked to project`);
-          skippedCount++;
-          continue;
-        }
-      } else {
-        const newThread = await base44.asServiceRole.entities.EmailThread.create({
-          gmail_thread_id: gmailThread.gmail_thread_id,
-          subject: gmailThread.subject || 'No Subject',
-          from_address: gmailThread.from_address,
-          to_addresses: gmailThread.to_addresses || [],
-          last_message_date: gmailThread.last_message_date,
-          last_message_snippet: gmailThread.snippet,
-          message_count: gmailThread.message_count || 1
-        });
-        threadId = newThread.id;
-        console.log(`Created new EmailThread: ${threadId}`);
+      // Skip if already linked to this project
+      if (thread.project_id === project.id) {
+        console.log(`Thread ${thread.id} already linked to project`);
+        skippedCount++;
+        continue;
       }
 
+      // Link the thread to the project
       await base44.asServiceRole.functions.invoke('linkEmailThreadToProject', {
-        threadId,
+        threadId: thread.id,
         projectId: project.id
       });
 
       linkedCount++;
-      console.log(`Linked thread ${gmailThread.gmail_thread_id} to project ${project.id}`);
+      console.log(`Linked thread ${thread.id} to project ${project.id}`);
 
       await new Promise(resolve => setTimeout(resolve, 200));
 
     } catch (error) {
-      console.error(`Error processing thread ${gmailThread.gmail_thread_id}:`, error);
+      console.error(`Error processing thread ${thread.id}:`, error);
       errorCount++;
       errors.push({
-        gmail_thread_id: gmailThread.gmail_thread_id,
+        thread_id: thread.id,
         error: error.message
       });
     }
