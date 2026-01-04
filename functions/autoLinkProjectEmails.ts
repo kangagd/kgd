@@ -258,7 +258,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { projectId, batchMode } = await req.json();
+    const { projectId } = await req.json();
+
+    if (!projectId) {
+      return Response.json({ error: 'projectId is required' }, { status: 400 });
+    }
 
     // Get Gmail user credentials
     const users = await base44.asServiceRole.entities.User.list();
@@ -269,68 +273,6 @@ Deno.serve(async (req) => {
     }
 
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
-
-    // Batch mode: process all projects
-    if (batchMode) {
-      const allProjects = await base44.asServiceRole.entities.Project.list();
-      const activeProjects = allProjects.filter(p => !p.deleted_at);
-      
-      console.log(`Total active projects: ${activeProjects.length}`);
-
-      // Fetch all customers to get emails
-      const customers = await base44.asServiceRole.entities.Customer.list();
-      const customerMap = new Map(customers.map(c => [c.id, c]));
-
-      let totalLinked = 0;
-      let totalSkipped = 0;
-      let projectsProcessed = 0;
-      let projectsWithoutEmail = 0;
-
-      for (const project of activeProjects) {
-        try {
-          // Get customer email from project or customer entity
-          let customerEmail = project.customer_email;
-          
-          if (!customerEmail && project.customer_id) {
-            const customer = customerMap.get(project.customer_id);
-            customerEmail = customer?.email;
-          }
-
-          if (!customerEmail) {
-            projectsWithoutEmail++;
-            continue;
-          }
-
-          // Add email to project for processing
-          const projectWithEmail = { ...project, customer_email: customerEmail };
-
-          const result = await processProject(base44, projectWithEmail, gmailUser, accessToken);
-          totalLinked += result.linkedCount;
-          totalSkipped += result.skippedCount;
-          projectsProcessed++;
-
-          // Rate limiting between projects - reduced for batch mode
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } catch (error) {
-          console.error(`Error processing project ${project.id}:`, error);
-        }
-      }
-
-      return Response.json({
-        success: true,
-        batchMode: true,
-        totalProjects: activeProjects.length,
-        projectsProcessed,
-        projectsWithoutEmail,
-        totalLinked,
-        totalSkipped
-      });
-    }
-
-    // Single project mode
-    if (!projectId) {
-      return Response.json({ error: 'projectId is required when batchMode is false' }, { status: 400 });
-    }
 
     const project = await base44.asServiceRole.entities.Project.get(projectId);
     
