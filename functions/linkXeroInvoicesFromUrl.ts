@@ -23,6 +23,9 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // Small delay to ensure DB consistency after token refresh
+    await new Promise(resolve => setTimeout(resolve, 200));
+
     const connections = await base44.asServiceRole.entities.XeroConnection.list();
     const xeroConnection = connections[0];
     
