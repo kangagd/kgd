@@ -62,6 +62,29 @@ export default function XeroSettingsModal({ open, onClose }) {
     }
   });
 
+  const disconnectMutation = useMutation({
+    mutationFn: async () => {
+      if (xeroConnections.length > 0) {
+        await base44.entities.XeroConnection.delete(xeroConnections[0].id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['xeroConnection'] });
+      toast.success('Xero disconnected successfully');
+      onClose();
+      setTimeout(() => window.location.reload(), 500);
+    },
+    onError: (error) => {
+      toast.error(`Failed to disconnect: ${error.message}`);
+    }
+  });
+
+  const handleDisconnect = () => {
+    if (confirm('Are you sure you want to disconnect Xero? You will need to reconnect and reauthorize.')) {
+      disconnectMutation.mutate();
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     saveMutation.mutate(formData);
