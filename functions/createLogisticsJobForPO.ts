@@ -52,22 +52,29 @@ Deno.serve(async (req) => {
             destination = PART_LOCATION.DELIVERY_BAY;
         }
 
-        // Find or create JobType for Logistics
-        let logisticsJobTypes = await base44.asServiceRole.entities.JobType.filter({ 
-            name: LOGISTICS_JOB_TYPE_NAME 
+        // Find or create JobType for Material Pickup - Warehouse
+        const jobTypeName = po.delivery_method === PO_DELIVERY_METHOD.PICKUP 
+            ? "Material Pickup - Warehouse" 
+            : "Material Delivery - Warehouse";
+            
+        let jobTypes = await base44.asServiceRole.entities.JobType.filter({ 
+            name: jobTypeName 
         });
         let jobTypeId;
 
-        if (logisticsJobTypes.length > 0) {
-            jobTypeId = logisticsJobTypes[0].id;
+        if (jobTypes.length > 0) {
+            jobTypeId = jobTypes[0].id;
         } else {
-            // Create the Logistics job type if it doesn't exist
+            // Create the job type if it doesn't exist
             const newJobType = await base44.asServiceRole.entities.JobType.create({
-                name: LOGISTICS_JOB_TYPE_NAME,
-                description: "Logistics job for managing deliveries and pickups",
+                name: jobTypeName,
+                description: po.delivery_method === PO_DELIVERY_METHOD.PICKUP 
+                    ? "Logistics: Pick up materials from supplier"
+                    : "Logistics: Receive delivery at warehouse",
                 color: "#8B5CF6",
                 estimated_duration: 2,
-                is_active: true
+                is_active: true,
+                is_logistics: true
             });
             jobTypeId = newJobType.id;
         }
@@ -88,32 +95,72 @@ Deno.serve(async (req) => {
         }
 
         // Set job title and address based on delivery method
-        let jobTitle, jobAddress;
+        let jobTitle, jobAddressFull;
         const warehouseAddress = "866 Bourke Street, Waterloo";
         
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
             // Material Pick Up from Supplier
             jobTitle = supplierName;
-            jobAddress = supplierAddress || supplierName;
+            jobAddressFull = supplierAddress || supplierName;
         } else {
             // Material Delivery to Warehouse
             jobTitle = "Warehouse";
-            jobAddress = warehouseAddress;
+            jobAddressFull = warehouseAddress;
+        }
+
+        // Generate job number - use manageJob to ensure proper numbering
+        let jobNumber;
+        if (po.project_id) {
+            // Project job - use project number with alpha suffix
+            const project = await base44.asServiceRole.entities.Project.get(po.project_id);
+            const projectNumber = project.project_number;
+            
+            // Find existing jobs for this project to determine next suffix
+            const projectJobs = await base44.asServiceRole.entities.Job.filter({ 
+                project_id: po.project_id 
+            });
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const suffix = alphabet[projectJobs.length] || `Z${projectJobs.length - 25}`;
+            
+            jobNumber = `${projectNumber}-${suffix}`;
+        } else {
+            // Standalone job - use unique number
+            const allJobs = await base44.asServiceRole.entities.Job.list('-created_date', 1);
+            const allProjects = await base44.asServiceRole.entities.Project.list('-project_number', 1);
+            
+            // Find highest number used across both projects and standalone jobs
+            let highestNumber = 4999;
+            
+            if (allProjects.length > 0 && allProjects[0].project_number) {
+                highestNumber = Math.max(highestNumber, allProjects[0].project_number);
+            }
+            
+            // Check existing standalone job numbers
+            const standaloneJobs = allJobs.filter(j => !j.project_id && typeof j.job_number === 'string' && !j.job_number.includes('-'));
+            for (const sj of standaloneJobs) {
+                const num = parseInt(sj.job_number);
+                if (!isNaN(num)) {
+                    highestNumber = Math.max(highestNumber, num);
+                }
+            }
+            
+            jobNumber = String(highestNumber + 1);
         }
 
         // Create the Job
         const jobData = {
+            job_number: jobNumber,
             job_type_id: jobTypeId,
-            job_type: LOGISTICS_JOB_TYPE_NAME,
-            job_type_name: LOGISTICS_JOB_TYPE_NAME,
+            job_type: jobTypeName,
+            job_type_name: jobTypeName,
             project_id: po.project_id || null,
             purchase_order_id: po.id,
             status: "Open",
             scheduled_date: scheduled_date || new Date().toISOString().split('T')[0],
             assigned_to: technician_id ? [technician_id] : [],
             notes: `Logistics job for PO from ${supplierName}\nOrigin: ${origin}\nDestination: ${destination}`,
-            address: jobAddress,
-            address_full: jobAddress,
+            address: jobAddressFull,
+            address_full: jobAddressFull,
             customer_name: jobTitle,
         };
 
