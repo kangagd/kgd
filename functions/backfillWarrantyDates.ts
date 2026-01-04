@@ -19,15 +19,23 @@ Deno.serve(async (req) => {
     );
 
     let updatedCount = 0;
+    let skippedCount = 0;
 
     for (const project of warrantyProjects) {
-      const warrantyDuration = project.warranty_duration_months || 12;
       const startDate = new Date(project.completed_date);
+      
+      // Skip if invalid date
+      if (isNaN(startDate.getTime())) {
+        skippedCount++;
+        continue;
+      }
+
+      const warrantyDuration = project.warranty_duration_months || 12;
       const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + warrantyDuration);
 
       const updates = {
-        warranty_start_date: startDate.toISOString().split('T')[0],
+        warranty_start_date: project.completed_date,
         warranty_end_date: endDate.toISOString().split('T')[0],
         warranty_status: endDate > new Date() ? 'Active' : 'Expired'
       };
@@ -42,7 +50,8 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       updatedCount,
-      message: `Updated ${updatedCount} projects with warranty dates`
+      skippedCount,
+      message: `Updated ${updatedCount} projects with warranty dates (skipped ${skippedCount} with invalid dates)`
     });
 
   } catch (error) {
