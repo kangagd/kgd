@@ -293,8 +293,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       }, [preselectedProjectId, projectIdFromUrl, projects, job]);
 
   const handleAutoSave = async () => {
-    if (!job && !formData.customer_id) {
-      // Don't auto-save if no customer is selected
+    // For logistics jobs, customer_id might not be set yet (supplier populates it)
+    // Allow submission if supplier_id is set for logistics jobs
+    if (!job && !formData.customer_id && (!isLogisticsJob || !formData.supplier_id)) {
+      // Don't auto-save if no customer/supplier is selected
       onCancel();
       return;
     }
