@@ -24,12 +24,34 @@ Deno.serve(async (req) => {
     const updates = {};
     let cleaned = false;
 
-    // Check and truncate notes if too long
-    if (truncateNotes && project.notes && project.notes.length > maxNotesLength) {
-      const truncatedNotes = project.notes.substring(0, maxNotesLength) + '\n\n[Note: Content was truncated due to excessive length]';
-      updates.notes = truncatedNotes;
-      cleaned = true;
-      console.log(`Truncated notes from ${project.notes.length} to ${truncatedNotes.length} chars`);
+    // Function to strip HTML tags
+    const stripHtml = (html) => {
+      if (!html) return html;
+      return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    };
+
+    // Check and clean notes - strip HTML and truncate if needed
+    if (project.notes && project.notes.length > 1000) {
+      const strippedNotes = stripHtml(project.notes);
+      const finalNotes = strippedNotes.length > maxNotesLength 
+        ? strippedNotes.substring(0, maxNotesLength) + '\n\n[Note: Content was truncated]'
+        : strippedNotes;
+      
+      if (finalNotes !== project.notes) {
+        updates.notes = finalNotes;
+        cleaned = true;
+        console.log(`Cleaned notes from ${project.notes.length} to ${finalNotes.length} chars`);
+      }
+    }
+
+    // Check and clean description - strip HTML if very long
+    if (project.description && project.description.length > 2000) {
+      const strippedDesc = stripHtml(project.description);
+      if (strippedDesc !== project.description) {
+        updates.description = strippedDesc;
+        cleaned = true;
+        console.log(`Cleaned description from ${project.description.length} to ${strippedDesc.length} chars`);
+      }
     }
 
     if (cleaned) {
