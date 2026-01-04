@@ -137,7 +137,7 @@ export default function AttachmentCard({
             });
           } else {
             await base44.entities.Project.update(linkedProjectId, {
-              other_documents: [...freshDocs, urlToSave]
+              other_documents: [...freshDocs, { url: urlToSave, name: attachment.filename }]
             });
           }
           
@@ -239,7 +239,7 @@ export default function AttachmentCard({
               const updatedImageUrls = [...existingImages, urlToSave];
               await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
             } else {
-              const updatedDocs = [...existingDocs, urlToSave];
+              const updatedDocs = [...existingDocs, { url: urlToSave, name: attachment.filename }];
               await base44.entities.Project.update(linkedProjectId, { other_documents: updatedDocs });
             }
           }
