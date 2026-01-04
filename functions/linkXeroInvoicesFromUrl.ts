@@ -26,6 +26,10 @@ Deno.serve(async (req) => {
     const connections = await base44.asServiceRole.entities.XeroConnection.list();
     const xeroConnection = connections[0];
     
+    console.log('Xero connection found:', xeroConnection ? 'yes' : 'no');
+    console.log('Has access token:', xeroConnection?.access_token ? 'yes' : 'no');
+    console.log('Tenant ID:', xeroConnection?.tenant_id);
+    
     if (!xeroConnection || !xeroConnection.access_token) {
       return Response.json({ error: 'No Xero connection found' }, { status: 400 });
     }
