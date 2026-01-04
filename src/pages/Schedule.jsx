@@ -1166,8 +1166,8 @@ export default function Schedule() {
             </div>
             
             {/* Mobile: Grid layout, Desktop: Flex row */}
-            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-row lg:items-center lg:justify-between lg:gap-3">
-              <div className="col-span-2 lg:col-span-1 flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-row lg:items-center lg:justify-between lg:gap-3 max-w-full">
+              <div className="col-span-2 lg:col-span-1 flex flex-wrap items-center gap-2 max-w-full min-w-0">
                 <div className="inline-flex items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
                   <Button
                     type="button"
