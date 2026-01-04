@@ -9,48 +9,72 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
+    const { action } = await req.json().catch(() => ({}));
+
     // Fetch all customers
     const customers = await base44.asServiceRole.entities.Customer.list();
 
-    let deletedCount = 0;
+    let deletedNoContact = 0;
+    let deletedSoftDeleted = 0;
     let updatedCount = 0;
-    const deletedIds = [];
 
-    for (const customer of customers) {
-      // 1. Delete customers with no email AND no phone
-      if (!customer.email && !customer.phone) {
-        await base44.asServiceRole.entities.Customer.delete(customer.id);
-        deletedIds.push(customer.id);
-        deletedCount++;
-        continue;
+    // Action 1: Delete soft-deleted customers
+    if (!action || action === 'delete_soft_deleted') {
+      for (const customer of customers) {
+        if (customer.deleted_at) {
+          await base44.asServiceRole.entities.Customer.delete(customer.id);
+          deletedSoftDeleted++;
+          await new Promise(resolve => setTimeout(resolve, 50)); // Rate limit protection
+        }
       }
+    }
 
-      // 2. Build normalized fields and fix incomplete data
-      const updates = {};
-      let needsUpdate = false;
-
-      // Normalize name
-      if (customer.name && !customer.normalized_name) {
-        updates.normalized_name = customer.name.toLowerCase().trim();
-        needsUpdate = true;
+    // Action 2: Delete customers with no contact info
+    if (!action || action === 'delete_no_contact') {
+      for (const customer of customers) {
+        if (!customer.deleted_at && !customer.email && !customer.phone) {
+          await base44.asServiceRole.entities.Customer.delete(customer.id);
+          deletedNoContact++;
+          await new Promise(resolve => setTimeout(resolve, 50)); // Rate limit protection
+        }
       }
+    }
 
-      // Normalize email
-      if (customer.email && !customer.normalized_email) {
-        updates.normalized_email = customer.email.toLowerCase().trim();
-        needsUpdate = true;
-      }
+    // Action 3: Normalize all fields
+    if (!action || action === 'normalize') {
+      for (const customer of customers) {
+        if (customer.deleted_at || (!customer.email && !customer.phone)) continue;
 
-      // Normalize phone (remove all non-digits)
-      if (customer.phone && !customer.normalized_phone) {
-        updates.normalized_phone = customer.phone.replace(/\D/g, '');
-        needsUpdate = true;
-      }
+        const updates = {};
+        let needsUpdate = false;
 
-      // Normalize address
-      if (!customer.normalized_address) {
+        // Always recalculate normalized fields
+        if (customer.name) {
+          const normalized = customer.name.toLowerCase().trim();
+          if (customer.normalized_name !== normalized) {
+            updates.normalized_name = normalized;
+            needsUpdate = true;
+          }
+        }
+
+        if (customer.email) {
+          const normalized = customer.email.toLowerCase().trim();
+          if (customer.normalized_email !== normalized) {
+            updates.normalized_email = normalized;
+            needsUpdate = true;
+          }
+        }
+
+        if (customer.phone) {
+          const normalized = customer.phone.replace(/\D/g, '');
+          if (customer.normalized_phone !== normalized) {
+            updates.normalized_phone = normalized;
+            needsUpdate = true;
+          }
+        }
+
+        // Fix and normalize address
         const addressParts = [
-          customer.address_full,
           customer.address_street,
           customer.address_suburb,
           customer.address_state,
@@ -58,24 +82,38 @@ Deno.serve(async (req) => {
           customer.address_country
         ].filter(Boolean);
         
-        if (addressParts.length > 0) {
-          updates.normalized_address = addressParts.join(', ').toLowerCase();
+        const normalizedAddress = addressParts.length > 0 
+          ? addressParts.join(', ').toLowerCase() 
+          : '';
+
+        if (customer.normalized_address !== normalizedAddress) {
+          updates.normalized_address = normalizedAddress;
           needsUpdate = true;
         }
-      }
 
-      if (needsUpdate) {
-        await base44.asServiceRole.entities.Customer.update(customer.id, updates);
-        updatedCount++;
+        // Also update address_full if it's different from constructed
+        if (addressParts.length > 0) {
+          const fullAddress = addressParts.join(', ');
+          if (!customer.address_full || customer.address_full !== fullAddress) {
+            updates.address_full = fullAddress;
+            needsUpdate = true;
+          }
+        }
+
+        if (needsUpdate) {
+          await base44.asServiceRole.entities.Customer.update(customer.id, updates);
+          updatedCount++;
+          await new Promise(resolve => setTimeout(resolve, 50)); // Rate limit protection
+        }
       }
     }
 
     return Response.json({
       success: true,
-      deletedCount,
+      deletedSoftDeleted,
+      deletedNoContact,
       updatedCount,
-      deletedIds: deletedIds.slice(0, 10), // Show first 10 for reference
-      message: `Deleted ${deletedCount} customers with no contact info, updated ${updatedCount} customers with normalized fields`
+      message: `Deleted ${deletedSoftDeleted} soft-deleted, ${deletedNoContact} with no contact, updated ${updatedCount} customers`
     });
 
   } catch (error) {
