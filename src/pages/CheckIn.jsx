@@ -34,10 +34,16 @@ export default function CheckIn() {
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['myJobs', user?.email],
-    queryFn: () => base44.entities.Job.filter({ 
-      assigned_to: user?.email,
-      status: ['Scheduled', 'Open']
-    }),
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const allJobs = await base44.entities.Job.filter({ 
+        status: ['Scheduled', 'Open']
+      });
+      // Filter jobs where user's email is in the assigned_to array
+      return allJobs.filter(job => 
+        job.assigned_to?.includes(user.email)
+      );
+    },
     enabled: !!user?.email,
   });
 
