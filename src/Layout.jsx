@@ -113,6 +113,8 @@ const viewerNavigationItems = [
 // Get effective role for user
 const getEffectiveRole = (user) => {
   if (!user) return 'viewer';
+  // Use extended_role if set, otherwise fallback to built-in role logic
+  if (user.extended_role) return user.extended_role;
   if (user.role === 'admin') return 'admin';
   if (user.role === 'manager') return 'manager';
   if (user.is_field_technician) return 'technician';
