@@ -370,8 +370,8 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   };
 
   return (
-    <Card className="border-2 border-[#FAE008] shadow-lg">
-      <CardHeader className="bg-[#FAE008]/10 border-b border-[#E5E7EB]">
+    <Card className="border-2 border-[#FAE008] shadow-lg flex flex-col max-h-[90vh]">
+      <CardHeader className="bg-[#FAE008]/10 border-b border-[#E5E7EB] flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <CardTitle className="text-[18px] font-semibold">
@@ -395,7 +395,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
                 <label className="text-[13px] font-semibold text-[#4B5563] w-12 flex-shrink-0">To:</label>
