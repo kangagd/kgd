@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
         if (customer.deleted_at) {
           await base44.asServiceRole.entities.Customer.delete(customer.id);
           deletedSoftDeleted++;
-          await new Promise(resolve => setTimeout(resolve, 50)); // Rate limit protection
+          await new Promise(resolve => setTimeout(resolve, 100)); // Rate limit protection
         }
       }
     }
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
         if (!customer.deleted_at && !customer.email && !customer.phone) {
           await base44.asServiceRole.entities.Customer.delete(customer.id);
           deletedNoContact++;
-          await new Promise(resolve => setTimeout(resolve, 50)); // Rate limit protection
+          await new Promise(resolve => setTimeout(resolve, 100)); // Rate limit protection
         }
       }
     }
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         if (needsUpdate) {
           await base44.asServiceRole.entities.Customer.update(customer.id, updates);
           updatedCount++;
-          await new Promise(resolve => setTimeout(resolve, 50)); // Rate limit protection
+          await new Promise(resolve => setTimeout(resolve, 100)); // Rate limit protection
         }
       }
     }
