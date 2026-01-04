@@ -12,9 +12,23 @@ async function processProject(base44, project) {
     };
   }
 
-  console.log(`Searching for existing EmailThreads with customer email: ${customerEmail}`);
+  console.log(`Searching Gmail history for emails with: ${customerEmail}`);
 
-  // Search existing EmailThreads in the database that match the customer email
+  // Search Gmail for historical emails with this customer
+  try {
+    const searchResult = await base44.asServiceRole.functions.invoke('searchGmailHistory', {
+      query: customerEmail,
+      maxResults: 100
+    });
+
+    if (searchResult.data?.synced) {
+      console.log(`Synced ${searchResult.data.synced} new emails from Gmail`);
+    }
+  } catch (gmailError) {
+    console.error('Gmail search error:', gmailError.message);
+  }
+
+  // Now search existing EmailThreads in the database that match the customer email
   const allThreads = await base44.asServiceRole.entities.EmailThread.list();
   const foundThreads = allThreads.filter(thread => {
     const fromMatches = thread.from_address?.toLowerCase().includes(customerEmail.toLowerCase());
