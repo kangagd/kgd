@@ -332,6 +332,11 @@ export default function Projects() {
           return allTradeRequirements.some(t => sameId(t.project_id, projectId) && t.is_required);
         }, [allTradeRequirements]);
 
+        const hasCustomerIssue = useCallback((project) => {
+          // No customer ID or missing both phone and email
+          return !project.customer_id || (!project.customer_phone && !project.customer_email);
+        }, []);
+
   if (showForm) {
     return (
       <div className="p-5 md:p-10 bg-[#ffffff] min-h-screen">
