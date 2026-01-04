@@ -135,6 +135,11 @@ export default function Projects() {
     queryFn: () => base44.entities.Quote.list(),
   });
 
+  const { data: allXeroInvoices = [] } = useQuery({
+    queryKey: ['allXeroInvoices'],
+    queryFn: () => base44.entities.XeroInvoice.list(),
+  });
+
   const inventoryByItem = useMemo(() => {
     const map = {};
     // Warehouse from PriceList
@@ -307,6 +312,10 @@ export default function Projects() {
           sameId(q.project_id, p.id)
         );
 
+        const projectInvoices = allXeroInvoices.filter(inv => 
+          sameId(inv.project_id, p.id)
+        );
+
         const hasUnansweredEmails = projectEmailThreads.some(thread => 
           thread.last_customer_message_at && 
           (!thread.last_internal_message_at || 
@@ -317,6 +326,28 @@ export default function Projects() {
           ai.severity === 'critical' || ai.severity === 'high'
         );
 
+        // Calculate actual outstanding amounts from Xero invoices
+        const totalInvoiced = projectInvoices.reduce((sum, inv) => 
+          sum + (inv.total_amount || inv.total || 0), 0
+        );
+        const totalPaid = projectInvoices.reduce((sum, inv) => 
+          sum + (inv.amount_paid || 0), 0
+        );
+        const totalOutstanding = projectInvoices.reduce((sum, inv) => 
+          sum + (inv.amount_due || 0), 0
+        );
+
+        const hasOutstandingPayment = totalOutstanding > 0 || 
+          projectInvoices.some(inv => 
+            (inv.status === 'AUTHORISED' || inv.status === 'OVERDUE') && 
+            (inv.amount_due || 0) > 0
+          );
+
+        // Also check manual payments tracking
+        const manualPaymentsPending = (p.payments || []).some(payment => 
+          payment.payment_status === 'Pending' && (payment.payment_amount || 0) > 0
+        );
+
         return {
           id: p.id,
           title: p.title,
@@ -325,9 +356,11 @@ export default function Projects() {
           financial_status: p.financial_status,
           project_type: p.project_type,
           total_project_value: p.total_project_value,
-          payments: p.payments,
-          warranty_enabled: p.warranty_enabled,
-          warranty_status: p.warranty_status,
+          total_invoiced: totalInvoiced,
+          total_paid: totalPaid,
+          total_outstanding: totalOutstanding,
+          has_outstanding_payment: hasOutstandingPayment || manualPaymentsPending,
+          invoice_count: projectInvoices.length,
           has_attention_items: projectAttentionItems.length > 0,
           attention_items_count: projectAttentionItems.length,
           high_priority_attention_count: highPriorityAttentionItems.length,
@@ -343,22 +376,26 @@ export default function Projects() {
 
 User Query: "${aiQuery}"
 
-Understanding common queries:
-- "outstanding payments" or "awaiting payment" → financial_status is "Awaiting Payment" or partial payments made
-- "initial balance paid" → financial_status is "Initial Payment Made"
+CRITICAL FILTERING RULES:
+- "outstanding payments" OR "awaiting payment" OR "unpaid" → has_outstanding_payment is true OR total_outstanding > 0
+- "fully paid" OR "paid in full" → has_outstanding_payment is false AND total_outstanding === 0
 - "unanswered emails" → has_unanswered_emails is true
-- "attention items" or "high priority" → has_attention_items is true or high_priority_attention_count > 0
-- "warranty" → warranty_status is "Active" or status is "Warranty"
-- "quotes sent" → latest_quote_status is "Sent" or status is "Quote Sent"
+- "attention items" OR "high priority" OR "need attention" → has_attention_items is true
+- "warranty" → warranty_status is "Active" OR status is "Warranty"
+- "quotes sent" → latest_quote_status is "Sent" OR status is "Quote Sent"
 - "completed" → status is "Completed"
 
-Available financial statuses: "Awaiting Payment", "Initial Payment Made", "Second Payment Made", "Balance Paid in Full", "Written Off", "Cancelled"
-Available project statuses: "Lead", "Initial Site Visit", "Create Quote", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty", "Lost"
+Each project includes:
+- has_outstanding_payment: true/false (if ANY money is owed)
+- total_outstanding: dollar amount still owed
+- total_invoiced: total amount invoiced
+- total_paid: total amount paid
+- financial_status: text status from manual tracking
 
 Projects data:
 ${JSON.stringify(enrichedProjects, null, 2)}
 
-Return matching project IDs and a brief explanation.`,
+Return ALL project IDs where has_outstanding_payment is true OR total_outstanding > 0 for payment-related queries.`,
         response_json_schema: {
           type: "object",
           properties: {
