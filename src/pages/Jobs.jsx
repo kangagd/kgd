@@ -531,7 +531,8 @@ export default function Jobs() {
           )}
 
           {showFilters && viewMode === "list" && (
-            <div className="flex flex-wrap gap-3">
+            <div className="max-w-full overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+              <div className="flex gap-3 min-w-max">
               <Select value={technicianFilter} onValueChange={setTechnicianFilter}>
                 <SelectTrigger className="w-full md:w-[200px] h-10">
                   <SelectValue placeholder="All Technicians" />
@@ -627,6 +628,7 @@ export default function Jobs() {
                   <SelectItem value="status-asc">Status (A-Z)</SelectItem>
                 </SelectContent>
               </Select>
+              </div>
             </div>
           )}
         </div>
