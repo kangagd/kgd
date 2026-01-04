@@ -97,10 +97,10 @@ Deno.serve(async (req) => {
         }
 
         // Link invoice to project
-        const existingInvoices = project.xero_invoices || [];
+        const currentInvoices = project.xero_invoices || [];
         await base44.asServiceRole.entities.Project.update(project.id, {
           primary_xero_invoice_id: invoiceEntityId,
-          xero_invoices: [...existingInvoices, invoiceEntityId].filter((v, i, a) => a.indexOf(v) === i) // deduplicate
+          xero_invoices: [...currentInvoices, invoiceEntityId].filter((v, i, a) => a.indexOf(v) === i) // deduplicate
         });
 
         linkedCount++;
