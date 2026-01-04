@@ -9,18 +9,68 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Get Xero connection by re-fetching fresh data
+    // Get fresh Xero connection with token refresh
     const connections = await base44.asServiceRole.entities.XeroConnection.list();
-    const xeroConnection = connections[0];
+    let xeroConnection = connections[0];
 
-    if (!xeroConnection || !xeroConnection.access_token) {
+    if (!xeroConnection || !xeroConnection.refresh_token) {
       return Response.json({ error: 'No Xero connection found. Please reconnect Xero.' }, { status: 400 });
     }
 
-    console.log('Xero connection found');
-    console.log('Access token (first 20 chars):', xeroConnection.access_token.substring(0, 20));
-    console.log('Tenant ID:', xeroConnection.tenant_id);
+    // Check if token needs refresh (expires in less than 5 minutes)
+    const expiresAt = new Date(xeroConnection.expires_at);
+    const now = new Date();
+    const needsRefresh = (expiresAt.getTime() - now.getTime()) < 5 * 60 * 1000;
+
     console.log('Token expires at:', xeroConnection.expires_at);
+    console.log('Needs refresh:', needsRefresh);
+
+    if (needsRefresh) {
+      console.log('Refreshing Xero token...');
+      const clientId = Deno.env.get('XERO_CLIENT_ID');
+      const clientSecret = Deno.env.get('XERO_CLIENT_SECRET');
+
+      const tokenResponse = await fetch('https://identity.xero.com/connect/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: xeroConnection.refresh_token
+        })
+      });
+
+      if (!tokenResponse.ok) {
+        const error = await tokenResponse.text();
+        console.error('Token refresh failed:', error);
+        return Response.json({ 
+          error: 'Token refresh failed. Please reconnect Xero.',
+          details: error
+        }, { status: 400 });
+      }
+
+      const tokens = await tokenResponse.json();
+      const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+
+      await base44.asServiceRole.entities.XeroConnection.update(xeroConnection.id, {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: newExpiresAt
+      });
+
+      xeroConnection = {
+        ...xeroConnection,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: newExpiresAt
+      };
+
+      console.log('Token refreshed successfully');
+    }
+
+    console.log('Using access token (first 20 chars):', xeroConnection.access_token.substring(0, 20));
     
     if (!xeroConnection || !xeroConnection.access_token) {
       return Response.json({ error: 'No Xero connection found' }, { status: 400 });
