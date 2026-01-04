@@ -9,10 +9,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Fetch all projects with customer_id but missing customer_name
+    // Fetch all projects with customer_id but missing any customer details
     const allProjects = await base44.asServiceRole.entities.Project.list();
     const projectsNeedingUpdate = allProjects.filter(p => 
-      p.customer_id && !p.customer_name
+      p.customer_id && (!p.customer_name || !p.customer_phone || !p.customer_email)
     );
 
     console.log(`Found ${projectsNeedingUpdate.length} projects needing customer details`);
