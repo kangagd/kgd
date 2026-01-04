@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
           {
             headers: {
               'Authorization': `Bearer ${xeroConnection.access_token}`,
-              'Xero-tenant-id': xeroConnection.tenant_id,
+              'Xero-tenant-id': xeroConnection.xero_tenant_id,
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             }
