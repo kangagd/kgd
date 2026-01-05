@@ -190,13 +190,19 @@ export default function Layout({ children, currentPageName }) {
         return;
       }
       try {
-        // Fetch check-ins for user
+        // Fetch all active check-ins (managers/admins can see all via RLS)
         const checkIns = await base44.entities.CheckInOut.list();
         
         if (isCancelled) return;
 
-        // Find active one for this user (no check_out_time)
-        const active = checkIns.find(c => !c.check_out_time && c.technician_email === user.email);
+        // Find any active check-in (no check_out_time)
+        // For technicians, show their own; for managers/admins, show any active one
+        const effectiveRole = getEffectiveRole(user);
+        const isManagerOrAdmin = effectiveRole === 'admin' || effectiveRole === 'manager';
+        
+        const active = isManagerOrAdmin 
+          ? checkIns.find(c => !c.check_out_time) // Show any active check-in
+          : checkIns.find(c => !c.check_out_time && c.technician_email === user.email); // Show only own
         
         if (active) {
             // Fetch job details
