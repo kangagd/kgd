@@ -17,7 +17,7 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
 
   // Get upcoming scheduled jobs (max 2)
   const upcomingJobs = jobs
-    .filter(j => j.status === "Scheduled" && j.scheduled_date)
+    .filter(j => j.scheduled_date && j.status === "Scheduled")
     .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))
     .slice(0, 2);
 
