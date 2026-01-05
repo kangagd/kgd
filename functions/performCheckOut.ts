@@ -36,8 +36,27 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Job ID and CheckIn ID are required' }, { status: 400 });
         }
 
-        // Require at least one photo/video
-        if (!imageUrls || imageUrls.length === 0) {
+        // Fetch job to check if it's logistics
+        const job = await base44.asServiceRole.entities.Job.get(jobId);
+        if (!job) {
+            return Response.json({ error: 'Job not found' }, { status: 404 });
+        }
+
+        // Check if logistics job by fetching job type
+        let isLogisticsJob = false;
+        if (job.job_type_id) {
+            try {
+                const jobType = await base44.asServiceRole.entities.JobType.get(job.job_type_id);
+                isLogisticsJob = jobType?.is_logistics === true;
+            } catch (e) {
+                console.warn("Failed to fetch job type:", e);
+            }
+        }
+        // Also check other logistics indicators
+        isLogisticsJob = isLogisticsJob || !!job.vehicle_id || !!job.purchase_order_id || !!job.third_party_trade_id;
+
+        // Require at least one photo/video ONLY for non-logistics jobs
+        if (!isLogisticsJob && (!imageUrls || imageUrls.length === 0)) {
             return Response.json({ error: 'At least one photo or video is required to check out' }, { status: 400 });
         }
 
@@ -49,11 +68,6 @@ Deno.serve(async (req) => {
 
         if (checkIn.technician_email !== user.email && user.role !== 'admin' && user.role !== 'manager') {
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
-        }
-
-        const job = await base44.asServiceRole.entities.Job.get(jobId);
-        if (!job) {
-            return Response.json({ error: 'Job not found' }, { status: 404 });
         }
 
         // Update CheckInOut record with check-out details

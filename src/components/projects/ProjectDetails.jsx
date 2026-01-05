@@ -1126,20 +1126,27 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <AddressAutocomplete
                     value={project.address_full || project.address}
                     onChange={(addressData) => {
-                      // Update all address fields
-                      base44.entities.Project.update(project.id, {
-                        address: addressData.address_full,
-                        address_full: addressData.address_full,
-                        address_street: addressData.address_street,
-                        address_suburb: addressData.address_suburb,
-                        address_state: addressData.address_state,
-                        address_postcode: addressData.address_postcode,
-                        address_country: addressData.address_country,
-                        google_place_id: addressData.google_place_id,
-                        latitude: addressData.latitude,
-                        longitude: addressData.longitude
+                      // Update all address fields and sync to jobs
+                      base44.functions.invoke('manageProject', {
+                        action: 'update',
+                        id: project.id,
+                        data: {
+                          address: addressData.address_full,
+                          address_full: addressData.address_full,
+                          address_street: addressData.address_street,
+                          address_suburb: addressData.address_suburb,
+                          address_state: addressData.address_state,
+                          address_postcode: addressData.address_postcode,
+                          address_country: addressData.address_country,
+                          google_place_id: addressData.google_place_id,
+                          latitude: addressData.latitude,
+                          longitude: addressData.longitude
+                        }
                       }).then(() => {
                         invalidateProjectData(queryClient, project.id);
+                        toast.success('Address updated and synced to jobs');
+                      }).catch(() => {
+                        toast.error('Failed to update address');
                       });
                     }}
                     placeholder="Search for address..."
@@ -2355,19 +2362,27 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         <AddressAutocomplete
                           value={project.address_full || project.address}
                           onChange={(addressData) => {
-                            base44.entities.Project.update(project.id, {
-                              address: addressData.address_full,
-                              address_full: addressData.address_full,
-                              address_street: addressData.address_street,
-                              address_suburb: addressData.address_suburb,
-                              address_state: addressData.address_state,
-                              address_postcode: addressData.address_postcode,
-                              address_country: addressData.address_country,
-                              google_place_id: addressData.google_place_id,
-                              latitude: addressData.latitude,
-                              longitude: addressData.longitude
+                            // Update all address fields and sync to jobs
+                            base44.functions.invoke('manageProject', {
+                              action: 'update',
+                              id: project.id,
+                              data: {
+                                address: addressData.address_full,
+                                address_full: addressData.address_full,
+                                address_street: addressData.address_street,
+                                address_suburb: addressData.address_suburb,
+                                address_state: addressData.address_state,
+                                address_postcode: addressData.address_postcode,
+                                address_country: addressData.address_country,
+                                google_place_id: addressData.google_place_id,
+                                latitude: addressData.latitude,
+                                longitude: addressData.longitude
+                              }
                             }).then(() => {
                               invalidateProjectData(queryClient, project.id);
+                              toast.success('Address updated and synced to jobs');
+                            }).catch(() => {
+                              toast.error('Failed to update address');
                             });
                           }}
                           placeholder="Search for address..."

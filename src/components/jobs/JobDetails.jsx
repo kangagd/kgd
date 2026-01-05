@@ -2156,9 +2156,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   {/* Sample Quick Actions */}
                   {user && <SampleQuickActionsPanel job={job} user={user} />}
 
-                  {/* Sample Quick Actions */}
-                  {user && <SampleQuickActionsPanel job={job} user={user} />}
-
                   {/* Tasks Panel */}
                   <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
                     <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
