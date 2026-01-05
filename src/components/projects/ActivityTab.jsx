@@ -64,8 +64,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return messages;
     },
     enabled: !!project.id,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 30000,
+    refetchOnMount: true,
     refetchOnWindowFocus: true
   });
 
@@ -88,8 +88,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return threads;
     },
     enabled: !!project.id,
-    staleTime: 0,
-    refetchOnMount: 'always',
+    staleTime: 30000,
+    refetchOnMount: true,
     refetchOnWindowFocus: true
   });
 
@@ -106,7 +106,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return allMessages.flat();
     },
     enabled: linkedThreads.length > 0,
-    staleTime: 0,
+    staleTime: 30000,
     refetchOnWindowFocus: true,
     refetchInterval: 10000
   });
@@ -153,7 +153,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return linkedDrafts;
     },
     enabled: linkedThreads.length > 0,
-    staleTime: 0,
+    staleTime: 30000,
     refetchOnWindowFocus: true,
     refetchInterval: 5000
   });
