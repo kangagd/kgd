@@ -90,7 +90,10 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getTechnicians');
+      return response.data?.technicians || [];
+    }
   });
 
   const isTechnician = user?.is_field_technician && user?.role !== 'admin';
