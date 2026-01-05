@@ -79,7 +79,10 @@ export default function Projects() {
 
   const { data: allProjects = [], isLoading } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-created_date'),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getMyProjects');
+      return response.data?.projects || [];
+    },
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
