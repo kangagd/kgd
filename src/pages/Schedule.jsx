@@ -206,12 +206,12 @@ export default function Schedule() {
     if (selectedTechnicianEmail === "me") {
       targetEmail = user?.email;
     } else if (selectedTechnicianEmail === "all") {
-      return allJobs;
+      return expandedJobs;
     } else {
       targetEmail = selectedTechnicianEmail;
     }
 
-    if (!targetEmail) return allJobs;
+    if (!targetEmail) return expandedJobs;
 
     const targetEmailLower = targetEmail.toLowerCase().trim();
 
