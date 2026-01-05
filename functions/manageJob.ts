@@ -144,6 +144,34 @@ Deno.serve(async (req) => {
             const jobTypeName = (jobData.job_type_name || jobData.job_type || '').toLowerCase();
             const isLogisticsJob = /delivery|pickup|return|logistics/.test(jobTypeName);
 
+            // Inherit address and customer fields from project if missing
+            if (jobData.project_id) {
+                const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
+                
+                // Inherit customer fields if missing
+                if (!jobData.customer_id && project.customer_id) {
+                    jobData.customer_id = project.customer_id;
+                    jobData.customer_name = project.customer_name;
+                    jobData.customer_phone = project.customer_phone;
+                    jobData.customer_email = project.customer_email;
+                    jobData.customer_type = project.customer_type;
+                }
+                
+                // Inherit address fields if missing
+                if (!jobData.address_full && (project.address_full || project.address)) {
+                    jobData.address = project.address_full || project.address;
+                    jobData.address_full = project.address_full || project.address;
+                    jobData.address_street = project.address_street;
+                    jobData.address_suburb = project.address_suburb;
+                    jobData.address_state = project.address_state;
+                    jobData.address_postcode = project.address_postcode;
+                    jobData.address_country = project.address_country || "Australia";
+                    jobData.google_place_id = project.google_place_id;
+                    jobData.latitude = project.latitude;
+                    jobData.longitude = project.longitude;
+                }
+            }
+
             // Auto-assign job number (skip for logistics jobs)
             if (!isLogisticsJob) {
                 if (jobData.project_id) {
