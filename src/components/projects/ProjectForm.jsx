@@ -96,7 +96,7 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
 
   const queryClient = useQueryClient();
 
-  const { data: allCustomers = [] } = useQuery({
+  const { data: allCustomers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
       try {
@@ -107,7 +107,9 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         // Fallback to direct query
         return await base44.entities.Customer.list();
       }
-    }
+    },
+    staleTime: 30000, // Cache for 30 seconds
+    refetchOnWindowFocus: false
   });
 
   const customers = allCustomers
@@ -428,9 +430,16 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
                         onValueChange={setCustomerSearchQuery}
                       />
                       <CommandList>
-                        <CommandEmpty>No customer found.</CommandEmpty>
-                        <CommandGroup>
-                          {filteredCustomers.map((customer) => {
+                        {customersLoading ? (
+                          <div className="p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading customers...
+                          </div>
+                        ) : (
+                          <>
+                            <CommandEmpty>No customer found.</CommandEmpty>
+                            <CommandGroup>
+                              {filteredCustomers.map((customer) => {
                             const searchable = `${customer.name || ""} ${customer.email || ""} ${customer.phone || ""}`.trim();
 
                             return (
@@ -454,7 +463,9 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
                               </CommandItem>
                             );
                           })}
-                        </CommandGroup>
+                            </CommandGroup>
+                          </>
+                        )}
                       </CommandList>
                     </Command>
                   </PopoverContent>
