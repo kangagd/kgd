@@ -83,6 +83,23 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     enabled: !!po?.linked_logistics_job_id
   });
 
+  // Determine available statuses based on delivery method
+  const getAvailableStatuses = () => {
+    const baseStatuses = [PO_STATUS.DRAFT, PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT];
+    
+    if (formData.delivery_method === 'pickup') {
+      // Pickup flow: draft → sent → on_order → in_transit → at_supplier → in_storage/in_vehicle/installed
+      return isProjectPO 
+        ? [...baseStatuses, PO_STATUS.AT_SUPPLIER, PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED, PO_STATUS.CANCELLED]
+        : [...baseStatuses, PO_STATUS.AT_SUPPLIER, PO_STATUS.IN_STORAGE, PO_STATUS.CANCELLED];
+    } else {
+      // Delivery flow: draft → sent → on_order → in_transit → in_loading_bay → in_storage/in_vehicle/installed
+      return isProjectPO 
+        ? [...baseStatuses, PO_STATUS.IN_LOADING_BAY, PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED, PO_STATUS.CANCELLED]
+        : [...baseStatuses, PO_STATUS.IN_LOADING_BAY, PO_STATUS.IN_STORAGE, PO_STATUS.CANCELLED];
+    }
+  };
+
   // Fetch additional data for line item sources
   const { data: lineItems = [] } = useQuery({
     queryKey: ['purchaseOrderLines', poId],
@@ -723,12 +740,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   const isDraft = po.status === PO_STATUS.DRAFT;
   const isProjectPO = !!formData.project_id;
-  const availableStatuses = isProjectPO ? PO_STATUS_OPTIONS_PROJECT : PO_STATUS_OPTIONS_NON_PROJECT;
+  const availableStatuses = getAvailableStatuses();
   
   const canCreateLogistics = [
     PO_STATUS.ON_ORDER,
     PO_STATUS.IN_TRANSIT,
     PO_STATUS.IN_LOADING_BAY,
+    PO_STATUS.AT_SUPPLIER,
   ].includes(formData.status);
 
   const containerClass = isModal 

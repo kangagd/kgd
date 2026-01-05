@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
         }
 
         // Determine origin and destination based on delivery method
-        let origin, destination, jobAddress;
+        let origin, destination;
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
             origin = PART_LOCATION.SUPPLIER;
             destination = PART_LOCATION.WAREHOUSE_STORAGE;
@@ -52,9 +52,9 @@ Deno.serve(async (req) => {
             destination = PART_LOCATION.DELIVERY_BAY;
         }
 
-        // Find or create JobType for Material Pickup - Warehouse
+        // Find or create JobType based on delivery method
         const jobTypeName = po.delivery_method === PO_DELIVERY_METHOD.PICKUP 
-            ? "Material Pickup - Warehouse" 
+            ? "Material Pickup - Supplier" 
             : "Material Delivery - Warehouse";
             
         let jobTypes = await base44.asServiceRole.entities.JobType.filter({ 
@@ -69,8 +69,8 @@ Deno.serve(async (req) => {
             const newJobType = await base44.asServiceRole.entities.JobType.create({
                 name: jobTypeName,
                 description: po.delivery_method === PO_DELIVERY_METHOD.PICKUP 
-                    ? "Logistics: Pick up materials from supplier"
-                    : "Logistics: Receive delivery at warehouse",
+                    ? "Pick up materials from supplier location"
+                    : "Receive delivery at warehouse location",
                 color: "#8B5CF6",
                 estimated_duration: 2,
                 is_active: true,
@@ -100,11 +100,11 @@ Deno.serve(async (req) => {
         
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
             // Material Pick Up from Supplier
-            jobTitle = supplierName;
+            jobTitle = `${supplierName} - Pickup`;
             jobAddressFull = supplierAddress || supplierName;
         } else {
             // Material Delivery to Warehouse
-            jobTitle = "Warehouse";
+            jobTitle = `${supplierName} - Delivery`;
             jobAddressFull = warehouseAddress;
         }
 
