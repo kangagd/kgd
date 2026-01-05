@@ -1944,24 +1944,28 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
+                          onClick={async () => {
                             const itemName = prompt("Item name:");
                             if (!itemName) return;
                             const quantity = parseFloat(prompt("Quantity:", "1") || "1");
                             
-                            base44.entities.Part.create({
-                              project_id: job.project_id || null,
-                              item_name: itemName,
-                              category: "Other",
-                              quantity_required: quantity,
-                              status: "pending",
-                              linked_logistics_jobs: [job.id]
-                            }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
+                            try {
+                              await base44.entities.Part.create({
+                                project_id: job.project_id || null,
+                                item_name: itemName,
+                                category: "Other",
+                                quantity_required: quantity,
+                                status: "pending",
+                                linked_logistics_jobs: [job.id]
+                              });
+                              
+                              await queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
+                              await queryClient.refetchQueries({ queryKey: ['jobParts', job.id] });
+                              
                               toast.success('Item added to checklist');
-                            }).catch(() => {
+                            } catch (error) {
                               toast.error('Failed to add item');
-                            });
+                            }
                           }}
                           className="h-7 text-xs"
                         >
