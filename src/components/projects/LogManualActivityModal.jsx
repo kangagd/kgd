@@ -15,6 +15,7 @@ export default function LogManualActivityModal({ open, onClose, projectId, onSuc
     contact_name: "",
     summary: "",
     outcome: "",
+    activity_date: new Date().toISOString().split('T')[0],
     attachments: []
   });
   const [uploading, setUploading] = useState(false);
@@ -73,7 +74,8 @@ export default function LogManualActivityModal({ open, onClose, projectId, onSuc
         sender_name: user.full_name,
         content: content,
         attachments: formData.attachments.length > 0 ? formData.attachments : null,
-        message_type: 'manual_activity'
+        message_type: 'manual_activity',
+        activity_date: formData.activity_date
       });
 
       toast.success('Activity logged successfully');
@@ -86,6 +88,7 @@ export default function LogManualActivityModal({ open, onClose, projectId, onSuc
         contact_name: "",
         summary: "",
         outcome: "",
+        activity_date: new Date().toISOString().split('T')[0],
         attachments: []
       });
     } catch (error) {
@@ -124,6 +127,15 @@ export default function LogManualActivityModal({ open, onClose, projectId, onSuc
               value={formData.contact_name}
               onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
               placeholder="e.g., John Smith"
+            />
+          </div>
+
+          <div>
+            <Label>Date</Label>
+            <Input
+              type="date"
+              value={formData.activity_date}
+              onChange={(e) => setFormData({ ...formData, activity_date: e.target.value })}
             />
           </div>
 

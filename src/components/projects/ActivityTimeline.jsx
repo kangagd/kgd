@@ -8,13 +8,16 @@ import {
   Calendar, 
   CheckCircle2, 
   Clock,
-  AlertCircle
+  AlertCircle,
+  Phone
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ManualActivityModal from "./ManualActivityModal";
 
 export default function ActivityTimeline({ project, onNavigateToTab }) {
   const [filter, setFilter] = React.useState("all");
+  const [selectedActivity, setSelectedActivity] = React.useState(null);
 
   // Fetch data sources
   const { data: quotes = [] } = useQuery({
@@ -38,6 +41,15 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
   const { data: changeHistory = [] } = useQuery({
     queryKey: ['projectChangeHistory', project.id],
     queryFn: () => base44.entities.ChangeHistory.filter({ project_id: project.id }, '-created_date', 50),
+    enabled: !!project.id
+  });
+
+  const { data: manualActivities = [] } = useQuery({
+    queryKey: ['projectManualActivities', project.id],
+    queryFn: () => base44.entities.ProjectMessage.filter({ 
+      project_id: project.id, 
+      message_type: 'manual_activity' 
+    }, '-created_date', 50),
     enabled: !!project.id
   });
 
@@ -189,11 +201,38 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
       }
     });
 
+    // Manual activity events
+    manualActivities.forEach(activity => {
+      // Parse type from content
+      const typeMatch = activity.content?.match(/\*\*\[(.*?)\]\*\*/);
+      const activityType = typeMatch ? typeMatch[1] : 'Activity';
+      
+      // Parse contact name
+      const contactMatch = activity.content?.match(/with (.+?)\n/);
+      const contactName = contactMatch ? contactMatch[1] : '';
+      
+      // Use activity_date if available, otherwise fall back to created_date
+      const timestamp = activity.activity_date ? parseISO(activity.activity_date) : parseISO(activity.created_date);
+      
+      events.push({
+        id: `manual-activity-${activity.id}`,
+        timestamp,
+        type: 'manual_activity',
+        category: 'ops',
+        action: 'logged',
+        title: activityType,
+        description: contactName ? `${activityType} with ${contactName}` : activityType,
+        icon: Phone,
+        color: 'orange',
+        metadata: { activityId: activity.id, activity }
+      });
+    });
+
     // Sort by timestamp descending and take top 12
     return events
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 12);
-  }, [quotes, invoices, jobs, changeHistory]);
+  }, [quotes, invoices, jobs, changeHistory, manualActivities]);
 
   // Filter events
   const filteredEvents = React.useMemo(() => {
@@ -226,6 +265,12 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
   };
 
   const handleEventClick = (event) => {
+    // Open modal for manual activities
+    if (event.type === 'manual_activity' && event.metadata?.activity) {
+      setSelectedActivity(event.metadata.activity);
+      return;
+    }
+
     if (!onNavigateToTab) return;
 
     // Navigate based on event type
@@ -239,15 +284,16 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <Tabs value={filter} onValueChange={setFilter} className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-          <TabsTrigger value="sales" className="flex-1">Sales</TabsTrigger>
-          <TabsTrigger value="ops" className="flex-1">Ops</TabsTrigger>
-        </TabsList>
-      </Tabs>
+    <>
+      <div className="space-y-4">
+        {/* Filters */}
+        <Tabs value={filter} onValueChange={setFilter} className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+            <TabsTrigger value="sales" className="flex-1">Sales</TabsTrigger>
+            <TabsTrigger value="ops" className="flex-1">Ops</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
       {/* Timeline */}
       {filteredEvents.length === 0 ? (
@@ -294,6 +340,13 @@ export default function ActivityTimeline({ project, onNavigateToTab }) {
         })}
         </div>
       )}
-    </div>
+      </div>
+
+      <ManualActivityModal 
+        open={!!selectedActivity}
+        onClose={() => setSelectedActivity(null)}
+        activity={selectedActivity}
+      />
+    </>
   );
 }
