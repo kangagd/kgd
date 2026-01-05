@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckSquare, Plus, Clock, AlertCircle } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import TaskFormModal from "../tasks/TaskFormModal";
-import { getTaskUrgencyCounts } from "../tasks/taskFilters";
+import TaskDetailModal from "../tasks/TaskDetailModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 
-export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName, onFilteredViewAll }) {
+export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, entityType = 'project', entityId, entityName, customerId, customerName, onFilteredViewAll, onTaskUpdate, onTaskDelete, onTaskStatusChange }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showTaskDetailModal, setShowTaskDetailModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
   const navigate = useNavigate();
   
-  const { overdue, dueToday, dueSoon } = getTaskUrgencyCounts(tasks);
-
   const handleViewAll = () => {
     if (entityType === 'project' && entityId) {
       navigate(`${createPageUrl("Tasks")}?projectId=${entityId}`);
@@ -39,49 +40,48 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Compact Stats */}
-        <div className="flex items-center gap-3 text-[13px]">
-          {overdue > 0 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onFilteredViewAll) onFilteredViewAll('overdue');
-              }}
-              className="flex items-center gap-1.5 cursor-pointer hover:underline"
-            >
-              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <span className="text-[#4B5563]">Overdue:</span>
-              <span className="font-semibold text-red-700">{overdue}</span>
-            </button>
+        {/* Task List */}
+        <div className="space-y-2">
+          {tasks.length > 0 ? (
+            tasks.slice(0, 3).map(task => (
+              <div
+                key={task.id}
+                className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTaskDetailModal(true);
+                  setSelectedTask(task);
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-4 w-4 text-[#FAE008] rounded border-gray-300"
+                    checked={task.status === 'Completed'}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      onTaskStatusChange(task.id, task.status === 'Completed' ? 'Open' : 'Completed');
+                    }}
+                  />
+                  <span className={`text-sm ${task.status === 'Completed' ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                    {task.title}
+                  </span>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {task.due_date ? `Due ${new Date(task.due_date).toLocaleDateString()}` : 'No Due Date'}
+                </Badge>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">No tasks for this project.</p>
           )}
-          {dueToday > 0 && (
+          {tasks.length > 3 && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onFilteredViewAll) onFilteredViewAll('due_today');
-              }}
-              className="flex items-center gap-1.5 cursor-pointer hover:underline"
+              onClick={(e) => { e.stopPropagation(); handleViewAll(); }}
+              className="text-sm text-[#FAE008] hover:underline mt-2 inline-block"
             >
-              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-              <span className="text-[#4B5563]">Due today:</span>
-              <span className="font-semibold text-orange-700">{dueToday}</span>
+              View all {tasks.length} tasks
             </button>
-          )}
-          {dueSoon > 0 && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onFilteredViewAll) onFilteredViewAll('due_soon');
-              }}
-              className="flex items-center gap-1.5 cursor-pointer hover:underline"
-            >
-              <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span className="text-[#4B5563]">Due soon:</span>
-              <span className="font-semibold text-yellow-700">{dueSoon}</span>
-            </button>
-          )}
-          {overdue === 0 && dueToday === 0 && dueSoon === 0 && (
-            <span className="text-[#9CA3AF]">No urgent tasks</span>
           )}
         </div>
 
@@ -131,6 +131,18 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
           name: entityName,
           customer_id: customerId,
           customer_name: customerName
+        }}
+      />
+
+      <TaskDetailModal
+        open={showTaskDetailModal}
+        onClose={() => setShowTaskDetailModal(false)}
+        task={selectedTask}
+        onUpdate={onTaskUpdate}
+        onDelete={onTaskDelete}
+        onMarkComplete={async (taskToComplete) => {
+          await onTaskStatusChange(taskToComplete.id, 'Completed');
+          setShowTaskDetailModal(false);
         }}
       />
     </Card>

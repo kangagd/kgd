@@ -388,7 +388,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         const viewerData = {
           project_id: project.id,
           user_email: user.email,
-          user_name: user.full_name,
+          user_name: user.display_name || user.full_name,
           last_seen: new Date().toISOString()
         };
 
@@ -602,7 +602,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         old_value: String(oldValue),
         new_value: String(newValue),
         changed_by: user.email,
-        changed_by_name: user.full_name
+        changed_by_name: user.display_name || user.full_name
       });
     }
     updateProjectMutation.mutate({ field: fieldName, value: newValue });
@@ -891,7 +891,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         old_value: String(project.description || ''),
         new_value: String(description),
         changed_by: user.email,
-        changed_by_name: user.full_name
+        changed_by_name: user.display_name || user.full_name
       });
       updateProjectMutation.mutate({ field: 'description', value: description });
     }
@@ -906,7 +906,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         old_value: String(project.notes || ''),
         new_value: String(notes),
         changed_by: user.email,
-        changed_by_name: user.full_name
+        changed_by_name: user.display_name || user.full_name
       });
       updateProjectMutation.mutate({ field: 'notes', value: notes });
     }
@@ -916,7 +916,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     const emailsArray = Array.isArray(emails) ? emails : [];
     const techNames = emailsArray.map(email => {
       const tech = technicians.find(t => sameId(t.email, email));
-      return tech?.full_name || "";
+      return tech?.display_name || tech?.full_name || "";
     }).filter(Boolean);
     
     const updates = {
@@ -1707,6 +1707,21 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     await base44.entities.Task.create(taskData);
                     queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
                     toast.success('Task created');
+                  }}
+                  onTaskUpdate={async (taskId, data) => {
+                    await base44.entities.Task.update(taskId, data);
+                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    toast.success('Task updated');
+                  }}
+                  onTaskDelete={async (taskId) => {
+                    await base44.entities.Task.delete(taskId);
+                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    toast.success('Task deleted');
+                  }}
+                  onTaskStatusChange={async (taskId, status) => {
+                    await base44.entities.Task.update(taskId, { status });
+                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    toast.success('Task status updated');
                   }}
                 />
               </div>
