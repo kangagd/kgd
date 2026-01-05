@@ -54,8 +54,7 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
       
       toast.success(checked ? 'Visit confirmed' : 'Confirmation removed');
       
-      // Refetch in background to ensure consistency
-      queryClient.invalidateQueries({ queryKey });
+      // Don't invalidate - keep the optimistic update to avoid race conditions
     } catch (error) {
       // Revert optimistic update on error
       queryClient.setQueryData(queryKey, previousJobs);
