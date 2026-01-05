@@ -151,12 +151,15 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     return "";
   });
   
+  const [initialBodySet, setInitialBodySet] = useState(false);
+  
   useEffect(() => {
-    if (currentUser && !existingDraft && !body) {
+    if (currentUser && !existingDraft && !initialBodySet) {
       const initialBody = getInitialBody();
       setBody(initialBody);
+      setInitialBodySet(true);
     }
-  }, [currentUser, mode, message, thread]);
+  }, [currentUser, mode, message, thread, existingDraft, initialBodySet]);
   
   const [attachments, setAttachments] = useState([]);
   const [isSending, setIsSending] = useState(false);
