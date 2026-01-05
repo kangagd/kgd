@@ -10,7 +10,13 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { filterBase44TeamMembers } from "../utils/userFilters";
 
-export default function MultiTechnicianSelect({ selectedEmails = [], technicians = [], onChange }) {
+export default function MultiTechnicianSelect({ 
+  selectedEmails = [], 
+  technicians = [], 
+  onChange, 
+  leaves = [], 
+  scheduledDate = null 
+}) {
   const [open, setOpen] = useState(false);
 
   // Filter out Base44 team members
@@ -18,6 +24,27 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
     filterBase44TeamMembers(technicians), 
     [technicians]
   );
+
+  // Check if a technician is on leave for the scheduled date
+  const isTechnicianOnLeave = (techEmail) => {
+    if (!scheduledDate || !leaves || leaves.length === 0) return false;
+    
+    try {
+      const checkDate = new Date(scheduledDate);
+      checkDate.setHours(12, 0, 0, 0); // Use midday to avoid timezone issues
+      
+      return leaves.some(leave => {
+        if (leave.technician_email?.toLowerCase() !== techEmail?.toLowerCase()) return false;
+        
+        const leaveStart = new Date(leave.start_time);
+        const leaveEnd = new Date(leave.end_time);
+        
+        return checkDate >= leaveStart && checkDate <= leaveEnd;
+      });
+    } catch {
+      return false;
+    }
+  };
 
   const selectedTechs = selectedEmails
     .map(email => assignableTechnicians.find(t => t.email === email))
@@ -71,25 +98,30 @@ export default function MultiTechnicianSelect({ selectedEmails = [], technicians
           <div className="space-y-3">
             <h4 className="font-medium text-sm">Select Technicians</h4>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {assignableTechnicians.map((tech) => (
-                <div key={tech.email} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={tech.email}
-                    checked={selectedEmails.includes(tech.email)}
-                    onCheckedChange={() => toggleTechnician(tech.email)}
-                  />
-                  <label
-                    htmlFor={tech.email}
-                    className="text-sm flex-1 cursor-pointer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleTechnician(tech.email);
-                    }}
-                  >
-                    {tech.display_name || tech.full_name}
-                  </label>
-                </div>
-              ))}
+              {assignableTechnicians.map((tech) => {
+                const onLeave = isTechnicianOnLeave(tech.email);
+                return (
+                  <div key={tech.email} className={`flex items-center space-x-2 ${onLeave ? 'opacity-60' : ''}`}>
+                    <Checkbox
+                      id={tech.email}
+                      checked={selectedEmails.includes(tech.email)}
+                      disabled={onLeave}
+                      onCheckedChange={() => !onLeave && toggleTechnician(tech.email)}
+                    />
+                    <label
+                      htmlFor={tech.email}
+                      className={`text-sm flex-1 ${onLeave ? 'text-gray-400 cursor-not-allowed' : 'cursor-pointer'}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!onLeave) toggleTechnician(tech.email);
+                      }}
+                    >
+                      {tech.display_name || tech.full_name}
+                      {onLeave && <span className="text-xs text-gray-500 ml-2">(On Leave)</span>}
+                    </label>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </PopoverContent>
