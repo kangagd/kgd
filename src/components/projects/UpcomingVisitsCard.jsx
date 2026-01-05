@@ -15,9 +15,14 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // Get upcoming scheduled jobs (max 2)
+  // Get upcoming scheduled jobs (max 2) - include jobs that are Scheduled OR client confirmed
   const upcomingJobs = jobs
-    .filter(j => j.scheduled_date && j.status === "Scheduled")
+    .filter(j => {
+      if (!j.scheduled_date) return false;
+      if (j.status === "Completed" || j.status === "Cancelled") return false;
+      // Show if status is Scheduled OR if client_confirmed is true
+      return j.status === "Scheduled" || j.client_confirmed === true;
+    })
     .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))
     .slice(0, 2);
 
