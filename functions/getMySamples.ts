@@ -9,21 +9,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Allow admins, managers, and field technicians to see samples
-    const isAuthorized = user.role === 'admin' || 
-                        user.extended_role === 'manager' || 
-                        user.is_field_technician;
+    // Check if user has permission to view samples (admin, manager, or technician)
+    const hasPermission = user.role === 'admin' || 
+                         user.extended_role === 'manager' || 
+                         user.is_field_technician;
 
-    if (!isAuthorized) {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    if (!hasPermission) {
+      return Response.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
     }
 
-    // Fetch all samples using service role to bypass RLS
+    // Use service role to bypass RLS and fetch all samples
     const samples = await base44.asServiceRole.entities.Sample.list();
 
     return Response.json({ samples });
   } catch (error) {
     console.error('Error in getMySamples:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 });
