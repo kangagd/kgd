@@ -81,6 +81,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const [liveDuplicates, setLiveDuplicates] = useState([]);
   const hasInitializedFromProject = React.useRef(false);
   const [editingVisitIndex, setEditingVisitIndex] = useState(null);
+  const [checklistItems, setChecklistItems] = useState([]);
+  const [newChecklistItem, setNewChecklistItem] = useState({ name: "", quantity: 1 });
 
 
   const queryClient = useQueryClient();
@@ -322,7 +324,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     const submitData = {
       ...formData,
       assigned_to: Array.isArray(formData.assigned_to) ? formData.assigned_to : [],
-      assigned_to_name: Array.isArray(formData.assigned_to_name) ? formData.assigned_to_name : []
+      assigned_to_name: Array.isArray(formData.assigned_to_name) ? formData.assigned_to_name : [],
+      logistics_checklist_items: isLogisticsJob ? checklistItems : undefined
     };
 
     // Remove empty string values for enum fields
@@ -1072,6 +1075,71 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 <p className="text-[14px] text-slate-500 italic">No scheduled visits yet. Click "Add Visit" to schedule.</p>
               )}
               </div>
+
+            {/* Checklist Items for Logistics Jobs */}
+            {isLogisticsJob && (
+              <div className="space-y-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Pickup Checklist Items</h3>
+                    <p className="text-[12px] text-[#6B7280] mt-1">Items to check off during pickup</p>
+                  </div>
+                </div>
+
+                {checklistItems.length > 0 && (
+                  <div className="space-y-2">
+                    {checklistItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-white border border-amber-200 rounded-lg">
+                        <div className="flex-1">
+                          <span className="text-[14px] font-medium text-[#111827]">{item.name}</span>
+                          <span className="text-[14px] text-[#6B7280] ml-2">× {item.quantity}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setChecklistItems(checklistItems.filter((_, i) => i !== index))}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Item name"
+                    value={newChecklistItem.name}
+                    onChange={(e) => setNewChecklistItem({ ...newChecklistItem, name: e.target.value })}
+                    className="flex-1 border-2 border-slate-300"
+                  />
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="Qty"
+                    value={newChecklistItem.quantity}
+                    onChange={(e) => setNewChecklistItem({ ...newChecklistItem, quantity: parseInt(e.target.value) || 1 })}
+                    className="w-24 border-2 border-slate-300"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      if (newChecklistItem.name.trim()) {
+                        setChecklistItems([...checklistItems, newChecklistItem]);
+                        setNewChecklistItem({ name: "", quantity: 1 });
+                      }
+                    }}
+                    disabled={!newChecklistItem.name.trim()}
+                    className="border-2 hover:bg-white"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <RichTextField
               label="Notes & Instructions"
