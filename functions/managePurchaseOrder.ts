@@ -8,6 +8,7 @@ const PO_STATUS = {
   ON_ORDER: "on_order",
   IN_TRANSIT: "in_transit",
   IN_LOADING_BAY: "in_loading_bay",
+  AT_SUPPLIER: "at_supplier",
   IN_STORAGE: "in_storage",
   IN_VEHICLE: "in_vehicle",
   INSTALLED: "installed",
@@ -53,6 +54,10 @@ function normaliseLegacyPoStatus(status) {
     case "in_loading_bay":
     case "in loading bay":
       return PO_STATUS.IN_LOADING_BAY;
+
+    case "at_supplier":
+    case "at supplier":
+      return PO_STATUS.AT_SUPPLIER;
 
     case "in_storage":
     case "in storage":
@@ -137,6 +142,7 @@ const PART_STATUS = {
   ON_ORDER: "on_order",
   IN_TRANSIT: "in_transit",
   IN_LOADING_BAY: "in_loading_bay",
+  AT_SUPPLIER: "at_supplier",
   IN_STORAGE: "in_storage",
   IN_VEHICLE: "in_vehicle",
   INSTALLED: "installed",
@@ -215,6 +221,9 @@ function mapPoStatusToPartStatus(poStatus) {
         case PO_STATUS.IN_LOADING_BAY:
             return PART_STATUS.IN_LOADING_BAY;
         
+        case PO_STATUS.AT_SUPPLIER:
+            return PART_STATUS.AT_SUPPLIER;
+        
         case PO_STATUS.IN_STORAGE:
             return PART_STATUS.IN_STORAGE;
         
@@ -273,6 +282,11 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
                 case PO_STATUS.IN_LOADING_BAY:
                     // Arrived but not put away - NOT YET AVAILABLE for picking
                     updateData.location = PART_LOCATION.LOADING_BAY;
+                    break;
+
+                case PO_STATUS.AT_SUPPLIER:
+                    // At supplier location - ready for pickup
+                    updateData.location = PART_LOCATION.SUPPLIER;
                     break;
 
                 case PO_STATUS.IN_STORAGE:
