@@ -157,8 +157,7 @@ export default function Schedule() {
     queryFn: async () => {
       const response = await base44.functions.invoke('getTechnicians');
       return response.data?.technicians || [];
-    },
-    enabled: isAdminOrManager
+    }
   });
 
   const { data: jobTypes = [] } = useQuery({

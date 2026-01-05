@@ -9,13 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only allow admins and managers to fetch technicians
-    const isAdmin = user.role === 'admin';
-    const isManager = user.extended_role === 'manager';
-
-    if (!isAdmin && !isManager) {
-      return Response.json({ error: 'Forbidden: Only admins and managers can view technicians' }, { status: 403 });
-    }
+    // Allow all authenticated users to view technicians list
 
     // Use service role to bypass User entity RLS
     const technicians = await base44.asServiceRole.entities.User.filter({ 
