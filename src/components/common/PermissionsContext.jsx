@@ -118,13 +118,15 @@ export function PermissionsProvider({ children }) {
     
     // Admin role takes precedence
     if (user.role === 'admin') return 'admin';
-    if (user.role === 'manager') return 'manager';
     
-    // If user is a field technician, they get technician role
-    if (user.is_field_technician) return 'technician';
+    // Check extended_role for manager
+    if (user.extended_role === 'manager') return 'manager';
     
-    // Default to viewer for other users
-    return user.role || 'viewer';
+    // Check for technician role (extended_role or is_field_technician flag)
+    if (user.extended_role === 'technician' || user.is_field_technician === true) return 'technician';
+    
+    // Default to viewer for all other cases (never return "user")
+    return 'viewer';
   };
 
   const role = getEffectiveRole();
