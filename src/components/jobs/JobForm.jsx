@@ -120,6 +120,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     enabled: isLogisticsJob && !!formData.project_id
   });
 
+  const { data: technicianLeaves = [] } = useQuery({
+    queryKey: ['technicianLeaves'],
+    queryFn: () => base44.entities.TechnicianLeave.list('-start_time'),
+    staleTime: 30000
+  });
+
   // Filter job types based on logistics toggle (only when creating new job)
   const jobTypes = !job ? allJobTypes.filter(jt => 
     isLogisticsJob ? (jt.is_logistics === true) : (jt.is_logistics !== true)
@@ -954,7 +960,18 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
                 />
               </div>
-              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[14px] font-medium text-[#111827] leading-[1.4]">Assigned Technicians</Label>
+              <MultiTechnicianSelect
+                selectedEmails={formData.assigned_to || []}
+                technicians={technicians}
+                onChange={handleTechnicianChange}
+                leaves={technicianLeaves}
+                scheduledDate={formData.scheduled_date}
+              />
+            </div>
 
               {/* Scheduled Visits Section */}
               <div className="space-y-4 pt-4 border-t-2 border-slate-200">
@@ -1026,6 +1043,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                           selectedEmails={visit.assigned_to || []}
                           technicians={technicians}
                           onChange={(emails) => handleVisitTechnicianChange(index, emails)}
+                          leaves={technicianLeaves}
+                          scheduledDate={visit.date}
                         />
                         {visit.assigned_to && visit.assigned_to.length > 0 && (
                           <div className="flex items-center gap-2 mt-2">
