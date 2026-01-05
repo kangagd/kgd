@@ -34,8 +34,11 @@ export default function ProjectChat({ projectId }) {
   });
 
   const { data: allUsers = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryKey: ['teamMembers'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getTeamMembers');
+      return response.data?.teamMembers || [];
+    }
   });
 
   const sendMessageMutation = useMutation({
