@@ -27,16 +27,38 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
     .slice(0, 2);
 
   const handleConfirmationToggle = async (job, checked) => {
+    // Store the query key for this specific project
+    const queryKey = ['projectJobs', job.project_id];
+    
+    // Cancel any outgoing refetches
+    await queryClient.cancelQueries({ queryKey });
+    
+    // Snapshot the previous value
+    const previousJobs = queryClient.getQueryData(queryKey);
+    
+    // Optimistically update the cache
+    queryClient.setQueryData(queryKey, (old) => {
+      if (!old) return old;
+      return old.map(j => 
+        j.id === job.id 
+          ? { ...j, client_confirmed: checked, client_confirmed_at: checked ? new Date().toISOString() : null }
+          : j
+      );
+    });
+    
     try {
       await base44.entities.Job.update(job.id, {
         client_confirmed: checked,
         client_confirmed_at: checked ? new Date().toISOString() : null
       });
       
-      // Invalidate all projectJobs queries
-      queryClient.invalidateQueries({ queryKey: ['projectJobs'] });
       toast.success(checked ? 'Visit confirmed' : 'Confirmation removed');
+      
+      // Refetch in background to ensure consistency
+      queryClient.invalidateQueries({ queryKey });
     } catch (error) {
+      // Revert optimistic update on error
+      queryClient.setQueryData(queryKey, previousJobs);
       toast.error('Failed to update confirmation');
       console.error('Confirmation toggle error:', error);
     }
