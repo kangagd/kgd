@@ -21,16 +21,16 @@ export const QUERY_CONFIG = {
 
   // Frequent updates - refetch on focus and mount
   frequent: {
-    staleTime: 30000, // 30 seconds
+    staleTime: 10000, // 10 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   },
 
   // Reference data - can be cached longer
   reference: {
-    staleTime: 300000, // 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   },
 
   // Static data - rarely changes
