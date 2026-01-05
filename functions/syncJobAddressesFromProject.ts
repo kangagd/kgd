@@ -27,7 +27,20 @@ Deno.serve(async (req) => {
             project_id: project_id
         });
 
-        const activeJobs = jobs.filter(j => !j.deleted_at);
+        // Fetch job types to identify logistics jobs
+        const jobTypes = await base44.asServiceRole.entities.JobType.list();
+        const logisticsJobTypeIds = jobTypes
+            .filter(jt => jt.is_logistics === true)
+            .map(jt => jt.id);
+
+        // Filter out deleted jobs AND logistics jobs
+        const activeJobs = jobs.filter(j => 
+            !j.deleted_at && 
+            !j.purchase_order_id && 
+            !j.vehicle_id && 
+            !j.third_party_trade_id &&
+            !logisticsJobTypeIds.includes(j.job_type_id)
+        );
 
         // Update each job with project's address
         let updatedCount = 0;
