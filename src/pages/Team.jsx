@@ -58,7 +58,7 @@ export default function Team() {
   });
 
   // Check if current user has access
-  if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+  if (currentUser && currentUser.role !== 'admin' && currentUser.extended_role !== 'manager') {
     return <AccessDenied message="Only administrators and managers can access the Team page." />;
   }
 
