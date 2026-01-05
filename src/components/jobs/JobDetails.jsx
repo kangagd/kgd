@@ -153,7 +153,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         return response.data;
       }
     },
-    initialData: initialJob
+    initialData: initialJob,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -186,7 +189,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: allJobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true })
+    queryFn: () => base44.entities.JobType.filter({ is_active: true }),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
   });
 
   const jobTypes = allJobTypes;
@@ -195,12 +200,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
-    enabled: !!(user?.role === 'admin' || user?.role === 'manager')
+    enabled: !!(user?.role === 'admin' || user?.role === 'manager'),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: jobSummaries = [] } = useQuery({
     queryKey: ['jobSummaries', job.id],
-    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time')
+    queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time'),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: allProjectJobs = [] } = useQuery({
@@ -238,7 +248,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', job.id],
-    queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id })
+    queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: handoverReports = [] } = useQuery({
@@ -285,7 +298,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['projectPartsForJob', job.project_id],
     queryFn: () => base44.entities.Part.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    staleTime: 60_000
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Fetch Purchase Orders for enriching parts with PO status
@@ -293,7 +308,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['purchaseOrdersForJob', job.project_id],
     queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    staleTime: 60_000
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Enrich parts with PO status for accurate status derivation
@@ -313,9 +330,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['projectTradeRequirements', job.project_id],
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    refetchInterval: 3000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Detect logistics job - check is_logistics flag on JobType entity
@@ -325,13 +342,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: purchaseOrder } = useQuery({
     queryKey: ['purchaseOrder', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrder.get(job.purchase_order_id),
-    enabled: !!job.purchase_order_id && isLogisticsJob
+    enabled: !!job.purchase_order_id && isLogisticsJob,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: purchaseOrderLines = [] } = useQuery({
     queryKey: ['purchaseOrderLines', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: job.purchase_order_id }),
-    enabled: !!job.purchase_order_id && isLogisticsJob
+    enabled: !!job.purchase_order_id && isLogisticsJob,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
 
@@ -347,7 +370,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         p.linked_logistics_jobs.includes(job.id)
       );
     },
-    enabled: isLogisticsJob
+    enabled: isLogisticsJob,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const { data: supplier } = useQuery({
@@ -359,7 +385,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: xeroInvoice } = useQuery({
     queryKey: ['xeroInvoice', job.xero_invoice_id],
     queryFn: () => base44.entities.XeroInvoice.get(job.xero_invoice_id),
-    enabled: !!job.xero_invoice_id
+    enabled: !!job.xero_invoice_id,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   // Fetch project-level invoices if job is linked to a project
@@ -383,7 +412,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         return [];
       }
     },
-    enabled: !!job.project_id
+    enabled: !!job.project_id,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email?.toLowerCase() === user?.email?.toLowerCase());

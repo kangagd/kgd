@@ -36,6 +36,7 @@ import { useLocation } from "react-router-dom";
 import EntityLink from "../components/common/EntityLink";
 import BackButton from "../components/common/BackButton";
 import { useNavigate } from "react-router-dom";
+import { QUERY_CONFIG } from "../components/api/queryConfig";
 
 export default function Projects() {
   const location = useLocation();
@@ -83,61 +84,69 @@ export default function Projects() {
       const response = await base44.functions.invoke('getMyProjects');
       return response.data?.projects || [];
     },
-    refetchInterval: 15000, // Refetch every 15 seconds
+    ...QUERY_CONFIG.realtime,
   });
 
   const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } })
+    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
+    ...QUERY_CONFIG.realtime,
   });
 
   const { data: allParts = [] } = useQuery({
     queryKey: ['allParts'],
     queryFn: () => base44.entities.Part.list(),
-    refetchInterval: 10000, // Refetch every 10 seconds
-    staleTime: 5000, // Consider data stale after 5 seconds
+    ...QUERY_CONFIG.realtime,
   });
 
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list(),
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ['inventoryQuantities'],
     queryFn: () => base44.entities.InventoryQuantity.list(),
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: allTradeRequirements = [] } = useQuery({
     queryKey: ['allTradeRequirements'],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
+    ...QUERY_CONFIG.frequent,
   });
 
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['allPurchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list(),
+    ...QUERY_CONFIG.frequent,
   });
 
   const { data: allAttentionItems = [] } = useQuery({
     queryKey: ['allAttentionItems'],
     queryFn: () => base44.entities.AttentionItem.list(),
+    ...QUERY_CONFIG.realtime,
   });
 
   const { data: allEmailThreads = [] } = useQuery({
     queryKey: ['allEmailThreads'],
     queryFn: () => base44.entities.EmailThread.list(),
+    ...QUERY_CONFIG.realtime,
   });
 
   const { data: allQuotes = [] } = useQuery({
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.list(),
+    ...QUERY_CONFIG.realtime,
   });
 
   const { data: allXeroInvoices = [] } = useQuery({
     queryKey: ['allXeroInvoices'],
     queryFn: () => base44.entities.XeroInvoice.list(),
+    ...QUERY_CONFIG.realtime,
   });
 
   const inventoryByItem = useMemo(() => {
@@ -467,11 +476,11 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
   }, [aiFilteredProjects, projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
         const getJobCount = useCallback((projectId) => {
-          return allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at).length;
+          return allJobs.filter(j => sameId(j.project_id, projectId)).length;
         }, [allJobs]);
 
         const getNextJob = useCallback((projectId) => {
-          const projectJobs = allJobs.filter(j => sameId(j.project_id, projectId) && !j.deleted_at && j.scheduled_date);
+          const projectJobs = allJobs.filter(j => sameId(j.project_id, projectId) && j.scheduled_date);
         const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
         if (futureJobs.length === 0) return null;
         return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
