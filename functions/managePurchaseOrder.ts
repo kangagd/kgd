@@ -814,9 +814,9 @@ Deno.serve(async (req) => {
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.DELIVERY &&
                      newStatus === PO_STATUS.IN_LOADING_BAY) ||
 
-                    // PICKUP: create job when IN_LOADING_BAY (for pickup, this represents ready at supplier)
+                    // PICKUP: create job when AT_SUPPLIER (ready for pickup at supplier location)
                     (updatedPO.delivery_method === PO_DELIVERY_METHOD.PICKUP &&
-                     newStatus === PO_STATUS.IN_LOADING_BAY)
+                     newStatus === PO_STATUS.AT_SUPPLIER)
                 );
 
             if (shouldHaveLogisticsJob) {
