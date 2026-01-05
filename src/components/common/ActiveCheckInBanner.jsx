@@ -49,6 +49,12 @@ export default function ActiveCheckInBanner({ checkIns, onClick }) {
     );
   }
   
+  // Helper to get initials from name
+  const getInitials = (name) => {
+    if (!name) return "?";
+    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+  
   // Multiple check-ins view (for admins/managers)
   return (
     <div className="bg-blue-600 text-white px-4 py-2 flex items-center justify-between shadow-md relative z-20">
@@ -61,12 +67,17 @@ export default function ActiveCheckInBanner({ checkIns, onClick }) {
             {checkInArray.length} Active Check-Ins
           </span>
           <div className="flex gap-2 overflow-x-auto">
-            {checkInArray.slice(0, 3).map((checkIn, idx) => (
-              <span key={checkIn.id} className="text-sm font-bold truncate">
-                {checkIn.technician_name || checkIn.technician_email}
-                {idx < Math.min(2, checkInArray.length - 1) && ', '}
-              </span>
-            ))}
+            {checkInArray.slice(0, 3).map((checkIn, idx) => {
+              const jobNumber = checkIn.job?.job_number || '?';
+              const initials = getInitials(checkIn.technician_name);
+              
+              return (
+                <span key={checkIn.id} className="text-sm font-bold truncate">
+                  #{jobNumber} ({initials})
+                  {idx < Math.min(2, checkInArray.length - 1) && ', '}
+                </span>
+              );
+            })}
             {checkInArray.length > 3 && (
               <span className="text-sm font-bold">+{checkInArray.length - 3} more</span>
             )}
