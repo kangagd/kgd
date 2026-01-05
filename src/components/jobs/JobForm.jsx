@@ -114,6 +114,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const suppliers = allSuppliers.filter(s => s.is_active !== false);
 
+  const { data: projectParts = [] } = useQuery({
+    queryKey: ['projectParts', formData.project_id],
+    queryFn: () => base44.entities.Part.filter({ project_id: formData.project_id }),
+    enabled: isLogisticsJob && !!formData.project_id
+  });
+
   // Filter job types based on logistics toggle (only when creating new job)
   const jobTypes = !job ? allJobTypes.filter(jt => 
     isLogisticsJob ? (jt.is_logistics === true) : (jt.is_logistics !== true)
@@ -1082,7 +1088,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Pickup Checklist Items</h3>
-                    <p className="text-[12px] text-[#6B7280] mt-1">Items to check off during pickup</p>
+                    <p className="text-[12px] text-[#6B7280] mt-1">
+                      {formData.project_id 
+                        ? "Select parts from the project" 
+                        : "Items to check off during pickup"}
+                    </p>
                   </div>
                 </div>
 
@@ -1108,36 +1118,76 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Item name"
-                    value={newChecklistItem.name}
-                    onChange={(e) => setNewChecklistItem({ ...newChecklistItem, name: e.target.value })}
-                    className="flex-1 border-2 border-slate-300"
-                  />
-                  <Input
-                    type="number"
-                    min="1"
-                    placeholder="Qty"
-                    value={newChecklistItem.quantity}
-                    onChange={(e) => setNewChecklistItem({ ...newChecklistItem, quantity: parseInt(e.target.value) || 1 })}
-                    className="w-24 border-2 border-slate-300"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      if (newChecklistItem.name.trim()) {
-                        setChecklistItems([...checklistItems, newChecklistItem]);
-                        setNewChecklistItem({ name: "", quantity: 1 });
-                      }
-                    }}
-                    disabled={!newChecklistItem.name.trim()}
-                    className="border-2 hover:bg-white"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
+                {formData.project_id ? (
+                  // Project-linked logistics job - show part selector
+                  <div className="space-y-2">
+                    <Label className="text-[13px] font-medium text-[#6B7280]">Add Part from Project</Label>
+                    {projectParts.length === 0 ? (
+                      <p className="text-[12px] text-[#9CA3AF] p-3 bg-white border border-amber-200 rounded-lg">
+                        No parts found on this project
+                      </p>
+                    ) : (
+                      <Select 
+                        onValueChange={(partId) => {
+                          const part = projectParts.find(p => p.id === partId);
+                          if (part && !checklistItems.find(item => item.part_id === partId)) {
+                            setChecklistItems([...checklistItems, {
+                              part_id: partId,
+                              name: part.item_name || part.category,
+                              quantity: part.quantity_required || 1
+                            }]);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="border-2 border-slate-300">
+                          <SelectValue placeholder="Select a part to add" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projectParts
+                            .filter(p => !checklistItems.find(item => item.part_id === p.id))
+                            .map((part) => (
+                              <SelectItem key={part.id} value={part.id}>
+                                {part.item_name || part.category} (Qty: {part.quantity_required || 1})
+                              </SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                ) : (
+                  // Standalone logistics job - allow manual entry
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Item name"
+                      value={newChecklistItem.name}
+                      onChange={(e) => setNewChecklistItem({ ...newChecklistItem, name: e.target.value })}
+                      className="flex-1 border-2 border-slate-300"
+                    />
+                    <Input
+                      type="number"
+                      min="1"
+                      placeholder="Qty"
+                      value={newChecklistItem.quantity}
+                      onChange={(e) => setNewChecklistItem({ ...newChecklistItem, quantity: parseInt(e.target.value) || 1 })}
+                      className="w-24 border-2 border-slate-300"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        if (newChecklistItem.name.trim()) {
+                          setChecklistItems([...checklistItems, newChecklistItem]);
+                          setNewChecklistItem({ name: "", quantity: 1 });
+                        }
+                      }}
+                      disabled={!newChecklistItem.name.trim()}
+                      className="border-2 hover:bg-white"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

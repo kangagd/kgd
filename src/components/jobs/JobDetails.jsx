@@ -1908,7 +1908,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
                         Pickup Checklist ({jobParts.length})
                       </CardTitle>
-                      {!activeCheckIn && job.status !== 'Completed' && (
+                      {!activeCheckIn && job.status !== 'Completed' && !job.project_id && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -1918,7 +1918,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                             const quantity = parseFloat(prompt("Quantity:", "1") || "1");
                             
                             base44.entities.Part.create({
-                              project_id: job.project_id || null,
+                              project_id: null,
                               item_name: itemName,
                               category: "Other",
                               quantity_required: quantity,
