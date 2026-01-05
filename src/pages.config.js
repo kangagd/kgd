@@ -1,4 +1,3 @@
-import Archive from './pages/Archive';
 import CheckIn from './pages/CheckIn';
 import Contracts from './pages/Contracts';
 import Customers from './pages/Customers';
@@ -32,7 +31,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Archive": Archive,
     "CheckIn": CheckIn,
     "Contracts": Contracts,
     "Customers": Customers,

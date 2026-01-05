@@ -9,7 +9,6 @@ import {
     Wrench, 
     UserCircle, 
     DollarSign, 
-    Archive as ArchiveIcon, 
     Building2,
     FolderKanban,
     Menu,
@@ -86,7 +85,6 @@ const navigationSections = [
       { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
       { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
       { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
-      { title: "Archive", url: createPageUrl("Archive"), icon: ArchiveIcon },
     ]
   }
 ];
@@ -299,7 +297,7 @@ export default function Layout({ children, currentPageName }) {
           return {
             ...section,
             items: section.items.filter(item => 
-              !["Team", "Role Settings", "Reports", "Archive"].includes(item.title)
+              !["Team", "Role Settings", "Reports"].includes(item.title)
             )
           };
         }
