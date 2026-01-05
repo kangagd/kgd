@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'admin' && user.role !== 'manager') {
+    if (user.role !== 'admin' && user.extended_role !== 'manager') {
       return Response.json({ error: 'Forbidden: Admin or Manager access required' }, { status: 403 });
     }
 
