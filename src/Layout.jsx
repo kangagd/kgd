@@ -197,27 +197,39 @@ export default function Layout({ children, currentPageName }) {
       try {
         // Fetch all active check-ins (managers/admins can see all via RLS)
         const checkIns = await base44.entities.CheckInOut.list();
-        
+
         if (isCancelled) return;
 
-        // Find any active check-in (no check_out_time)
-        // For technicians, show their own; for managers/admins, show any active one
+        // Filter for active check-ins (no check_out_time)
         const effectiveRole = getEffectiveRole(user);
         const isManagerOrAdmin = effectiveRole === 'admin' || effectiveRole === 'manager';
-        
-        const active = isManagerOrAdmin 
-          ? checkIns.find(c => !c.check_out_time) // Show any active check-in
-          : checkIns.find(c => !c.check_out_time && c.technician_email === user.email); // Show only own
-        
-        if (active) {
-            // Fetch job details
+
+        const activeCheckIns = isManagerOrAdmin 
+          ? checkIns.filter(c => !c.check_out_time) // Show all active check-ins
+          : checkIns.filter(c => !c.check_out_time && c.technician_email === user.email); // Show only own
+
+        if (activeCheckIns.length > 0) {
+            // Fetch job details for all active check-ins
             try {
-              const job = await base44.entities.Job.get(active.job_id);
-              if (!isCancelled) setActiveCheckIn({ ...active, job });
+              const checkInsWithJobs = await Promise.all(
+                activeCheckIns.map(async (checkIn) => {
+                  try {
+                    const job = await base44.entities.Job.get(checkIn.job_id);
+                    return { ...checkIn, job };
+                  } catch (err) {
+                    console.error("Error fetching job for check-in", err);
+                    return { ...checkIn, job: null };
+                  }
+                })
+              );
+
+              if (!isCancelled) {
+                // For technicians, return single object; for admins/managers, return array
+                setActiveCheckIn(isManagerOrAdmin ? checkInsWithJobs : checkInsWithJobs[0]);
+              }
             } catch (err) {
-              console.error("Error fetching job for active check-in", err);
-              // Still show banner but maybe without job details if fail
-              if (!isCancelled) setActiveCheckIn({ ...active, job: null });
+              console.error("Error fetching jobs for active check-ins", err);
+              if (!isCancelled) setActiveCheckIn(isManagerOrAdmin ? activeCheckIns : activeCheckIns[0]);
             }
         } else {
             if (!isCancelled) setActiveCheckIn(null);
@@ -899,8 +911,7 @@ export default function Layout({ children, currentPageName }) {
               <div className="relative">
                 {activeCheckIn && (
                   <ActiveCheckInBanner 
-                    job={activeCheckIn.job} 
-                    onClick={() => navigate(`${createPageUrl("CheckIn")}?jobId=${activeCheckIn.job_id}`)}
+                    checkIns={activeCheckIn}
                   />
                 )}
                 {children}
