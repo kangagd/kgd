@@ -259,6 +259,23 @@ Deno.serve(async (req) => {
 
             job = await base44.asServiceRole.entities.Job.create(jobData);
             
+            // Create checklist items as Parts for logistics jobs
+            if (isLogisticsJob && jobData.logistics_checklist_items && Array.isArray(jobData.logistics_checklist_items)) {
+                for (const item of jobData.logistics_checklist_items) {
+                    if (item.name) {
+                        await base44.asServiceRole.entities.Part.create({
+                            project_id: job.project_id || null,
+                            item_name: item.name,
+                            category: "Other",
+                            quantity_required: item.quantity || 1,
+                            status: PART_STATUS.PENDING,
+                            location: PART_LOCATION.SUPPLIER,
+                            linked_logistics_jobs: [job.id]
+                        });
+                    }
+                }
+            }
+            
             // Update project activity when job is created
             if (job.project_id) {
                 await updateProjectActivity(base44, job.project_id, 'Job Created');
