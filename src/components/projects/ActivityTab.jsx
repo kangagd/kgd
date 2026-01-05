@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, Phone, MessageSquare, User, Calendar, Plus, Paperclip, Link2, Unlink, FileEdit, Forward, Reply, Loader2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
+import ManualActivityModal from "./ManualActivityModal";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import EmailMessageView from "../inbox/EmailMessageView";
@@ -39,6 +40,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [selectedManualActivity, setSelectedManualActivity] = useState(null);
   const queryClient = useQueryClient();
 
   // Fetch manual communication activities only
@@ -293,10 +295,11 @@ export default function ActivityTab({ project, onComposeEmail }) {
         id: `manual-${msg.id}`,
         type: 'manual',
         subType: activityType,
-        date: msg.created_date,
+        date: msg.activity_date || msg.created_date,
         from: msg.sender_name,
         content: msg.content,
-        attachments: msg.attachments || []
+        attachments: msg.attachments || [],
+        fullActivity: msg
       });
     });
 
@@ -433,12 +436,14 @@ export default function ActivityTab({ project, onComposeEmail }) {
               {filteredActivities.map((activity) => (
                 <div
                   key={activity.id}
-                  className={`border-l-2 border-[#E5E7EB] pl-5 pb-3 last:pb-0 relative ${(activity.type === 'email' || activity.type === 'draft') ? 'cursor-pointer hover:bg-[#F9FAFB] -mx-4 px-9 py-3 rounded-lg transition-colors' : ''}`}
+                  className={`border-l-2 border-[#E5E7EB] pl-5 pb-3 last:pb-0 relative ${(activity.type === 'email' || activity.type === 'draft' || activity.type === 'manual') ? 'cursor-pointer hover:bg-[#F9FAFB] -mx-4 px-9 py-3 rounded-lg transition-colors' : ''}`}
                   onClick={() => {
                     if (activity.type === 'email') {
                       setSelectedActivity(activity);
                     } else if (activity.type === 'draft') {
                       onComposeEmail?.(activity);
+                    } else if (activity.type === 'manual' && activity.fullActivity) {
+                      setSelectedManualActivity(activity.fullActivity);
                     }
                   }}
                 >
@@ -521,6 +526,12 @@ export default function ActivityTab({ project, onComposeEmail }) {
         projectId={project.id}
         onLink={(threadId) => linkEmailMutation.mutate(threadId)}
         isLinking={linkEmailMutation.isPending}
+      />
+
+      <ManualActivityModal
+        open={!!selectedManualActivity}
+        onClose={() => setSelectedManualActivity(null)}
+        activity={selectedManualActivity}
       />
     </div>
   );
