@@ -158,7 +158,7 @@ export default function Schedule() {
       const response = await base44.functions.invoke('getTechnicians');
       return response.data?.technicians || [];
     },
-    enabled: !!(user?.role === 'admin' || user?.extended_role === 'manager')
+    enabled: isAdminOrManager
   });
 
   const { data: jobTypes = [] } = useQuery({
