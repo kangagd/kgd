@@ -154,7 +154,10 @@ export default function Schedule() {
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getTechnicians');
+      return response.data?.technicians || [];
+    },
     enabled: !!(user?.role === 'admin' || user?.extended_role === 'manager')
   });
 

@@ -40,7 +40,10 @@ export default function Team() {
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getTeamMembers');
+      return response.data?.users || [];
+    },
     enabled: currentUser?.role === 'admin' || currentUser?.extended_role === 'manager',
   });
 
