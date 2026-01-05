@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
@@ -27,22 +27,20 @@ Deno.serve(async (req) => {
       filter.created_date = { $gte: since };
     }
 
-    // Fetch notifications and unread count in parallel for better performance
-    const [notifications, unreadNotifications] = await Promise.all([
-      base44.asServiceRole.entities.Notification.filter(
-        filter,
-        '-created_date',
-        limit
-      ),
-      // Only fetch unread count if we're not already filtering to unread
-      onlyUnread 
-        ? Promise.resolve([]) 
-        : base44.asServiceRole.entities.Notification.filter(
-            { user_email: user.email, is_read: false },
-            'created_date',
-            100 // Limit unread count query to prevent scanning all notifications
-          )
-    ]);
+    // Fetch notifications and unread count
+    const notifications = await base44.entities.Notification.filter(
+      filter,
+      '-created_date',
+      limit
+    );
+    
+    const unreadNotifications = onlyUnread 
+      ? [] 
+      : await base44.entities.Notification.filter(
+          { user_email: user.email, is_read: false },
+          'created_date',
+          100
+        );
 
     // Calculate unread count efficiently
     const unreadCount = onlyUnread 
