@@ -2809,7 +2809,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-600 font-semibold">Duration:</span>
                                 <span className="font-bold text-[#000000]">
-                                  {checkIn.duration_hours.toFixed(1)}h
+                                  {(checkIn.duration_hours || 0).toFixed(1)}h
                                 </span>
                               </div>
                             </div>
