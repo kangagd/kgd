@@ -1380,9 +1380,9 @@ export default function Schedule() {
             </DragDropContext>
           ) : (
             <>
-              {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} />}
-              {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} />}
-              {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} />}
+              {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
+              {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
+              {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
             </>
           )
         )}
