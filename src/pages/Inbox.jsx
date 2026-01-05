@@ -76,8 +76,8 @@ export default function Inbox() {
         const permissions = await base44.entities.EmailPermission.filter({ user_email: currentUser.email });
         if (permissions.length > 0) {
           setUserPermissions(permissions[0]);
-        } else if (currentUser.role === 'admin') {
-          // Auto-create full permissions for admin
+        } else if (currentUser.role === 'admin' || currentUser.extended_role === 'manager') {
+          // Auto-create full permissions for admin and manager
           const newPerm = await base44.entities.EmailPermission.create({
             user_email: currentUser.email,
             user_name: currentUser.full_name,
