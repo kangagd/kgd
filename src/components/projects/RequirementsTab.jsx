@@ -149,8 +149,7 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
       )}
 
       {/* Visits Context - Only show for install projects */}
-      {!isRepairOrMaintenance && (
-      {project.initial_visit_job_id && (
+      {!isRepairOrMaintenance && project.initial_visit_job_id && (
         <Card className="border border-[#E5E7EB] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-[16px] font-semibold text-[#111827]">Initial Site Visit</CardTitle>
@@ -159,7 +158,7 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
             <InitialVisitSummary project={project} />
           </CardContent>
         </Card>
-      ))}
+      )}
 
       {/* Project Contacts - Always show */}
       <ProjectContactsPanel project={project} />
