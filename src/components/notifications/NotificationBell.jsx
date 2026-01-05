@@ -207,10 +207,16 @@ export default function NotificationBell({ isMobile = false }) {
   const { data, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getNotifications', { limit: 20 });
-      return response.data;
+      try {
+        const response = await base44.functions.invoke('getNotifications', { limit: 20 });
+        return response.data || { notifications: [], unread_count: 0 };
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        return { notifications: [], unread_count: 0 };
+      }
     },
-    refetchInterval: 30000
+    refetchInterval: 30000,
+    retry: false
   });
 
   const markReadMutation = useMutation({
