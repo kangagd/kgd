@@ -77,7 +77,8 @@ export function computeAttentionItems({
   parts = [],
   purchaseOrders = [],
   emails = [],
-  manualLogs = []
+  manualLogs = [],
+  tradeRequirements = []
 }) {
   const items = [];
   
@@ -221,6 +222,22 @@ export function computeAttentionItems({
         deepLinkTab: 'requirements'
       });
     }
+  }
+
+  // RULE D2 — Required third-party trade not booked (HIGH, Requirements)
+  const unbookedRequiredTrades = tradeRequirements.filter(t => 
+    t.is_required && !t.is_booked
+  );
+  
+  if (unbookedRequiredTrades.length > 0) {
+    items.push({
+      id: 'THIRD_PARTY_TRADE_NOT_BOOKED',
+      reasonCode: 'THIRD_PARTY_TRADE_NOT_BOOKED',
+      priority: 'HIGH',
+      category: 'Requirements',
+      message: `Third-party trade not booked (${unbookedRequiredTrades.length})`,
+      deepLinkTab: 'requirements'
+    });
   }
 
   // RULE E — Visit overdue and not completed (MEDIUM, Ops)

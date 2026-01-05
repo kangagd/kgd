@@ -1663,6 +1663,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               purchaseOrders={purchaseOrders}
               emails={projectEmails}
               manualLogs={chatMessages}
+              tradeRequirements={tradeRequirements}
               onNavigateToTab={(tab) => {
                 setActiveTab(tab);
                 setTimeout(() => {

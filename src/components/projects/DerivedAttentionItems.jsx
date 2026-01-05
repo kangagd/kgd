@@ -12,6 +12,7 @@ export default function DerivedAttentionItems({
   purchaseOrders = [],
   emails = [],
   manualLogs = [],
+  tradeRequirements = [],
   onNavigateToTab
 }) {
   const items = computeAttentionItems({
@@ -22,7 +23,8 @@ export default function DerivedAttentionItems({
     parts,
     purchaseOrders,
     emails,
-    manualLogs
+    manualLogs,
+    tradeRequirements
   });
 
   if (items.length === 0) {
