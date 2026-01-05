@@ -31,12 +31,17 @@ export default function Dashboard() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        
+        // Redirect technicians to Schedule with My Schedule view
+        if (currentUser?.is_field_technician && currentUser?.role !== 'admin' && currentUser?.extended_role !== 'manager') {
+          navigate(createPageUrl("Schedule"));
+        }
       } catch (error) {
         // Error loading user - handled silently
       }
     };
     loadUser();
-  }, []);
+  }, [navigate]);
 
   const { data: allJobs = [] } = useQuery({
     queryKey: ['jobs'],
