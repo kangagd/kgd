@@ -818,22 +818,35 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
               <Card
                 className="hover:shadow-lg transition-all duration-200 hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
               >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setModalProject(project);
-                  }}
-                >
-                  <Eye className="w-4 h-4 text-[#6B7280]" />
-                </Button>
                 <CardContent className="p-4">
-                  {/* Top row */}
+                  {/* Top row - Project Number, Freshness, Age, Eye icon */}
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[16px] font-bold text-[#111827]">
+                        #{project.project_number}
+                      </span>
+                      <Badge className={freshnessColors[freshness.color]}>
+                        {freshness.label}
+                      </Badge>
+                      <span className="text-[12px] text-[#6B7280]">{age !== null ? `${age}d` : ''}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg hover:bg-[#F3F4F6] flex-shrink-0"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setModalProject(project);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 text-[#6B7280]" />
+                    </Button>
+                  </div>
+
+                  {/* Title row */}
                   <div className="mb-3">
-                    <div className="flex items-center gap-2 mb-2 pr-8">
+                    <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
                       <DuplicateBadge record={project} size="sm" />
                       {hasCustomerIssue(project) && (
@@ -848,10 +861,6 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Badge className={freshnessColors[freshness.color]}>
-                        {freshness.label}
-                      </Badge>
-                      <span className="text-[12px] text-[#6B7280]">Age: {age !== null ? `${age} days` : 'Unknown'}</span>
                       {project.organisation_type && (
                         <OrganisationTypeBadge value={project.organisation_type} />
                       )}
