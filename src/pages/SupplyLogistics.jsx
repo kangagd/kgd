@@ -158,7 +158,8 @@ export default function SupplyLogistics() {
       
       const normalizedStatus = statusMap[newStatus] || newStatus;
       
-      const response = await base44.functions.invoke('updatePurchaseOrderStatus', {
+      const response = await base44.functions.invoke('managePurchaseOrder', {
+        action: 'updateStatus',
         id: poId,
         status: normalizedStatus
       });
