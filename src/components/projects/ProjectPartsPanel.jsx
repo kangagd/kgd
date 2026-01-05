@@ -141,6 +141,29 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
     }
   });
 
+  const deletePartMutation = useMutation({
+    mutationFn: (partId) => base44.entities.Part.delete(partId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectParts', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['parts'] });
+      toast.success("Part deleted");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete part");
+    }
+  });
+
+  const handleDeletePart = (part) => {
+    if (part.purchase_order_id) {
+      toast.error("Cannot delete parts linked to a Purchase Order");
+      return;
+    }
+    
+    if (confirm(`Delete "${part.item_name || part.category}"?`)) {
+      deletePartMutation.mutate(part.id);
+    }
+  };
+
   const handleSavePart = async (data) => {
     return new Promise((resolve, reject) => {
       const successCallback = (result) => {
@@ -554,20 +577,34 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                             <span className="text-xs text-red-700">Qty: {part.quantity_required || 1}</span>
                           </div>
                         </div>
-                        {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
+                        <div className="flex gap-1">
+                          {normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPartToAssign(part);
+                                setAssignModalOpen(true);
+                              }}
+                            >
+                              Assign
+                            </Button>
+                          )}
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
-                            className="h-7 text-xs"
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setPartToAssign(part);
-                              setAssignModalOpen(true);
+                              handleDeletePart(part);
                             }}
+                            title="Delete part"
                           >
-                            Assign
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -711,21 +748,35 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                             <span className="text-xs text-gray-600">Qty: {part.quantity_required || 1}</span>
                           </div>
                         </div>
-                        {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
+                        <div className="flex gap-1">
+                          {(normaliseLegacyPartLocation(part.location) !== PART_LOCATION.VEHICLE || !part.assigned_vehicle_id) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPartToAssign(part);
+                                setAssignModalOpen(true);
+                              }}
+                            >
+                              <Truck className="w-3 h-3 mr-1" />
+                              Assign
+                            </Button>
+                          )}
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
-                            className="h-7 text-xs border-blue-200 text-blue-700 hover:bg-blue-50"
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setPartToAssign(part);
-                              setAssignModalOpen(true);
+                              handleDeletePart(part);
                             }}
+                            title="Delete part"
                           >
-                            <Truck className="w-3 h-3 mr-1" />
-                            Assign
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
