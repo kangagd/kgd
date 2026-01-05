@@ -110,8 +110,8 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
   // Show Mon-Fri (indices 1-5) unless there are weekend jobs
   const weekDays = hasWeekendJobs ? allWeekDays : allWeekDays.slice(1, 6);
 
-  const assignedTechnicianEmails = [...new Set(jobs.flatMap(job => job.assigned_to || []))];
-  const visibleTechnicians = technicians.filter(tech => assignedTechnicianEmails.includes(tech.email));
+  // Show all technicians for admins/managers, not just those with assigned jobs
+  const visibleTechnicians = technicians;
 
   const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
 

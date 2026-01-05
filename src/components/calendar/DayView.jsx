@@ -216,7 +216,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
     });
   };
 
-  if (technicians.length === 0) {
+  if (technicians.length === 0 && !isTechnician) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
