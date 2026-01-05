@@ -89,7 +89,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list(),
+    queryFn: () => base44.entities.Customer.filter({ deleted_at: { $exists: false } }),
   });
 
   const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);

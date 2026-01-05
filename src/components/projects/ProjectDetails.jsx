@@ -203,10 +203,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   const { data: jobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
-    queryFn: async () => {
-      const projectJobs = await base44.entities.Job.filter({ project_id: project.id });
-      return projectJobs.filter(job => !job.deleted_at);
-    },
+    queryFn: () => base44.entities.Job.filter({ 
+      project_id: project.id,
+      deleted_at: { $exists: false }
+    }),
     enabled: !!project.id,
     ...QUERY_CONFIG.realtime
   });

@@ -90,10 +90,7 @@ export default function Projects() {
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: async () => {
-      const jobs = await base44.entities.Job.list();
-      return jobs.filter(j => !j.deleted_at);
-    }
+    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } })
   });
 
   const { data: allParts = [] } = useQuery({
