@@ -69,23 +69,18 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Update customer
-      await base44.entities.Customer.update(customerId, formData);
-
-      // Also update cached customer info on the project
-      if (projectId) {
-        await base44.entities.Project.update(projectId, {
-          customer_name: formData.name,
-          customer_phone: formData.phone,
-          customer_email: formData.email
-        });
-      }
+      // Update customer via backend function (handles duplicates and project syncing)
+      await base44.functions.invoke('updateCustomerInfo', {
+        customerId,
+        data: formData
+      });
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['customer', customerId] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['allCustomers'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
 
       if (onCustomerUpdate) {
         onCustomerUpdate(formData);
@@ -95,7 +90,7 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating customer:', error);
-      toast.error('Failed to update customer');
+      toast.error(error.message || 'Failed to update customer');
     } finally {
       setIsSaving(false);
     }
