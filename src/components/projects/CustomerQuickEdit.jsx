@@ -359,7 +359,11 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
               onValueChange={handleOrganisationChange}
             >
               <SelectTrigger className="h-9 text-[14px] flex-1">
-                <SelectValue placeholder="Select organisation" />
+                <SelectValue placeholder="Select organisation">
+                  {formData.organisation_id && formData.organisation_id !== "none" 
+                    ? formData.organisation_name || organisations.find(o => o.id === formData.organisation_id)?.name
+                    : "None"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
