@@ -284,20 +284,34 @@ Deno.serve(async (req) => {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
             
-            // Detect if job is becoming a logistics job
-            const wasLogisticsJob = previousJob.purchase_order_id || 
-                                   previousJob.vehicle_id || 
-                                   previousJob.third_party_trade_id ||
-                                   (previousJob.job_type_name || '').toLowerCase().includes('material pick') ||
-                                   (previousJob.job_type_name || '').toLowerCase().includes('material delivery') ||
-                                   (previousJob.job_type_name || '').toLowerCase().includes('stock delivery');
+            // CRITICAL: Check JobType entity for is_logistics flag
+            let previousJobTypeIsLogistics = false;
+            let newJobTypeIsLogistics = false;
             
-            const isLogisticsJob = data.purchase_order_id || 
+            if (previousJob.job_type_id) {
+                try {
+                    const prevJobType = await base44.asServiceRole.entities.JobType.get(previousJob.job_type_id);
+                    previousJobTypeIsLogistics = prevJobType?.is_logistics === true;
+                } catch (e) {}
+            }
+            
+            if (data.job_type_id) {
+                try {
+                    const newJobType = await base44.asServiceRole.entities.JobType.get(data.job_type_id);
+                    newJobTypeIsLogistics = newJobType?.is_logistics === true;
+                } catch (e) {}
+            }
+            
+            // Detect if job is becoming a logistics job
+            const wasLogisticsJob = previousJobTypeIsLogistics ||
+                                   previousJob.purchase_order_id || 
+                                   previousJob.vehicle_id || 
+                                   previousJob.third_party_trade_id;
+            
+            const isLogisticsJob = newJobTypeIsLogistics ||
+                                  data.purchase_order_id || 
                                   data.vehicle_id || 
                                   data.third_party_trade_id ||
-                                  (data.job_type_name || '').toLowerCase().includes('material pick') ||
-                                  (data.job_type_name || '').toLowerCase().includes('material delivery') ||
-                                  (data.job_type_name || '').toLowerCase().includes('stock delivery') ||
                                   wasLogisticsJob;
             
             // GUARDRAIL: Prevent logistics jobs from having customer_name/address manually overridden
