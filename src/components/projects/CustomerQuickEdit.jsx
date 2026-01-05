@@ -344,7 +344,9 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
               <SelectItem value="Owner">Owner</SelectItem>
               <SelectItem value="Builder">Builder</SelectItem>
               <SelectItem value="Real Estate - Tenant">Real Estate - Tenant</SelectItem>
+              <SelectItem value="Real Estate - Agent">Real Estate - Agent</SelectItem>
               <SelectItem value="Strata - Owner">Strata - Owner</SelectItem>
+              <SelectItem value="Strata - Agent">Strata - Agent</SelectItem>
             </SelectContent>
           </Select>
         </div>
