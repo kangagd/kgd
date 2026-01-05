@@ -15,6 +15,8 @@ const PO_STATUS = {
   CANCELLED: "cancelled",
 };
 
+console.log('[managePurchaseOrder INIT] Valid statuses:', Object.values(PO_STATUS));
+
 // Normalize legacy status values to canonical ones
 function normaliseLegacyPoStatus(status) {
   if (!status) return PO_STATUS.DRAFT;
