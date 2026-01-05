@@ -47,7 +47,10 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
 
   const { data: organisations = [] } = useQuery({
     queryKey: ['organisations'],
-    queryFn: () => base44.entities.Organisation.filter({ status: 'active', deleted_at: { $exists: false } })
+    queryFn: async () => {
+      const orgs = await base44.entities.Organisation.list();
+      return orgs.filter(org => org.status === 'active' && !org.deleted_at);
+    }
   });
 
   const filteredOrganisations = organisations.filter(org => 
