@@ -101,7 +101,10 @@ export default function Inbox() {
 
   const { data: threads = [], isLoading } = useQuery({
     queryKey: ['emailThreads'],
-    queryFn: () => base44.entities.EmailThread.list('-last_message_date'),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getMyEmailThreads');
+      return response.data?.threads || [];
+    },
     enabled: !!userPermissions?.can_view,
     refetchInterval: 60000 // Auto-refresh every 60 seconds
   });
