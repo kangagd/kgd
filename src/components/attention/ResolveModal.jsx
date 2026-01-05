@@ -8,8 +8,11 @@ export default function ResolveModal({ open, onClose, item, onConfirm }) {
   const [note, setNote] = useState("");
 
   const handleConfirm = () => {
-    onConfirm(item.id, note);
+    // For derived items, pass the canonical key or a unique identifier
+    const itemId = item.isDerived ? (item.id || item.message) : item.id;
+    onConfirm(itemId, note);
     setNote("");
+    onClose();
   };
 
   return (
@@ -21,9 +24,9 @@ export default function ResolveModal({ open, onClose, item, onConfirm }) {
 
         <div className="py-4">
           <p className="text-sm text-gray-600 mb-4">
-            You're about to mark this attention item as resolved:
+            You're about to dismiss this attention item:
           </p>
-          <p className="font-medium text-sm mb-4">{item?.title}</p>
+          <p className="font-medium text-sm mb-4">{item?.title || item?.message}</p>
           
           <div>
             <Label>Resolution Note (optional, max 240 chars)</Label>
