@@ -754,30 +754,33 @@ export default function Layout({ children, currentPageName }) {
           {/* Tech Header */}
           {isTechnician && (
              <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
-                <div className="flex items-center justify-between min-h-[44px]">
-                  <button
-                    onClick={() => setTechMobileMenuOpen(!techMobileMenuOpen)}
-                    className="flex items-center gap-2 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px]"
-                  >
-                    <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center">
-                      <Wrench className="w-4 h-4 text-[#111827]" />
-                    </div>
-                    <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
-                  </button>
-                  <div className="flex items-center gap-2">
-                      <NotificationBell isMobile={true} />
-                      <RoleBadge role={effectiveRole} />
-                      <button
-                        onClick={() => navigate(createPageUrl("UserProfile"))}
-                        className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
-                      >
-                        <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
-                                <span className="text-[#111827] font-semibold text-sm">
-                                  {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
-                                </span>
-                              </div>
-                      </button>
-                    </div>
+                <div className="flex flex-col gap-2 min-h-[44px]">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => setTechMobileMenuOpen(!techMobileMenuOpen)}
+                      className="flex items-center gap-2 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px]"
+                    >
+                      <div className="w-8 h-8 bg-[#FAE008] rounded-lg flex items-center justify-center">
+                        <Wrench className="w-4 h-4 text-[#111827]" />
+                      </div>
+                      <h3 className="font-semibold text-[#111827] text-[14px]">KGD</h3>
+                    </button>
+                    <div className="flex items-center gap-2">
+                        <NotificationBell isMobile={true} />
+                        <RoleBadge role={effectiveRole} />
+                        <button
+                          onClick={() => navigate(createPageUrl("UserProfile"))}
+                          className="flex items-center hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors min-h-[44px] min-w-[44px] justify-center"
+                        >
+                          <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
+                                  <span className="text-[#111827] font-semibold text-sm">
+                                    {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
+                                  </span>
+                                </div>
+                        </button>
+                      </div>
+                  </div>
+                  <GlobalSearchDropdown />
                 </div>
               </header>
           )}
@@ -785,17 +788,20 @@ export default function Layout({ children, currentPageName }) {
           {/* Admin Mobile Header */}
           {!isTechnician && (
             <header className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-30 safe-area-top">
-              <div className="flex items-center justify-between min-h-[44px]">
-                <button
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  aria-label="Open navigation"
-                >
-                  <Menu className="w-6 h-6 text-[#111827]" />
-                </button>
-                <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
-                  {allNavigationItems.find(item => item.url === location.pathname)?.title || 'KangarooGD'}
-                </h1>
+              <div className="flex flex-col gap-2 min-h-[44px]">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setIsMobileMenuOpen(true)}
+                    className="p-2 hover:bg-[#F3F4F6] rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label="Open navigation"
+                  >
+                    <Menu className="w-6 h-6 text-[#111827]" />
+                  </button>
+                  <h1 className="font-semibold text-[#111827] text-[14px] truncate px-2 flex-1 text-center">
+                    {allNavigationItems.find(item => item.url === location.pathname)?.title || 'KangarooGD'}
+                  </h1>
+                </div>
+                <GlobalSearchDropdown />
               </div>
             </header>
           )}
