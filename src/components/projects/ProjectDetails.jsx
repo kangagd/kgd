@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -81,6 +82,7 @@ import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
 import DerivedAttentionItems from "./DerivedAttentionItems";
 import EmailComposer from "../inbox/EmailComposer";
+import { QUERY_CONFIG, invalidateProjectData } from "../api/queryConfig";
 
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
@@ -188,7 +190,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: project = initialProject } = useQuery({
     queryKey: ['project', initialProject.id],
     queryFn: () => base44.entities.Project.get(initialProject.id),
-    initialData: initialProject
+    initialData: initialProject,
+    ...QUERY_CONFIG.critical
   });
 
   const [description, setDescription] = useState(project.description || "");
@@ -205,24 +208,27 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const projectJobs = await base44.entities.Job.filter({ project_id: project.id });
       return projectJobs.filter(job => !job.deleted_at);
     },
-    refetchInterval: 5000,
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.realtime
   });
 
   const { data: parts = [] } = useQuery({
     queryKey: ['projectParts', project.id],
     queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.frequent
   });
 
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list(),
+    ...QUERY_CONFIG.reference
   });
 
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ['inventoryQuantities'],
     queryFn: () => base44.entities.InventoryQuantity.list(),
+    ...QUERY_CONFIG.reference
   });
 
   const inventoryByItem = React.useMemo(() => {
@@ -255,12 +261,13 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       }
     },
     enabled: !!project.customer_id,
-    staleTime: 0 // Always refetch to get latest deleted_at status
+    ...QUERY_CONFIG.critical
   });
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true })
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    ...QUERY_CONFIG.reference
   });
 
   const { data: activeViewers = [] } = useQuery({
@@ -275,14 +282,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         return [];
       }
     },
-    refetchInterval: 10000
+    ...QUERY_CONFIG.realtime
   });
 
   const { data: chatMessages = [] } = useQuery({
     queryKey: ['projectMessages', project.id],
     queryFn: () => base44.entities.ProjectMessage?.filter({ project_id: project.id }, 'created_date') || [],
-    refetchInterval: 10000,
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.realtime
   });
 
   const hasNewMessages = chatMessages.some(m => 
@@ -303,24 +310,28 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     queryKey: ["handover-reports", project.id],
     queryFn: () => base44.entities.HandoverReport.filter({ project_id: project.id }),
     enabled: !!project?.id,
+    ...QUERY_CONFIG.frequent
   });
 
   const { data: projectContacts = [] } = useQuery({
     queryKey: ['projectContacts', project.id],
     queryFn: () => base44.entities.ProjectContact.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.frequent
   });
 
   const { data: tradeRequirements = [] } = useQuery({
     queryKey: ['projectTrades', project.id],
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.frequent
   });
 
   const { data: projectTasks = [] } = useQuery({
     queryKey: ['projectTasks', project.id],
     queryFn: () => base44.entities.Task.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.realtime
   });
 
   // Auto-expand panels based on content
@@ -346,25 +357,29 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       
       return uniqueInvoices;
     },
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.critical
   });
 
   const { data: quotes = [] } = useQuery({
     queryKey: ['projectQuotes', project.id],
     queryFn: () => base44.entities.Quote.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.critical
   });
 
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['projectPurchaseOrders', project.id],
     queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.frequent
   });
 
   const { data: projectEmails = [] } = useQuery({
     queryKey: ['projectEmails', project.id],
     queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
-    enabled: !!project.id
+    enabled: !!project.id,
+    ...QUERY_CONFIG.frequent
   });
 
   React.useEffect(() => {
@@ -414,8 +429,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         ...oldData,
         [variables.field]: variables.value
       }));
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['allProjects'] });
+      invalidateProjectData(queryClient, project.id);
     }
   });
 
@@ -427,8 +441,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         ...oldData,
         ...fields
       }));
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['allProjects'] });
+      invalidateProjectData(queryClient, project.id);
     }
   });
 
@@ -442,8 +455,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] }); // Specific to Xero invoices
+      invalidateProjectData(queryClient, project.id); // For the main project data
       setShowInvoiceModal(false);
       toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
     },
@@ -504,7 +517,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       });
 
       queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      invalidateProjectData(queryClient, project.id);
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
     } catch (error) {
@@ -641,8 +654,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      invalidateProjectData(queryClient, project.id);
       toast.success('AI suggestions applied to project');
     } catch (error) {
       toast.error('Failed to apply AI suggestions');
@@ -670,7 +682,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           old_status: oldStage,
           completed_date: project.completed_date || new Date().toISOString().split('T')[0]
         });
-        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+        invalidateProjectData(queryClient, project.id);
         queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
         toast.success('Project completed and warranty activated');
       } catch (error) {
@@ -882,10 +894,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         base44.entities.Task.update(task.id, { status: "Cancelled" })
       ));
 
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      invalidateProjectData(queryClient, project.id);
+      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] }); // Job specific invalidation
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Task specific invalidation
       
       const cancelledCount = openJobs.length + allOpenTasks.length;
       toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} and ${allOpenTasks.length} task${allOpenTasks.length !== 1 ? 's' : ''} cancelled.`);
@@ -940,8 +951,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     };
     
     base44.entities.Project.update(project.id, updates).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['allProjects'] });
+      invalidateProjectData(queryClient, project.id);
       queryClient.setQueryData(['project', project.id], (oldData) => ({
         ...oldData,
         ...updates
@@ -1105,7 +1115,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               customerId={project.customer_id}
               projectId={project.id}
               onCustomerUpdate={(updatedData) => {
-                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                invalidateProjectData(queryClient, project.id);
               }}
             />
 
@@ -1130,8 +1140,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         latitude: addressData.latitude,
                         longitude: addressData.longitude
                       }).then(() => {
-                        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                        queryClient.invalidateQueries({ queryKey: ['projects'] });
+                        invalidateProjectData(queryClient, project.id);
                       });
                     }}
                     placeholder="Search for address..."
@@ -1290,7 +1299,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   });
                   
                   if (response.data.success && response.data.pdf_url) {
-                    queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                    invalidateProjectData(queryClient, project.id);
                     toast.success('Handover report generated successfully');
                     window.open(response.data.pdf_url, '_blank');
                   }
@@ -2326,7 +2335,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     customerId={project.customer_id}
                     projectId={project.id}
                     onCustomerUpdate={(updatedData) => {
-                      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                      invalidateProjectData(queryClient, project.id);
                     }}
                   />
 
@@ -2350,8 +2359,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                               latitude: addressData.latitude,
                               longitude: addressData.longitude
                             }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                              queryClient.invalidateQueries({ queryKey: ['projects'] });
+                              invalidateProjectData(queryClient, project.id);
                             });
                           }}
                           placeholder="Search for address..."
