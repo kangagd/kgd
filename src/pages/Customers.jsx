@@ -183,6 +183,9 @@ export default function Customers() {
   // Memoized customer filtering to avoid re-computation on every render
   // Potential optimisation: Debounce searchTerm for large customer lists
   const filteredCustomers = React.useMemo(() => customers.filter((customer) => {
+    // Filter out deleted and inactive
+    if (customer.deleted_at || customer.status === 'inactive') return false;
+    
     const matchesSearch =
       customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
