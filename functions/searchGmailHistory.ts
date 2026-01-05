@@ -92,11 +92,18 @@ Deno.serve(async (req) => {
       return Response.json({ synced: 0, found: 0 });
     }
 
-    // Process and sync messages
+    // Process and sync messages with timeout protection
     let syncedCount = 0;
     const seenThreadIds = new Set();
+    const startTime = Date.now();
+    const MAX_PROCESSING_TIME = 25000; // 25 seconds to leave buffer for response
 
     for (const msg of messageIds) {
+      // Check if we're approaching timeout
+      if (Date.now() - startTime > MAX_PROCESSING_TIME) {
+        console.log(`Timeout approaching, processed ${syncedCount} of ${messageIds.length} messages`);
+        break;
+      }
       try {
         // Check if message already exists
         const existingMsg = await base44.asServiceRole.entities.EmailMessage.filter({
