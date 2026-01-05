@@ -61,14 +61,20 @@ export default function Archive() {
 
   const { data: allJobs = [], isLoading: jobsLoading } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list('-deleted_at')
+    queryFn: () => base44.entities.Job.list('-deleted_at'),
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
   });
 
   const deletedJobs = allJobs.filter(job => job.deleted_at);
 
   const { data: allCustomers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['allCustomers'],
-    queryFn: () => base44.entities.Customer.list('-deleted_at')
+    queryFn: () => base44.entities.Customer.list('-deleted_at'),
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
   });
 
   const deletedCustomers = allCustomers.filter(customer => customer.deleted_at);
