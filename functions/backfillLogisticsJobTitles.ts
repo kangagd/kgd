@@ -10,8 +10,16 @@ Deno.serve(async (req) => {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
         
-        if (!user || user.role !== 'admin') {
-            return Response.json({ error: 'Unauthorized - Admin only' }, { status: 401 });
+        if (!user) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        
+        // Allow admins, managers, or targeted job_ids parameter
+        const { job_ids } = await req.json().catch(() => ({}));
+        const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
+        
+        if (!isAdminOrManager && !job_ids) {
+            return Response.json({ error: 'Unauthorized - Admin/Manager only' }, { status: 401 });
         }
 
         console.log('Starting logistics job titles backfill...');
@@ -22,12 +30,22 @@ Deno.serve(async (req) => {
         
         console.log(`Found ${logisticsJobTypes.length} logistics job types`);
         
-        // Get all jobs that are logistics
-        const allJobs = await base44.asServiceRole.entities.Job.list();
-        const logisticsJobs = allJobs.filter(job => 
-            (job.job_type_id && logisticsJobTypeIds.includes(job.job_type_id)) ||
-            job.purchase_order_id
-        );
+        // Get jobs - either specific ones or all logistics jobs
+        let logisticsJobs;
+        if (job_ids && Array.isArray(job_ids) && job_ids.length > 0) {
+            // Specific jobs requested
+            logisticsJobs = await Promise.all(
+                job_ids.map(id => base44.asServiceRole.entities.Job.get(id).catch(() => null))
+            );
+            logisticsJobs = logisticsJobs.filter(j => j !== null);
+        } else {
+            // All logistics jobs
+            const allJobs = await base44.asServiceRole.entities.Job.list();
+            logisticsJobs = allJobs.filter(job => 
+                (job.job_type_id && logisticsJobTypeIds.includes(job.job_type_id)) ||
+                job.purchase_order_id
+            );
+        }
         
         console.log(`Found ${logisticsJobs.length} logistics jobs to process`);
         
