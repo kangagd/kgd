@@ -2027,6 +2027,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   mode={composerMode}
                   thread={composerMessage?.thread}
                   message={composerMessage?.message}
+                  existingDraft={composerMessage?.existingDraft}
                   onClose={() => {
                     setComposerMode(null);
                     setComposerMessage(null);
@@ -2036,7 +2037,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     setComposerMessage(null);
                     queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
                     queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
+                    queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
                     toast.success('Email sent successfully');
+                  }}
+                  onDraftSaved={() => {
+                    queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
                   }}
                   defaultTo={project.customer_email}
                   projectId={project.id}

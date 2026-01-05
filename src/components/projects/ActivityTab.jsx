@@ -283,7 +283,8 @@ export default function ActivityTab({ project, onComposeEmail }) {
         toAddresses: draft.to_addresses || [],
         draftId: draft.id,
         threadId: draft.thread_id,
-        mode: draft.mode || 'compose'
+        mode: draft.mode || 'compose',
+        fullDraft: draft  // Store full draft object for re-opening
       });
     });
 
@@ -442,7 +443,13 @@ export default function ActivityTab({ project, onComposeEmail }) {
                     if (activity.type === 'email') {
                       setSelectedActivity(activity);
                     } else if (activity.type === 'draft') {
-                      onComposeEmail?.(activity);
+                      // Pass the full draft object with thread info
+                      const thread = linkedThreads.find(t => t.id === activity.threadId);
+                      onComposeEmail?.({
+                        mode: activity.mode,
+                        thread: thread,
+                        existingDraft: activity.fullDraft
+                      });
                     } else if (activity.type === 'manual' && activity.fullActivity) {
                       setSelectedManualActivity(activity.fullActivity);
                     }
