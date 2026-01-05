@@ -36,11 +36,12 @@ export default function CheckIn() {
     queryKey: ['myJobs', user?.email],
     queryFn: async () => {
       if (!user?.email) return [];
-      const allJobs = await base44.entities.Job.filter({ 
-        status: ['Scheduled', 'Open']
-      });
-      // Filter jobs where user's email is in the assigned_to array
+      // Use backend function for consistency with other pages
+      const response = await base44.functions.invoke('getMyJobs');
+      const allJobs = response.data || [];
+      // Filter for scheduled/open jobs assigned to user
       return allJobs.filter(job => 
+        (job.status === 'Scheduled' || job.status === 'Open') &&
         job.assigned_to?.includes(user.email)
       );
     },
@@ -65,6 +66,7 @@ export default function CheckIn() {
       return checkIn;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns'] });
       queryClient.invalidateQueries({ queryKey: ['myCheckIns'] });
       queryClient.invalidateQueries({ queryKey: ['myJobs'] });
       setSelectedJobId("");
@@ -94,6 +96,7 @@ export default function CheckIn() {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['checkIns'] });
       queryClient.invalidateQueries({ queryKey: ['myCheckIns'] });
       queryClient.invalidateQueries({ queryKey: ['myJobs'] });
       setNotes("");

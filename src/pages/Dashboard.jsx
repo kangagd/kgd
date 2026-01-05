@@ -18,6 +18,7 @@ import MaintenanceRemindersCard from "../components/dashboard/MaintenanceReminde
 import EntityModal from "../components/common/EntityModal";
 import JobModalView from "../components/jobs/JobModalView";
 import { toast } from "sonner";
+import { jobKeys } from "../components/api/queryKeys";
 
 
 
@@ -44,7 +45,7 @@ export default function Dashboard() {
   }, [navigate]);
 
   const { data: allJobs = [] } = useQuery({
-    queryKey: ['jobs'],
+    queryKey: jobKeys.all,
     queryFn: () => base44.entities.Job.list('-scheduled_date'),
   });
 
@@ -56,7 +57,7 @@ export default function Dashboard() {
   });
 
   const { data: allProjects = [] } = useQuery({
-    queryKey: ['recentProjects'],
+    queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-updated_date', 5),
   });
 
@@ -81,7 +82,7 @@ export default function Dashboard() {
   const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
   const { data: allPurchaseOrders = [] } = useQuery({
-    queryKey: ['recentPurchaseOrders'],
+    queryKey: ['purchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
     enabled: isAdminOrManager,
   });

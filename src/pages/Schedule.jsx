@@ -28,6 +28,7 @@ import WeekView from "../components/calendar/WeekView";
 import MonthView from "../components/calendar/MonthView";
 import { LayoutList, Calendar as CalendarIcon2 } from "lucide-react";
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
+import { jobKeys } from "../components/api/queryKeys";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ export default function Schedule() {
   }, []);
 
   const { data: allJobs = [], isLoading } = useQuery({
-    queryKey: ['jobs'],
+    queryKey: jobKeys.all,
     queryFn: async () => {
       // Use backend function for robust permission handling
       const response = await base44.functions.invoke('getMyJobs');
@@ -358,8 +359,7 @@ export default function Schedule() {
       return { jobId, updates, notify };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: jobKeys.all });
       toast.success('Job rescheduled successfully');
       
       // Reset state
@@ -1443,7 +1443,7 @@ export default function Schedule() {
           open={showAIAssistant}
           onClose={() => setShowAIAssistant(false)}
           selectedDate={selectedDate} 
-          onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: ['jobs'] })}
+          onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: jobKeys.all })}
         />
       </div>
     </div>
