@@ -36,7 +36,7 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
     queryKey: ['warehouseSamples'],
     queryFn: async () => {
       const response = await base44.functions.invoke('getMySamples');
-      const allSamples = response.data?.samples || [];
+      const allSamples = response.data || [];
       return allSamples.filter(s => 
         s.current_location_type === "warehouse" && s.status === "active"
       );
@@ -55,7 +55,7 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
     queryFn: async () => {
       if (!vehicleId) return [];
       const response = await base44.functions.invoke('getMySamples');
-      const allSamples = response.data?.samples || [];
+      const allSamples = response.data || [];
       // Show samples currently in vehicle OR those whose home is this vehicle
       const filtered = allSamples.filter(s => 
         s.status === "active" && (
