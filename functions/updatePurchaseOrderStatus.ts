@@ -6,6 +6,7 @@ const PO_STATUS = {
   ON_ORDER: "on_order",
   IN_TRANSIT: "in_transit",
   IN_LOADING_BAY: "in_loading_bay",
+  AT_SUPPLIER: "at_supplier",
   IN_STORAGE: "in_storage",
   IN_VEHICLE: "in_vehicle",
   INSTALLED: "installed",
@@ -22,6 +23,7 @@ function normaliseLegacyPoStatus(status) {
     'on_order': PO_STATUS.ON_ORDER,
     'in_transit': PO_STATUS.IN_TRANSIT,
     'in_loading_bay': PO_STATUS.IN_LOADING_BAY,
+    'at_supplier': PO_STATUS.AT_SUPPLIER,
     'received': PO_STATUS.IN_LOADING_BAY,
     'delivered': PO_STATUS.IN_LOADING_BAY,
     'in_storage': PO_STATUS.IN_STORAGE,
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
             !updated.linked_logistics_job_id &&
             (
                 (updated.delivery_method === 'delivery' && normalizedStatus === PO_STATUS.IN_LOADING_BAY) ||
-                (updated.delivery_method === 'pickup' && normalizedStatus === PO_STATUS.IN_LOADING_BAY)
+                (updated.delivery_method === 'pickup' && normalizedStatus === PO_STATUS.AT_SUPPLIER)
             );
 
         if (shouldHaveLogisticsJob) {
