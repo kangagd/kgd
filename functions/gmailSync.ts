@@ -145,7 +145,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'User record not found' }, { status: 404 });
     }
     
-    const user = users[0];
+    let user = users[0];
+
+    // If manager doesn't have Gmail connected, try to use admin's Gmail connection
+    if (!user.gmail_access_token && currentUser.extended_role === 'manager') {
+      const adminUsers = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
+      const connectedAdmin = adminUsers.find(admin => admin.gmail_access_token);
+      if (connectedAdmin) {
+        user = connectedAdmin;
+        console.log('Manager using admin Gmail connection:', connectedAdmin.email);
+      }
+    }
 
     if (!user.gmail_access_token) {
       return Response.json({ error: 'Gmail not connected', synced: 0 }, { status: 200 });

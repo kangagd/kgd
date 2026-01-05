@@ -8,9 +8,37 @@ export default function GmailConnect({ user, onSyncComplete }) {
   const [isConnected, setIsConnected] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
+  const [gmailStatus, setGmailStatus] = useState(null);
 
   useEffect(() => {
-    setIsConnected(!!user?.gmail_access_token);
+    const checkGmailStatus = async () => {
+      if (user?.gmail_access_token) {
+        setIsConnected(true);
+        setGmailStatus('connected');
+      } else if (user?.extended_role === 'manager' || user?.role === 'admin') {
+        // Check if admin has Gmail connected (for managers)
+        try {
+          const response = await base44.functions.invoke('gmailSync', {});
+          if (response.data && !response.data.error) {
+            setIsConnected(true);
+            setGmailStatus('using_admin');
+          } else {
+            setIsConnected(false);
+            setGmailStatus('not_connected');
+          }
+        } catch {
+          setIsConnected(false);
+          setGmailStatus('not_connected');
+        }
+      } else {
+        setIsConnected(false);
+        setGmailStatus('not_connected');
+      }
+    };
+    
+    if (user) {
+      checkGmailStatus();
+    }
   }, [user]);
 
   useEffect(() => {
@@ -59,7 +87,7 @@ export default function GmailConnect({ user, onSyncComplete }) {
   if (!isConnected) {
     return (
       <Button onClick={handleConnect} variant="outline" size="sm">
-        Connect Gmail
+        {user?.extended_role === 'manager' ? 'Gmail Not Connected (Contact Admin)' : 'Connect Gmail'}
       </Button>
     );
   }
@@ -71,6 +99,7 @@ export default function GmailConnect({ user, onSyncComplete }) {
       variant="ghost"
       size="sm"
       className="gap-2"
+      title={gmailStatus === 'using_admin' ? 'Using shared Gmail connection' : 'Using your Gmail connection'}
     >
       <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
       {isSyncing ? 'Syncing...' : 'Sync'}

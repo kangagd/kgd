@@ -136,7 +136,9 @@ export default function Inbox() {
 
   // Auto-sync Gmail in background
   useEffect(() => {
-    if (!user?.gmail_access_token) return;
+    // Allow auto-sync for admin (with token) and managers (using admin's token)
+    if (!user) return;
+    if (!user.gmail_access_token && user.extended_role !== 'manager') return;
     
     const syncGmail = async () => {
       try {
