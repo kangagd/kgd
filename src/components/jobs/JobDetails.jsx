@@ -2068,7 +2068,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
-                            <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
+                            <span className="text-sm font-bold text-[#111827]">{(totalJobTime || 0).toFixed(1)}h</span>
                           </div>
                         </div>
                       )}
@@ -2275,7 +2275,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <div className="bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg p-3">
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-[#6B7280] font-semibold">Total Time:</span>
-                            <span className="text-sm font-bold text-[#111827]">{totalJobTime.toFixed(1)}h</span>
+                            <span className="text-sm font-bold text-[#111827]">{(totalJobTime || 0).toFixed(1)}h</span>
                           </div>
                         </div>
                       )}
