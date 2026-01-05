@@ -16,9 +16,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // 1. Get all users for mention parsing
-    // In a large app, we might want to optimize this, but for now listing users is fine
-    const allUsers = await base44.entities.User.list();
+    // 1. Get all users for mention parsing using service role
+    const teamResponse = await base44.functions.invoke('getTeamMembers');
+    const allUsers = teamResponse.data?.teamMembers || [];
     
     // 2. Parse mentions
     const mentionedUsers = [];
