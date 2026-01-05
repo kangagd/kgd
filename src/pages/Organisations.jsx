@@ -37,7 +37,7 @@ export default function Organisations() {
 
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.filter({ deleted_at: { $exists: false } })
+    queryFn: () => base44.entities.Customer.list()
   });
 
   // Handle URL params for direct navigation
@@ -125,15 +125,13 @@ export default function Organisations() {
   });
 
   const getCustomerCount = (orgId, orgName) => {
-    const matchedCustomers = allCustomers.filter(c => 
-      c.organisation_id === orgId || 
-      (c.organisation_name && orgName && c.organisation_name.toLowerCase() === orgName.toLowerCase())
-    );
-    
-    console.log(`Counting customers for org ${orgName} (${orgId}):`, {
-      totalCustomers: allCustomers.length,
-      matchedCount: matchedCustomers.length,
-      matched: matchedCustomers.map(c => ({ name: c.name, org_id: c.organisation_id, org_name: c.organisation_name }))
+    const matchedCustomers = allCustomers.filter(c => {
+      // Exclude deleted/inactive customers
+      if (c.deleted_at || c.status === 'inactive') return false;
+      
+      // Match by org ID or org name
+      return c.organisation_id === orgId || 
+        (c.organisation_name && orgName && c.organisation_name.toLowerCase() === orgName.toLowerCase());
     });
     
     return matchedCustomers.length;
