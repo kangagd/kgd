@@ -52,6 +52,9 @@ export default function ActiveCheckInBanner({ checkIns, onClick }) {
   // Helper to get initials from name
   const getInitials = (name) => {
     if (!name) return "?";
+    // If name is already short (1-2 chars), assume it's already initials/display_name
+    if (name.length <= 2) return name.toUpperCase();
+    // Otherwise extract initials from full name
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
   };
   
