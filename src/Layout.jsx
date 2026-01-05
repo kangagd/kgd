@@ -113,13 +113,18 @@ const viewerNavigationItems = [
 // Get effective role for user
 const getEffectiveRole = (user) => {
   if (!user) return 'viewer';
-  // Use extended_role if set, otherwise fallback to built-in role logic
-  if (user.extended_role) return user.extended_role;
+  
+  // Admin role takes precedence
   if (user.role === 'admin') return 'admin';
-  if (user.role === 'manager') return 'manager';
-  if (user.is_field_technician) return 'technician';
-  if (user.role === 'viewer') return 'viewer';
-  return 'user';
+  
+  // Check extended_role for manager
+  if (user.extended_role === 'manager') return 'manager';
+  
+  // Check for technician role (extended_role or is_field_technician flag)
+  if (user.extended_role === 'technician' || user.is_field_technician === true) return 'technician';
+  
+  // Default to viewer for all other cases (never return "user")
+  return 'viewer';
 };
 
 export default function Layout({ children, currentPageName }) {
