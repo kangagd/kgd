@@ -126,26 +126,24 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
                     )}
                   </button>
 
-                  {/* Client Confirmed Toggle - Only for non-logistics jobs */}
-                  {!job.job_type?.toLowerCase().includes('logistics') && (
-                    <div 
-                      className="flex items-center justify-between mt-2 pt-2 border-t border-[#E5E7EB]"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center gap-2">
-                        {job.client_confirmed ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                        ) : (
-                          <XCircle className="w-3.5 h-3.5 text-[#9CA3AF]" />
-                        )}
-                        <span className="text-[13px] font-medium text-[#4B5563]">Client Confirmed</span>
-                      </div>
-                      <Switch
-                        checked={job.client_confirmed || false}
-                        onCheckedChange={(checked) => handleConfirmationToggle(job, checked)}
-                      />
+                  {/* Client Confirmed Toggle */}
+                  <div 
+                    className="flex items-center justify-between mt-2 pt-2 border-t border-[#E5E7EB]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center gap-2">
+                      {job.client_confirmed ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                      ) : (
+                        <XCircle className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                      )}
+                      <span className="text-[13px] font-medium text-[#4B5563]">Client Confirmed</span>
                     </div>
-                  )}
+                    <Switch
+                      checked={job.client_confirmed || false}
+                      onCheckedChange={(checked) => handleConfirmationToggle(job, checked)}
+                    />
+                  </div>
                 </div>
               );
             })}
