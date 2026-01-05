@@ -238,11 +238,17 @@ export default function Jobs() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setJobsCursor(null); // Reset pagination
+      setAllJobsData([]); // Clear accumulated data
       refetch();
       setSelectedJob(null);
+      setModalJob(null);
+      navigate(createPageUrl("Jobs")); // Navigate back to list
+      notifySuccess('Job deleted successfully');
     },
     onError: (error) => {
-      alert(`Failed to delete job: ${error.message || 'Unknown error'}`);
+      notifyError('Failed to delete job', error);
     }
   });
 
