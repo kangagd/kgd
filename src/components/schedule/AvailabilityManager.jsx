@@ -47,7 +47,7 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
   const [closedEnd, setClosedEnd] = useState("");
 
   // --- Queries ---
-  const { data: leaves = [], isLoading: leavesLoading } = useQuery({
+  const { data: leaves = [], isLoading: leavesLoading, refetch: refetchLeaves } = useQuery({
     queryKey: ['technicianLeaves'],
     queryFn: async () => {
       const data = await base44.entities.TechnicianLeave.list('-start_time');
@@ -58,6 +58,13 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
     refetchOnMount: true,
     staleTime: 0
   });
+
+  // Refetch when modal opens to ensure fresh data
+  React.useEffect(() => {
+    if (open) {
+      refetchLeaves();
+    }
+  }, [open, refetchLeaves]);
 
   const { data: closedDays = [], isLoading: closedDaysLoading } = useQuery({
     queryKey: ['businessClosedDays'],
@@ -72,8 +79,10 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
     mutationFn: (data) => base44.entities.TechnicianLeave.create(data),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['technicianLeaves'] });
+      await queryClient.invalidateQueries({ queryKey: ['jobs'] });
       await queryClient.refetchQueries({ queryKey: ['technicianLeaves'] });
-      toast.success("Leave added");
+      await refetchLeaves();
+      toast.success("Leave added successfully");
       setLeaveStart("");
       setLeaveEnd("");
       setLeaveStartTime("00:00");
@@ -86,7 +95,9 @@ export default function AvailabilityManager({ open, onClose, technicians = [] })
     mutationFn: (id) => base44.entities.TechnicianLeave.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['technicianLeaves'] });
-      toast.success("Leave removed");
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      refetchLeaves();
+      toast.success("Leave removed successfully");
     }
   });
 
