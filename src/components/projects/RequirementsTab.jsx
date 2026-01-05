@@ -16,6 +16,8 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
   const [newDoor, setNewDoor] = React.useState({ height: "", width: "", type: "", style: "" });
   const [specialRequirements, setSpecialRequirements] = React.useState(project.special_requirements || "");
 
+  const isRepairOrMaintenance = project.project_type === "Repair" || project.project_type === "Maintenance";
+
   const handleAddDoor = () => {
     if (!newDoor.height && !newDoor.width && !newDoor.type) return;
     const currentDoors = project.doors || [];
@@ -37,7 +39,8 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
 
   return (
     <div className="space-y-6">
-      {/* Door Measurements */}
+      {/* Door Measurements - Only show for install projects */}
+      {!isRepairOrMaintenance && (
       <Card className="border border-[#E5E7EB] shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -125,8 +128,10 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
           )}
         </CardContent>
       </Card>
+      )}
 
-      {/* Special Requirements */}
+      {/* Special Requirements - Only show for install projects */}
+      {!isRepairOrMaintenance && (
       <Card className="border border-[#E5E7EB] shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-[16px] font-semibold text-[#111827]">Special Requirements</CardTitle>
@@ -141,8 +146,10 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
           />
         </CardContent>
       </Card>
+      )}
 
-      {/* Visits Context */}
+      {/* Visits Context - Only show for install projects */}
+      {!isRepairOrMaintenance && (
       {project.initial_visit_job_id && (
         <Card className="border border-[#E5E7EB] shadow-sm">
           <CardHeader className="pb-3">
@@ -152,12 +159,12 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
             <InitialVisitSummary project={project} />
           </CardContent>
         </Card>
-      )}
+      ))}
 
-      {/* Project Contacts */}
+      {/* Project Contacts - Always show */}
       <ProjectContactsPanel project={project} />
 
-      {/* Third Party Required */}
+      {/* Third Party Trades - Always show */}
       <Card className="border border-[#E5E7EB] shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-[16px] font-semibold text-[#111827]">Third Party Trades</CardTitle>
