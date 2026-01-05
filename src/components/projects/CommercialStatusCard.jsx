@@ -1,12 +1,9 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileText, DollarSign, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { base44 } from "@/api/base44Client";
-import { toast } from "sonner";
+import { FileText, DollarSign, ChevronRight } from "lucide-react";
 
-export default function CommercialStatusCard({ project, quotes = [], invoices = [], onNavigateToTab, onUpdateProject }) {
+export default function CommercialStatusCard({ project, quotes = [], invoices = [], onNavigateToTab }) {
   // Quote status
   const primaryQuote = quotes.find(q => q.id === project.primary_quote_id) || quotes[0];
   const quoteStatus = primaryQuote?.status || "Draft";
@@ -30,40 +27,12 @@ export default function CommercialStatusCard({ project, quotes = [], invoices = 
     "Expired": "bg-orange-100 text-orange-700"
   };
 
-  const handleClientConfirmedToggle = async (checked) => {
-    try {
-      await base44.entities.Project.update(project.id, {
-        client_confirmed: checked,
-        client_confirmed_at: checked ? new Date().toISOString() : null
-      });
-      toast.success(checked ? 'Client confirmed' : 'Confirmation removed');
-    } catch (error) {
-      toast.error('Failed to update confirmation status');
-    }
-  };
-
   return (
     <Card className="border border-[#E5E7EB] shadow-sm">
       <CardHeader className="pb-3">
         <CardTitle className="text-[16px] font-semibold text-[#111827]">Commercial Status</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        {/* Client Confirmed Toggle */}
-        <div className="flex items-center justify-between p-2.5 rounded-lg bg-[#F9FAFB] border border-[#E5E7EB]">
-          <div className="flex items-center gap-2">
-            {project.client_confirmed ? (
-              <CheckCircle2 className="w-4 h-4 text-green-600" />
-            ) : (
-              <XCircle className="w-4 h-4 text-[#9CA3AF]" />
-            )}
-            <span className="text-[14px] font-medium text-[#111827]">Client Confirmed</span>
-          </div>
-          <Switch
-            checked={project.client_confirmed || false}
-            onCheckedChange={handleClientConfirmedToggle}
-          />
-        </div>
-
         {/* Quote Status */}
         <button
           onClick={(e) => {
