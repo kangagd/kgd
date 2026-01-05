@@ -68,7 +68,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook }) {
+export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [] }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -365,17 +365,34 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook })
                       const jobsInCell = getJobsForCell(day, technician.email);
                       const isDragOver = dragOverCell === `${day.toISOString()}-${technician.email}`;
                       const isToday = isSameDay(day, new Date());
+                      
+                      // Check if technician is on leave this day
+                      const isOnLeave = leaves.some(leave => {
+                        try {
+                          const leaveStart = new Date(leave.start_time);
+                          const leaveEnd = new Date(leave.end_time);
+                          return leave.technician_email?.toLowerCase() === technician.email?.toLowerCase() &&
+                                 day >= leaveStart && day <= leaveEnd;
+                        } catch {
+                          return false;
+                        }
+                      });
 
                       return (
                         <div
                           key={day.toISOString()}
                           className={`${compactMode ? 'p-1.5' : 'p-2'} border-r border-[#E5E7EB] transition-all overflow-y-auto ${
-                            isDragOver ? 'bg-[#16A34A]/5 border-[#16A34A]' : isToday ? 'bg-[#FAE008]/5' : ''
+                            isOnLeave ? 'bg-gray-200' : isDragOver ? 'bg-[#16A34A]/5 border-[#16A34A]' : isToday ? 'bg-[#FAE008]/5' : ''
                           }`}
                           onDragOver={(e) => handleDragOver(e, day, technician.email)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, day, technician.email)}
                         >
+                          {isOnLeave && (
+                            <div className="text-xs text-gray-700 font-medium mb-2 text-center">
+                              🚫 Unavailable
+                            </div>
+                          )}
                           <div className={compactMode ? 'space-y-1' : 'space-y-1.5'}>
                             {jobsInCell.map(job => {
                               const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
