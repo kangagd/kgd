@@ -238,7 +238,7 @@ export default function Team() {
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-[#FAE008]/20 flex items-center justify-center flex-shrink-0">
                             <span className="text-[#111827] font-semibold">
-                              {user.full_name?.charAt(0)?.toUpperCase() || 'U'}
+                              {(user.display_name || user.full_name)?.charAt(0)?.toUpperCase() || 'U'}
                             </span>
                           </div>
                           <div className="min-w-0">
