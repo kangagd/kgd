@@ -422,28 +422,47 @@ CATEGORY RULES:
     // STEP 5.5: Find or create customer
     let suggested_customer_id = null;
     
-    if (parsedEmail.customer_email) {
+    if (parsedEmail.customer_email || parsedEmail.customer_phone) {
       try {
-        // Try to find existing customer by email
-        const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
-          email: parsedEmail.customer_email
+        // Fetch all active customers to check for duplicates
+        const allCustomers = await base44.asServiceRole.entities.Customer.list();
+        
+        // Normalize for comparison
+        const normalizedEmail = parsedEmail.customer_email?.toLowerCase().trim();
+        const normalizedPhone = parsedEmail.customer_phone?.replace(/\D/g, '');
+        
+        // Find existing customer by email or phone
+        const existingCustomer = allCustomers.find(c => {
+          if (c.deleted_at) return false; // Skip deleted customers
+          
+          // Check email match
+          if (normalizedEmail && c.normalized_email === normalizedEmail) return true;
+          
+          // Check phone match
+          if (normalizedPhone && c.normalized_phone === normalizedPhone) return true;
+          
+          return false;
         });
 
-        if (existingCustomers.length > 0) {
+        if (existingCustomer) {
           // Use existing customer
-          suggested_customer_id = existingCustomers[0].id;
+          suggested_customer_id = existingCustomer.id;
+          console.log(`Found existing customer: ${existingCustomer.name} (${existingCustomer.id})`);
         } else if (parsedEmail.customer_name) {
-          // Create new customer
+          // Create new customer with normalized fields
           const newCustomer = await base44.asServiceRole.entities.Customer.create({
             name: parsedEmail.customer_name,
             email: parsedEmail.customer_email,
+            normalized_email: normalizedEmail,
             phone: parsedEmail.customer_phone || null,
+            normalized_phone: normalizedPhone,
             source: isWix ? parsedEmail.source : null,
             source_details: isWix ? parsedEmail.source : null,
             customer_type: 'Owner',
             address_full: parsedEmail.address || null
           });
           suggested_customer_id = newCustomer.id;
+          console.log(`Created new customer: ${newCustomer.name} (${newCustomer.id})`);
         }
       } catch (error) {
         console.error('Error creating/finding customer:', error);
