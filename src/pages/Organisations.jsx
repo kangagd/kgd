@@ -29,18 +29,15 @@ export default function Organisations() {
 
   const { data: allOrganisations = [], isLoading, refetch } = useQuery({
     queryKey: ['organisations'],
-    queryFn: () => base44.entities.Organisation.list(),
+    queryFn: () => base44.entities.Organisation.filter({ deleted_at: { $exists: false } }),
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
-  const organisations = allOrganisations.filter(org => !org.deleted_at);
+  const organisations = allOrganisations;
 
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: async () => {
-      const customers = await base44.entities.Customer.list();
-      return customers.filter(c => !c.deleted_at);
-    }
+    queryFn: () => base44.entities.Customer.filter({ deleted_at: { $exists: false } })
   });
 
   // Handle URL params for direct navigation

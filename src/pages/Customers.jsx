@@ -53,11 +53,14 @@ export default function Customers() {
 
   const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
-    queryFn: () => base44.entities.Customer.list(),
+    queryFn: () => base44.entities.Customer.filter({ 
+      deleted_at: { $exists: false },
+      status: 'active'
+    }),
     refetchInterval: 15000,
   });
 
-  const customers = allCustomers.filter(customer => !customer.deleted_at && customer.status === 'active');
+  const customers = allCustomers;
 
   // Handle URL params for direct navigation
   useEffect(() => {
@@ -74,17 +77,17 @@ export default function Customers() {
 
   const { data: allJobs = [] } = useQuery({
     queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list(),
+    queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
   });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['allProjects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryFn: () => base44.entities.Project.filter({ deleted_at: { $exists: false } }),
   });
 
   const getCustomerCounts = (customerId) => {
-    const jobCount = allJobs.filter(j => j.customer_id === customerId && !j.deleted_at).length;
-    const projectCount = allProjects.filter(p => p.customer_id === customerId && !p.deleted_at).length;
+    const jobCount = allJobs.filter(j => j.customer_id === customerId).length;
+    const projectCount = allProjects.filter(p => p.customer_id === customerId).length;
     return { jobCount, projectCount };
   };
 
