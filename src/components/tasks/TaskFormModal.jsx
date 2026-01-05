@@ -62,7 +62,8 @@ export default function TaskFormModal({
   const { data: jobs = [] } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => base44.entities.Job.list(),
-    enabled: !!preLinkedEntity && preLinkedEntity.type === 'job'
+    enabled: !!preLinkedEntity && preLinkedEntity.type === 'job',
+    staleTime: 60000
   });
 
   // Handle FormNavigator save request
