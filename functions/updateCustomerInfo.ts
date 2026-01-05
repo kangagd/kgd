@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
   try {
@@ -43,9 +43,17 @@ Deno.serve(async (req) => {
     }
 
     if (duplicateQuery.length > 0) {
-      const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
-        $or: duplicateQuery,
-        id: { $ne: finalCustomerId }
+      // Fetch all customers to check for duplicates (excluding the current customer)
+      const allCustomers = await base44.asServiceRole.entities.Customer.list();
+      const existingCustomers = allCustomers.filter(c => {
+        if (c.id === finalCustomerId) return false; // Exclude current customer
+        if (c.deleted_at) return false; // Exclude deleted customers
+        
+        // Check if email or phone matches
+        if (updates.normalized_email && c.normalized_email === updates.normalized_email) return true;
+        if (updates.normalized_phone && c.normalized_phone === updates.normalized_phone) return true;
+        
+        return false;
       });
 
       if (existingCustomers.length > 0) {
