@@ -6,15 +6,15 @@
 export const QUERY_CONFIG = {
   // Critical data - always fresh, refetch on window focus
   critical: {
-    staleTime: 0, // Always consider stale
+    staleTime: 10000, // 10 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   },
 
-  // Real-time data - auto-refresh every few seconds
+  // Real-time data - auto-refresh every minute
   realtime: {
-    staleTime: 5000, // 5 seconds
-    refetchInterval: 10000, // Refetch every 10 seconds
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every 60 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
   },

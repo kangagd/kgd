@@ -229,8 +229,8 @@ export default function Layout({ children, currentPageName }) {
 
     if (user) {
       fetchActiveCheckIn();
-      // Poll every 30 seconds for more responsive updates
-      const interval = setInterval(fetchActiveCheckIn, 30000);
+      // Poll every 2 minutes to reduce API load
+      const interval = setInterval(fetchActiveCheckIn, 120000);
       return () => {
         isCancelled = true;
         clearInterval(interval);
