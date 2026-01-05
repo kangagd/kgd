@@ -1021,7 +1021,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   };
 
   const isInstallType = project.project_type && project.project_type.includes("Install");
-  const showRequirementsTab = isInstallType || project.project_type === "Multiple";
+  const showRequirementsTab = true; // Always show requirements tab for contacts and trades
 
   React.useEffect(() => {
     // Auto-focus tabs based on project stage
