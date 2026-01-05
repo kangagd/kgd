@@ -8,6 +8,7 @@ const PO_STATUS = {
   ON_ORDER: "on_order",
   IN_TRANSIT: "in_transit",
   IN_LOADING_BAY: "in_loading_bay",
+  AT_SUPPLIER: "at_supplier",
   IN_STORAGE: "in_storage",
   IN_VEHICLE: "in_vehicle",
   INSTALLED: "installed",
@@ -19,6 +20,7 @@ const PART_STATUS = {
   ON_ORDER: "on_order",
   IN_TRANSIT: "in_transit",
   IN_LOADING_BAY: "in_loading_bay",
+  AT_SUPPLIER: "at_supplier",
   IN_STORAGE: "in_storage",
   IN_VEHICLE: "in_vehicle",
   INSTALLED: "installed",
@@ -75,12 +77,20 @@ async function handleLogisticsJobCompletion(base44, job) {
     if (!logisticsOutcome || logisticsOutcome === 'none') return;
 
     try {
+        // Fetch PO to check delivery method
+        const po = await base44.asServiceRole.entities.PurchaseOrder.get(job.purchase_order_id);
+        
         // Update PO status based on outcome
         let newPOStatus;
         let newPartStatus;
         let newPartLocation;
 
-        if (logisticsOutcome === 'in_storage') {
+        if (po?.delivery_method === 'pickup' && logisticsOutcome === 'in_storage') {
+            // For pickup orders, "in_storage" outcome means ready at supplier
+            newPOStatus = PO_STATUS.AT_SUPPLIER;
+            newPartStatus = PART_STATUS.AT_SUPPLIER;
+            newPartLocation = PART_LOCATION.SUPPLIER;
+        } else if (logisticsOutcome === 'in_storage') {
             // CRITICAL: Parts now physically at warehouse - AVAILABLE for picking
             newPOStatus = PO_STATUS.IN_STORAGE;
             newPartStatus = PART_STATUS.IN_STORAGE;
