@@ -958,7 +958,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       expected_duration: jobType?.estimated_duration || null
     };
     
-    // CRITICAL: Use manageJob function to trigger logistics backfill if needed
     try {
       await base44.functions.invoke('manageJob', { 
         action: 'update', 
@@ -966,13 +965,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         data: updates 
       });
       
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
-      
-      // If this is now a logistics job, link ready parts from project
-      if (jobType?.is_logistics === true && job.project_id) {
-        try {
+      // If logistics job, explicitly trigger backfill for title/address
+      if (jobType?.is_logistics === true) {
+        await base44.functions.invoke('backfillLogisticsJobTitles', { job_ids: [job.id] });
+        await base44.functions.invoke('backfillLogisticsJobAddresses', { job_ids: [job.id] });
+        
+        // Link ready parts from project
+        if (job.project_id) {
           const readyParts = enrichedProjectParts.filter(p => {
             const normalizedStatus = getNormalizedPartStatus(p);
             return normalizedStatus === PART_STATUS.IN_STORAGE || 
@@ -987,15 +986,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               });
             }
           }
-          
-          if (readyParts.length > 0) {
-            queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
-            toast.success(`Linked ${readyParts.length} ready part(s) to this logistics job`);
-          }
-        } catch (error) {
-          console.error('Error linking parts to logistics job:', error);
         }
       }
+      
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
       
       toast.success('Job type updated');
     } catch (error) {
