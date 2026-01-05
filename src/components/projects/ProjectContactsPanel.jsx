@@ -83,7 +83,7 @@ export default function ProjectContactsPanel({ project }) {
         throw new Error("Contact name is required");
       }
 
-      await base44.entities.ProjectContact.create({
+      return await base44.entities.ProjectContact.create({
         project_id: project.id,
         contact_id: finalContactId || null,
         name: finalName,
@@ -93,9 +93,10 @@ export default function ProjectContactsPanel({ project }) {
         show_on_jobs: newContact.show_on_jobs,
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["project-contacts", project.id]);
-      queryClient.invalidateQueries(["people-for-project-contacts"]);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["project-contacts", project.id] });
+      await queryClient.invalidateQueries({ queryKey: ["people-for-project-contacts"] });
+      await queryClient.refetchQueries({ queryKey: ["project-contacts", project.id] });
       setNewContact({
         contact_id: "",
         name: "",
@@ -115,8 +116,9 @@ export default function ProjectContactsPanel({ project }) {
     mutationFn: async ({ id, patch }) => {
       return base44.entities.ProjectContact.update(id, patch);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["project-contacts", project.id]);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["project-contacts", project.id] });
+      await queryClient.refetchQueries({ queryKey: ["project-contacts", project.id] });
       toast.success("Contact updated");
     },
   });
@@ -125,8 +127,9 @@ export default function ProjectContactsPanel({ project }) {
     mutationFn: async (id) => {
       return base44.entities.ProjectContact.delete(id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["project-contacts", project.id]);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["project-contacts", project.id] });
+      await queryClient.refetchQueries({ queryKey: ["project-contacts", project.id] });
       toast.success("Contact deleted");
     },
   });
