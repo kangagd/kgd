@@ -565,24 +565,30 @@ export default function Schedule() {
     jobsByTechEmail[UNASSIGNED_KEY] = [];
     techDisplayNames[UNASSIGNED_KEY] = 'Unassigned';
 
-    // Distribute jobs
+    // Distribute jobs - a job can appear under multiple technicians if assigned to multiple
     dayJobs.forEach(job => {
-      const rawEmail = job.assigned_to?.[0];
-      const primaryEmail = rawEmail ? rawEmail.toLowerCase() : null;
+      const assignedEmails = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
       
-      if (primaryEmail && jobsByTechEmail[primaryEmail] !== undefined) {
-        // Known technician
-        jobsByTechEmail[primaryEmail].push(job);
-      } else if (primaryEmail) {
-        // Unknown technician (maybe deleted or not in fetched list)
-        if (!jobsByTechEmail[primaryEmail]) {
-          jobsByTechEmail[primaryEmail] = [];
-          techDisplayNames[primaryEmail] = job.assigned_to_name?.[0] || primaryEmail;
-        }
-        jobsByTechEmail[primaryEmail].push(job);
-      } else {
+      if (assignedEmails.length === 0) {
         // Unassigned
         jobsByTechEmail[UNASSIGNED_KEY].push(job);
+      } else {
+        // Add job under each assigned technician
+        assignedEmails.forEach((rawEmail, idx) => {
+          const email = rawEmail ? rawEmail.toLowerCase() : null;
+          
+          if (email && jobsByTechEmail[email] !== undefined) {
+            // Known technician
+            jobsByTechEmail[email].push(job);
+          } else if (email) {
+            // Unknown technician (maybe deleted or not in fetched list)
+            if (!jobsByTechEmail[email]) {
+              jobsByTechEmail[email] = [];
+              techDisplayNames[email] = job.assigned_to_name?.[idx] || email;
+            }
+            jobsByTechEmail[email].push(job);
+          }
+        });
       }
     });
 
