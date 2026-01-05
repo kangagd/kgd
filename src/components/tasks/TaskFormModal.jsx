@@ -47,7 +47,16 @@ export default function TaskFormModal({
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: async () => {
+      try {
+        // Try using backend function for managers to bypass RLS
+        const response = await base44.functions.invoke('getAllUsers');
+        return response.data.users || [];
+      } catch (error) {
+        // Fallback to direct query
+        return await base44.entities.User.list();
+      }
+    }
   });
 
   const { data: jobs = [] } = useQuery({

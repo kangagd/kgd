@@ -98,7 +98,16 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
 
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list()
+    queryFn: async () => {
+      try {
+        // Use backend function for managers to bypass RLS if needed
+        const response = await base44.functions.invoke('getAllCustomers');
+        return response.data.customers || [];
+      } catch (error) {
+        // Fallback to direct query
+        return await base44.entities.Customer.list();
+      }
+    }
   });
 
   const customers = allCustomers
