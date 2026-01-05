@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, Archive, Trash2, SlidersHorizontal, Plus, Sparkles, Loader2, Paperclip, Settings } from "lucide-react";
+import { Mail, Archive, Trash2, SlidersHorizontal, Plus, Sparkles, Loader2, Paperclip, Settings, Link as LinkIcon } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -311,37 +311,75 @@ export default function Inbox() {
 
   const handleLinkProject = useCallback(async (projectId, projectTitle) => {
     try {
-      // Use centralized linking function
-      await base44.functions.invoke('linkEmailThreadToProject', {
-        email_thread_id: selectedThread.id,
-        project_id: projectId,
-        set_as_primary: true
-      });
+      // Check if bulk linking (multiple threads selected)
+      if (selectedThreadIds.length > 0) {
+        // Bulk link
+        toast.info(`Linking ${selectedThreadIds.length} email threads...`);
+        
+        const results = await Promise.allSettled(
+          selectedThreadIds.map(async (threadId) => {
+            await base44.functions.invoke('linkEmailThreadToProject', {
+              email_thread_id: threadId,
+              project_id: projectId,
+              set_as_primary: false
+            });
+            
+            // Auto-save attachments
+            await base44.functions.invoke('saveThreadAttachments', {
+              thread_id: threadId,
+              target_type: 'project',
+              target_id: projectId
+            });
+            
+            // Mark thread as closed
+            await base44.entities.EmailThread.update(threadId, { status: 'Closed' });
+          })
+        );
+        
+        const successCount = results.filter(r => r.status === 'fulfilled').length;
+        const failCount = results.filter(r => r.status === 'rejected').length;
+        
+        if (successCount > 0) {
+          toast.success(`${successCount} email thread${successCount !== 1 ? 's' : ''} linked to project`);
+        }
+        if (failCount > 0) {
+          toast.error(`${failCount} email thread${failCount !== 1 ? 's' : ''} failed to link`);
+        }
+        
+        setSelectedThreadIds([]);
+      } else if (selectedThread) {
+        // Single thread link
+        await base44.functions.invoke('linkEmailThreadToProject', {
+          email_thread_id: selectedThread.id,
+          project_id: projectId,
+          set_as_primary: true
+        });
 
-      // Auto-save attachments
-      toast.info('Processing attachments...');
-      const res = await base44.functions.invoke('saveThreadAttachments', {
-        thread_id: selectedThread.id,
-        target_type: 'project',
-        target_id: projectId
-      });
-      if (res.data?.saved_count > 0) {
-        toast.success(`Saved ${res.data.saved_count} attachments to project`);
+        // Auto-save attachments
+        toast.info('Processing attachments...');
+        const res = await base44.functions.invoke('saveThreadAttachments', {
+          thread_id: selectedThread.id,
+          target_type: 'project',
+          target_id: projectId
+        });
+        if (res.data?.saved_count > 0) {
+          toast.success(`Saved ${res.data.saved_count} attachments to project`);
+        }
+
+        // Mark thread as closed
+        await base44.entities.EmailThread.update(selectedThread.id, { status: 'Closed' });
+
+        toast.success('Email thread linked to project');
       }
 
-      // Mark thread as closed
-      await base44.entities.EmailThread.update(selectedThread.id, { status: 'Closed' });
-
       queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-      queryClient.invalidateQueries({ queryKey: ['emailThread', selectedThread.id] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
-      toast.success('Email thread linked to project');
     } catch (error) {
       toast.error('Failed to link email thread');
       console.error('Link error:', error);
     }
     setLinkModalOpen(false);
-  }, [selectedThread, queryClient]);
+  }, [selectedThread, selectedThreadIds, queryClient]);
 
   const handleLinkJob = useCallback((jobId, jobNumber) => {
     updateThreadMutation.mutate({
@@ -715,6 +753,18 @@ export default function Inbox() {
             >
               <Archive className="w-4 h-4" />
               Archive
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setLinkType('project');
+                setLinkModalOpen(true);
+              }}
+              className="h-8 gap-2"
+            >
+              <LinkIcon className="w-4 h-4" />
+              Link to Project
             </Button>
             <Button
               variant="ghost"
