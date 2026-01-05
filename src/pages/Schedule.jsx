@@ -155,7 +155,7 @@ export default function Schedule() {
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
-    enabled: !!(user?.role === 'admin' || user?.role === 'manager')
+    enabled: !!(user?.role === 'admin' || user?.extended_role === 'manager')
   });
 
   const { data: jobTypes = [] } = useQuery({

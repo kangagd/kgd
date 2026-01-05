@@ -72,7 +72,7 @@ export default function Projects() {
   }, []);
 
   const isAdmin = user?.role === 'admin';
-  const isManager = user?.role === 'manager';
+  const isManager = user?.extended_role === 'manager';
   const isAdminOrManager = isAdmin || isManager;
   const isViewer = user?.role === 'viewer';
   const canCreateProjects = isAdminOrManager;
