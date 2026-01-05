@@ -94,6 +94,10 @@ export default function SupplyLogistics() {
     const normalized = normaliseLegacyPoStatus(po.status);
     return normalized === PO_STATUS.IN_LOADING_BAY;
   });
+  const atSupplierPOs = activePOs.filter(po => {
+    const normalized = normaliseLegacyPoStatus(po.status);
+    return normalized === PO_STATUS.AT_SUPPLIER;
+  });
   const completedPOs = activePOs.filter(po => {
     const normalized = normaliseLegacyPoStatus(po.status);
     return [PO_STATUS.IN_STORAGE, PO_STATUS.IN_VEHICLE, PO_STATUS.INSTALLED].includes(normalized);
@@ -142,11 +146,13 @@ export default function SupplyLogistics() {
         'On Order': 'on_order',
         'In Transit': 'in_transit',
         'Loading Bay': 'in_loading_bay',
+        'At Supplier': 'at_supplier',
         'Completed': 'in_storage',
         'draft': 'draft',
         'on_order': 'on_order',
         'in_transit': 'in_transit',
         'in_loading_bay': 'in_loading_bay',
+        'at_supplier': 'at_supplier',
         'in_storage': 'in_storage'
       };
       
@@ -187,6 +193,7 @@ export default function SupplyLogistics() {
       'on_order': PO_STATUS.ON_ORDER,
       'in_transit': PO_STATUS.IN_TRANSIT,
       'loading_bay': PO_STATUS.IN_LOADING_BAY,
+      'at_supplier': PO_STATUS.AT_SUPPLIER,
       'completed': PO_STATUS.IN_STORAGE
     };
     
@@ -316,7 +323,7 @@ export default function SupplyLogistics() {
               <Card className="border border-gray-200">
                 <CardContent className="py-3">
                   <p className="text-xs text-gray-500">Active POs</p>
-                  <p className="text-xl font-semibold text-gray-900">{onOrderPOs.length + inTransitPOs.length + loadingBayPOs.length}</p>
+                  <p className="text-xl font-semibold text-gray-900">{onOrderPOs.length + inTransitPOs.length + loadingBayPOs.length + atSupplierPOs.length}</p>
                 </CardContent>
               </Card>
               <Card className="border border-gray-200">
@@ -335,7 +342,7 @@ export default function SupplyLogistics() {
 
             {/* Kanban Board */}
             <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="grid gap-4 md:grid-cols-5">
+              <div className="grid gap-4 md:grid-cols-6">
                 {/* Draft */}
                 <Droppable droppableId="draft">
                   {(provided, snapshot) => (
@@ -419,9 +426,34 @@ export default function SupplyLogistics() {
                         <span className="text-sm font-semibold text-[#111827]">Loading Bay</span>
                         <span className="text-xs text-[#6B7280]">{loadingBayPOs.length}</span>
                       </div>
+                      <div className="text-[10px] text-[#6B7280] mb-2">Delivery</div>
                       <div className="space-y-2 min-h-[100px]">
                         {loadingBayPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
                         {!loadingBayPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
+                        {provided.placeholder}
+                      </div>
+                    </div>
+                  )}
+                </Droppable>
+
+                {/* At Supplier */}
+                <Droppable droppableId="at_supplier">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={`flex flex-col rounded-xl border border-[#E5E7EB] bg-white p-3 ${
+                        snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-[#FAE008]' : ''
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[#111827]">At Supplier</span>
+                        <span className="text-xs text-[#6B7280]">{atSupplierPOs.length}</span>
+                      </div>
+                      <div className="text-[10px] text-[#6B7280] mb-2">Pickup</div>
+                      <div className="space-y-2 min-h-[100px]">
+                        {atSupplierPOs.map((po, index) => <POCard key={po.id} po={po} index={index} />)}
+                        {!atSupplierPOs.length && <div className="text-[11px] text-[#6B7280] text-center py-4">No POs</div>}
                         {provided.placeholder}
                       </div>
                     </div>
