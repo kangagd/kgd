@@ -142,7 +142,7 @@ The summary should be a single paragraph, professional, and capture the key work
             job_type: job.job_type_name || null,
             scheduled_datetime: scheduledDatetime,
             technician_email: user.email || "",
-            technician_name: user.full_name || user.email || "Unknown Technician",
+            technician_name: user.display_name || user.full_name || user.email || "Unknown Technician",
             check_in_time: checkIn.check_in_time || new Date().toISOString(),
             check_out_time: safeCheckOutTime,
             duration_minutes: safeDurationMinutes,

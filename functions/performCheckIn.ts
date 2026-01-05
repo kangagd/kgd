@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
         const checkInData = {
             job_id: jobId,
             technician_email: user.email || "unknown@example.com",
-            technician_name: user.full_name || user.display_name || user.email || "Unknown Technician",
+            technician_name: user.display_name || user.full_name || user.email || "Unknown Technician",
             check_in_time: checkInTime
         };
 
