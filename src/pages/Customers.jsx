@@ -51,28 +51,11 @@ export default function Customers() {
   const isViewer = user?.role === 'viewer';
   const canEditCustomers = isAdminOrManager;
 
-  const { data: allCustomers = [], isLoading, refetch, error } = useQuery({
+  const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
-    queryFn: async () => {
-      try {
-        return await base44.entities.Customer.filter({ 
-          deleted_at: { $exists: false },
-          status: 'active'
-        });
-      } catch (err) {
-        console.error('Customer fetch error:', err);
-        // Fallback to list all if filter fails
-        return await base44.entities.Customer.list();
-      }
-    },
+    queryFn: () => base44.entities.Customer.list(),
     refetchInterval: 15000,
   });
-
-  // Debug logging
-  React.useEffect(() => {
-    if (error) console.error('Customers query error:', error);
-    console.log('Customers loaded:', allCustomers?.length);
-  }, [allCustomers, error]);
 
   const customers = allCustomers;
 

@@ -27,25 +27,11 @@ export default function Organisations() {
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: allOrganisations = [], isLoading, refetch, error } = useQuery({
+  const { data: allOrganisations = [], isLoading, refetch } = useQuery({
     queryKey: ['organisations'],
-    queryFn: async () => {
-      try {
-        return await base44.entities.Organisation.filter({ deleted_at: { $exists: false } });
-      } catch (err) {
-        console.error('Organisation fetch error:', err);
-        // Fallback to list all if filter fails
-        return await base44.entities.Organisation.list();
-      }
-    },
+    queryFn: () => base44.entities.Organisation.list(),
     refetchInterval: 15000,
   });
-
-  // Debug logging
-  React.useEffect(() => {
-    if (error) console.error('Organisations query error:', error);
-    console.log('Organisations loaded:', allOrganisations?.length);
-  }, [allOrganisations, error]);
 
   const organisations = allOrganisations;
 
@@ -124,6 +110,8 @@ export default function Organisations() {
   };
 
   const filteredOrganisations = organisations.filter(org => {
+    // Filter out deleted
+    if (org.deleted_at) return false;
     const matchesSearch = 
       org.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       org.organisation_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
