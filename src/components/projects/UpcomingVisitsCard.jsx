@@ -21,8 +21,7 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
     .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))
     .slice(0, 2);
 
-  const handleConfirmationToggle = async (job, checked, e) => {
-    e.stopPropagation();
+  const handleConfirmationToggle = async (job, checked) => {
     try {
       await base44.entities.Job.update(job.id, {
         client_confirmed: checked,
@@ -116,7 +115,7 @@ export default function UpcomingVisitsCard({ jobs = [], onScheduleVisit }) {
                     </div>
                     <Switch
                       checked={job.client_confirmed || false}
-                      onCheckedChange={(checked) => handleConfirmationToggle(job, checked, event)}
+                      onCheckedChange={(checked) => handleConfirmationToggle(job, checked)}
                     />
                   </div>
                 </div>
