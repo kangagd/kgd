@@ -69,6 +69,14 @@ function daysSince(dateString) {
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
+function hoursSince(dateString) {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now - date;
+  return Math.floor(diff / (1000 * 60 * 60));
+}
+
 export function computeAttentionItems({
   project,
   quotes = [],
@@ -83,6 +91,39 @@ export function computeAttentionItems({
   const items = [];
   
   if (!project) return items;
+
+  const now = new Date();
+
+  // RULE 0 — Client not confirmed but job scheduled within 24 hours (CRITICAL, Ops)
+  if (!project.client_confirmed) {
+    const upcomingJobs = jobs.filter(job => {
+      if (!job.scheduled_date || job.status === 'Completed' || job.status === 'Cancelled') {
+        return false;
+      }
+      
+      const scheduledDateTime = new Date(job.scheduled_date);
+      const hoursUntil = (scheduledDateTime - now) / (1000 * 60 * 60);
+      
+      return hoursUntil >= 0 && hoursUntil <= 24;
+    });
+
+    if (upcomingJobs.length > 0) {
+      const earliestJob = upcomingJobs.sort((a, b) => 
+        new Date(a.scheduled_date) - new Date(b.scheduled_date)
+      )[0];
+      
+      const hoursUntil = Math.round((new Date(earliestJob.scheduled_date) - now) / (1000 * 60 * 60));
+      
+      items.push({
+        id: 'CLIENT_NOT_CONFIRMED_UPCOMING_JOB',
+        reasonCode: 'CLIENT_NOT_CONFIRMED_UPCOMING_JOB',
+        priority: 'CRITICAL',
+        category: 'Ops',
+        message: `Client not confirmed - job in ${hoursUntil}h`,
+        deepLinkTab: 'overview'
+      });
+    }
+  }
 
   // RULE A — Deposit missing after quote accepted (HIGH, Finance)
   const acceptedQuotes = quotes.filter(q => q.status === 'Accepted' || q.status === 'accepted');
@@ -111,7 +152,6 @@ export function computeAttentionItems({
   }
 
   // RULE B — Invoice overdue (HIGH / MEDIUM, Finance)
-  const now = new Date();
   for (const invoice of invoices) {
     if (invoice.status !== 'PAID' && invoice.due_date) {
       const dueDate = new Date(invoice.due_date);
@@ -356,17 +396,21 @@ export function computeAttentionItems({
   
   for (const item of items) {
     const existing = seen.get(item.reasonCode);
-    if (!existing || item.priority === 'HIGH') {
+    if (!existing || item.priority === 'CRITICAL' || (item.priority === 'HIGH' && existing.priority !== 'CRITICAL')) {
       seen.set(item.reasonCode, item);
     }
   }
   
   deduped.push(...seen.values());
 
-  // Sort: HIGH first, then MEDIUM, then by sortWeight (most urgent first)
+  // Sort: CRITICAL first, HIGH second, then MEDIUM, then by sortWeight (most urgent first)
   deduped.sort((a, b) => {
-    if (a.priority !== b.priority) {
-      return a.priority === 'HIGH' ? -1 : 1;
+    const priorityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+    const aPrio = priorityOrder[a.priority] || 999;
+    const bPrio = priorityOrder[b.priority] || 999;
+    
+    if (aPrio !== bPrio) {
+      return aPrio - bPrio;
     }
     return (b.sortWeight || 0) - (a.sortWeight || 0);
   });
