@@ -323,8 +323,9 @@ Deno.serve(async (req) => {
                 job = await base44.asServiceRole.entities.Job.update(id, data);
             }
             
-            // If job just became a logistics job, trigger title and address backfill
-            if (!wasLogisticsJob && isLogisticsJob) {
+            // CRITICAL: If job just became OR is already a logistics job, trigger title and address backfill
+            // This ensures job_type_id changes immediately trigger the backfill
+            if (isLogisticsJob) {
                 try {
                     await base44.asServiceRole.functions.invoke('backfillLogisticsJobAddresses', {
                         job_ids: [job.id]
