@@ -823,6 +823,7 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
                   size="icon"
                   className="absolute top-2 right-2 h-8 w-8 rounded-lg hover:bg-[#F3F4F6] z-10"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     setModalProject(project);
                   }}

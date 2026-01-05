@@ -89,8 +89,7 @@ export default function JobCard({ job, onClick, onViewDetails, activeCheckIns = 
 
   return (
     <Card 
-      className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
-      onClick={handleClick}
+      className="hover:shadow-lg transition-all duration-200 hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
     >
       <div className="absolute top-2 right-2 flex gap-1 z-10">
         <Button
