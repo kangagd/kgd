@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -1662,6 +1661,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </div>
 
           <TabsContent value="overview" className="space-y-4 mt-3">
+            {/* Manual Attention Items */}
+            <AttentionItemsPanel
+              entity_type="project"
+              entity_id={project.id}
+              context_ids={{
+                customer_id: project.customer_id
+              }}
+            />
+
             {/* Derived Attention Items */}
             <DerivedAttentionItems
               project={project}
