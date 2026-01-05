@@ -69,7 +69,6 @@ import DocumentListItem from "./DocumentListItem";
 import AgeBadge from "../common/AgeBadge";
 import LastActivityCard from "./LastActivityCard";
 import SamplesAtClientPanel from "./SamplesAtClientPanel";
-import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import MediaDocumentsDrawer from "./MediaDocumentsDrawer";
 import CommercialStatusCard from "./CommercialStatusCard";
 import TasksCompactCard from "./TasksCompactCard";
@@ -79,8 +78,8 @@ import ActivityTimeline from "./ActivityTimeline";
 import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
-import DerivedAttentionItems from "./DerivedAttentionItems";
 import EmailComposer from "../inbox/EmailComposer";
+import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import { QUERY_CONFIG, invalidateProjectData } from "../api/queryConfig";
 
 const statusColors = {
@@ -1644,17 +1643,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </div>
 
           <TabsContent value="overview" className="space-y-4 mt-3">
-            {/* Manual Attention Items */}
-            <AttentionItemsPanel
+            {/* Unified Attention Items */}
+            <UnifiedAttentionPanel
               entity_type="project"
               entity_id={project.id}
               context_ids={{
                 customer_id: project.customer_id
               }}
-            />
-
-            {/* Derived Attention Items */}
-            <DerivedAttentionItems
               project={project}
               quotes={quotes}
               invoices={xeroInvoices}
