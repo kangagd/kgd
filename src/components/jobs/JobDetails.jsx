@@ -2820,7 +2820,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-2.5">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-bold text-blue-900">Total:</span>
-                          <span className="text-base font-bold text-blue-900">{totalJobTime.toFixed(1)}h</span>
+                          <span className="text-base font-bold text-blue-900">{(totalJobTime || 0).toFixed(1)}h</span>
                         </div>
                       </div>
                     </CollapsibleContent>
