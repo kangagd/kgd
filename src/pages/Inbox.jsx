@@ -318,18 +318,23 @@ export default function Inbox() {
         
         const results = await Promise.allSettled(
           selectedThreadIds.map(async (threadId) => {
+            // Link thread to project
             await base44.functions.invoke('linkEmailThreadToProject', {
               email_thread_id: threadId,
               project_id: projectId,
               set_as_primary: false
             });
             
-            // Auto-save attachments
-            await base44.functions.invoke('saveThreadAttachments', {
-              thread_id: threadId,
-              target_type: 'project',
-              target_id: projectId
-            });
+            // Try to save attachments, but don't fail if it errors
+            try {
+              await base44.functions.invoke('saveThreadAttachments', {
+                thread_id: threadId,
+                target_type: 'project',
+                target_id: projectId
+              });
+            } catch (attachError) {
+              console.warn('Failed to save attachments for thread', threadId, attachError);
+            }
             
             // Mark thread as closed
             await base44.entities.EmailThread.update(threadId, { status: 'Closed' });
@@ -355,15 +360,20 @@ export default function Inbox() {
           set_as_primary: true
         });
 
-        // Auto-save attachments
+        // Auto-save attachments (show progress for single thread)
         toast.info('Processing attachments...');
-        const res = await base44.functions.invoke('saveThreadAttachments', {
-          thread_id: selectedThread.id,
-          target_type: 'project',
-          target_id: projectId
-        });
-        if (res.data?.saved_count > 0) {
-          toast.success(`Saved ${res.data.saved_count} attachments to project`);
+        try {
+          const res = await base44.functions.invoke('saveThreadAttachments', {
+            thread_id: selectedThread.id,
+            target_type: 'project',
+            target_id: projectId
+          });
+          if (res.data?.saved_count > 0) {
+            toast.success(`Saved ${res.data.saved_count} attachments to project`);
+          }
+        } catch (attachError) {
+          console.warn('Failed to save attachments', attachError);
+          toast.warning('Thread linked, but attachments could not be saved');
         }
 
         // Mark thread as closed
