@@ -69,6 +69,7 @@ export default function Schedule() {
   const [showAvailabilityManager, setShowAvailabilityManager] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [activeCheckInMap, setActiveCheckInMap] = useState({});
+  const [todaysSectionExpanded, setTodaysSectionExpanded] = useState(isTechnician);
 
   // User loaded via usePermissions
 
@@ -252,62 +253,72 @@ export default function Schedule() {
   }, [navigate]);
 
   const renderTodaysJobs = () => (
-    <section className="mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div className="mb-2 flex items-center justify-between">
+    <section className="mb-4 rounded-xl border border-slate-200 bg-white shadow-sm">
+      <button
+        onClick={() => setTodaysSectionExpanded(!todaysSectionExpanded)}
+        className="w-full p-3 flex items-center justify-between hover:bg-slate-50 transition-colors rounded-xl"
+      >
         <h2 className="text-sm font-semibold text-slate-900">
           Today's Jobs
         </h2>
-        <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-          {todaysJobs.length}
-        </span>
-      </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+            {todaysJobs.length}
+          </span>
+          <ChevronRight className={`w-4 h-4 text-slate-500 transition-transform ${todaysSectionExpanded ? 'rotate-90' : ''}`} />
+        </div>
+      </button>
 
-      {todaysJobs.length === 0 ? (
-        <p className="text-xs text-slate-500 py-2 text-center italic">
-          No jobs scheduled for today in this view.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {todaysJobs.map((job) => (
-            <li
-              key={job.id}
-              className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-xs border border-slate-100"
-            >
-              <div className="flex flex-col gap-0.5 overflow-hidden mr-2">
-                <div className="font-semibold text-slate-900 truncate">
-                  {job.job_number ? `#${job.job_number}` : ''} {job.title || "Job"}
-                </div>
-                <div className="flex items-center gap-1 text-slate-600 truncate">
-                  <span className="font-medium text-slate-700">{job.scheduled_time || "Time TBC"}</span>
-                  <span>·</span>
-                  <span className="truncate">{job.customer_name || job.customer?.name || "Customer"}</span>
-                </div>
-                {job.address && (
-                  <div className="text-slate-500 truncate">
-                    {job.address}
+      {todaysSectionExpanded && (
+        <div className="px-3 pb-3">
+          {todaysJobs.length === 0 ? (
+            <p className="text-xs text-slate-500 py-2 text-center italic">
+              No jobs scheduled for today in this view.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {todaysJobs.map((job) => (
+                <li
+                  key={job.id}
+                  className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-xs border border-slate-100"
+                >
+                  <div className="flex flex-col gap-0.5 overflow-hidden mr-2">
+                    <div className="font-semibold text-slate-900 truncate">
+                      {job.job_number ? `#${job.job_number}` : ''} {job.title || "Job"}
+                    </div>
+                    <div className="flex items-center gap-1 text-slate-600 truncate">
+                      <span className="font-medium text-slate-700">{job.scheduled_time || "Time TBC"}</span>
+                      <span>·</span>
+                      <span className="truncate">{job.customer_name || job.customer?.name || "Customer"}</span>
+                    </div>
+                    {job.address && (
+                      <div className="text-slate-500 truncate">
+                        {job.address}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-1.5 shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 text-[10px] px-2"
-                  onClick={() => handleOpenJob(job)}
-                >
-                  View
-                </Button>
-                <Button
-                  size="sm"
-                  className="h-6 text-[10px] px-2 bg-[#FAE008] text-black hover:bg-[#E5CF07]"
-                  onClick={() => handleOpenCheckIn(job)}
-                >
-                  Check In
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                  <div className="flex flex-col gap-1.5 shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 text-[10px] px-2"
+                      onClick={() => handleOpenJob(job)}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-6 text-[10px] px-2 bg-[#FAE008] text-black hover:bg-[#E5CF07]"
+                      onClick={() => handleOpenCheckIn(job)}
+                    >
+                      Check In
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </section>
   );
