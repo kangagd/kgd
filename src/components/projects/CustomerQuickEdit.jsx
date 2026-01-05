@@ -22,6 +22,7 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({});
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
+  const [orgSearchTerm, setOrgSearchTerm] = useState("");
   const [newOrgData, setNewOrgData] = useState({
     name: "",
     organisation_type: undefined,
@@ -48,6 +49,11 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
     queryKey: ['organisations'],
     queryFn: () => base44.entities.Organisation.filter({ status: 'active', deleted_at: { $exists: false } })
   });
+
+  const filteredOrganisations = organisations.filter(org => 
+    org.name?.toLowerCase().includes(orgSearchTerm.toLowerCase()) ||
+    org.organisation_type?.toLowerCase().includes(orgSearchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     if (customer) {
@@ -366,12 +372,26 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
+                <div className="px-2 py-1.5 border-b">
+                  <Input
+                    placeholder="Search organisations..."
+                    value={orgSearchTerm}
+                    onChange={(e) => setOrgSearchTerm(e.target.value)}
+                    className="h-8 text-[13px]"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
                 <SelectItem value="none">None</SelectItem>
-                {organisations.map((org) => (
+                {filteredOrganisations.map((org) => (
                   <SelectItem key={org.id} value={org.id}>
                     {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
                   </SelectItem>
                 ))}
+                {filteredOrganisations.length === 0 && orgSearchTerm && (
+                  <div className="px-2 py-6 text-center text-[13px] text-[#6B7280]">
+                    No organisations found
+                  </div>
+                )}
               </SelectContent>
             </Select>
             <Button
