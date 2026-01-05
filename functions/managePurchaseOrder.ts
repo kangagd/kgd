@@ -697,6 +697,8 @@ Deno.serve(async (req) => {
 
         // Action: updateStatus
         if (action === 'updateStatus') {
+            console.log('[managePurchaseOrderV2] action=updateStatus po=' + id + ' user=' + user.email);
+            
             if (!id || !status) {
                 return Response.json({ error: 'id and status are required' }, { status: 400 });
             }
