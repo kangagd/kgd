@@ -284,20 +284,45 @@ Deno.serve(async (req) => {
             previousJob = await base44.asServiceRole.entities.Job.get(id);
             if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
             
-            // GUARDRAIL: Prevent logistics jobs from having customer_name/address manually overridden
-            const isLogisticsJob = previousJob.purchase_order_id || 
-                                  previousJob.vehicle_id || 
-                                  previousJob.third_party_trade_id ||
-                                  (previousJob.job_type_name || '').toLowerCase().includes('material pick') ||
-                                  (previousJob.job_type_name || '').toLowerCase().includes('material delivery') ||
-                                  (previousJob.job_type_name || '').toLowerCase().includes('stock delivery');
+            // Detect if job is becoming a logistics job
+            const wasLogisticsJob = previousJob.purchase_order_id || 
+                                   previousJob.vehicle_id || 
+                                   previousJob.third_party_trade_id ||
+                                   (previousJob.job_type_name || '').toLowerCase().includes('material pick') ||
+                                   (previousJob.job_type_name || '').toLowerCase().includes('material delivery') ||
+                                   (previousJob.job_type_name || '').toLowerCase().includes('stock delivery');
             
+            const isLogisticsJob = data.purchase_order_id || 
+                                  data.vehicle_id || 
+                                  data.third_party_trade_id ||
+                                  (data.job_type_name || '').toLowerCase().includes('material pick') ||
+                                  (data.job_type_name || '').toLowerCase().includes('material delivery') ||
+                                  (data.job_type_name || '').toLowerCase().includes('stock delivery') ||
+                                  wasLogisticsJob;
+            
+            // GUARDRAIL: Prevent logistics jobs from having customer_name/address manually overridden
             if (isLogisticsJob && (data.customer_name || data.address || data.address_full)) {
                 // Strip out these fields to prevent manual override
                 const { customer_name, address, address_full, ...safeData } = data;
                 job = await base44.asServiceRole.entities.Job.update(id, safeData);
             } else {
                 job = await base44.asServiceRole.entities.Job.update(id, data);
+            }
+            
+            // If job just became a logistics job, trigger title and address backfill
+            if (!wasLogisticsJob && isLogisticsJob) {
+                try {
+                    await base44.asServiceRole.functions.invoke('backfillLogisticsJobAddresses', {
+                        job_ids: [job.id]
+                    });
+                    await base44.asServiceRole.functions.invoke('backfillLogisticsJobTitles', {
+                        job_ids: [job.id]
+                    });
+                    // Re-fetch to get updated job
+                    job = await base44.asServiceRole.entities.Job.get(id);
+                } catch (error) {
+                    console.error('Error backfilling logistics job data:', error);
+                }
             }
             
             // Update project activity when job is updated
