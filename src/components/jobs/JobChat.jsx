@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, MessageCircle, AtSign } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 export default function JobChat({ jobId }) {
   const [message, setMessage] = useState("");
@@ -56,11 +57,14 @@ export default function JobChat({ jobId }) {
         throw new Error(response.data.error);
       }
       
-      return response.data.message;
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobMessages', jobId] });
       setMessage("");
+    },
+    onError: (error) => {
+      toast.error('Failed to send message: ' + error.message);
     }
   });
 
