@@ -97,26 +97,69 @@ export default function Dashboard() {
 
   const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
 
-  const { data: allAttentionItems = [] } = useQuery({
-    queryKey: ['attentionItems', 'dashboard'],
-    queryFn: () => base44.entities.AttentionItem.filter({ status: 'open' }),
+  // Fetch unconfirmed jobs (scheduled in the next 7 days)
+  const sevenDaysFromNow = new Date();
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+  
+  const { data: unconfirmedJobs = [] } = useQuery({
+    queryKey: ['jobs', 'unconfirmed', 'dashboard'],
+    queryFn: async () => {
+      const jobs = await base44.entities.Job.filter({ 
+        client_confirmed: false,
+        status: 'Scheduled'
+      });
+      // Filter for jobs scheduled in the next 7 days
+      return jobs.filter(job => {
+        if (!job.scheduled_date) return false;
+        const scheduledDate = new Date(job.scheduled_date);
+        return scheduledDate >= new Date() && scheduledDate <= sevenDaysFromNow;
+      });
+    },
     enabled: isAdminOrManager,
-    staleTime: 120000, // 2 minutes
+    staleTime: 120000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
   });
 
-  // Show all open attention items, sorted by severity and date
-  const criticalAttentionItems = allAttentionItems
-    .sort((a, b) => {
-      // Sort by severity first (critical > high), then by created_date
-      const severityOrder = { critical: 2, high: 1 };
-      const severityDiff = (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
-      if (severityDiff !== 0) return severityDiff;
-      return new Date(b.created_date) - new Date(a.created_date);
-    })
-    .slice(0, 5);
+  // Fetch unbooked third party trades
+  const { data: unbookedTrades = [] } = useQuery({
+    queryKey: ['trades', 'unbooked', 'dashboard'],
+    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ 
+      status: 'Required'
+    }),
+    enabled: isAdminOrManager,
+    staleTime: 120000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
+  });
+
+  // Combine both into attention items
+  const criticalAttentionItems = [
+    ...unconfirmedJobs.map(job => ({
+      id: `job-${job.id}`,
+      type: 'unconfirmed_job',
+      title: `Client not confirmed - ${job.customer_name || 'Job'}`,
+      description: job.scheduled_date ? `Scheduled: ${format(new Date(job.scheduled_date), 'MMM d, yyyy')}` : null,
+      entity_type: 'job',
+      entity_id: job.id,
+      job_number: job.job_number,
+      created_date: job.created_date
+    })),
+    ...unbookedTrades.map(trade => ({
+      id: `trade-${trade.id}`,
+      type: 'unbooked_trade',
+      title: `Third party trade not booked - ${trade.trade_type || 'Trade'}`,
+      description: trade.notes || trade.project_title,
+      entity_type: 'project',
+      entity_id: trade.project_id,
+      project_title: trade.project_title,
+      created_date: trade.created_date
+    }))
+  ]
+  .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+  .slice(0, 5);
 
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
@@ -369,10 +412,10 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {criticalAttentionItems.map(item => {
                     const handleClick = () => {
-                      if (item.root_entity_type === 'project' && item.root_entity_id) {
-                        navigate(createPageUrl("Projects") + `?projectId=${item.root_entity_id}`);
-                      } else if (item.root_entity_type === 'job' && item.root_entity_id) {
-                        navigate(createPageUrl("Jobs") + `?jobId=${item.root_entity_id}`);
+                      if (item.entity_type === 'project' && item.entity_id) {
+                        navigate(createPageUrl("Projects") + `?projectId=${item.entity_id}`);
+                      } else if (item.entity_type === 'job' && item.entity_id) {
+                        navigate(createPageUrl("Jobs") + `?jobId=${item.entity_id}`);
                       }
                     };
 
@@ -383,32 +426,28 @@ export default function Dashboard() {
                         onClick={handleClick}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            item.severity === 'critical' ? 'bg-red-100' : 'bg-yellow-100'
-                          }`}>
-                            <AlertTriangle className={`w-4 h-4 ${
-                              item.severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
-                            }`} />
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-yellow-100">
+                            <AlertTriangle className="w-4 h-4 text-yellow-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
                               {item.title}
                             </h4>
-                            {item.summary_bullets && item.summary_bullets.length > 0 && (
+                            {item.description && (
                               <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 line-clamp-2">
-                                {item.summary_bullets[0]}
+                                {item.description}
                               </p>
                             )}
-                            {item.root_entity_type === 'project' && (
+                            {item.entity_type === 'project' && (
                               <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 truncate flex items-center gap-1">
                                 <FolderKanban className="w-3 h-3" />
                                 Project
                               </p>
                             )}
-                            {item.root_entity_type === 'job' && (
+                            {item.entity_type === 'job' && item.job_number && (
                               <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 truncate flex items-center gap-1">
                                 <Briefcase className="w-3 h-3" />
-                                Job
+                                Job #{item.job_number}
                               </p>
                             )}
                           </div>
