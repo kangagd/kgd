@@ -218,14 +218,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     ...QUERY_CONFIG.frequent
   });
 
-  // Lazy load all jobs only when needed (overview or visits tab)
+  // Always fetch jobs for consistency across all tabs
   const { data: jobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
     queryFn: () => base44.entities.Job.filter({ 
       project_id: project.id,
       deleted_at: { $exists: false }
     }),
-    enabled: !!project.id && (activeTab === 'overview' || activeTab === 'summary'),
+    enabled: !!project.id,
     ...QUERY_CONFIG.projectDetailLazy
   });
 
