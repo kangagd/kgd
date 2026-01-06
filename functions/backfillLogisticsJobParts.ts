@@ -27,7 +27,14 @@ Deno.serve(async (req) => {
       processed++;
 
       // Get PO and its lines
-      const po = await base44.asServiceRole.entities.PurchaseOrder.get(job.purchase_order_id);
+      let po;
+      try {
+        po = await base44.asServiceRole.entities.PurchaseOrder.get(job.purchase_order_id);
+      } catch (error) {
+        console.error(`PO ${job.purchase_order_id} not found for job ${job.id}:`, error);
+        continue;
+      }
+
       const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
         purchase_order_id: po.id
       });
