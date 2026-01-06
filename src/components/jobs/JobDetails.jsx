@@ -363,12 +363,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: jobParts = [] } = useQuery({
     queryKey: ['jobParts', job.id],
     queryFn: async () => {
-      const parts = await base44.entities.Part.list();
-      return parts.filter(p => 
+      // Fetch all parts for the app
+      const allParts = await base44.entities.Part.list();
+      // Filter for parts linked to this job
+      const linkedParts = allParts.filter(p => 
         p.linked_logistics_jobs && 
         Array.isArray(p.linked_logistics_jobs) && 
         p.linked_logistics_jobs.includes(job.id)
       );
+      // Deduplicate by part ID (keep most recent)
+      const seen = new Map();
+      for (const part of linkedParts) {
+        if (!seen.has(part.id) || new Date(part.updated_date) > new Date(seen.get(part.id).updated_date)) {
+          seen.set(part.id, part);
+        }
+      }
+      return Array.from(seen.values());
     },
     enabled: isLogisticsJob,
     staleTime: 0,
