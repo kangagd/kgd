@@ -223,7 +223,8 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                     </div>
                   </div>
                 </div>
-              ))
+              );
+              })
             )}
           </div>
         </div>
