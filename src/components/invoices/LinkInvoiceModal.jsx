@@ -150,12 +150,20 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                 </p>
               </div>
             ) : (
-              availableInvoices.map((invoice) => (
+              availableInvoices.map((invoice) => {
+                const isLinkedToOtherProject = linkedToOtherProjectIds.has(invoice.xero_invoice_id);
+                const isLinkedToCurrentProject = linkedToCurrentProjectIds.has(invoice.xero_invoice_id);
+                
+                return (
                 <div
                   key={invoice.xero_invoice_id}
-                  onClick={() => handleSelect(invoice)}
-                  className={`p-3 border rounded-lg cursor-pointer transition-all hover:border-[#FAE008] hover:bg-[#FFFEF5] ${
-                    linkedToCurrentProjectIds.has(invoice.xero_invoice_id) ? 'border-[#FAE008] bg-[#FFFEF5]' : 'border-[#E5E7EB]'
+                  onClick={() => !isLinkedToOtherProject && handleSelect(invoice)}
+                  className={`p-3 border rounded-lg transition-all ${
+                    isLinkedToOtherProject 
+                      ? 'opacity-50 cursor-not-allowed border-[#E5E7EB]' 
+                      : 'cursor-pointer hover:border-[#FAE008] hover:bg-[#FFFEF5]'
+                  } ${
+                    isLinkedToCurrentProject ? 'border-[#FAE008] bg-[#FFFEF5]' : 'border-[#E5E7EB]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
