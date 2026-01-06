@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
                         }
                     }
                 } catch (e) {
-                    console.error("Error auto-linking contract to job:", e);
+                    console.warn("Customer not found - skipping contract link:", e.message);
                 }
             }
 
