@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Xero credentials not configured' }, { status: 500 });
     }
 
-    const scopes = 'openid profile email accounting.transactions.read accounting.contacts.read accounting.settings.read offline_access';
+    const scopes = 'openid profile email accounting.transactions accounting.contacts accounting.settings offline_access';
     const authUrl = `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${user.id}`;
 
     return Response.json({ authUrl });
