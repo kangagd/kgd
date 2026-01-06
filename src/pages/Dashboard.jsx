@@ -108,6 +108,13 @@ export default function Dashboard() {
   });
 
   const criticalAttentionItems = allAttentionItems
+    .filter(item => {
+      const title = item.title?.toLowerCase() || '';
+      return title.includes('not confirmed') || 
+             title.includes('unconfirmed') || 
+             title.includes('trade not booked') ||
+             title.includes('not booked');
+    })
     .sort((a, b) => {
       // Sort by severity first (critical > high), then by created_date
       const severityOrder = { critical: 2, high: 1 };
