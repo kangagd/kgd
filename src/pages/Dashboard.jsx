@@ -47,6 +47,10 @@ export default function Dashboard() {
   const { data: allJobs = [] } = useQuery({
     queryKey: jobKeys.all,
     queryFn: () => base44.entities.Job.list('-scheduled_date'),
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const jobs = allJobs.filter(j => !j.deleted_at);
@@ -54,11 +58,19 @@ export default function Dashboard() {
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
     queryFn: () => base44.entities.CheckInOut.list('-created_date', 10),
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-updated_date', 5),
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const recentProjects = allProjects.filter(p => !p.deleted_at).slice(0, 5);
@@ -67,6 +79,10 @@ export default function Dashboard() {
     queryKey: ['myTasks', user?.email],
     queryFn: () => base44.entities.Task.filter({ assigned_to_email: user?.email }),
     enabled: !!user?.email,
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const myTasks = allTasks
@@ -85,6 +101,10 @@ export default function Dashboard() {
     queryKey: ['purchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
     enabled: isAdminOrManager,
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const recentPurchaseOrders = allPurchaseOrders.filter(po => 
@@ -97,6 +117,10 @@ export default function Dashboard() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
     enabled: isAdminOrManager && recentPurchaseOrders.length > 0,
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const logisticsJobs = jobs.filter(j => 
@@ -111,6 +135,10 @@ export default function Dashboard() {
     queryKey: ['suppliers'],
     queryFn: () => base44.entities.Supplier.list('name'),
     enabled: isAdminOrManager && logisticsJobs.length > 0,
+    staleTime: 300000, // 5 minutes (suppliers rarely change)
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: 1,
   });
 
   // Get today's date in local timezone (YYYY-MM-DD format)
