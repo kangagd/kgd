@@ -208,24 +208,19 @@ export default function NotificationBell({ isMobile = false }) {
     queryKey: ['notifications'],
     queryFn: async () => {
       try {
-        const response = await base44.functions.invoke('getNotifications', { limit: 20 });
+        const response = await base44.functions.invoke('getNotifications', { limit: 50 });
         return response.data || { notifications: [], unread_count: 0 };
       } catch (error) {
+        // Silently fail to prevent toast spam
         console.error('Error fetching notifications:', error);
         return { notifications: [], unread_count: 0 };
       }
     },
-    staleTime: 60000, // 1 minute
-    refetchInterval: 120000, // Poll every 2 minutes instead of 30s
+    staleTime: 120000, // 2 minutes
+    refetchInterval: false, // Disable auto-polling to reduce API load
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: (failureCount, error) => {
-      if (error?.response?.status === 429) {
-        toast.error('Rate limit hit – slowing down');
-        return false;
-      }
-      return failureCount < 1;
-    }
+    refetchOnMount: true,
+    retry: false, // Don't retry on errors to prevent cascading failures
   });
 
   const markReadMutation = useMutation({

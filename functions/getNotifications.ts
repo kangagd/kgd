@@ -27,25 +27,17 @@ Deno.serve(async (req) => {
       filter.created_date = { $gte: since };
     }
 
-    // Fetch notifications and unread count
+    // Fetch notifications once
     const notifications = await base44.entities.Notification.filter(
       filter,
       '-created_date',
       limit
     );
     
-    const unreadNotifications = onlyUnread 
-      ? [] 
-      : await base44.entities.Notification.filter(
-          { user_email: user.email, is_read: false },
-          'created_date',
-          100
-        );
-
-    // Calculate unread count efficiently
+    // Calculate unread count from fetched notifications to avoid second query
     const unreadCount = onlyUnread 
       ? notifications.length 
-      : unreadNotifications.length;
+      : notifications.filter(n => !n.is_read).length;
 
     return Response.json({
       notifications,
