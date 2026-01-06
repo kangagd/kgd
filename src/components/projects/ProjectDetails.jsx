@@ -625,7 +625,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       
       const newJob = createJobResponse.data.job;
 
-      // Refresh jobs and navigate to the new job
+      // Update cached jobs list with the new job
+      queryClient.setQueryData(['projectJobs', project.id], (old = []) => [...old, newJob]);
       queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
       
       // Navigate to the new job
