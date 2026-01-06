@@ -46,6 +46,10 @@ export default function CheckIn() {
       );
     },
     enabled: !!user?.email,
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const { data: checkIns = [] } = useQuery({
@@ -54,6 +58,10 @@ export default function CheckIn() {
       technician_email: user?.email 
     }, '-created_date'),
     enabled: !!user?.email,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
   });
 
   const activeCheckIn = checkIns.find(ci => !ci.check_out_time && ci.check_out_time !== "");
