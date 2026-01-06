@@ -340,14 +340,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnMount: true,
   });
 
-  // Detect logistics job - check is_logistics flag on JobType entity
-  const isLogisticsJob = !!(currentJobType?.is_logistics === true || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id);
+  // Detect logistics job - check is_logistics flag on JobType entity OR presence of logistics fields
+  const isLogisticsJob = !!(currentJobType?.is_logistics === true || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id || job.is_logistics_job === true);
 
   // Fetch purchase order data for logistics jobs
   const { data: purchaseOrder } = useQuery({
     queryKey: ['purchaseOrder', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrder.get(job.purchase_order_id),
-    enabled: !!job.purchase_order_id && isLogisticsJob,
+    enabled: !!job.purchase_order_id,
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -356,7 +356,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: purchaseOrderLines = [] } = useQuery({
     queryKey: ['purchaseOrderLines', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: job.purchase_order_id }),
-    enabled: !!job.purchase_order_id && isLogisticsJob,
+    enabled: !!job.purchase_order_id,
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -364,7 +364,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
 
 
-  // Fetch parts for logistics jobs
+  // Fetch parts for logistics jobs - enabled if ANY logistics indicator present
   const { data: jobParts = [] } = useQuery({
     queryKey: ['jobParts', job.id, job.purchase_order_id],
     queryFn: async () => {
@@ -383,7 +383,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         );
       }
     },
-    enabled: isLogisticsJob,
+    enabled: !!(job.purchase_order_id || job.vehicle_id || job.third_party_trade_id || job.is_logistics_job === true),
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
