@@ -8,7 +8,7 @@ import { ProjectStatusBadge } from "../components/common/StatusBadge";
 import { getPoDisplayReference, getPoIdentity } from "@/components/domain/poDisplayHelpers";
 import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
 import { getPoStatusColor } from "@/components/domain/purchaseOrderStatusConfig";
-import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package, FolderOpen } from "lucide-react";
+import { Plus, Clock, Briefcase, Calendar, CheckCircle, FolderKanban, CheckSquare, Truck, Package, FolderOpen, AlertTriangle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -96,6 +96,30 @@ export default function Dashboard() {
     .slice(0, 5);
 
   const isAdminOrManager = user?.role === 'admin' || user?.role === 'manager';
+
+  const { data: allAttentionItems = [] } = useQuery({
+    queryKey: ['attentionItems', 'dashboard'],
+    queryFn: () => base44.entities.AttentionItem.filter({ status: 'open' }),
+    enabled: isAdminOrManager,
+    staleTime: 120000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
+  });
+
+  const criticalAttentionItems = allAttentionItems
+    .filter(item => 
+      item.type === 'unconfirmed_visit' || 
+      item.type === 'third_party_trade_not_booked'
+    )
+    .sort((a, b) => {
+      // Sort by priority first (high > medium > low), then by created_date
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      const priorityDiff = (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+      if (priorityDiff !== 0) return priorityDiff;
+      return new Date(b.created_date) - new Date(a.created_date);
+    })
+    .slice(0, 5);
 
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
@@ -325,6 +349,75 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+
+          {isAdminOrManager && (
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Attention Items</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate(createPageUrl("Projects"))}
+                  className="text-[#6B7280] hover:text-[#111827] text-sm"
+                >
+                  View All →
+                </Button>
+              </div>
+              {criticalAttentionItems.length === 0 ? (
+                <div className="text-center py-16">
+                  <CheckCircle className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
+                  <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">All clear! No urgent items</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {criticalAttentionItems.map(item => {
+                    const handleClick = () => {
+                      if (item.project_id) {
+                        navigate(createPageUrl("Projects") + `?projectId=${item.project_id}`);
+                      } else if (item.job_id) {
+                        navigate(createPageUrl("Jobs") + `?jobId=${item.job_id}`);
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#FEF3C7] hover:border-[#D97706] transition-all cursor-pointer"
+                        onClick={handleClick}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            item.priority === 'high' ? 'bg-red-100' : 
+                            item.priority === 'medium' ? 'bg-yellow-100' : 'bg-blue-100'
+                          }`}>
+                            <AlertTriangle className={`w-4 h-4 ${
+                              item.priority === 'high' ? 'text-red-600' : 
+                              item.priority === 'medium' ? 'text-yellow-600' : 'text-blue-600'
+                            }`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
+                              {item.title}
+                            </h4>
+                            {item.description && (
+                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 line-clamp-2">
+                                {item.description}
+                              </p>
+                            )}
+                            {item.project_title && (
+                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 truncate">
+                                {item.project_title}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {user?.is_field_technician && (
             <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
