@@ -174,7 +174,7 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
               </div>
             )}
 
-            {quote.expires_at && (
+            {quote.expires_at && !quote.accepted_at && (
               <div className="flex items-center gap-3 text-[13px]">
                 <Clock className={`w-4 h-4 ${moment(quote.expires_at).isBefore(moment()) ? 'text-red-500' : 'text-[#9CA3AF]'}`} />
                 <span className="text-[#6B7280]">
