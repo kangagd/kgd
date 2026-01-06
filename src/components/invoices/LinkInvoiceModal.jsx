@@ -169,9 +169,9 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                         <Badge className={`${statusColors[invoice.status] || 'bg-slate-100 text-slate-700'} text-[10px] font-medium`}>
                           {invoice.status}
                         </Badge>
-                        {invoice.xero_invoice_id === currentInvoiceId && (
+                        {linkedToCurrentProjectIds.has(invoice.xero_invoice_id) && (
                           <Badge className="bg-green-100 text-green-700 text-[10px] font-medium">
-                            Currently Linked
+                            Linked to this Project
                           </Badge>
                         )}
                       </div>
