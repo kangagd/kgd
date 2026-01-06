@@ -107,6 +107,12 @@ Deno.serve(async (req) => {
       ? clientAddress 
       : warehouseAddress;
 
+    // Build checked_items object for samples
+    const checkedItems = {};
+    for (const sample_id of sample_ids) {
+      checkedItems[sample_id] = false;
+    }
+
     // Create Job
     const job = await base44.asServiceRole.entities.Job.create({
       project_id,
@@ -140,6 +146,7 @@ Deno.serve(async (req) => {
       logistics_purpose: logisticsPurpose,
       origin_address: originAddress,
       destination_address: destinationAddress,
+      checked_items: checkedItems,
     });
 
     // Record sample movement based on job type using manageSample
