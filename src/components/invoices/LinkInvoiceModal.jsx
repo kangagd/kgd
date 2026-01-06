@@ -119,7 +119,7 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
           </div>
 
           <p className="text-[12px] text-[#6B7280] flex-shrink-0">
-            {xeroData?.total ? `Loaded ${xeroData.total} invoices from Xero` : 'Searching all invoices in Xero...'}
+            {availableInvoices.length > 0 ? `Showing ${availableInvoices.length} available invoice${availableInvoices.length === 1 ? '' : 's'}` : xeroData?.total ? `Loaded ${xeroData.total} invoices from Xero` : 'Searching all invoices in Xero...'}
           </p>
 
           <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
