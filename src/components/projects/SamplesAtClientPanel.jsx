@@ -16,7 +16,7 @@ export default function SamplesAtClientPanel({ project }) {
   const { data: clientSamples = [], isLoading } = useQuery({
     queryKey: ['clientSamples', project.id],
     queryFn: async () => {
-      const samples = await base44.entities.SampleV2.filter({
+      const samples = await base44.entities.Sample.filter({
         checked_out_project_id: project.id,
       });
       return samples;

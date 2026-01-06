@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
       sample_ids,
       job_type,
       scheduled_date,
+      pickup_date,
       notes,
     } = await req.json();
 
@@ -154,10 +155,11 @@ Deno.serve(async (req) => {
       // Drop-off: Check out samples to project immediately
       for (const sample_id of sample_ids) {
         try {
-          await base44.functions.invoke('manageSample', {
+          await base44.asServiceRole.functions.invoke('manageSample', {
             action: 'checkoutToProject',
             sample_id,
             project_id,
+            due_back_at: pickup_date || null,
             notes: `Checked out for drop-off job #${job.job_number}`,
           });
         } catch (error) {

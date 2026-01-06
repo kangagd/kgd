@@ -28,6 +28,7 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
   const [selectedSampleIds, setSelectedSampleIds] = useState([]);
   const [vehicleId, setVehicleId] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
+  const [pickupDate, setPickupDate] = useState("");
   const [notes, setNotes] = useState("");
   const [sourceLocation, setSourceLocation] = useState("warehouse");
   const queryClient = useQueryClient();
@@ -76,6 +77,7 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
         sample_ids: selectedSampleIds,
         job_type: "Sample Drop-Off",
         scheduled_date: scheduledDate || null,
+        pickup_date: pickupDate || null,
         notes,
       });
       return result.data;
@@ -95,6 +97,7 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
     setSelectedSampleIds([]);
     setVehicleId("");
     setScheduledDate("");
+    setPickupDate("");
     setNotes("");
     setSourceLocation("warehouse");
     onClose();
@@ -197,12 +200,22 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
           </div>
 
           <div>
-            <Label htmlFor="scheduled_date">Scheduled Date (Optional)</Label>
+            <Label htmlFor="scheduled_date">Drop-Off Date (Optional)</Label>
             <Input
               id="scheduled_date"
               type="date"
               value={scheduledDate}
               onChange={(e) => setScheduledDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="pickup_date">Pickup Date (Optional)</Label>
+            <Input
+              id="pickup_date"
+              type="date"
+              value={pickupDate}
+              onChange={(e) => setPickupDate(e.target.value)}
             />
           </div>
 
