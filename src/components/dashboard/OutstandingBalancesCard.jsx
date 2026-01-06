@@ -154,11 +154,17 @@ export default function OutstandingBalancesCard() {
                     <p className="text-[16px] font-bold text-[#D97706] leading-[1.2]">
                       ${project.outstandingBalance.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    {project.completed_date && (
-                      <p className="text-[11px] text-[#6B7280] leading-[1.35] mt-1">
-                        {format(parseISO(project.completed_date), 'MMM d')}
-                      </p>
-                    )}
+                    {project.completed_date && (() => {
+                      try {
+                        return (
+                          <p className="text-[11px] text-[#6B7280] leading-[1.35] mt-1">
+                            {format(parseISO(project.completed_date), 'MMM d')}
+                          </p>
+                        );
+                      } catch {
+                        return null;
+                      }
+                    })()}
                   </div>
                 </div>
               </div>
