@@ -170,6 +170,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
 
+  // Sync checkedItems state when job data changes
+  useEffect(() => {
+    setCheckedItems(job.checked_items || {});
+  }, [job.checked_items, job.id]);
+
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
