@@ -28,6 +28,7 @@ import {
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import moment from "moment";
+import PandaDocViewerModal from "./PandaDocViewerModal";
 
 const statusConfig = {
   Draft: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: FileText },
@@ -43,6 +44,8 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingLink, setIsLoadingLink] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
+  const [showPandaDocModal, setShowPandaDocModal] = useState(false);
+  const [pandaDocUrl, setPandaDocUrl] = useState("");
 
   const config = statusConfig[quote.status] || statusConfig.Draft;
   const StatusIcon = config.icon;
@@ -102,7 +105,8 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
       try {
         const freshUrl = await onRefreshLink(quote);
         if (freshUrl) {
-          window.open(freshUrl, '_blank');
+          setPandaDocUrl(freshUrl);
+          setShowPandaDocModal(true);
         } else {
           toast.error('Could not generate client link');
         }
@@ -112,7 +116,8 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
         setIsLoadingLink(false);
       }
     } else if (quote.pandadoc_public_url) {
-      window.open(quote.pandadoc_public_url, '_blank');
+      setPandaDocUrl(quote.pandadoc_public_url);
+      setShowPandaDocModal(true);
     }
   };
 
@@ -201,123 +206,132 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
   }
 
   return (
-    <Card 
-      className={`border border-[#E5E7EB] hover:border-[#D1D5DB] transition-all hover:shadow-sm ${onSelect ? 'cursor-pointer' : ''}`}
-      onClick={() => onSelect?.(quote)}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <h4 className="text-[14px] font-semibold text-[#111827]">
-                {quote.name}
-              </h4>
-              {quote.number && (
-                <span className="text-[12px] text-[#6B7280]">#{quote.number}</span>
-              )}
-              <Badge className={`${config.color} border`}>
-                <StatusIcon className="w-3 h-3 mr-1" />
-                {quote.status}
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-4 text-[13px] mb-2">
-              <span className="font-semibold text-[#111827]">
-                ${quote.value?.toFixed(2) || '0.00'} {quote.currency || 'AUD'}
-              </span>
-              <span className="text-[#6B7280]">
-                Created {moment(quote.created_date).format('D MMM YYYY')}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#9CA3AF]">
-              {quote.sent_at && (
-                <span>Sent {moment(quote.sent_at).format('D MMM h:mm A')}</span>
-              )}
-              {quote.viewed_at && (
-                <span className="text-purple-600">Viewed {moment(quote.viewed_at).format('D MMM h:mm A')}</span>
-              )}
-              {quote.accepted_at && (
-                <span className="text-green-600 font-medium">Accepted {moment(quote.accepted_at).format('D MMM h:mm A')}</span>
-              )}
-              {quote.declined_at && (
-                <span className="text-red-600">Declined {moment(quote.declined_at).format('D MMM h:mm A')}</span>
-              )}
-              {quote.expires_at && !quote.accepted_at && (
-                <span className={moment(quote.expires_at).isBefore(moment()) ? 'text-red-600' : 'text-[#9CA3AF]'}>
-                  {moment(quote.expires_at).isBefore(moment()) ? 'Expired' : 'Expires'} {moment(quote.expires_at).format('D MMM')}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {isAdmin && quote.status === 'Draft' && (
-              <Button
-                size="sm"
-                onClick={handleSend}
-                disabled={isSending}
-                className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-8"
-              >
-                {isSending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5 mr-1" />
-                    Send
-                  </>
+    <>
+      <Card 
+        className={`border border-[#E5E7EB] hover:border-[#D1D5DB] transition-all hover:shadow-sm ${onSelect ? 'cursor-pointer' : ''}`}
+        onClick={() => onSelect?.(quote)}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <h4 className="text-[14px] font-semibold text-[#111827]">
+                  {quote.name}
+                </h4>
+                {quote.number && (
+                  <span className="text-[12px] text-[#6B7280]">#{quote.number}</span>
                 )}
-              </Button>
-            )}
+                <Badge className={`${config.color} border`}>
+                  <StatusIcon className="w-3 h-3 mr-1" />
+                  {quote.status}
+                </Badge>
+              </div>
 
-            {isAdmin && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {quote.pandadoc_internal_url && (
-                    <DropdownMenuItem onClick={openInPandaDoc}>
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      Open in PandaDoc
-                    </DropdownMenuItem>
-                  )}
-                  {quote.pandadoc_document_id && (
+              <div className="flex items-center gap-4 text-[13px] mb-2">
+                <span className="font-semibold text-[#111827]">
+                  ${quote.value?.toFixed(2) || '0.00'} {quote.currency || 'AUD'}
+                </span>
+                <span className="text-[#6B7280]">
+                  Created {moment(quote.created_date).format('D MMM YYYY')}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-[#9CA3AF]">
+                {quote.sent_at && (
+                  <span>Sent {moment(quote.sent_at).format('D MMM h:mm A')}</span>
+                )}
+                {quote.viewed_at && (
+                  <span className="text-purple-600">Viewed {moment(quote.viewed_at).format('D MMM h:mm A')}</span>
+                )}
+                {quote.accepted_at && (
+                  <span className="text-green-600 font-medium">Accepted {moment(quote.accepted_at).format('D MMM h:mm A')}</span>
+                )}
+                {quote.declined_at && (
+                  <span className="text-red-600">Declined {moment(quote.declined_at).format('D MMM h:mm A')}</span>
+                )}
+                {quote.expires_at && !quote.accepted_at && (
+                  <span className={moment(quote.expires_at).isBefore(moment()) ? 'text-red-600' : 'text-[#9CA3AF]'}>
+                    {moment(quote.expires_at).isBefore(moment()) ? 'Expired' : 'Expires'} {moment(quote.expires_at).format('D MMM')}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {isAdmin && quote.status === 'Draft' && (
+                <Button
+                  size="sm"
+                  onClick={handleSend}
+                  disabled={isSending}
+                  className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] h-8"
+                >
+                  {isSending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
                     <>
-                      <DropdownMenuItem onClick={openPublicUrl} disabled={isLoadingLink}>
-                        {isLoadingLink ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
-                        View as Client
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={copyClientLink} disabled={isLoadingLink}>
-                        {isLoadingLink ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
-                        Copy Client Link
-                      </DropdownMenuItem>
+                      <Send className="w-3.5 h-3.5 mr-1" />
+                      Send
                     </>
                   )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleRefreshStatus} disabled={isRefreshing}>
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    Refresh Status
-                  </DropdownMenuItem>
-                  {quote.status === 'Sent' && (
-                    <DropdownMenuItem onClick={openInPandaDoc}>
-                      <RotateCw className="w-4 h-4 mr-2" />
-                      Resend (via PandaDoc)
+                </Button>
+              )}
+
+              {isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {quote.pandadoc_internal_url && (
+                      <DropdownMenuItem onClick={openInPandaDoc}>
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open in PandaDoc
+                      </DropdownMenuItem>
+                    )}
+                    {quote.pandadoc_document_id && (
+                      <>
+                        <DropdownMenuItem onClick={openPublicUrl} disabled={isLoadingLink}>
+                          {isLoadingLink ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
+                          View as Client
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={copyClientLink} disabled={isLoadingLink}>
+                          {isLoadingLink ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+                          Copy Client Link
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleRefreshStatus} disabled={isRefreshing}>
+                      <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      Refresh Status
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleUnlink} disabled={isUnlinking} className="text-red-600 focus:text-red-600">
-                    {isUnlinking ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Unlink className="w-4 h-4 mr-2" />}
-                    Unlink Quote
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+                    {quote.status === 'Sent' && (
+                      <DropdownMenuItem onClick={openInPandaDoc}>
+                        <RotateCw className="w-4 h-4 mr-2" />
+                        Resend (via PandaDoc)
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleUnlink} disabled={isUnlinking} className="text-red-600 focus:text-red-600">
+                      {isUnlinking ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Unlink className="w-4 h-4 mr-2" />}
+                      Unlink Quote
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <PandaDocViewerModal
+        open={showPandaDocModal}
+        onClose={() => setShowPandaDocModal(false)}
+        url={pandaDocUrl}
+        quoteName={quote.name}
+      />
+    </>
   );
 }
