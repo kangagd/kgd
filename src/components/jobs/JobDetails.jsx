@@ -931,10 +931,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setCheckedItems(prev => ({ ...prev, [itemId]: checked }));
   };
 
-  // GUARDRAIL: Only count Parts, not PO lines (Parts are the source of truth)
+  // GUARDRAIL: Only count Parts and Samples, not PO lines (Parts/Samples are the source of truth)
   const allItemsChecked = () => {
-    if (jobParts.length === 0) return true;
-    const totalItems = jobParts.length; // Only Parts, never include purchaseOrderLines
+    const totalItems = jobParts.length + jobSamples.length;
+    if (totalItems === 0) return true;
     const checkedCount = Object.values(checkedItems).filter(Boolean).length;
     return checkedCount === totalItems;
   };
