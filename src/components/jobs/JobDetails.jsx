@@ -2068,9 +2068,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                 onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
                               />
                               <div className="flex-1">
-                                <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Unnamed Item'}</span>
+                                <span className={`text-[14px] font-medium ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
+                                  {part.item_name || 'Unnamed Item'}
+                                </span>
                                 {part.quantity_required && (
-                                  <span className="text-[14px] text-[#6B7280] ml-2">× {part.quantity_required}</span>
+                                  <span className={`text-[14px] ml-2 ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
+                                    × {part.quantity_required}
+                                  </span>
                                 )}
                               </div>
                               {!activeCheckIn && job.status !== 'Completed' && (
@@ -2101,7 +2105,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                 onCheckedChange={(checked) => handleItemCheck(sample.id, checked)}
                               />
                               <div className="flex-1">
-                                <span className="text-[14px] font-medium text-[#111827]">{sample.name || 'Unnamed Sample'}</span>
+                                <span className={`text-[14px] font-medium ${checkedItems[sample.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
+                                  {sample.name || 'Unnamed Sample'}
+                                </span>
                                 <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
                               </div>
                             </div>
