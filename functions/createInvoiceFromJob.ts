@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 async function refreshAndGetConnection(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
   if (connections.length === 0) throw new Error('No Xero connection found');
-  
+   
   const connection = connections[0];
   const expiresAt = new Date(connection.expires_at);
   
