@@ -108,14 +108,59 @@ Deno.serve(async (req) => {
       const response = await fetch(file_url);
       const csvText = await response.text();
       
-      const lines = csvText.split('\n').filter(line => line.trim());
-      if (lines.length === 0) {
+      // RFC 4180 CSV parser
+      const parseCSV = (text) => {
+        const rows = [];
+        let currentRow = [];
+        let currentField = '';
+        let insideQuotes = false;
+        
+        for (let i = 0; i < text.length; i++) {
+          const char = text[i];
+          const nextChar = text[i + 1];
+          
+          if (char === '"') {
+            if (insideQuotes && nextChar === '"') {
+              currentField += '"';
+              i++;
+            } else {
+              insideQuotes = !insideQuotes;
+            }
+          } else if (char === ',' && !insideQuotes) {
+            currentRow.push(currentField);
+            currentField = '';
+          } else if ((char === '\n' || char === '\r') && !insideQuotes) {
+            if (char === '\r' && nextChar === '\n') {
+              i++;
+            }
+            currentRow.push(currentField);
+            if (currentRow.some(field => field.trim() !== '')) {
+              rows.push(currentRow);
+            }
+            currentRow = [];
+            currentField = '';
+          } else {
+            currentField += char;
+          }
+        }
+        
+        if (currentField || currentRow.length > 0) {
+          currentRow.push(currentField);
+          if (currentRow.some(field => field.trim() !== '')) {
+            rows.push(currentRow);
+          }
+        }
+        
+        return rows;
+      };
+      
+      const parsedRows = parseCSV(csvText);
+      if (parsedRows.length === 0) {
         return Response.json({ error: 'CSV file is empty' }, { status: 400 });
       }
 
-      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-      const rows = lines.slice(1, 6).map(line => {
-        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const headers = parsedRows[0];
+      const previewRows = parsedRows.slice(1, 6).map(values => {
         const row = {};
         headers.forEach((header, idx) => {
           row[header] = values[idx] || '';
@@ -126,8 +171,8 @@ Deno.serve(async (req) => {
       return Response.json({
         success: true,
         headers,
-        preview_rows: rows,
-        total_rows: lines.length - 1
+        preview_rows: previewRows,
+        total_rows: parsedRows.length - 1
       });
     }
 

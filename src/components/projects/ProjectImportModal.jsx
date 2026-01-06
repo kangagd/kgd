@@ -60,8 +60,9 @@ export default function ProjectImportModal({ open, onClose, onSuccess }) {
   };
 
   const parseCSV = (csvText) => {
-    const lines = [];
-    let currentLine = '';
+    const rows = [];
+    let currentRow = [];
+    let currentField = '';
     let insideQuotes = false;
     
     for (let i = 0; i < csvText.length; i++) {
@@ -70,51 +71,43 @@ export default function ProjectImportModal({ open, onClose, onSuccess }) {
       
       if (char === '"') {
         if (insideQuotes && nextChar === '"') {
-          currentLine += '"';
-          i++;
+          // Escaped quote within quoted field
+          currentField += '"';
+          i++; // Skip next quote
         } else {
+          // Toggle quote state
           insideQuotes = !insideQuotes;
         }
-      } else if (char === '\n' && !insideQuotes) {
-        if (currentLine.trim()) {
-          lines.push(currentLine);
+      } else if (char === ',' && !insideQuotes) {
+        // End of field
+        currentRow.push(currentField);
+        currentField = '';
+      } else if ((char === '\n' || char === '\r') && !insideQuotes) {
+        // End of row (handle both \n and \r\n)
+        if (char === '\r' && nextChar === '\n') {
+          i++; // Skip \n in \r\n
         }
-        currentLine = '';
+        currentRow.push(currentField);
+        if (currentRow.some(field => field.trim() !== '')) {
+          rows.push(currentRow);
+        }
+        currentRow = [];
+        currentField = '';
       } else {
-        currentLine += char;
+        // Regular character (including newlines within quotes)
+        currentField += char;
       }
     }
     
-    if (currentLine.trim()) {
-      lines.push(currentLine);
+    // Handle last field and row
+    if (currentField || currentRow.length > 0) {
+      currentRow.push(currentField);
+      if (currentRow.some(field => field.trim() !== '')) {
+        rows.push(currentRow);
+      }
     }
     
-    return lines.map(line => {
-      const values = [];
-      let current = '';
-      let inQuotes = false;
-      
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        const nextChar = line[i + 1];
-        
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            current += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === ',' && !inQuotes) {
-          values.push(current.trim());
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      values.push(current.trim());
-      return values;
-    });
+    return rows;
   };
 
   const handleValidate = async () => {
