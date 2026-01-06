@@ -85,10 +85,8 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
       .map(inv => inv.xero_invoice_id)
   );
 
-  // Show all invoices from search, but filter out those linked to OTHER projects
-  const availableInvoices = invoices.filter(inv => 
-    !linkedToOtherProjectIds.has(inv.xero_invoice_id)
-  );
+  // Show ALL invoices from search
+  const availableInvoices = invoices;
 
   // Create a set of invoice IDs that are linked to the CURRENT project
   const linkedToCurrentProjectIds = new Set(
