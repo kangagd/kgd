@@ -1,18 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
-const LOGISTICS_JOB_TYPE_NAME = "Logistics";
-
 const PO_DELIVERY_METHOD = {
     DELIVERY: "delivery",
     PICKUP: "pickup",
 };
 
-const PART_LOCATION = {
-    SUPPLIER: "supplier",
-    DELIVERY_BAY: "delivery_bay",
-    WAREHOUSE_STORAGE: "warehouse_storage",
-    VEHICLE: "vehicle",
-    CLIENT_SITE: "client_site",
+const LOGISTICS_PURPOSE = {
+    PO_DELIVERY_TO_WAREHOUSE: "po_delivery_to_warehouse",
+    PO_PICKUP_FROM_SUPPLIER: "po_pickup_from_supplier",
 };
 
 Deno.serve(async (req) => {
