@@ -61,9 +61,10 @@ Deno.serve(async (req) => {
 
       // Create missing Parts from PO lines
       for (const line of poLines) {
-        if (line.part_id && existingPartsByLineId.has(line.part_id)) {
+        // Check if Part already exists for this line
+        if (existingPartsByLineId.has(line.id)) {
           // Update item_name if missing
-          const part = existingPartsByLineId.get(line.part_id);
+          const part = existingPartsByLineId.get(line.id);
           if (!part.item_name && line.item_name) {
             await base44.asServiceRole.entities.Part.update(part.id, {
               item_name: line.item_name
