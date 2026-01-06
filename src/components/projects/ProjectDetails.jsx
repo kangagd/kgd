@@ -237,15 +237,18 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     ...QUERY_CONFIG.projectDetailLazy
   });
 
+  // Only fetch inventory data when parts tab is active
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list(),
+    enabled: activeTab === 'parts',
     ...QUERY_CONFIG.reference
   });
 
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ['inventoryQuantities'],
     queryFn: () => base44.entities.InventoryQuantity.list(),
+    enabled: activeTab === 'parts',
     ...QUERY_CONFIG.reference
   });
 
@@ -300,7 +303,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         return [];
       }
     },
-    ...QUERY_CONFIG.realtime
+    staleTime: 120000, // 2 minutes - less critical
+    refetchInterval: 120000, // Poll every 2 minutes instead of 1
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Lazy load chat messages only when needed for unread count or activity tab
