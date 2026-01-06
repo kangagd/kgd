@@ -593,7 +593,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {isAdminOrManager && (
+        {user?.role === 'admin' && (
           <div className="mb-6">
             <OutstandingBalancesCard />
           </div>
