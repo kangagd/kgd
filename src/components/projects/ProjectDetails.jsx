@@ -959,6 +959,31 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     }
   };
 
+  const handleAddressUpdate = async (addressData) => {
+    try {
+      await base44.functions.invoke('manageProject', {
+        action: 'update',
+        id: project.id,
+        data: {
+          address: addressData.address_full,
+          address_full: addressData.address_full,
+          address_street: addressData.address_street,
+          address_suburb: addressData.address_suburb,
+          address_state: addressData.address_state,
+          address_postcode: addressData.address_postcode,
+          address_country: addressData.address_country,
+          google_place_id: addressData.google_place_id,
+          latitude: addressData.latitude,
+          longitude: addressData.longitude
+        }
+      });
+      invalidateProjectData(queryClient, project.id);
+      toast.success('Address updated and synced to jobs');
+    } catch (error) {
+      toast.error('Failed to update address');
+    }
+  };
+
   const handleTechniciansChange = (emails) => {
     const emailsArray = Array.isArray(emails) ? emails : [];
     const techNames = emailsArray.map(email => {
@@ -1096,19 +1121,25 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     gray: "bg-gray-100 text-gray-700"
   };
 
-  // Calculate command bar counts
-  const mediaCount = (project.image_urls || []).length;
-  const docsCount = [
-    project.quote_url,
-    project.invoice_url,
-    project.handover_pdf_url,
-    ...(project.other_documents || [])
-  ].filter(Boolean).length + (handoverReports.length > 0 ? 1 : 0);
-  const tasksCount = projectTasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled').length;
-  const unreadCommsCount = chatMessages.filter(m => 
-    new Date(m.created_date) > new Date(lastReadChat) && 
-    m.sender_email !== user?.email
-  ).length;
+  // Memoize command bar counts
+  const commandBarCounts = React.useMemo(() => {
+    const mediaCount = (project.image_urls || []).length;
+    const docsCount = [
+      project.quote_url,
+      project.invoice_url,
+      project.handover_pdf_url,
+      ...(project.other_documents || [])
+    ].filter(Boolean).length + (handoverReports.length > 0 ? 1 : 0);
+    const tasksCount = projectTasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled').length;
+    const unreadCommsCount = chatMessages.filter(m => 
+      new Date(m.created_date) > new Date(lastReadChat) && 
+      m.sender_email !== user?.email
+    ).length;
+    
+    return { mediaCount, docsCount, tasksCount, unreadCommsCount };
+  }, [project.image_urls, project.quote_url, project.invoice_url, project.handover_pdf_url, project.other_documents, handoverReports.length, projectTasks, chatMessages, lastReadChat, user?.email]);
+
+  const { mediaCount, docsCount, tasksCount, unreadCommsCount } = commandBarCounts;
 
   return (
     <div className="relative flex flex-col lg:flex-row gap-4 overflow-x-hidden items-start">
@@ -1149,30 +1180,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
                   <AddressAutocomplete
                     value={project.address_full || project.address}
-                    onChange={(addressData) => {
-                      // Update all address fields and sync to jobs
-                      base44.functions.invoke('manageProject', {
-                        action: 'update',
-                        id: project.id,
-                        data: {
-                          address: addressData.address_full,
-                          address_full: addressData.address_full,
-                          address_street: addressData.address_street,
-                          address_suburb: addressData.address_suburb,
-                          address_state: addressData.address_state,
-                          address_postcode: addressData.address_postcode,
-                          address_country: addressData.address_country,
-                          google_place_id: addressData.google_place_id,
-                          latitude: addressData.latitude,
-                          longitude: addressData.longitude
-                        }
-                      }).then(() => {
-                        invalidateProjectData(queryClient, project.id);
-                        toast.success('Address updated and synced to jobs');
-                      }).catch(() => {
-                        toast.error('Failed to update address');
-                      });
-                    }}
+                    onChange={handleAddressUpdate}
                     placeholder="Search for address..."
                     className="text-[14px]"
                   />
@@ -2401,32 +2409,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         <div className="text-[14px] text-[#6B7280] font-normal leading-[1.4] mb-0.5">Address</div>
                         <AddressAutocomplete
                           value={project.address_full || project.address}
-                          onChange={(addressData) => {
-                            // Update all address fields and sync to jobs
-                            base44.functions.invoke('manageProject', {
-                              action: 'update',
-                              id: project.id,
-                              data: {
-                                address: addressData.address_full,
-                                address_full: addressData.address_full,
-                                address_street: addressData.address_street,
-                                address_suburb: addressData.address_suburb,
-                                address_state: addressData.address_state,
-                                address_postcode: addressData.address_postcode,
-                                address_country: addressData.address_country,
-                                google_place_id: addressData.google_place_id,
-                                latitude: addressData.latitude,
-                                longitude: addressData.longitude
-                              }
-                            }).then(() => {
-                              queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-                              queryClient.invalidateQueries({ queryKey: ['projects'] });
-                              queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
-                              toast.success('Address updated and synced to jobs');
-                            }).catch(() => {
-                              toast.error('Failed to update address');
-                            });
-                          }}
+                          onChange={handleAddressUpdate}
                           placeholder="Search for address..."
                           className="text-[14px]"
                         />
