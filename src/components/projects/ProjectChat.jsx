@@ -35,10 +35,15 @@ export default function ProjectChat({ projectId }) {
   });
 
   const { data: allUsers = [] } = useQuery({
-    queryKey: ['teamMembers'],
+    queryKey: ['allUsers'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getTeamMembers');
-      return response.data?.teamMembers || [];
+      try {
+        const users = await base44.entities.User.list();
+        return Array.isArray(users) ? users : [];
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
     }
   });
 
