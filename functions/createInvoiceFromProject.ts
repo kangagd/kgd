@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
       Date: new Date().toISOString().split('T')[0],
       DueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       LineItems: xeroLineItems,
+      InvoiceNumber: String(project.project_number),
       Reference: `Project #${project.project_number} - ${project.title}`,
       Status: "AUTHORISED"
     };
