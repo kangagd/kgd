@@ -78,22 +78,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    // Get Xero settings for account codes
+    // Get Xero settings for account codes - default to 200 (Sales)
     const xeroSettings = await base44.asServiceRole.entities.XeroSettings.list();
-    const accountCode = xeroSettings.length > 0 ? xeroSettings[0].default_sales_account_code : "200"; // Default to 200 (Sales) if not configured
-
-    if (!accountCode) {
-      return Response.json({ 
-        error: 'No Xero account code configured. Please set up Xero settings first.' 
-      }, { status: 400 });
-    }
+    const accountCode = (xeroSettings.length > 0 && xeroSettings[0].default_sales_account_code) 
+      ? xeroSettings[0].default_sales_account_code 
+      : "200";
 
     // Build Xero invoice payload
     const xeroLineItems = lineItems.map(item => ({
       Description: item.description,
       Quantity: 1,
       UnitAmount: item.amount,
-      AccountCode: accountCode || "200",
+      AccountCode: accountCode,
       TaxType: "OUTPUT", // GST on Output (10%)
       DiscountAmount: item.discount || 0
     }));
