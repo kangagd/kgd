@@ -8,10 +8,13 @@ import { Package, Calendar, ArrowDown, ArrowUp } from "lucide-react";
 import { getSampleStatusColor } from "../domain/sampleConfig";
 import ScheduleSampleDropOffModal from "./ScheduleSampleDropOffModal";
 import ScheduleSamplePickupModal from "./ScheduleSamplePickupModal";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function SamplesAtClientPanel({ project }) {
   const [showDropOffModal, setShowDropOffModal] = useState(false);
   const [showPickupModal, setShowPickupModal] = useState(false);
+  const navigate = useNavigate();
 
   const { data: clientSamples = [], isLoading } = useQuery({
     queryKey: ['clientSamples', project.id],
@@ -20,6 +23,17 @@ export default function SamplesAtClientPanel({ project }) {
         checked_out_project_id: project.id,
       });
       return samples;
+    },
+  });
+
+  const { data: logisticsJobs = [] } = useQuery({
+    queryKey: ['projectLogisticsJobs', project.id],
+    queryFn: async () => {
+      const jobs = await base44.entities.Job.filter({
+        project_id: project.id,
+        is_logistics_job: true,
+      });
+      return jobs;
     },
   });
 
@@ -64,34 +78,50 @@ export default function SamplesAtClientPanel({ project }) {
 
         {!isLoading && clientSamples.length > 0 && (
           <div className="space-y-2">
-            {clientSamples.map((sample) => (
-              <div
-                key={sample.id}
-                className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors"
-              >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[14px] font-medium text-[#111827]">
-                      {sample.name}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] px-1.5 py-0 ${getSampleStatusColor(sample.status)}`}
-                    >
-                      {sample.status}
-                    </Badge>
+            {clientSamples.map((sample) => {
+              const relatedJob = logisticsJobs.find(job => 
+                job.sample_ids?.includes(sample.id) && 
+                (job.logistics_purpose === 'sample_dropoff' || job.logistics_purpose === 'sample_pickup')
+              );
+
+              return (
+                <div
+                  key={sample.id}
+                  className={`flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] transition-colors ${
+                    relatedJob ? 'hover:bg-[#F9FAFB] cursor-pointer' : ''
+                  }`}
+                  onClick={() => relatedJob && navigate(createPageUrl("Jobs") + `?jobId=${relatedJob.id}`)}
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[14px] font-medium text-[#111827]">
+                        {sample.name}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] px-1.5 py-0 ${getSampleStatusColor(sample.status)}`}
+                      >
+                        {sample.status}
+                      </Badge>
+                      {relatedJob && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
+                          <Calendar className="w-3 h-3 mr-1" />
+                          {relatedJob.logistics_purpose === 'sample_dropoff' ? 'Drop-off' : 'Pickup'} Scheduled
+                        </Badge>
+                      )}
+                    </div>
+                    {sample.category && (
+                      <p className="text-[12px] text-[#6B7280]">{sample.category}</p>
+                    )}
+                    {sample.sample_tag && (
+                      <p className="text-[11px] text-[#9CA3AF] font-mono">
+                        Tag: {sample.sample_tag}
+                      </p>
+                    )}
                   </div>
-                  {sample.category && (
-                    <p className="text-[12px] text-[#6B7280]">{sample.category}</p>
-                  )}
-                  {sample.sample_tag && (
-                    <p className="text-[11px] text-[#9CA3AF] font-mono">
-                      Tag: {sample.sample_tag}
-                    </p>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
