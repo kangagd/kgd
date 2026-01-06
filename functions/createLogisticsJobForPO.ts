@@ -144,10 +144,14 @@ Deno.serve(async (req) => {
             status: "Open",
             scheduled_date: scheduled_date || new Date().toISOString().split('T')[0],
             assigned_to: technician_id ? [technician_id] : [],
-            notes: `Logistics job for PO from ${supplierName}\nOrigin: ${origin}\nDestination: ${destination}`,
+            notes: `Logistics job for PO from ${supplierName}`,
             address: jobAddressFull,
             address_full: jobAddressFull,
             customer_name: jobTitle,
+            is_logistics_job: true,
+            logistics_purpose: logisticsPurpose,
+            origin_address: originAddress,
+            destination_address: destinationAddress,
         };
 
         const job = await base44.asServiceRole.entities.Job.create(jobData);
