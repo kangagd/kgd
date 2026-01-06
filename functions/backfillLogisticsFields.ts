@@ -49,7 +49,14 @@ async function analyzeJob(job, base44) {
             const po = await base44.asServiceRole.entities.PurchaseOrder.get(job.purchase_order_id);
             isLogisticsJob = true;
 
-            if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+            // Determine if pickup or delivery by checking BOTH PO delivery_method AND job type name
+            const isPickup = po.delivery_method === PO_DELIVERY_METHOD.PICKUP 
+                || jobTypeName.includes('pick up') 
+                || jobTypeName.includes('pickup') 
+                || jobTypeName.includes('pick-up')
+                || jobTypeName.includes('supplier');
+
+            if (isPickup) {
                 logisticsPurpose = LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER;
                 // Origin: supplier, Destination: warehouse
                 if (po.supplier_id) {
