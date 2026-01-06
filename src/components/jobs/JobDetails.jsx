@@ -175,6 +175,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setCheckedItems(job.checked_items || {});
   }, [job.checked_items, job.id]);
 
+  // Force refetch parts data when job loads or changes
+  useEffect(() => {
+    if (job.purchase_order_id) {
+      queryClient.invalidateQueries({ queryKey: ['jobParts', job.id, job.purchase_order_id] });
+    }
+  }, [job.id, job.purchase_order_id, queryClient]);
+
   const [user, setUser] = useState(null);
   const [measurements, setMeasurements] = useState(job.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
