@@ -127,9 +127,11 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   });
 
   // Filter job types based on logistics toggle (only when creating new job)
-  const jobTypes = !job ? allJobTypes.filter(jt => 
-    isLogisticsJob ? (jt.is_logistics === true) : (jt.is_logistics !== true)
-  ).sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999)) : allJobTypes;
+  const jobTypes = !job 
+    ? allJobTypes.filter(jt => 
+        isLogisticsJob ? (jt.is_logistics === true) : (jt.is_logistics !== true)
+      ).sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999))
+    : allJobTypes.sort((a, b) => (a.sort_order || 999) - (b.sort_order || 999));
 
   useEffect(() => {
     // Only apply preselectedCustomerId if no project is being used
