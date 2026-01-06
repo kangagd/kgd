@@ -86,7 +86,8 @@ export function computeAttentionItems({
   purchaseOrders = [],
   emails = [],
   manualLogs = [],
-  tradeRequirements = []
+  tradeRequirements = [],
+  samples = []
 }) {
   const items = [];
   
@@ -387,6 +388,25 @@ export function computeAttentionItems({
         message: 'Client frustration detected — follow up required',
         deepLinkTab: 'activity'
       });
+    }
+  }
+
+  // RULE I — Sample checked out for over 1 week (MEDIUM, Ops)
+  const projectSamples = samples.filter(s => s.checked_out_project_id === project.id);
+  for (const sample of projectSamples) {
+    if (sample.checked_out_at) {
+      const daysOut = daysSince(sample.checked_out_at);
+      if (daysOut > 7) {
+        items.push({
+          id: `SAMPLE_OVERDUE_${sample.id}`,
+          reasonCode: 'SAMPLE_OVERDUE',
+          priority: 'MEDIUM',
+          category: 'Ops',
+          message: `Sample overdue: ${sample.name} (${daysOut} days)`,
+          deepLinkTab: 'overview',
+          sortWeight: daysOut
+        });
+      }
     }
   }
 
