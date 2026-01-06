@@ -166,7 +166,11 @@ Deno.serve(async (req) => {
             purchase_order_id: po.id
         });
 
+        // Build checked_items object for the job
+        const checkedItems = {};
         for (const part of parts) {
+            checkedItems[part.id] = false;
+            
             const currentLinks = Array.isArray(part.linked_logistics_jobs) ? part.linked_logistics_jobs : [];
             if (!currentLinks.includes(job.id)) {
                 await base44.asServiceRole.entities.Part.update(part.id, {
@@ -175,9 +179,14 @@ Deno.serve(async (req) => {
             }
         }
 
+        // Update job with checked_items
+        const updatedJob = await base44.asServiceRole.entities.Job.update(job.id, {
+            checked_items: checkedItems
+        });
+
         return Response.json({
             success: true,
-            job,
+            job: updatedJob,
             purchaseOrder: updatedPO
         });
 
