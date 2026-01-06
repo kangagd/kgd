@@ -59,18 +59,74 @@ export default function ProjectImportModal({ open, onClose, onSuccess }) {
     }
   };
 
+  const parseCSV = (csvText) => {
+    const lines = [];
+    let currentLine = '';
+    let insideQuotes = false;
+    
+    for (let i = 0; i < csvText.length; i++) {
+      const char = csvText[i];
+      const nextChar = csvText[i + 1];
+      
+      if (char === '"') {
+        if (insideQuotes && nextChar === '"') {
+          currentLine += '"';
+          i++;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+      } else if (char === '\n' && !insideQuotes) {
+        if (currentLine.trim()) {
+          lines.push(currentLine);
+        }
+        currentLine = '';
+      } else {
+        currentLine += char;
+      }
+    }
+    
+    if (currentLine.trim()) {
+      lines.push(currentLine);
+    }
+    
+    return lines.map(line => {
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+        
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      return values;
+    });
+  };
+
   const handleValidate = async () => {
     if (!previewData) return;
 
     try {
-      // Parse entire CSV to get all records
       const response = await fetch(fileUrl);
       const csvText = await response.text();
-      const lines = csvText.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      const parsedLines = parseCSV(csvText);
+      const headers = parsedLines[0];
       
-      const records = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const records = parsedLines.slice(1).map(values => {
         const row = {};
         headers.forEach((header, idx) => {
           row[header] = values[idx] || '';
@@ -101,14 +157,12 @@ export default function ProjectImportModal({ open, onClose, onSuccess }) {
 
     setImporting(true);
     try {
-      // Parse entire CSV again for import
       const response = await fetch(fileUrl);
       const csvText = await response.text();
-      const lines = csvText.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+      const parsedLines = parseCSV(csvText);
+      const headers = parsedLines[0];
       
-      const records = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const records = parsedLines.slice(1).map(values => {
         const row = {};
         headers.forEach((header, idx) => {
           row[header] = values[idx] || '';
