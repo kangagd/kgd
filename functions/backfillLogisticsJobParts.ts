@@ -44,14 +44,32 @@ Deno.serve(async (req) => {
         purchase_order_id: po.id
       });
 
-      // Map existing parts by PO line ID (part_id field in PO line)
+      // Map existing parts by PO line ID
       const existingPartsByLineId = new Map();
-      for (const part of existingParts) {
-        // Find which PO line this part belongs to by checking all lines
-        for (const line of poLines) {
-          if (line.part_id === part.id) {
-            existingPartsByLineId.set(line.id, part);
-            break;
+      
+      // First pass: map parts that are already linked to PO lines via part_id
+      for (const line of poLines) {
+        if (line.part_id) {
+          const linkedPart = existingParts.find(p => p.id === line.part_id);
+          if (linkedPart) {
+            existingPartsByLineId.set(line.id, linkedPart);
+          }
+        }
+      }
+      
+      // Second pass: for lines without part_id, try to match by item_name
+      for (const line of poLines) {
+        if (!existingPartsByLineId.has(line.id) && line.item_name) {
+          const matchingPart = existingParts.find(p => 
+            p.item_name === line.item_name && 
+            !Array.from(existingPartsByLineId.values()).includes(p)
+          );
+          if (matchingPart) {
+            existingPartsByLineId.set(line.id, matchingPart);
+            // Link this part to the PO line
+            await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
+              part_id: matchingPart.id
+            });
           }
         }
       }
