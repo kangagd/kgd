@@ -161,16 +161,68 @@ Deno.serve(async (req) => {
             linked_logistics_job_id: job.id
         });
 
-        // Link job to all Parts on this PO
+        // Get existing Parts on this PO
         const parts = await base44.asServiceRole.entities.Part.filter({
             purchase_order_id: po.id
         });
 
+        // Get PO lines to ensure we have Parts for all line items
+        const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
+            purchase_order_id: po.id
+        });
+
+        // Create Parts from PO lines if they don't exist
+        const existingPartsByLineId = new Map();
+        for (const part of parts) {
+            if (part.part_id) {
+                existingPartsByLineId.set(part.part_id, part);
+            }
+        }
+
+        const allParts = [...parts];
+        for (const line of poLines) {
+            // Check if we already have a Part for this line
+            if (line.part_id && existingPartsByLineId.has(line.part_id)) {
+                // Part exists, but ensure item_name is populated from PO line
+                const part = existingPartsByLineId.get(line.part_id);
+                if (!part.item_name && line.item_name) {
+                    await base44.asServiceRole.entities.Part.update(part.id, {
+                        item_name: line.item_name
+                    });
+                    part.item_name = line.item_name;
+                }
+                continue;
+            }
+
+            // No Part exists for this line - create one
+            const newPart = await base44.asServiceRole.entities.Part.create({
+                project_id: po.project_id || null,
+                item_name: line.item_name || line.description || 'Item',
+                category: "Other",
+                quantity_required: line.qty_ordered || 1,
+                status: "on_order",
+                location: "supplier",
+                purchase_order_id: po.id,
+                supplier_id: po.supplier_id,
+                supplier_name: po.supplier_name,
+                po_number: po.po_reference,
+                order_reference: po.po_reference,
+                order_date: po.order_date,
+                eta: po.expected_date,
+            });
+            allParts.push(newPart);
+
+            // Update the PO line with the new part_id
+            await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
+                part_id: newPart.id
+            });
+        }
+
         // Build checked_items object for the job
         const checkedItems = {};
-        for (const part of parts) {
+        for (const part of allParts) {
             checkedItems[part.id] = false;
-            
+
             const currentLinks = Array.isArray(part.linked_logistics_jobs) ? part.linked_logistics_jobs : [];
             if (!currentLinks.includes(job.id)) {
                 await base44.asServiceRole.entities.Part.update(part.id, {
