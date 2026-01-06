@@ -92,36 +92,20 @@ export default function EmailDetailView({
     refetchInterval: 30000
   });
 
-  // Verify linked project exists
+  // Verify linked project exists (use project_id field)
   const { data: linkedProject } = useQuery({
-    queryKey: ['project', thread.linked_project_id],
+    queryKey: ['project', thread.project_id],
     queryFn: async () => {
-      if (!thread.linked_project_id) return null;
+      if (!thread.project_id) return null;
       try {
-        const project = await base44.entities.Project.get(thread.linked_project_id);
+        const project = await base44.entities.Project.get(thread.project_id);
         if (project.deleted_at) return null;
         return project;
       } catch {
         return null;
       }
     },
-    enabled: !!thread.linked_project_id
-  });
-
-  // Verify linked job exists
-  const { data: linkedJob } = useQuery({
-    queryKey: ['job', thread.linked_job_id],
-    queryFn: async () => {
-      if (!thread.linked_job_id) return null;
-      try {
-        const job = await base44.entities.Job.get(thread.linked_job_id);
-        if (job.deleted_at) return null;
-        return job;
-      } catch {
-        return null;
-      }
-    },
-    enabled: !!thread.linked_job_id
+    enabled: !!thread.project_id
   });
 
   const latestMessage = messages[messages.length - 1];
@@ -228,34 +212,18 @@ export default function EmailDetailView({
                     {thread.subject}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 text-[13px] text-[#6B7280]">
-                    {(linkedProject || linkedJob) && (
-                      <>
-                        {linkedProject && (
-                          <div className="flex items-center gap-1">
-                            <LinkIcon className="w-3 h-3" />
-                            <span>Project:</span>
-                            <button
-                              onClick={() => navigate(createPageUrl("Projects") + `?projectId=${linkedProject.id}`)}
-                              className="text-[#111827] font-medium hover:underline"
-                            >
-                              {linkedProject.title}
-                            </button>
-                          </div>
-                        )}
-                        {linkedJob && (
-                          <div className="flex items-center gap-1">
-                            <LinkIcon className="w-3 h-3" />
-                            <span>Job:</span>
-                            <button
-                              onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${linkedJob.id}`)}
-                              className="text-[#111827] font-medium hover:underline"
-                            >
-                              #{linkedJob.job_number}
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
+                  {linkedProject && (
+                  <div className="flex items-center gap-1">
+                    <LinkIcon className="w-3 h-3" />
+                    <span>Project:</span>
+                    <button
+                      onClick={() => navigate(createPageUrl("Projects") + `?projectId=${linkedProject.id}`)}
+                      className="text-[#111827] font-medium hover:underline"
+                    >
+                      {linkedProject.title}
+                    </button>
+                  </div>
+                  )}
                     <div className="flex items-center gap-2">
                       <span className="text-[#6B7280]">Priority:</span>
                       <Select value={thread.priority || "Normal"} onValueChange={handlePriorityChange} disabled={updatingPriority}>
@@ -330,20 +298,11 @@ export default function EmailDetailView({
                           Link to Project
                         </DropdownMenuItem>
                       )}
-                      {userPermissions?.can_link_to_job && (
-                        <DropdownMenuItem onClick={onLinkJob}>
-                          Link to Job
-                        </DropdownMenuItem>
-                      )}
-                      {thread.linked_project_id && userPermissions?.can_link_to_project && (
-                        <DropdownMenuItem onClick={onUnlinkProject}>
-                          Unlink Project
-                        </DropdownMenuItem>
-                      )}
-                      {thread.linked_job_id && userPermissions?.can_link_to_job && (
-                        <DropdownMenuItem onClick={onUnlinkJob}>
-                          Unlink Job
-                        </DropdownMenuItem>
+
+                      {thread.project_id && userPermissions?.can_link_to_project && (
+                      <DropdownMenuItem onClick={onUnlinkProject}>
+                        Unlink Project
+                      </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -458,8 +417,7 @@ export default function EmailDetailView({
                       <AttachmentCard
                         key={idx}
                         attachment={attachment}
-                        linkedJobId={thread.linked_job_id}
-                        linkedProjectId={thread.linked_project_id}
+                        linkedProjectId={thread.project_id}
                         threadSubject={thread.subject}
                         gmailMessageId={attachment.gmail_message_id}
                       />
