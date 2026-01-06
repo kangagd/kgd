@@ -108,15 +108,11 @@ export default function Dashboard() {
   });
 
   const criticalAttentionItems = allAttentionItems
-    .filter(item => 
-      item.type === 'unconfirmed_visit' || 
-      item.type === 'third_party_trade_not_booked'
-    )
     .sort((a, b) => {
-      // Sort by priority first (high > medium > low), then by created_date
-      const priorityOrder = { high: 3, medium: 2, low: 1 };
-      const priorityDiff = (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
-      if (priorityDiff !== 0) return priorityDiff;
+      // Sort by severity first (critical > high), then by created_date
+      const severityOrder = { critical: 2, high: 1 };
+      const severityDiff = (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
+      if (severityDiff !== 0) return severityDiff;
       return new Date(b.created_date) - new Date(a.created_date);
     })
     .slice(0, 5);
@@ -372,10 +368,10 @@ export default function Dashboard() {
                 <div className="space-y-3">
                   {criticalAttentionItems.map(item => {
                     const handleClick = () => {
-                      if (item.project_id) {
-                        navigate(createPageUrl("Projects") + `?projectId=${item.project_id}`);
-                      } else if (item.job_id) {
-                        navigate(createPageUrl("Jobs") + `?jobId=${item.job_id}`);
+                      if (item.root_entity_type === 'project' && item.root_entity_id) {
+                        navigate(createPageUrl("Projects") + `?projectId=${item.root_entity_id}`);
+                      } else if (item.root_entity_type === 'job' && item.root_entity_id) {
+                        navigate(createPageUrl("Jobs") + `?jobId=${item.root_entity_id}`);
                       }
                     };
 
@@ -387,26 +383,31 @@ export default function Dashboard() {
                       >
                         <div className="flex items-start gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            item.priority === 'high' ? 'bg-red-100' : 
-                            item.priority === 'medium' ? 'bg-yellow-100' : 'bg-blue-100'
+                            item.severity === 'critical' ? 'bg-red-100' : 'bg-yellow-100'
                           }`}>
                             <AlertTriangle className={`w-4 h-4 ${
-                              item.priority === 'high' ? 'text-red-600' : 
-                              item.priority === 'medium' ? 'text-yellow-600' : 'text-blue-600'
+                              item.severity === 'critical' ? 'text-red-600' : 'text-yellow-600'
                             }`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
                               {item.title}
                             </h4>
-                            {item.description && (
+                            {item.summary_bullets && item.summary_bullets.length > 0 && (
                               <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 line-clamp-2">
-                                {item.description}
+                                {item.summary_bullets[0]}
                               </p>
                             )}
-                            {item.project_title && (
-                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 truncate">
-                                {item.project_title}
+                            {item.root_entity_type === 'project' && (
+                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 truncate flex items-center gap-1">
+                                <FolderKanban className="w-3 h-3" />
+                                Project
+                              </p>
+                            )}
+                            {item.root_entity_type === 'job' && (
+                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1 truncate flex items-center gap-1">
+                                <Briefcase className="w-3 h-3" />
+                                Job
                               </p>
                             )}
                           </div>
