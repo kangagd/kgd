@@ -5,6 +5,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { updateProjectActivity } from './updateProjectActivity.js';
 
+const LOGISTICS_PURPOSE = {
+  PART_PICKUP_FOR_INSTALL: "part_pickup_for_install",
+};
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -72,52 +76,23 @@ Deno.serve(async (req) => {
                     const project = await base44.asServiceRole.entities.Project.get(part.project_id);
 
                     if (project) {
-                        let jobTypeName;
-                        let jobDescription;
-                        let jobColor;
-                        let jobNotes;
-                        let jobAddress;
-                        let newLocation;
+                        // Use standardized JobType: "Material Pick Up - Warehouse"
+                        const jobTypeName = "Material Pick Up - Warehouse";
+                        const warehouseAddress = "866 Bourke Street, Waterloo";
+                        const supplierAddress = supplier?.pickup_address || supplier?.address_full || "Supplier address";
 
-                        if (fulfilmentPreference === "delivery") {
-                            jobTypeName = "Material Delivery – Supplier";
-                            jobDescription = "Logistics: Receive delivery from supplier";
-                            jobColor = "#3b82f6"; // Blue
-                            jobAddress = project.address_full || project.address || "Site Address";
-                            
-                            let deliveryNote = `Supplier delivery for project ${project.title} from ${supplierName}.`;
-                            if (supplier?.delivery_days) {
-                                deliveryNote += ` Usual delivery days: ${supplier.delivery_days}.`;
-                            }
-                            jobNotes = deliveryNote;
-                            newLocation = "Awaiting Supplier Delivery";
-
-                        } else {
-                            // PICKUP
-                            jobTypeName = "Material Pickup – Supplier";
-                            jobDescription = "Logistics: Pickup parts from supplier";
-                            jobColor = "#f59e0b"; // Amber
-                            jobAddress = supplier?.pickup_address || "Address not defined";
-                            jobNotes = `Pickup parts for project ${project.title} from ${supplierName}.`;
-                            newLocation = "At Supplier";
-                        }
-
-                        // Find or Create JobType
+                        // Find JobType (should exist from standardized set)
                         let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
-                        let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
                         
-                        if (!jobTypeId) {
-                             const newJobType = await base44.asServiceRole.entities.JobType.create({
-                                 name: jobTypeName,
-                                 description: jobDescription,
-                                 color: jobColor,
-                                 estimated_duration: 0.5,
-                                 is_active: true
-                             });
-                             jobTypeId = newJobType.id;
+                        if (jobTypes.length === 0) {
+                            console.error(`JobType "${jobTypeName}" not found. Skipping logistics job creation.`);
+                            return Response.json({ success: true, part });
                         }
+                        
+                        const jobTypeId = jobTypes[0].id;
+                        const jobNotes = `Pickup parts for project ${project.title} from ${supplierName}.`;
 
-                        // Create Job
+                        // Create Job with new logistics fields
                         const logisticsJob = await base44.asServiceRole.entities.Job.create({
                             job_type: jobTypeName,
                             job_type_id: jobTypeId,
@@ -126,12 +101,16 @@ Deno.serve(async (req) => {
                             project_name: project.title,
                             customer_id: project.customer_id,
                             customer_name: project.customer_name,
-                            address: jobAddress,
-                            address_full: jobAddress,
+                            address: warehouseAddress,
+                            address_full: warehouseAddress,
                             status: "Scheduled",
                             notes: jobNotes,
                             overview: `Part: ${part.category}${part.notes ? ' - ' + part.notes : ''}`,
-                            additional_info: `Order Ref: ${part.order_reference || 'N/A'}`
+                            additional_info: `Order Ref: ${part.order_reference || 'N/A'}`,
+                            is_logistics_job: true,
+                            logistics_purpose: LOGISTICS_PURPOSE.PART_PICKUP_FOR_INSTALL,
+                            origin_address: warehouseAddress,
+                            destination_address: project.address_full || project.address || "Client Site",
                         });
 
                         // Update Part with linked job and location
