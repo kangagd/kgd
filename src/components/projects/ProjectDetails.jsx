@@ -200,23 +200,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
 
-  // Always fetch upcoming jobs (shown in sidebar on all tabs)
-  const { data: upcomingJobs = [] } = useQuery({
-    queryKey: ['projectUpcomingJobs', project.id],
-    queryFn: async () => {
-      const allJobs = await base44.entities.Job.filter({ 
-        project_id: project.id,
-        deleted_at: { $exists: false }
-      });
-      const upcoming = allJobs
-        .filter(j => j.scheduled_date && new Date(j.scheduled_date) >= new Date())
-        .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))
-        .slice(0, 3); // Show top 3 instead of 2
-      return upcoming;
-    },
-    enabled: !!project.id,
-    ...QUERY_CONFIG.frequent
-  });
+
 
   // Always fetch jobs for consistency across all tabs
   const { data: jobs = [] } = useQuery({
@@ -1813,7 +1797,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Row 3: Upcoming Visits + Latest Visit */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UpcomingVisitsCard 
-                jobs={upcomingJobs}
+                jobs={jobs}
                 onScheduleVisit={handleAddJob}
               />
               <LatestVisitCard 
