@@ -18,8 +18,8 @@ export default function VehicleSamplesPanel({ vehicle }) {
     queryKey: ['vehicleSamples', vehicle.id],
     queryFn: async () => {
       const allSamples = await base44.entities.Sample.filter({
-        location_type: "Vehicle",
-        location_reference_id: vehicle.id,
+        current_location_type: "vehicle",
+        current_location_reference_id: vehicle.id,
       });
       return allSamples;
     },
@@ -36,13 +36,9 @@ export default function VehicleSamplesPanel({ vehicle }) {
 
   const returnToWarehouseMutation = useMutation({
     mutationFn: async (sample_id) => {
-      const result = await base44.functions.invoke('recordSampleMovement', {
-        sample_ids: [sample_id],
-        from_location_type: "Vehicle",
-        from_location_reference_id: vehicle.id,
-        to_location_type: "Warehouse",
-        to_location_reference_id: null,
-        movement_type: "Return to Warehouse",
+      const result = await base44.functions.invoke('manageSample', {
+        action: 'return_to_warehouse',
+        sample_id: sample_id,
       });
       return result.data;
     },
@@ -60,7 +56,7 @@ export default function VehicleSamplesPanel({ vehicle }) {
     // Find the most recent movement TO this vehicle for this sample
     const relevantMovements = sampleMovements.filter(
       m => m.sample_id === sample_id && 
-           m.to_location_type === "Vehicle" &&
+           m.to_location_type === "vehicle" &&
            m.to_location_reference_id === vehicle.id
     );
 
