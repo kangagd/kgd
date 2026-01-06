@@ -18,7 +18,8 @@ import {
   RefreshCw,
   ClipboardList,
   Loader2,
-  Wrench
+  Wrench,
+  TestTube2
 } from "lucide-react";
 import LocationBadge from "@/components/common/LocationBadge";
 import {
@@ -232,6 +233,18 @@ export default function MyVehicle() {
   const { data: partsHardwareItems = [] } = useQuery({
     queryKey: ["parts-hardware-items"],
     queryFn: () => base44.entities.PartsHardwareItem.list("name"),
+  });
+
+  const { data: samplesInVehicle = [], isLoading: samplesLoading } = useQuery({
+    queryKey: ["samples-in-vehicle", vehicle?.id],
+    queryFn: async () => {
+      if (!vehicle?.id) return [];
+      return base44.entities.Sample.filter({
+        current_location_type: "vehicle",
+        current_location_reference_id: vehicle.id,
+      });
+    },
+    enabled: !!vehicle?.id,
   });
 
   const toolItemMap = useMemo(() => {
@@ -590,6 +603,51 @@ export default function MyVehicle() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Samples Section */}
+      <div className="mb-4 bg-blue-50 rounded-xl border border-blue-200 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <Package className="w-5 h-5 text-blue-600" />
+            Samples in Vehicle
+          </h3>
+        </div>
+
+        {samplesLoading ? (
+          <p className="text-sm text-gray-500">Loading samples...</p>
+        ) : !samplesInVehicle.length ? (
+          <p className="text-sm text-gray-500 italic">
+            No samples currently in this vehicle.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {samplesInVehicle.map((sample) => (
+              <div key={sample.id} className="p-3 border border-blue-200 rounded-lg bg-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-sm text-gray-900">
+                      {sample.name}
+                    </div>
+                    {sample.category && (
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {sample.category}
+                      </div>
+                    )}
+                    {sample.sample_tag && (
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        Tag: {sample.sample_tag}
+                      </div>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {sample.status || 'active'}
+                  </Badge>
                 </div>
               </div>
             ))}
