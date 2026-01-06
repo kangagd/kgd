@@ -108,9 +108,9 @@ export default function Dashboard() {
         client_confirmed: false,
         status: 'Scheduled'
       });
-      // Filter for jobs scheduled in the next 7 days
+      // Filter for jobs scheduled in the next 7 days, excluding logistics jobs
       return jobs.filter(job => {
-        if (!job.scheduled_date) return false;
+        if (!job.scheduled_date || job.is_logistics_job) return false;
         const scheduledDate = new Date(job.scheduled_date);
         return scheduledDate >= new Date() && scheduledDate <= sevenDaysFromNow;
       });
