@@ -16,6 +16,7 @@ import JobCard from "../components/jobs/JobCard";
 import XeroConnectButton from "../components/xero/XeroConnectButton";
 import MaintenanceRemindersCard from "../components/dashboard/MaintenanceRemindersCard";
 import CheckedOutSamplesCard from "../components/dashboard/CheckedOutSamplesCard";
+import OutstandingBalancesCard from "../components/dashboard/OutstandingBalancesCard";
 import EntityModal from "../components/common/EntityModal";
 import JobModalView from "../components/jobs/JobModalView";
 import { toast } from "sonner";
@@ -589,6 +590,12 @@ export default function Dashboard() {
         {isAdminOrManager && (
           <div className="mb-6">
             <CheckedOutSamplesCard />
+          </div>
+        )}
+
+        {isAdminOrManager && (
+          <div className="mb-6">
+            <OutstandingBalancesCard />
           </div>
         )}
 
