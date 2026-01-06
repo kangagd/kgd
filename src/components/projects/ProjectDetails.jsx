@@ -200,7 +200,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
 
-  // Only fetch upcoming jobs for overview/summary (limit to next 2)
+  // Always fetch upcoming jobs (shown in sidebar on all tabs)
   const { data: upcomingJobs = [] } = useQuery({
     queryKey: ['projectUpcomingJobs', project.id],
     queryFn: async () => {
@@ -211,10 +211,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const upcoming = allJobs
         .filter(j => j.scheduled_date && new Date(j.scheduled_date) >= new Date())
         .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))
-        .slice(0, 2);
+        .slice(0, 3); // Show top 3 instead of 2
       return upcoming;
     },
-    enabled: !!project.id && (activeTab === 'overview' || activeTab === 'summary'),
+    enabled: !!project.id,
     ...QUERY_CONFIG.frequent
   });
 
