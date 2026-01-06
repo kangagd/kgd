@@ -200,21 +200,41 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
 
+  // Only fetch upcoming jobs for overview/summary (limit to next 2)
+  const { data: upcomingJobs = [] } = useQuery({
+    queryKey: ['projectUpcomingJobs', project.id],
+    queryFn: async () => {
+      const allJobs = await base44.entities.Job.filter({ 
+        project_id: project.id,
+        deleted_at: { $exists: false }
+      });
+      const upcoming = allJobs
+        .filter(j => j.scheduled_date && new Date(j.scheduled_date) >= new Date())
+        .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))
+        .slice(0, 2);
+      return upcoming;
+    },
+    enabled: !!project.id && (activeTab === 'overview' || activeTab === 'summary'),
+    ...QUERY_CONFIG.frequent
+  });
+
+  // Lazy load all jobs only when needed (overview or visits tab)
   const { data: jobs = [] } = useQuery({
     queryKey: ['projectJobs', project.id],
     queryFn: () => base44.entities.Job.filter({ 
       project_id: project.id,
       deleted_at: { $exists: false }
     }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.realtime
+    enabled: !!project.id && (activeTab === 'overview' || activeTab === 'summary'),
+    ...QUERY_CONFIG.projectDetailLazy
   });
 
+  // Lazy load parts only when parts tab is active
   const { data: parts = [] } = useQuery({
     queryKey: ['projectParts', project.id],
     queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.frequent
+    enabled: !!project.id && activeTab === 'parts',
+    ...QUERY_CONFIG.projectDetailLazy
   });
 
   const { data: priceListItems = [] } = useQuery({
@@ -283,11 +303,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     ...QUERY_CONFIG.realtime
   });
 
+  // Lazy load chat messages only when needed for unread count or activity tab
   const { data: chatMessages = [] } = useQuery({
     queryKey: ['projectMessages', project.id],
     queryFn: () => base44.entities.ProjectMessage?.filter({ project_id: project.id }, 'created_date') || [],
-    enabled: !!project.id,
-    ...QUERY_CONFIG.realtime
+    enabled: !!project.id && activeTab === 'activity',
+    ...QUERY_CONFIG.projectDetailLazy,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
   const hasNewMessages = chatMessages.some(m => 
@@ -304,32 +330,36 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     }
   };
 
+  // Reference data - rarely changes, cache longer
   const { data: handoverReports = [] } = useQuery({
     queryKey: ["handover-reports", project.id],
     queryFn: () => base44.entities.HandoverReport.filter({ project_id: project.id }),
     enabled: !!project?.id,
-    ...QUERY_CONFIG.frequent
+    ...QUERY_CONFIG.reference
   });
 
+  // Lazy load contacts only when requirements tab is active or in sidebar view
   const { data: projectContacts = [] } = useQuery({
     queryKey: ['projectContacts', project.id],
     queryFn: () => base44.entities.ProjectContact.filter({ project_id: project.id }),
     enabled: !!project.id,
-    ...QUERY_CONFIG.frequent
+    ...QUERY_CONFIG.projectDetailLazy
   });
 
+  // Lazy load trades only when requirements tab is active
   const { data: tradeRequirements = [] } = useQuery({
     queryKey: ['projectTrades', project.id],
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.frequent
+    enabled: !!project.id && activeTab === 'requirements',
+    ...QUERY_CONFIG.projectDetailLazy
   });
 
+  // Lazy load tasks - always needed for overview cards
   const { data: projectTasks = [] } = useQuery({
     queryKey: ['projectTasks', project.id],
     queryFn: () => base44.entities.Task.filter({ project_id: project.id }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.realtime
+    enabled: !!project.id && activeTab === 'overview',
+    ...QUERY_CONFIG.projectDetailLazy
   });
 
   // Auto-expand panels based on content
@@ -339,45 +369,65 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
   }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
 
+  // Lazy load invoices only when invoices tab or overview is active
   const { data: xeroInvoices = [] } = useQuery({
     queryKey: ['projectXeroInvoices', project.id],
     queryFn: async () => {
-      // Fetch all invoices linked to this project via project_id
       const allInvoices = await base44.entities.XeroInvoice.filter({ project_id: project.id });
-      
-      // Deduplicate by xero_invoice_id (in case duplicates were created)
       const uniqueInvoices = allInvoices.reduce((acc, inv) => {
         if (!acc.find(i => sameId(i.xero_invoice_id, inv.xero_invoice_id))) {
           acc.push(inv);
         }
         return acc;
       }, []);
-      
       return uniqueInvoices;
     },
-    enabled: !!project.id,
-    ...QUERY_CONFIG.critical
+    enabled: !!project.id && (activeTab === 'invoices' || activeTab === 'overview'),
+    ...QUERY_CONFIG.projectDetailLazy,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
+  // Lazy load quotes only when quoting tab or overview is active
   const { data: quotes = [] } = useQuery({
     queryKey: ['projectQuotes', project.id],
     queryFn: () => base44.entities.Quote.filter({ project_id: project.id }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.critical
+    enabled: !!project.id && (activeTab === 'quoting' || activeTab === 'overview'),
+    ...QUERY_CONFIG.projectDetailLazy,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
+  // Lazy load purchase orders only when parts tab is active
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['projectPurchaseOrders', project.id],
     queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.frequent
+    enabled: !!project.id && activeTab === 'parts',
+    ...QUERY_CONFIG.projectDetailLazy,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
+  // Lazy load project emails only when activity tab is active
   const { data: projectEmails = [] } = useQuery({
     queryKey: ['projectEmails', project.id],
     queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.frequent
+    enabled: !!project.id && activeTab === 'activity',
+    ...QUERY_CONFIG.projectDetailLazy,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
   React.useEffect(() => {
@@ -427,7 +477,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         ...oldData,
         [variables.field]: variables.value
       }));
-      invalidateProjectData(queryClient, project.id);
+      // Only invalidate the specific project and projects list - not all related data
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
   });
 
@@ -439,7 +491,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         ...oldData,
         ...fields
       }));
-      invalidateProjectData(queryClient, project.id);
+      // Only invalidate the specific project and projects list
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
   });
 
@@ -453,8 +507,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] }); // Specific to Xero invoices
-      invalidateProjectData(queryClient, project.id); // For the main project data
+      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       setShowInvoiceModal(false);
       toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
     },
@@ -515,7 +569,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       });
 
       queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
-      invalidateProjectData(queryClient, project.id);
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
     } catch (error) {
@@ -674,7 +728,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           old_status: oldStage,
           completed_date: project.completed_date || new Date().toISOString().split('T')[0]
         });
-        invalidateProjectData(queryClient, project.id);
+        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
         queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
         toast.success('Project completed and warranty activated');
       } catch (error) {
@@ -868,9 +923,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         base44.entities.Task.update(task.id, { status: "Cancelled" })
       ));
 
-      invalidateProjectData(queryClient, project.id);
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] }); // Job specific invalidation
-      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Task specific invalidation
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
       
       const cancelledCount = openJobs.length + allOpenTasks.length;
       toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} and ${allOpenTasks.length} task${allOpenTasks.length !== 1 ? 's' : ''} cancelled.`);
@@ -925,11 +981,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     };
     
     base44.entities.Project.update(project.id, updates).then(() => {
-      invalidateProjectData(queryClient, project.id);
       queryClient.setQueryData(['project', project.id], (oldData) => ({
         ...oldData,
         ...updates
       }));
+      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
     });
   };
 
@@ -1089,7 +1146,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               customerId={project.customer_id}
               projectId={project.id}
               onCustomerUpdate={(updatedData) => {
-                invalidateProjectData(queryClient, project.id);
+                queryClient.invalidateQueries({ queryKey: ['customer', project.customer_id] });
+                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
               }}
             />
 
@@ -1748,7 +1806,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Row 3: Upcoming Visits + Latest Visit */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <UpcomingVisitsCard 
-                jobs={jobs}
+                jobs={upcomingJobs}
                 onScheduleVisit={handleAddJob}
               />
               <LatestVisitCard 
@@ -2370,7 +2428,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                                 longitude: addressData.longitude
                               }
                             }).then(() => {
-                              invalidateProjectData(queryClient, project.id);
+                              queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                              queryClient.invalidateQueries({ queryKey: ['projects'] });
+                              queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
                               toast.success('Address updated and synced to jobs');
                             }).catch(() => {
                               toast.error('Failed to update address');

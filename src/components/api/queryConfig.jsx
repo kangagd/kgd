@@ -9,6 +9,11 @@ export const QUERY_CONFIG = {
     staleTime: 10000, // 10 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    retry: (failureCount, error) => {
+      // Don't retry on 429 rate limit errors
+      if (error?.response?.status === 429) return false;
+      return failureCount < 1; // Max 1 retry for other errors
+    },
   },
 
   // Real-time data - auto-refresh every minute
@@ -17,20 +22,32 @@ export const QUERY_CONFIG = {
     refetchInterval: 60000, // Refetch every 60 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 429) return false;
+      return failureCount < 1;
+    },
   },
 
   // Frequent updates - refetch on focus and mount
   frequent: {
-    staleTime: 10000, // 10 seconds
-    refetchOnWindowFocus: true,
+    staleTime: 30000, // 30 seconds - increased from 10s
+    refetchOnWindowFocus: false, // Disabled for performance
     refetchOnMount: true,
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 429) return false;
+      return failureCount < 1;
+    },
   },
 
   // Reference data - can be cached longer
   reference: {
-    staleTime: 60000, // 1 minute
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 300000, // 5 minutes - increased from 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 429) return false;
+      return failureCount < 1;
+    },
   },
 
   // Static data - rarely changes
@@ -38,6 +55,22 @@ export const QUERY_CONFIG = {
     staleTime: 600000, // 10 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 429) return false;
+      return failureCount < 1;
+    },
+  },
+
+  // Project detail lazy load - for tab-based data
+  projectDetailLazy: {
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    keepPreviousData: true,
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 429) return false;
+      return failureCount < 1;
+    },
   },
 };
 

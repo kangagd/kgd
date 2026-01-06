@@ -85,6 +85,11 @@ export default function Projects() {
       return response.data?.projects || [];
     },
     ...QUERY_CONFIG.realtime,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
   const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
@@ -92,13 +97,27 @@ export default function Projects() {
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],
     queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
-    ...QUERY_CONFIG.realtime,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
   const { data: allParts = [] } = useQuery({
     queryKey: ['allParts'],
     queryFn: () => base44.entities.Part.list(),
-    ...QUERY_CONFIG.realtime,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
   const { data: priceListItems = [] } = useQuery({
@@ -116,37 +135,49 @@ export default function Projects() {
   const { data: allTradeRequirements = [] } = useQuery({
     queryKey: ['allTradeRequirements'],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
-    ...QUERY_CONFIG.frequent,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['allPurchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list(),
-    ...QUERY_CONFIG.frequent,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allAttentionItems = [] } = useQuery({
     queryKey: ['allAttentionItems'],
     queryFn: () => base44.entities.AttentionItem.list(),
-    ...QUERY_CONFIG.realtime,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allEmailThreads = [] } = useQuery({
     queryKey: ['allEmailThreads'],
     queryFn: () => base44.entities.EmailThread.list(),
-    ...QUERY_CONFIG.realtime,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allQuotes = [] } = useQuery({
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.list(),
-    ...QUERY_CONFIG.realtime,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allXeroInvoices = [] } = useQuery({
     queryKey: ['allXeroInvoices'],
     queryFn: () => base44.entities.XeroInvoice.list(),
-    ...QUERY_CONFIG.realtime,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const inventoryByItem = useMemo(() => {
