@@ -57,7 +57,7 @@ const parseTime = (timeString) => {
   return hours + minutes / 60;
 };
 
-export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) {
+export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [] }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverZone, setDragOverZone] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -354,6 +354,18 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                   return assignedTo.includes(technician.email);
                 });
 
+                // Check if technician has leave on this day
+                const techLeave = leaves.find(leave => {
+                  if (leave.technician_email?.toLowerCase() !== technician.email?.toLowerCase()) return false;
+                  try {
+                    const leaveStart = new Date(leave.start_time);
+                    const leaveEnd = new Date(leave.end_time);
+                    return currentDate >= leaveStart && currentDate <= leaveEnd;
+                  } catch {
+                    return false;
+                  }
+                });
+
                 return (
                   <div key={technician.id} className="flex border-b border-[#E5E7EB] hover:bg-[#F8F9FA]/50 transition-colors">
                     <div className={`${compactMode ? 'w-32' : 'w-40'} flex-shrink-0 ${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] flex items-center gap-2`}>
@@ -365,22 +377,34 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook }) 
                         {technician.display_name || technician.full_name}
                       </span>
                     </div>
-                    <div className={`flex-1 relative ${compactMode ? 'h-32' : 'h-36'}`}>
-                      {hours.map(hour => (
-                        <div 
-                          key={hour} 
-                          className={`absolute top-0 bottom-0 border-r border-[#E5E7EB] transition-colors ${
-                            dragOverZone === `${technician.email}-${hour}` ? 'bg-[#FAE008]/20' : ''
-                          }`}
-                          style={{ 
-                            left: `${((hour - startHour) / (endHour - startHour + 1)) * 100}%`,
-                            width: `${(1 / (endHour - startHour + 1)) * 100}%`
-                          }}
-                          onDragOver={(e) => handleDragOver(e, technician.email, hour)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, technician.email, hour)}
-                        />
-                      ))}
+                    <div className={`flex-1 relative ${compactMode ? 'h-32' : 'h-36'} ${techLeave ? 'bg-gray-200/50' : ''}`}>
+                      {techLeave ? (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-300/80 z-10">
+                          <div className="text-center px-2">
+                            <div className="text-xs font-bold text-gray-700">🚫 Unavailable</div>
+                            <div className="text-[10px] text-gray-600 capitalize">{techLeave.leave_type}</div>
+                            {techLeave.reason && (
+                              <div className="text-[9px] text-gray-600 mt-0.5">{techLeave.reason}</div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        hours.map(hour => (
+                          <div 
+                            key={hour} 
+                            className={`absolute top-0 bottom-0 border-r border-[#E5E7EB] transition-colors ${
+                              dragOverZone === `${technician.email}-${hour}` ? 'bg-[#FAE008]/20' : ''
+                            }`}
+                            style={{ 
+                              left: `${((hour - startHour) / (endHour - startHour + 1)) * 100}%`,
+                              width: `${(1 / (endHour - startHour + 1)) * 100}%`
+                            }}
+                            onDragOver={(e) => handleDragOver(e, technician.email, hour)}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => handleDrop(e, technician.email, hour)}
+                          />
+                        ))
+                      )}
                       
                       {techJobs.map(job => {
                         const position = getJobPosition(job);

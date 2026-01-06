@@ -46,7 +46,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }) {
+export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [] }) {
   const [user, setUser] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const compactMode = true;
@@ -114,6 +114,17 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
               const isToday = isSameDay(day, new Date());
               const isSelected = selectedDay && isSameDay(selectedDay, day);
 
+              // Check if any technician has leave on this day
+              const dayLeaves = leaves.filter(leave => {
+                try {
+                  const leaveStart = new Date(leave.start_time);
+                  const leaveEnd = new Date(leave.end_time);
+                  return day >= leaveStart && day <= leaveEnd;
+                } catch {
+                  return false;
+                }
+              });
+
               return (
                 <div
                   key={day.toISOString()}
@@ -149,6 +160,17 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook }
                       </button>
                     )}
                   </div>
+                  
+                  {/* Leave indicators */}
+                  {dayLeaves.length > 0 && (
+                    <div className="mb-0.5">
+                      {dayLeaves.slice(0, 2).map(leave => (
+                        <div key={leave.id} className="text-[9px] p-0.5 mb-0.5 rounded bg-gray-200 border-l-2 border-gray-500 truncate">
+                          🚫 {leave.technician_name?.split(' ')[0]}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
                   {/* Mobile technician: just show count */}
                   {isTechnician && dayJobs.length > 0 ? (
