@@ -1,6 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { updateProjectActivity } from './updateProjectActivity.js';
-// Force redeploy
 
 async function refreshXeroTokenIfNeeded(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
@@ -153,7 +151,14 @@ Deno.serve(async (req) => {
     });
 
     // Update project activity
-    await updateProjectActivity(base44, project.id, 'Invoice Created');
+    try {
+      await base44.asServiceRole.entities.Project.update(project.id, {
+        last_activity_at: new Date().toISOString(),
+        last_activity_type: 'Invoice Created'
+      });
+    } catch (e) {
+      console.error('Failed to update project activity:', e);
+    }
 
     return Response.json({ 
       success: true, 
