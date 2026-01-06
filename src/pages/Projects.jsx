@@ -5,7 +5,7 @@ import { sameId } from "@/components/utils/id";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, SlidersHorizontal, User, Filter, Eye, AlertTriangle, UserX, Sparkles } from "lucide-react";
+import { Plus, Search, SlidersHorizontal, User, Filter, Eye, AlertTriangle, UserX, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -29,6 +29,7 @@ import ProjectForm from "../components/projects/ProjectForm";
 import ProjectDetails from "../components/projects/ProjectDetails";
 import EntityModal from "../components/common/EntityModal.jsx";
 import ProjectModalView from "../components/projects/ProjectModalView";
+import ProjectImportModal from "../components/projects/ProjectImportModal";
 import { createPageUrl } from "@/utils";
 import { DuplicateBadge } from "../components/common/DuplicateWarningCard";
 import { getProjectFreshnessBadge, getProjectAge } from "../components/utils/freshness";
@@ -58,6 +59,7 @@ export default function Projects() {
   const [aiQuery, setAiQuery] = useState("");
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [aiFilteredProjects, setAiFilteredProjects] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -583,13 +585,25 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
             <p className="text-sm text-[#4B5563] mt-1">Manage all projects and quotes</p>
           </div>
           {canCreateProjects && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Project
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Project
+              </Button>
+              {isAdmin && (
+                <Button
+                  onClick={() => setShowImportModal(true)}
+                  variant="outline"
+                  className="h-10 px-4 text-sm rounded-xl"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -973,6 +987,14 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
             />
           )}
         </EntityModal>
+
+        <ProjectImportModal
+          open={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          }}
+        />
       </div>
     </div>
   );
