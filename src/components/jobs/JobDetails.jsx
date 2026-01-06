@@ -1991,44 +1991,58 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       )}
                     </CardHeader>
                     <CardContent className="p-4 space-y-2">
-                      {jobParts.length === 0 ? (
+                      {jobParts.length === 0 && jobSamples.length === 0 ? (
                         <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
                           No items in checklist
                         </div>
                       ) : (
-                        jobParts.map((part) => (
-                          <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
-                            <Checkbox
-                              checked={checkedItems[part.id] || false}
-                              onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
-                            />
-                            <div className="flex-1">
-                              <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Unnamed Item'}</span>
-                              {part.quantity_required && (
-                                <span className="text-[14px] text-[#6B7280] ml-2">× {part.quantity_required}</span>
+                        <>
+                          {jobParts.map((part) => (
+                            <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                              <Checkbox
+                                checked={checkedItems[part.id] || false}
+                                onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
+                              />
+                              <div className="flex-1">
+                                <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Unnamed Item'}</span>
+                                {part.quantity_required && (
+                                  <span className="text-[14px] text-[#6B7280] ml-2">× {part.quantity_required}</span>
+                                )}
+                              </div>
+                              {!activeCheckIn && job.status !== 'Completed' && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm('Delete this item from checklist?')) {
+                                      base44.entities.Part.delete(part.id).then(() => {
+                                        queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
+                                        toast.success('Item removed');
+                                      }).catch(() => {
+                                        toast.error('Failed to remove item');
+                                      });
+                                    }
+                                  }}
+                                  className="h-7 w-7 text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
                               )}
                             </div>
-                            {!activeCheckIn && job.status !== 'Completed' && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (confirm('Delete this item from checklist?')) {
-                                    base44.entities.Part.delete(part.id).then(() => {
-                                      queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
-                                      toast.success('Item removed');
-                                    }).catch(() => {
-                                      toast.error('Failed to remove item');
-                                    });
-                                  }
-                                }}
-                                className="h-7 w-7 text-red-500 hover:text-red-700"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
-                          </div>
-                        ))
+                          ))}
+                          {jobSamples.map((sample) => (
+                            <div key={sample.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                              <Checkbox
+                                checked={checkedItems[sample.id] || false}
+                                onCheckedChange={(checked) => handleItemCheck(sample.id, checked)}
+                              />
+                              <div className="flex-1">
+                                <span className="text-[14px] font-medium text-[#111827]">{sample.name || 'Unnamed Sample'}</span>
+                                <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </>
                       )}
                     </CardContent>
                   </Card>
