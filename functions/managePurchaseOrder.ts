@@ -15,7 +15,7 @@ const PO_STATUS = {
   CANCELLED: "cancelled",
 };
 
-console.log('[managePurchaseOrder INIT v2.0] Valid statuses:', Object.values(PO_STATUS));
+console.log('[managePurchaseOrder INIT v3.0 FORCED REDEPLOY] Valid statuses:', Object.values(PO_STATUS));
 
 // Normalize legacy status values to canonical ones
 function normaliseLegacyPoStatus(status) {
