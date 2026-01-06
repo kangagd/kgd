@@ -89,6 +89,8 @@ export function normaliseLegacyPoStatus(input) {
     case "in_delivery_bay":
     case "loadingbay":
       return PO_STATUS.IN_LOADING_BAY;
+    case "at_supplier":
+      return PO_STATUS.AT_SUPPLIER;
     case "in_storage":
     case "completed_in_storage":
       return PO_STATUS.IN_STORAGE;
