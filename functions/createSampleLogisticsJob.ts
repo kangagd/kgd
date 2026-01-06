@@ -6,6 +6,12 @@ const SAMPLE_JOB_TYPES = {
   SAMPLE_PICKUP: "Sample Pickup",
 };
 
+// Logistics Purpose
+const LOGISTICS_PURPOSE = {
+  SAMPLE_DROPOFF: "sample_dropoff",
+  SAMPLE_PICKUP: "sample_pickup",
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -88,6 +94,19 @@ Deno.serve(async (req) => {
       jobTypeId = newJobType.id;
     }
 
+    // Determine logistics purpose and addresses
+    const warehouseAddress = "866 Bourke Street, Waterloo";
+    const clientAddress = project.address_full || project.address || "Client Site";
+    const logisticsPurpose = job_type === SAMPLE_JOB_TYPES.SAMPLE_DROP_OFF 
+      ? LOGISTICS_PURPOSE.SAMPLE_DROPOFF 
+      : LOGISTICS_PURPOSE.SAMPLE_PICKUP;
+    const originAddress = job_type === SAMPLE_JOB_TYPES.SAMPLE_DROP_OFF 
+      ? warehouseAddress 
+      : clientAddress;
+    const destinationAddress = job_type === SAMPLE_JOB_TYPES.SAMPLE_DROP_OFF 
+      ? clientAddress 
+      : warehouseAddress;
+
     // Create Job
     const job = await base44.asServiceRole.entities.Job.create({
       project_id,
@@ -117,6 +136,10 @@ Deno.serve(async (req) => {
       scheduled_date: scheduled_date || null,
       notes: jobNotes,
       expected_duration: 0.5,
+      is_logistics_job: true,
+      logistics_purpose: logisticsPurpose,
+      origin_address: originAddress,
+      destination_address: destinationAddress,
     });
 
     // Record sample movement based on job type using manageSample
