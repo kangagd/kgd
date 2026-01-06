@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     // Build Xero invoice payload
     const xeroLineItems = lineItems.map(item => ({
       Description: item.description,
-      Quantity: 1,
+      Quantity: item.quantity || 1,
       UnitAmount: item.amount,
       AccountCode: accountCode,
       TaxType: "OUTPUT", // GST on Output (10%)
@@ -102,10 +102,10 @@ Deno.serve(async (req) => {
         Phones: customer.phone ? [{ PhoneType: "DEFAULT", PhoneNumber: customer.phone }] : []
       },
       Date: new Date().toISOString().split('T')[0],
-      DueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      DueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       LineItems: xeroLineItems,
       InvoiceNumber: String(project.project_number),
-      Reference: `Project #${project.project_number} - ${project.title}`,
+      Reference: project.address_full || project.address || `Project #${project.project_number}`,
       Status: "AUTHORISED"
     };
 
