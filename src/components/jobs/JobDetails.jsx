@@ -1199,7 +1199,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         client_confirmed: newValue,
                         client_confirmed_at: newValue ? new Date().toISOString() : null
                       });
-                      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+                      await queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+                      await queryClient.refetchQueries({ queryKey: ['job', job.id] });
                       queryClient.invalidateQueries({ queryKey: ['jobs'] });
                       toast.success(newValue ? 'Job marked as confirmed' : 'Job marked as unconfirmed');
                     } catch (error) {
@@ -1207,13 +1208,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     }
                   }}
                   className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
-                    job.client_confirmed 
+                    job.client_confirmed === true
                       ? 'bg-green-100 text-green-700 hover:bg-green-200' 
                       : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                   }`}
-                  title={job.client_confirmed ? 'Client confirmed - Click to unconfirm' : 'Not confirmed - Click to confirm'}
+                  title={job.client_confirmed === true ? 'Client confirmed - Click to unconfirm' : 'Not confirmed - Click to confirm'}
                 >
-                  {job.client_confirmed ? (
+                  {job.client_confirmed === true ? (
                     <CheckCircle className="w-4 h-4" />
                   ) : (
                     <AlertTriangle className="w-4 h-4" />
