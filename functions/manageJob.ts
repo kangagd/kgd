@@ -461,6 +461,11 @@ Deno.serve(async (req) => {
                         pickupTime = `${ph.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
                     } catch (e) {}
 
+                    // Fetch project for destination address
+                    const project = await base44.asServiceRole.entities.Project.get(job.project_id);
+                    const warehouseAddress = "866 Bourke Street, Waterloo";
+                    const destinationAddress = project?.address_full || project?.address || "Client Site";
+
                     const pickupJob = await base44.asServiceRole.entities.Job.create({
                         job_type: pickupJobTypeName,
                         job_type_id: jobTypeId,
@@ -472,13 +477,17 @@ Deno.serve(async (req) => {
                         customer_phone: job.customer_phone,
                         customer_email: job.customer_email,
                         customer_type: job.customer_type,
-                        address: "866 Bourke Street, Waterloo",
-                        address_full: "866 Bourke Street, Waterloo",
+                        address: warehouseAddress,
+                        address_full: warehouseAddress,
                         status: "Scheduled",
                         scheduled_date: scheduledDate,
                         scheduled_time: pickupTime,
                         expected_duration: 0.5,
-                        notes: `Pickup for parts: ${parts.map(p => p.category).join(', ')}`
+                        notes: `Pickup for parts: ${parts.map(p => p.category).join(', ')}`,
+                        is_logistics_job: true,
+                        logistics_purpose: "part_pickup_for_install",
+                        origin_address: warehouseAddress,
+                        destination_address: destinationAddress,
                     });
 
                     // Link parts to this new job
