@@ -825,6 +825,8 @@ Deno.serve(async (req) => {
 
             if (shouldHaveLogisticsJob) {
                 try {
+                    // Invoke the updated createLogisticsJobForPO function
+                    // which now uses standardized JobTypes and logistics_purpose
                     const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
                         purchase_order_id: updatedPO.id,
                         scheduled_date: updatedPO.expected_date || new Date().toISOString().split("T")[0],
