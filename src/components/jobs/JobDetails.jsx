@@ -1190,6 +1190,36 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
                 #{job.job_number}
               </Badge>
+              {!isLogisticsJob && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const newValue = !job.client_confirmed;
+                      await base44.entities.Job.update(job.id, {
+                        client_confirmed: newValue,
+                        client_confirmed_at: newValue ? new Date().toISOString() : null
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+                      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+                      toast.success(newValue ? 'Job marked as confirmed' : 'Job marked as unconfirmed');
+                    } catch (error) {
+                      toast.error('Failed to update confirmation status');
+                    }
+                  }}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
+                    job.client_confirmed 
+                      ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                  }`}
+                  title={job.client_confirmed ? 'Client confirmed - Click to unconfirm' : 'Not confirmed - Click to confirm'}
+                >
+                  {job.client_confirmed ? (
+                    <CheckCircle className="w-4 h-4" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4" />
+                  )}
+                </button>
+              )}
               {job.customer_type && (
                 <Badge className={`${customerTypeColors[job.customer_type] || 'bg-gray-100 text-gray-700'} border-0 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:opacity-100`}>
                   {job.customer_type}
