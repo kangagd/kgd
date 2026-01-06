@@ -65,6 +65,10 @@ Deno.serve(async (req) => {
       customer_id: project.customer_id,
       customer_name: project.customer_name,
       notes: notes,
+      is_logistics_job: true,
+      logistics_purpose: "manual_client_dropoff",
+      origin_address: "866 Bourke Street, Waterloo",
+      destination_address: address || "Client Site",
     };
 
     let result;
