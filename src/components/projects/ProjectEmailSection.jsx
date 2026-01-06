@@ -73,8 +73,11 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       return await base44.entities.EmailThread.get(threadId);
     },
     onSuccess: async () => {
+      // CRITICAL: Invalidate all email queries to ensure inbox shows updated link status
       queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
       queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
       setShowLinkModal(false);
       toast.success('Email thread linked');
       if (onThreadLinked) onThreadLinked();

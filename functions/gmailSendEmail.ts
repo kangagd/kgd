@@ -201,6 +201,7 @@ Deno.serve(async (req) => {
       emailThreadId = newThread.id;
     } else {
       // C) Update existing thread with reply activity
+      // CRITICAL: Refetch thread to get latest project_id to avoid race conditions
       const existingThread = await base44.asServiceRole.entities.EmailThread.get(emailThreadId);
       const updates = {
         last_message_date: new Date().toISOString(),
@@ -208,14 +209,14 @@ Deno.serve(async (req) => {
         message_count: (existingThread?.message_count || 0) + 1
       };
       
-      // D) If thread is already linked to a project, inherit that linkage
-      // Also link if projectId explicitly provided but thread not yet linked
-      if (existingThread.project_id) {
-        // Thread already has a project - ensure we use it
-        updates.project_id = existingThread.project_id;
-      } else if (projectId) {
-        // No existing link but projectId provided - link it now
+      // D) Priority: explicit projectId > existing thread.project_id
+      // This ensures replies from ProjectEmailSection always link correctly
+      if (projectId) {
+        // Explicit projectId provided (e.g., from ProjectEmailSection) - use it
         updates.project_id = projectId;
+      } else if (existingThread.project_id) {
+        // Thread already has a project - preserve it
+        updates.project_id = existingThread.project_id;
       }
       
       await base44.asServiceRole.entities.EmailThread.update(emailThreadId, updates);
