@@ -169,6 +169,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
+  const queryClient = useQueryClient();
 
   // Sync checkedItems state when job data changes
   useEffect(() => {
@@ -197,7 +198,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [validationError, setValidationError] = useState("");
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [previousReportData, setPreviousReportData] = useState(null);
-  const queryClient = useQueryClient();
 
   const { data: allJobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
