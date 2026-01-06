@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import moment from "moment";
+import PandaDocViewerModal from "./PandaDocViewerModal";
 
 const statusConfig = {
   Draft: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: FileText, label: 'Draft' },
@@ -28,6 +29,8 @@ const statusConfig = {
 
 export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = false, isTechnician = false, onRefreshLink }) {
   const [isLoadingLink, setIsLoadingLink] = React.useState(false);
+  const [showPandaDocModal, setShowPandaDocModal] = React.useState(false);
+  const [pandaDocUrl, setPandaDocUrl] = React.useState("");
   
   if (!quote) return null;
 
@@ -47,7 +50,8 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
       try {
         const freshUrl = await onRefreshLink(quote);
         if (freshUrl) {
-          window.open(freshUrl, '_blank');
+          setPandaDocUrl(freshUrl);
+          setShowPandaDocModal(true);
         } else {
           toast.error('Could not generate client link');
         }
@@ -57,7 +61,8 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
         setIsLoadingLink(false);
       }
     } else if (quote.pandadoc_public_url) {
-      window.open(quote.pandadoc_public_url, '_blank');
+      setPandaDocUrl(quote.pandadoc_public_url);
+      setShowPandaDocModal(true);
     }
   };
 
@@ -243,6 +248,13 @@ export default function QuoteSummaryModal({ quote, isOpen, onClose, isAdmin = fa
           )}
         </DialogFooter>
       </DialogContent>
+
+      <PandaDocViewerModal
+        open={showPandaDocModal}
+        onClose={() => setShowPandaDocModal(false)}
+        url={pandaDocUrl}
+        quoteName={quote.name}
+      />
     </Dialog>
   );
 }
