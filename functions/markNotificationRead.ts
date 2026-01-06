@@ -1,64 +1,47 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-
+    
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { notificationId, markAllRead } = body;
+    const { notificationId, markAllRead } = await req.json();
 
     if (markAllRead) {
-      // Mark all notifications as read for this user
-      const unreadNotifications = await base44.asServiceRole.entities.Notification.filter({
+      // Mark all unread notifications as read
+      const unreadNotifications = await base44.entities.Notification.filter({
         user_email: user.email,
         is_read: false
       });
 
-      const now = new Date().toISOString();
       await Promise.all(
-        unreadNotifications.map(n => 
-          base44.asServiceRole.entities.Notification.update(n.id, {
+        unreadNotifications.map(n =>
+          base44.entities.Notification.update(n.id, {
             is_read: true,
-            read_at: now
+            read_at: new Date().toISOString()
           })
         )
       );
 
-      return Response.json({ 
-        success: true, 
-        marked_count: unreadNotifications.length 
+      return Response.json({ success: true, updated: unreadNotifications.length });
+    } else if (notificationId) {
+      // Mark single notification as read
+      await base44.entities.Notification.update(notificationId, {
+        is_read: true,
+        read_at: new Date().toISOString()
       });
+
+      return Response.json({ success: true });
+    } else {
+      return Response.json({ error: 'Missing notificationId or markAllRead' }, { status: 400 });
     }
 
-    if (!notificationId) {
-      return Response.json({ error: 'notificationId or markAllRead required' }, { status: 400 });
-    }
-
-    // Verify notification belongs to user
-    const notification = await base44.asServiceRole.entities.Notification.get(notificationId);
-    
-    if (!notification) {
-      return Response.json({ error: 'Notification not found' }, { status: 404 });
-    }
-
-    if (notification.user_email !== user.email) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
-    }
-
-    // Mark as read
-    await base44.asServiceRole.entities.Notification.update(notificationId, {
-      is_read: true,
-      read_at: new Date().toISOString()
-    });
-
-    return Response.json({ success: true });
   } catch (error) {
-    console.error('Error marking notification read:', error);
+    console.error('markNotificationRead error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
