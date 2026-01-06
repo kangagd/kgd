@@ -947,8 +947,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   };
 
-  const handleItemCheck = (itemId, checked) => {
-    setCheckedItems(prev => ({ ...prev, [itemId]: checked }));
+  const handleItemCheck = async (itemId, checked) => {
+    const newCheckedItems = { ...checkedItems, [itemId]: checked };
+    setCheckedItems(newCheckedItems);
+    
+    // Persist to database immediately
+    try {
+      await base44.entities.Job.update(job.id, { checked_items: newCheckedItems });
+      queryClient.setQueryData(['job', job.id], (oldData) => ({
+        ...oldData,
+        checked_items: newCheckedItems
+      }));
+    } catch (error) {
+      console.error('Failed to save checklist state:', error);
+      toast.error('Failed to save checklist state');
+    }
   };
 
   // GUARDRAIL: Only count Parts and Samples, not PO lines (Parts/Samples are the source of truth)
