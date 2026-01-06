@@ -1948,13 +1948,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {isLogisticsJob ? (
                 <>
                   {/* Order Items Checklist for Logistics Jobs */}
-                  {/* CRITICAL GUARDRAIL: Only show Parts, NOT PurchaseOrderLines */}
+                  {/* CRITICAL GUARDRAIL: Only show Parts and Samples, NOT PurchaseOrderLines */}
                   {/* Parts are the canonical source - PO lines are already converted to Parts */}
                   {/* Showing both causes duplicates. DO NOT ADD purchaseOrderLines back here. */}
                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                        Pickup Checklist ({jobParts.length})
+                        Pickup Checklist ({jobParts.length + jobSamples.length})
                       </CardTitle>
                       {!activeCheckIn && job.status !== 'Completed' && (
                         <Button
