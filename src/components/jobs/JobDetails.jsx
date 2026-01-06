@@ -376,6 +376,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnMount: true,
   });
 
+  // Fetch samples for logistics jobs
+  const { data: jobSamples = [] } = useQuery({
+    queryKey: ['jobSamples', job.id],
+    queryFn: async () => {
+      if (!job.sample_ids || !Array.isArray(job.sample_ids) || job.sample_ids.length === 0) {
+        return [];
+      }
+      const allSamples = await base44.entities.Sample.list();
+      return allSamples.filter(s => job.sample_ids.includes(s.id));
+    },
+    enabled: isLogisticsJob && !!(job.sample_ids && job.sample_ids.length > 0),
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+
   const { data: supplier } = useQuery({
     queryKey: ["supplier", purchaseOrder?.supplier_id],
     queryFn: () => base44.entities.Supplier.get(purchaseOrder.supplier_id),
