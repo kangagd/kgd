@@ -76,18 +76,22 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Set job title and address based on delivery method
-        let jobTitle, jobAddressFull;
+        // Set addresses and job details based on delivery method
         const warehouseAddress = "866 Bourke Street, Waterloo";
+        let jobTitle, jobAddressFull;
         
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
-            // Material Pick Up from Supplier
+            // Pickup from supplier
             jobTitle = `${supplierName} - Pickup`;
             jobAddressFull = supplierAddress || supplierName;
+            originAddress = supplierAddress || supplierName;
+            destinationAddress = warehouseAddress;
         } else {
-            // Material Delivery to Warehouse
+            // Delivery to warehouse
             jobTitle = `${supplierName} - Delivery`;
             jobAddressFull = warehouseAddress;
+            originAddress = supplierAddress || supplierName;
+            destinationAddress = warehouseAddress;
         }
 
         // Generate job number - use manageJob to ensure proper numbering
