@@ -157,7 +157,7 @@ export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting
                   key={invoice.xero_invoice_id}
                   onClick={() => handleSelect(invoice)}
                   className={`p-3 border rounded-lg cursor-pointer transition-all hover:border-[#FAE008] hover:bg-[#FFFEF5] ${
-                    invoice.xero_invoice_id === currentInvoiceId ? 'border-[#FAE008] bg-[#FFFEF5]' : 'border-[#E5E7EB]'
+                    linkedToCurrentProjectIds.has(invoice.xero_invoice_id) ? 'border-[#FAE008] bg-[#FFFEF5]' : 'border-[#E5E7EB]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
