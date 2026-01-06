@@ -44,10 +44,15 @@ Deno.serve(async (req) => {
         purchase_order_id: po.id
       });
 
+      // Map existing parts by PO line ID (part_id field in PO line)
       const existingPartsByLineId = new Map();
       for (const part of existingParts) {
-        if (part.part_id) {
-          existingPartsByLineId.set(part.part_id, part);
+        // Find which PO line this part belongs to by checking all lines
+        for (const line of poLines) {
+          if (line.part_id === part.id) {
+            existingPartsByLineId.set(line.id, part);
+            break;
+          }
         }
       }
 
