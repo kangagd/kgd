@@ -110,7 +110,8 @@ export default function Dashboard() {
   const recentPurchaseOrders = allPurchaseOrders.filter(po => 
     po.status !== 'received' && 
     po.status !== 'installed' &&
-    po.status !== 'cancelled'
+    po.status !== 'cancelled' &&
+    po.status !== 'in_storage'
   ).slice(0, 5);
 
   const { data: projects = [] } = useQuery({
@@ -123,23 +124,7 @@ export default function Dashboard() {
     retry: 1,
   });
 
-  const logisticsJobs = jobs.filter(j => 
-    j.job_type === 'Logistics' || 
-    j.vehicle_id || 
-    j.purchase_order_id ||
-    j.third_party_trade_id
-  ).slice(0, 5);
 
-  // Fetch suppliers for logistics jobs
-  const { data: suppliers = [] } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: () => base44.entities.Supplier.list('name'),
-    enabled: isAdminOrManager && logisticsJobs.length > 0,
-    staleTime: 300000, // 5 minutes (suppliers rarely change)
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: 1,
-  });
 
   // Get today's date in local timezone (YYYY-MM-DD format)
   const getLocalDateString = (date) => {
@@ -231,7 +216,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
           <div
             onClick={() => handleCardClick('today')}
             className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
@@ -277,22 +262,6 @@ export default function Dashboard() {
               </div>
             </div>
             <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Completed Today</h3>
-            <p className="text-[12px] text-[#6B7280] leading-[1.35] group-hover:text-[#111827] transition-colors font-normal">Click to view →</p>
-          </div>
-
-          <div
-            onClick={() => navigate(createPageUrl("Jobs"))}
-            className="bg-white rounded-xl border border-[#E5E7EB] p-7 cursor-pointer hover:shadow-xl hover:border-[#FAE008] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group"
-          >
-            <div className="flex items-start justify-between mb-5">
-              <div className="w-14 h-14 bg-[#4B5563]/10 rounded-xl flex items-center justify-center group-hover:bg-[#4B5563]/20 transition-colors">
-                <Briefcase className="w-7 h-7 text-[#4B5563]" />
-              </div>
-              <div className="text-right">
-                <p className="text-[28px] font-bold text-[#111827] leading-[1.2]">{jobs.length}</p>
-              </div>
-            </div>
-            <h3 className="text-[14px] font-semibold text-[#4B5563] leading-[1.4] uppercase tracking-wide mb-1.5">Total Jobs</h3>
             <p className="text-[12px] text-[#6B7280] leading-[1.35] group-hover:text-[#111827] transition-colors font-normal">Click to view →</p>
           </div>
         </div>
@@ -414,69 +383,11 @@ export default function Dashboard() {
           )}
         </div>
 
-        {isAdminOrManager && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            {/* Logistics Jobs */}
+        {isAdminOrManager && recentPurchaseOrders.length > 0 && (
+          <div className="mb-6">
             <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Logistics Jobs</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate(createPageUrl("Logistics"))}
-                  className="text-[#6B7280] hover:text-[#111827] text-sm"
-                >
-                  View All →
-                </Button>
-              </div>
-              {logisticsJobs.length === 0 ? (
-                <div className="text-center py-16">
-                  <Truck className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
-                  <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No logistics jobs</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {logisticsJobs.map(job => {
-                    const po = job.purchase_order_id ? allPurchaseOrders.find(p => p.id === job.purchase_order_id) : null;
-                    const supplierName = po?.supplier_name || job.customer_name;
-                    
-                    return (
-                      <div 
-                        key={job.id} 
-                        className="p-4 rounded-xl border border-[#E5E7EB] hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
-                        onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 bg-[#FAE008]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Truck className="w-4 h-4 text-[#111827]" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-[14px] font-medium text-[#111827] leading-[1.4]">
-                              #{job.job_number} {job.job_type_name || 'Logistics'}
-                            </h4>
-                            {supplierName && (
-                              <p className="text-[12px] font-medium text-[#111827] leading-[1.35]">{supplierName}</p>
-                            )}
-                            <p className="text-[12px] text-[#6B7280] leading-[1.35] truncate">{job.address_full || job.address}</p>
-                            {job.scheduled_date && (
-                              <p className="text-[12px] text-[#6B7280] leading-[1.35] mt-1">
-                                {format(parseISO(job.scheduled_date), 'MMM d')}
-                                {job.scheduled_time && ` • ${job.scheduled_time}`}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Purchase Order Updates */}
-            <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Purchase Orders</h2>
+                <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Active Purchase Orders</h2>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -486,12 +397,7 @@ export default function Dashboard() {
                   View All →
                 </Button>
               </div>
-              {recentPurchaseOrders.length === 0 ? (
-                <div className="text-center py-16">
-                  <Package className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
-                  <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No active purchase orders</p>
-                </div>
-              ) : (
+              {(
                 <div className="space-y-3">
                   {recentPurchaseOrders.map(po => {
                     const poIdentity = getPoIdentity(po);
