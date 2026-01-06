@@ -216,9 +216,9 @@ export default function NotificationBell({ isMobile = false }) {
         return { notifications: [], unread_count: 0 };
       }
     },
-    staleTime: 120000, // 2 minutes
-    refetchInterval: false, // Disable auto-polling to reduce API load
-    refetchOnWindowFocus: false,
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Poll every 60 seconds for new notifications
+    refetchOnWindowFocus: true,
     refetchOnMount: true,
     retry: false, // Don't retry on errors to prevent cascading failures
   });
