@@ -215,8 +215,17 @@ export default function NotificationBell({ isMobile = false }) {
         return { notifications: [], unread_count: 0 };
       }
     },
-    refetchInterval: 30000,
-    retry: false
+    staleTime: 60000, // 1 minute
+    refetchInterval: 120000, // Poll every 2 minutes instead of 30s
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+        return false;
+      }
+      return failureCount < 1;
+    }
   });
 
   const markReadMutation = useMutation({
