@@ -6,10 +6,19 @@ export default function DocumentListItem({ doc, docUrl, docName, index, onPrevie
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(docName);
 
+  const handleClick = () => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      onPreview();
+    } else {
+      window.open(docUrl, '_blank');
+    }
+  };
+
   return (
     <div className="relative group">
       <button
-        onClick={onPreview}
+        onClick={handleClick}
         className="w-full flex items-center gap-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FAE008] transition-all cursor-pointer"
       >
         <FileText className="w-4 h-4 text-purple-600 flex-shrink-0" />
