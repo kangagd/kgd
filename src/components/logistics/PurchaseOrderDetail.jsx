@@ -992,9 +992,8 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData((prev) => ({ ...prev, status: value }));
 
                   try {
-                    const response = await base44.functions.invoke("managePurchaseOrder", {
-                      action: "updateStatus",
-                      id: po.id,
+                    const response = await base44.functions.invoke("updatePurchaseOrderStatus", {
+                      po_id: po.id,
                       status: value,
                     });
 
