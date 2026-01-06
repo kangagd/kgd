@@ -36,43 +36,30 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
-        // Determine origin and destination based on delivery method
-        let origin, destination;
+        // Determine logistics purpose and job type based on delivery method
+        let logisticsPurpose, jobTypeName, originAddress, destinationAddress;
+        
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
-            origin = PART_LOCATION.SUPPLIER;
-            destination = PART_LOCATION.WAREHOUSE_STORAGE;
+            logisticsPurpose = LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER;
+            jobTypeName = "Ready for Pick Up - Supplier";
         } else {
             // Default to DELIVERY
-            origin = PART_LOCATION.SUPPLIER;
-            destination = PART_LOCATION.DELIVERY_BAY;
+            logisticsPurpose = LOGISTICS_PURPOSE.PO_DELIVERY_TO_WAREHOUSE;
+            jobTypeName = "Delivery in Loading Bay";
         }
-
-        // Find or create JobType based on delivery method
-        const jobTypeName = po.delivery_method === PO_DELIVERY_METHOD.PICKUP 
-            ? "Material Pickup - Supplier" 
-            : "Material Delivery - Warehouse";
             
         let jobTypes = await base44.asServiceRole.entities.JobType.filter({ 
             name: jobTypeName 
         });
-        let jobTypeId;
-
-        if (jobTypes.length > 0) {
-            jobTypeId = jobTypes[0].id;
-        } else {
-            // Create the job type if it doesn't exist
-            const newJobType = await base44.asServiceRole.entities.JobType.create({
-                name: jobTypeName,
-                description: po.delivery_method === PO_DELIVERY_METHOD.PICKUP 
-                    ? "Pick up materials from supplier location"
-                    : "Receive delivery at warehouse location",
-                color: "#8B5CF6",
-                estimated_duration: 2,
-                is_active: true,
-                is_logistics: true
-            });
-            jobTypeId = newJobType.id;
+        
+        if (jobTypes.length === 0) {
+            return Response.json({ 
+                success: false, 
+                error: `JobType "${jobTypeName}" not found. Please ensure it exists.` 
+            }, { status: 400 });
         }
+        
+        const jobTypeId = jobTypes[0].id;
 
         // Get supplier name and address
         let supplierName = "Supplier";
