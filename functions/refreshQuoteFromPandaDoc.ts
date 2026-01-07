@@ -98,8 +98,14 @@ Deno.serve(async (req) => {
       updateData.declined_at = new Date().toISOString();
     }
 
+    // Reset expiration date when document is re-opened (moved back to Draft or Sent)
     if (pandadocDoc.expiration_date) {
       updateData.expires_at = pandadocDoc.expiration_date;
+    } else if ((newStatus === 'Draft' || newStatus === 'Sent') && (quote.status === 'Expired' || quote.status === 'Declined')) {
+      // If PandaDoc doesn't provide expiration_date but we're re-opening, calculate new expiration
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      updateData.expires_at = thirtyDaysFromNow.toISOString();
     }
 
     // Update the quote
