@@ -329,29 +329,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     ...QUERY_CONFIG.reference
   });
 
-  // Lazy load contacts only when requirements tab is active or in sidebar view
-  const { data: projectContacts = [] } = useQuery({
-    queryKey: ['projectContacts', project.id],
-    queryFn: () => base44.entities.ProjectContact.filter({ project_id: project.id }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.projectDetailLazy
-  });
 
-  // Lazy load trades only when requirements tab is active
-  const { data: tradeRequirements = [] } = useQuery({
-    queryKey: ['projectTrades', project.id],
-    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: project.id }),
-    enabled: !!project.id && activeTab === 'requirements',
-    ...QUERY_CONFIG.projectDetailLazy
-  });
-
-  // Lazy load tasks - always needed for overview cards
-  const { data: projectTasks = [] } = useQuery({
-    queryKey: ['projectTasks', project.id],
-    queryFn: () => base44.entities.Task.filter({ project_id: project.id }),
-    enabled: !!project.id && activeTab === 'overview',
-    ...QUERY_CONFIG.projectDetailLazy
-  });
 
   // Auto-expand panels based on content
   React.useEffect(() => {
