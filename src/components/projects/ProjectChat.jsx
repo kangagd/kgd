@@ -48,8 +48,8 @@ export default function ProjectChat({ projectId }) {
     queryKey: ['allUsers'],
     queryFn: async () => {
       try {
-        const users = await base44.entities.User.list();
-        return Array.isArray(users) ? users : [];
+        const response = await base44.functions.invoke('getAllUsers', {});
+        return response.data?.users || [];
       } catch (error) {
         console.error('Error fetching users:', error);
         return [];
