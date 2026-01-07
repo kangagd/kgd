@@ -230,15 +230,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
 
-  // Lazy load parts only when parts tab is active
-  const { data: parts = [] } = useQuery({
-    queryKey: ['projectParts', project.id],
-    queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
-    enabled: !!project.id && activeTab === 'parts',
-    ...QUERY_CONFIG.projectDetailLazy
-  });
-
-  // Only fetch inventory data when parts tab is active
+  // Fetch inventory data for parts tab
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list(),
