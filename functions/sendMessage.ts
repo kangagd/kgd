@@ -32,24 +32,33 @@ Deno.serve(async (req) => {
 
     console.log(`[sendMessage] User ${user.email} sending ${type} message to ${entityId}`);
 
-    // 1. Get all users for mention parsing using service role
-    // NOTE: Use list() instead of filter({}) to avoid RLS issues
-    const allUsers = await base44.asServiceRole.entities.User.list();
+    // 1. Get all users for mention parsing - MUST use service role to bypass RLS
+    let allUsers = [];
+    try {
+      allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+      console.log(`[sendMessage] Fetched ${allUsers.length} users for mention parsing`);
+    } catch (error) {
+      console.error('[sendMessage] Failed to fetch users for mentions:', error);
+      // Continue without mention parsing rather than failing the whole message
+      allUsers = [];
+    }
     
     // 2. Parse mentions
     const mentionedUsers = [];
-    const mentionRegex = /@(\w+(?:\s+\w+)?)/g;
-    let match;
-    
-    while ((match = mentionRegex.exec(message)) !== null) {
-      const mentionedName = match[1];
-      const mentionedUser = allUsers.find(u => 
-        (u.display_name || u.full_name)?.toLowerCase() === mentionedName.toLowerCase()
-      );
+    if (allUsers.length > 0) {
+      const mentionRegex = /@(\w+(?:\s+\w+)?)/g;
+      let match;
       
-      // Don't notify self
-      if (mentionedUser && mentionedUser.email !== user.email && !mentionedUsers.includes(mentionedUser.email)) {
-        mentionedUsers.push(mentionedUser.email);
+      while ((match = mentionRegex.exec(message)) !== null) {
+        const mentionedName = match[1];
+        const mentionedUser = allUsers.find(u => 
+          (u.display_name || u.full_name)?.toLowerCase() === mentionedName.toLowerCase()
+        );
+        
+        // Don't notify self
+        if (mentionedUser && mentionedUser.email !== user.email && !mentionedUsers.includes(mentionedUser.email)) {
+          mentionedUsers.push(mentionedUser.email);
+        }
       }
     }
 
