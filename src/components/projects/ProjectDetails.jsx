@@ -208,7 +208,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       projectEmails: [],
       emailThreads: []
     },
-    staleTime: 30000, // 30 seconds
+    staleTime: 5000, // 5 seconds - shorter stale time to pick up contact changes faster
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
