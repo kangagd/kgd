@@ -100,9 +100,15 @@ export default function ProjectContactsPanel({ project }) {
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["project-contacts", project.id] });
+      // Invalidate and refetch all related queries
+      await queryClient.invalidateQueries({ queryKey: ["project-contacts"] });
       await queryClient.invalidateQueries({ queryKey: ["people-for-project-contacts"] });
-      await queryClient.refetchQueries({ queryKey: ["project-contacts", project.id] });
+      
+      // Force immediate refetch with a small delay to ensure backend update is complete
+      setTimeout(async () => {
+        await queryClient.refetchQueries({ queryKey: ["project-contacts", project.id] });
+      }, 200);
+      
       setNewContact({
         contact_id: "",
         name: "",
