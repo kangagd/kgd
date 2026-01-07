@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, AlertCircle, Link as LinkIcon } from "lucide-react";
+import { Loader2, Sparkles, AlertCircle, Link as LinkIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
