@@ -146,146 +146,146 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
           )}
 
           {threadId && (isLoading || isFetching) && !hasInsights && (
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-8">
-            <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
-            <span>Analyzing email with AI...</span>
-          </div>
-        )}
+            <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-8">
+              <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
+              <span>Analyzing email with AI...</span>
+            </div>
+          )}
 
-        {threadId && isError && !hasInsights && (
-          <div className="flex items-center gap-2 text-xs text-red-600 py-2">
-            <AlertCircle className="w-4 h-4" />
-            <span>
-              {isRateLimitError 
-                ? "Rate limit exceeded. Please wait a moment before trying again."
-                : "Could not generate insights for this email. Try again."}
-            </span>
-          </div>
-        )}
+          {threadId && isError && !hasInsights && (
+            <div className="flex items-center gap-2 text-xs text-red-600 py-2">
+              <AlertCircle className="w-4 h-4" />
+              <span>
+                {isRateLimitError 
+                  ? "Rate limit exceeded. Please wait a moment before trying again."
+                  : "Could not generate insights for this email. Try again."}
+              </span>
+            </div>
+          )}
 
-        {!hasInsights && !isLoading && !isFetching && !isError && threadId && (
-          <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
-            <AlertCircle className="w-4 h-4 text-slate-400" />
-            <span>No AI insights yet. Click "Run AI" to analyze this email.</span>
-          </div>
-        )}
+          {!hasInsights && !isLoading && !isFetching && !isError && threadId && (
+            <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+              <AlertCircle className="w-4 h-4 text-slate-400" />
+              <span>No AI insights yet. Click "Run AI" to analyze this email.</span>
+            </div>
+          )}
 
-        {hasInsights && t?.ai_overview && (
-          <div className="text-sm">
-            <p className="font-medium text-xs text-slate-500 mb-1.5">Overview</p>
-            <p className="text-slate-800 leading-relaxed">{t.ai_overview}</p>
-          </div>
-        )}
+          {hasInsights && t?.ai_overview && (
+            <div className="text-sm">
+              <p className="font-medium text-xs text-slate-500 mb-1.5">Overview</p>
+              <p className="text-slate-800 leading-relaxed">{t.ai_overview}</p>
+            </div>
+          )}
 
-        {hasInsights && Array.isArray(t?.ai_key_points) && t.ai_key_points.length > 0 && (
-          <div>
-            <p className="font-medium text-xs text-slate-500 mb-1.5">Key Points</p>
-            <ul className="list-disc list-inside space-y-1 text-xs text-slate-700">
-              {t.ai_key_points.map((kp, idx) => (
-                <li key={idx} className="leading-relaxed">{kp}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {hasInsights && (t?.ai_labels || t?.ai_priority || t?.ai_category) && (
-          <div className="space-y-1.5">
-            <p className="font-medium text-xs text-slate-500 mb-1.5">Classification</p>
-            <div className="flex flex-wrap gap-1.5">
-              {Array.isArray(t?.ai_labels) &&
-                t.ai_labels.map((label) => (
-                  <Badge
-                    key={label}
-                    variant="outline"
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border-slate-300"
-                  >
-                    {label}
-                  </Badge>
+          {hasInsights && Array.isArray(t?.ai_key_points) && t.ai_key_points.length > 0 && (
+            <div>
+              <p className="font-medium text-xs text-slate-500 mb-1.5">Key Points</p>
+              <ul className="list-disc list-inside space-y-1 text-xs text-slate-700">
+                {t.ai_key_points.map((kp, idx) => (
+                  <li key={idx} className="leading-relaxed">{kp}</li>
                 ))}
-              {t?.ai_priority && (
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border-amber-200"
-                >
-                  Priority: {t.ai_priority}
-                </Badge>
-              )}
-              {t?.ai_category && (
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border-blue-200"
-                >
-                  {t.ai_category}
-                </Badge>
-              )}
+              </ul>
             </div>
-          </div>
-        )}
+          )}
 
-        {hasInsights && (projectLink || jobLink) && (
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            <p className="font-medium text-xs text-slate-500 mb-1.5">
-              Suggested Links
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {projectLink && (
-                <Link
-                  to={`${createPageUrl("Projects")}?projectId=${projectLink}`}
-                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 transition-colors no-underline"
-                >
-                  <LinkIcon className="w-3 h-3" />
-                  View suggested project
-                  {t.ai_suggested_links?.project_confidence && (
-                    <span className="text-[10px] opacity-70">
-                      ({Math.round(t.ai_suggested_links.project_confidence * 100)}%)
-                    </span>
-                  )}
-                </Link>
-              )}
-              {jobLink && (
-                <Link
-                  to={`${createPageUrl("Jobs")}?jobId=${jobLink}`}
-                  className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 transition-colors no-underline"
-                >
-                  <LinkIcon className="w-3 h-3" />
-                  View suggested job
-                  {t.ai_suggested_links?.job_confidence && (
-                    <span className="text-[10px] opacity-70">
-                      ({Math.round(t.ai_suggested_links.job_confidence * 100)}%)
-                    </span>
-                  )}
-                </Link>
-              )}
+          {hasInsights && (t?.ai_labels || t?.ai_priority || t?.ai_category) && (
+            <div className="space-y-1.5">
+              <p className="font-medium text-xs text-slate-500 mb-1.5">Classification</p>
+              <div className="flex flex-wrap gap-1.5">
+                {Array.isArray(t?.ai_labels) &&
+                  t.ai_labels.map((label) => (
+                    <Badge
+                      key={label}
+                      variant="outline"
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border-slate-300"
+                    >
+                      {label}
+                    </Badge>
+                  ))}
+                {t?.ai_priority && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border-amber-200"
+                  >
+                    Priority: {t.ai_priority}
+                  </Badge>
+                )}
+                {t?.ai_category && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border-blue-200"
+                  >
+                    {t.ai_category}
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {hasInsights && (
-          <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="text-xs rounded-lg"
-              onClick={() => {
-                if (onCreateProjectFromAI) onCreateProjectFromAI();
-              }}
-            >
-              Create Project from AI
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="text-xs rounded-lg"
-              onClick={() => {
-                if (onCreateJobFromAI) onCreateJobFromAI();
-              }}
-            >
-              Create Job from AI
-            </Button>
-          </div>
-        )}
+          {hasInsights && (projectLink || jobLink) && (
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <p className="font-medium text-xs text-slate-500 mb-1.5">
+                Suggested Links
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {projectLink && (
+                  <Link
+                    to={`${createPageUrl("Projects")}?projectId=${projectLink}`}
+                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 transition-colors no-underline"
+                  >
+                    <LinkIcon className="w-3 h-3" />
+                    View suggested project
+                    {t.ai_suggested_links?.project_confidence && (
+                      <span className="text-[10px] opacity-70">
+                        ({Math.round(t.ai_suggested_links.project_confidence * 100)}%)
+                      </span>
+                    )}
+                  </Link>
+                )}
+                {jobLink && (
+                  <Link
+                    to={`${createPageUrl("Jobs")}?jobId=${jobLink}`}
+                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 text-green-700 hover:text-green-800 transition-colors no-underline"
+                  >
+                    <LinkIcon className="w-3 h-3" />
+                    View suggested job
+                    {t.ai_suggested_links?.job_confidence && (
+                      <span className="text-[10px] opacity-70">
+                        ({Math.round(t.ai_suggested_links.job_confidence * 100)}%)
+                      </span>
+                    )}
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+
+          {hasInsights && (
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs rounded-lg"
+                onClick={() => {
+                  if (onCreateProjectFromAI) onCreateProjectFromAI();
+                }}
+              >
+                Create Project from AI
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-xs rounded-lg"
+                onClick={() => {
+                  if (onCreateJobFromAI) onCreateJobFromAI();
+                }}
+              >
+                Create Job from AI
+              </Button>
+            </div>
+          )}
         </CardContent>
       )}
     </Card>
