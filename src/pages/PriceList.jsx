@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
 import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 import PriceListCard from "../components/pricelist/PriceListCard";
+import MoveStockModal from "../components/inventory/MoveStockModal";
 import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
 import { useMemo } from "react";
 import BackButton from "../components/common/BackButton";
@@ -25,6 +26,7 @@ export default function PriceList() {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [adjustingStock, setAdjustingStock] = useState(null);
+  const [movingStock, setMovingStock] = useState(null);
   const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
 
@@ -49,6 +51,11 @@ export default function PriceList() {
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ["inventory-quantities"],
     queryFn: () => base44.entities.InventoryQuantity.list("id"),
+  });
+
+  const { data: inventoryLocations = [] } = useQuery({
+    queryKey: ["inventory-locations"],
+    queryFn: () => base44.entities.InventoryLocation.filter({ is_active: true }),
   });
 
   const inventorySummaryByItem = useMemo(() => {
@@ -152,6 +159,10 @@ export default function PriceList() {
 
   const handleStockAdjust = (item) => {
     setAdjustingStock(item);
+  };
+
+  const handleMoveStock = (item) => {
+    setMovingStock(item);
   };
 
   if (showForm) {
@@ -272,19 +283,25 @@ export default function PriceList() {
           </Card>
         ) : (
           <div className="grid gap-3">
-            {filteredItems.map((item) => (
-              <PriceListCard
-                key={item.id}
-                item={item}
-                isAdmin={canEditPriceList}
-                canModifyStock={canModifyStock}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStockAdjust={handleStockAdjust}
-                inventorySummary={inventorySummaryByItem[item.id]}
-                canViewCosts={isAdminOrManager}
-              />
-            ))}
+            {filteredItems.map((item) => {
+              const stockByLocation = inventoryQuantities.filter(q => q.price_list_item_id === item.id);
+              return (
+                <PriceListCard
+                  key={item.id}
+                  item={item}
+                  isAdmin={canEditPriceList}
+                  canModifyStock={canModifyStock}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onStockAdjust={handleStockAdjust}
+                  onMoveStock={handleMoveStock}
+                  inventorySummary={inventorySummaryByItem[item.id]}
+                  stockByLocation={stockByLocation}
+                  locations={inventoryLocations}
+                  canViewCosts={isAdminOrManager}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -293,6 +310,16 @@ export default function PriceList() {
         item={adjustingStock}
         open={!!adjustingStock}
         onClose={() => setAdjustingStock(null)}
+      />
+
+      <MoveStockModal
+        item={movingStock}
+        isOpen={!!movingStock}
+        onClose={() => setMovingStock(null)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['inventory-quantities'] });
+          setMovingStock(null);
+        }}
       />
     </div>
   );
