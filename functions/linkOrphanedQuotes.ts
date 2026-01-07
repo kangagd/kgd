@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
       total: orphanedQuotes.length,
       linked: 0,
       notMatched: 0,
+      notMatchedReasons: [],
       errors: []
     };
 
@@ -41,6 +42,13 @@ Deno.serve(async (req) => {
         const match = quote.name?.match(/#(\d+)/);
         if (!match) {
           results.notMatched++;
+          results.notMatchedReasons.push({
+            quoteId: quote.id,
+            quoteName: quote.name,
+            customerId: quote.customer_id,
+            customerName: quote.customer_name,
+            reason: "No project number found in quote name"
+          });
           continue;
         }
 
@@ -50,12 +58,29 @@ Deno.serve(async (req) => {
         const customerProjects = projectMap.get(quote.customer_id);
         if (!customerProjects) {
           results.notMatched++;
+          results.notMatchedReasons.push({
+            quoteId: quote.id,
+            quoteName: quote.name,
+            customerId: quote.customer_id,
+            customerName: quote.customer_name,
+            projectNumber: projectNumber,
+            reason: `No projects found for customer_id: ${quote.customer_id}`
+          });
           continue;
         }
 
         const matchedProject = customerProjects.get(projectNumber);
         if (!matchedProject) {
           results.notMatched++;
+          const availableProjectNumbers = Array.from(customerProjects.keys());
+          results.notMatchedReasons.push({
+            quoteId: quote.id,
+            quoteName: quote.name,
+            customerId: quote.customer_id,
+            customerName: quote.customer_name,
+            projectNumber: projectNumber,
+            reason: `Project #${projectNumber} not found for this customer. Available project numbers: ${availableProjectNumbers.join(', ')}`
+          });
           continue;
         }
 
