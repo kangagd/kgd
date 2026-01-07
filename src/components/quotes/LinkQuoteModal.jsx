@@ -42,7 +42,8 @@ export default function LinkQuoteModal({
     try {
       const response = await base44.functions.invoke('listPandaDocDocuments', {
         search: searchTerm,
-        count: 50
+        count: 50,
+        projectId: project?.id || null
       });
       if (response.data?.documents) {
         setDocuments(response.data.documents);

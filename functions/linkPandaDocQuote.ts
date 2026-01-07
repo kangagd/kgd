@@ -31,16 +31,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Either projectId or jobId is required' }, { status: 400 });
     }
 
-    // Check if already linked
-    const existingQuotes = await base44.asServiceRole.entities.Quote.filter({
-      pandadoc_document_id: pandadocDocumentId
-    });
+    // Check if already linked to THIS project
+    if (projectId) {
+      const existingQuotes = await base44.asServiceRole.entities.Quote.filter({
+        pandadoc_document_id: pandadocDocumentId,
+        project_id: projectId
+      });
 
-    if (existingQuotes.length > 0) {
-      return Response.json({ 
-        error: 'This document is already linked to another quote',
-        existing_quote_id: existingQuotes[0].id
-      }, { status: 400 });
+      if (existingQuotes.length > 0) {
+        return Response.json({ 
+          error: 'This document is already linked to this project',
+          existing_quote_id: existingQuotes[0].id
+        }, { status: 400 });
+      }
     }
 
     // Fetch document details from PandaDoc
