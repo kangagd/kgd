@@ -266,9 +266,39 @@ Deno.serve(async (req) => {
         const gmailThreadId = detail.threadId;
         
         // Check if thread already exists by Gmail thread ID
-        const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
+        let existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
           gmail_thread_id: gmailThreadId
         });
+        
+        // If no exact Gmail thread ID match, try to find related threads by subject + email participants
+        // This handles cases where Gmail creates new thread IDs for replies
+        if (existingThreads.length === 0) {
+          const normalizedSubject = subject.replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
+          const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+          
+          existingThreads = allThreads.filter(t => {
+            const threadSubject = (t.subject || '').replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
+            if (threadSubject !== normalizedSubject) return false;
+            
+            // Check if participants match (from/to overlap)
+            const fromAddr = parseEmailAddress(from).toLowerCase();
+            const toAddrs = to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase());
+            const threadFromAddr = (t.from_address || '').toLowerCase();
+            const threadToAddrs = (t.to_addresses || []).map(a => a.toLowerCase());
+            
+            const allCurrent = [fromAddr, ...toAddrs];
+            const allThread = [threadFromAddr, ...threadToAddrs];
+            
+            // Check if there's overlap in participants
+            return allCurrent.some(addr => allThread.includes(addr));
+          });
+          
+          // Use the most recently updated matching thread
+          if (existingThreads.length > 0) {
+            existingThreads.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+            existingThreads = [existingThreads[0]];
+          }
+        }
 
         let threadId;
 
