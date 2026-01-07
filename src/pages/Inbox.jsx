@@ -149,9 +149,14 @@ export default function Inbox() {
 
   // Auto-sync Gmail in background
   useEffect(() => {
-    // Allow auto-sync for admin (with token) and managers (using admin's token)
+    // Allow auto-sync for:
+    // 1. Users with gmail_access_token
+    // 2. Managers (using admin's token)
+    // 3. Any user (backend will check if another user with same email has token)
     if (!user) return;
-    if (!user.gmail_access_token && user.extended_role !== 'manager') return;
+    
+    // Only skip sync if user is viewer/regular user without permission
+    if (!userPermissions?.can_view) return;
     
     const syncGmail = async () => {
       try {
@@ -175,7 +180,7 @@ export default function Inbox() {
       clearTimeout(timeout);
       clearInterval(interval);
     };
-  }, [user, queryClient]);
+  }, [user, userPermissions?.can_view, queryClient]);
 
   // Handle resize
   useEffect(() => {

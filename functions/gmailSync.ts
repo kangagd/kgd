@@ -139,15 +139,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch full user record with gmail tokens using service role
+    // Fetch all users with the same email address
     const users = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
     if (users.length === 0) {
       return Response.json({ error: 'User record not found' }, { status: 404 });
     }
     
-    let user = users[0];
+    // Find any user with this email that has Gmail connected
+    let user = users.find(u => u.gmail_access_token);
+    
+    // If no user with this email has Gmail, fallback to first user
+    if (!user) {
+      user = users[0];
+    }
 
-    // If manager doesn't have Gmail connected, try to use admin's Gmail connection
+    // If still no token and user is manager, try to use admin's Gmail connection
     if (!user.gmail_access_token && currentUser.extended_role === 'manager') {
       const adminUsers = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
       const connectedAdmin = adminUsers.find(admin => admin.gmail_access_token);
@@ -160,6 +166,8 @@ Deno.serve(async (req) => {
     if (!user.gmail_access_token) {
       return Response.json({ error: 'Gmail not connected', synced: 0 }, { status: 200 });
     }
+    
+    console.log('Using Gmail connection from user:', user.email, 'for current user:', currentUser.email);
 
     // Refresh token if needed
     const accessToken = await refreshTokenIfNeeded(user, base44);
