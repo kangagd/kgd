@@ -284,16 +284,48 @@ Deno.serve(async (req) => {
             updateData.last_message_date = messageDate;
           }
           
-          // Auto-link: If thread is already linked to project/customer, inherit those links
-          // This ensures new messages on existing threads automatically get the project linkage
-          if (existingThreads[0].project_id && !updateData.project_id) {
-            updateData.project_id = existingThreads[0].project_id;
-            updateData.project_number = existingThreads[0].project_number;
-            updateData.project_title = existingThreads[0].project_title;
-          }
-          if (existingThreads[0].customer_id && !updateData.customer_id) {
-            updateData.customer_id = existingThreads[0].customer_id;
-            updateData.customer_name = existingThreads[0].customer_name;
+          // Auto-link: If thread is NOT yet linked, try to link it now
+          if (!existingThreads[0].project_id) {
+            try {
+              const fromEmail = parseEmailAddress(from).toLowerCase();
+              const allEmails = [fromEmail, ...to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase())];
+              
+              // Find matching customers
+              const customers = await base44.asServiceRole.entities.Customer.list();
+              const matchingCustomer = customers.find(c => 
+                c.email && allEmails.includes(c.email.toLowerCase())
+              );
+              
+              if (matchingCustomer) {
+                // Find most recent open project for this customer
+                const projects = await base44.asServiceRole.entities.Project.filter({
+                  customer_id: matchingCustomer.id
+                });
+                
+                const openProjects = projects.filter(p => 
+                  !['Completed', 'Lost', 'Cancelled'].includes(p.status)
+                ).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+                
+                const projectToLink = openProjects[0];
+                
+                if (projectToLink) {
+                  updateData.customer_id = matchingCustomer.id;
+                  updateData.customer_name = matchingCustomer.name;
+                  updateData.project_id = projectToLink.id;
+                  updateData.project_number = projectToLink.project_number;
+                  updateData.project_title = projectToLink.title;
+                  updateData.linked_to_project_at = new Date().toISOString();
+                  updateData.linked_to_project_by = 'system';
+                  console.log(`Auto-linked existing thread ${threadId} to project ${projectToLink.id}`);
+                } else {
+                  updateData.customer_id = matchingCustomer.id;
+                  updateData.customer_name = matchingCustomer.name;
+                  console.log(`Auto-linked existing thread ${threadId} to customer ${matchingCustomer.id}`);
+                }
+              }
+            } catch (linkError) {
+              console.error('Auto-link error for existing thread:', linkError.message);
+            }
           }
           
           await base44.asServiceRole.entities.EmailThread.update(threadId, updateData);
