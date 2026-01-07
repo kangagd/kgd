@@ -32,9 +32,8 @@ export default function ProjectChat({ projectId }) {
     queryKey: ['projectMessages', projectId],
     queryFn: async () => {
       try {
-        if (!base44.entities.ProjectMessage) return [];
-        const msgs = await base44.entities.ProjectMessage.filter({ project_id: projectId }, 'created_date');
-        return Array.isArray(msgs) ? msgs : [];
+        const response = await base44.functions.invoke('getProjectMessages', { projectId });
+        return response.data?.messages || [];
       } catch (error) {
         console.error('Error fetching messages:', error);
         return [];

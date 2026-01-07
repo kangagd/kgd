@@ -32,9 +32,8 @@ export default function JobChat({ jobId }) {
     queryKey: ['jobMessages', jobId],
     queryFn: async () => {
       try {
-        if (!base44.entities.JobMessage) return [];
-        const msgs = await base44.entities.JobMessage.filter({ job_id: jobId }, 'created_date');
-        return Array.isArray(msgs) ? msgs : [];
+        const response = await base44.functions.invoke('getJobMessages', { jobId });
+        return response.data?.messages || [];
       } catch (error) {
         console.error('Error fetching job messages:', error);
         return [];
