@@ -20,17 +20,16 @@ import { toast } from "sonner";
 
 export default function StockAdjustmentModal({ item, open, onClose, vehicles = [], locations = [] }) {
   const [fromLocation, setFromLocation] = useState("");
-  const [toLocation, setToLocation] = useState("warehouse");
+  const [toLocation, setToLocation] = useState("");
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
   const queryClient = useQueryClient();
   const { can } = usePermissions();
 
-  // Combine all locations: warehouse + vehicles + inventory locations
+  // Combine all locations from inventory system + vehicles
   const allLocations = [
-    { id: 'warehouse', name: 'Warehouse', type: 'warehouse' },
-    ...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' })),
-    ...locations.filter(l => l.type !== 'warehouse') // Avoid duplicate warehouses
+    ...locations,
+    ...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' }))
   ];
 
   const adjustStockMutation = useMutation({
@@ -99,9 +98,10 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
         }
       }
 
-      // Update legacy stock_level on PriceListItem if warehouse is involved
-      if (toLoc === 'warehouse' || fromLoc === 'warehouse') {
-        const delta = toLoc === 'warehouse' ? quantityValue : -quantityValue;
+      // Update legacy stock_level on PriceListItem if warehouse location is involved
+      const warehouseLoc = allLocations.find(l => l.type === 'warehouse');
+      if (warehouseLoc && (toLoc === warehouseLoc.id || fromLoc === warehouseLoc.id)) {
+        const delta = toLoc === warehouseLoc.id ? quantityValue : -quantityValue;
         await base44.entities.PriceListItem.update(item.id, {
           stock_level: Math.max(0, (item.stock_level || 0) + delta)
         });
@@ -117,7 +117,7 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
       setQuantity("");
       setNotes("");
       setFromLocation("");
-      setToLocation("warehouse");
+      setToLocation("");
       onClose();
     },
     onError: (error) => {
@@ -149,7 +149,7 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <div className="text-sm text-slate-600 mb-1">Current Stock (Warehouse)</div>
+            <div className="text-sm text-slate-600 mb-1">Current Stock (Legacy)</div>
             <div className="text-2xl font-bold text-slate-900">{item.stock_level || 0}</div>
           </div>
 
