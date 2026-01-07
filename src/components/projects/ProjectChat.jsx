@@ -166,9 +166,9 @@ export default function ProjectChat({ projectId }) {
                     </span>
                   </div>
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                   {(msg.message || '').split(/(@\w+(?:\s+\w+)?)/).map((part, i) => {
+                   {(msg.message || '').split(/(@[\w\s]+?)(?=\s|$)/).map((part, i) => {
                      if (part.startsWith('@')) {
-                       const mentionedName = part.substring(1);
+                       const mentionedName = part.substring(1).trim();
                        const mentionedUser = allUsers.find(u => 
                          (u.display_name || u.full_name)?.toLowerCase() === mentionedName.toLowerCase()
                        );
@@ -178,7 +178,7 @@ export default function ProjectChat({ projectId }) {
                            key={i} 
                            className={`font-semibold ${isCurrentUser ? 'bg-blue-100 text-blue-800 px-1 rounded' : 'text-blue-600'}`}
                          >
-                           {part}
+                           @{mentionedName}
                          </span>
                        );
                      }
