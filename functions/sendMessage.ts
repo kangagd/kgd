@@ -32,10 +32,11 @@ Deno.serve(async (req) => {
 
     console.log(`[sendMessage] User ${user.email} sending ${type} message to ${entityId}`);
 
-    // 1. Get all users for mention parsing - MUST use service role to bypass RLS
+    // 1. Get all users for mention parsing - call getAllUsers backend function
     let allUsers = [];
     try {
-      allUsers = await base44.asServiceRole.entities.User.list('-created_date', 500);
+      const usersResponse = await base44.functions.invoke('getAllUsers', {});
+      allUsers = usersResponse.data?.users || [];
       console.log(`[sendMessage] Fetched ${allUsers.length} users for mention parsing`);
     } catch (error) {
       console.error('[sendMessage] Failed to fetch users for mentions:', error);
