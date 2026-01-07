@@ -76,19 +76,23 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
 
             {/* Stock Info Row */}
             <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-[14px] text-[#4B5563] leading-[1.4] flex-wrap">
+            <div className="flex items-center gap-3 text-[13px] text-[#4B5563] leading-[1.4] flex-wrap">
               {(item.track_inventory !== false && item.in_inventory !== false) ? (
                 <>
                   {stockByLocation && stockByLocation.length > 0 ? (
                     <>
-                      {stockByLocation.map((qty, idx) => (
-                        <span key={idx}>
-                          {qty.location_name}: <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
-                            {qty.quantity}
+                      {stockByLocation.map((qty, idx) => {
+                        const location = locations?.find(l => l.id === qty.location_id);
+                        const locationName = qty.location_name || location?.name || 'Unknown';
+                        return (
+                          <span key={idx}>
+                            {locationName}: <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
+                              {qty.quantity}
+                            </span>
                           </span>
-                        </span>
-                      ))}
-                      <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
+                        );
+                      })}
+                      <span className="text-[#6B7280]">• Min: {item.min_stock_level}</span>
                     </>
                   ) : (
                     <>
@@ -97,7 +101,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                           {item.stock_level}
                         </span>
                       </span>
-                      <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
+                      <span className="text-[#6B7280]">• Min: {item.min_stock_level}</span>
                     </>
                   )}
                 </>
