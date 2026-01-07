@@ -185,42 +185,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const canCreateJobs = isAdminOrManager;
   const canViewFinancials = isAdminOrManager;
 
-  // Single batch query for all project data
-  const { data: projectData, isLoading: isLoadingProjectData } = useQuery({
-    queryKey: ['projectWithRelations', initialProject.id],
-    queryFn: async () => {
-      const response = await base44.functions.invoke('getProjectWithRelations', { 
-        project_id: initialProject.id 
-      });
-      return response.data;
-    },
-    initialData: {
-      project: initialProject,
-      jobs: [],
-      quotes: [],
-      xeroInvoices: [],
-      parts: [],
-      purchaseOrders: [],
-      projectContacts: [],
-      tradeRequirements: [],
-      projectTasks: [],
-      projectMessages: [],
-      emailThreads: []
-    },
+  const { data: project = initialProject } = useQuery({
+    queryKey: ['project', initialProject.id],
+    queryFn: () => base44.entities.Project.get(initialProject.id),
+    initialData: initialProject,
     ...QUERY_CONFIG.critical
   });
-
-  const project = projectData.project;
-  const jobs = projectData.jobs;
-  const quotes = projectData.quotes;
-  const xeroInvoices = projectData.xeroInvoices;
-  const parts = projectData.parts;
-  const purchaseOrders = projectData.purchaseOrders;
-  const projectContacts = projectData.projectContacts;
-  const tradeRequirements = projectData.tradeRequirements;
-  const projectTasks = projectData.projectTasks;
-  const chatMessages = projectData.projectMessages;
-  const emailThreads = projectData.emailThreads;
 
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
@@ -230,7 +200,28 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
 
-  // Fetch inventory data for parts tab
+
+
+  // Always fetch jobs for consistency across all tabs
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['projectJobs', project.id],
+    queryFn: () => base44.entities.Job.filter({ 
+      project_id: project.id,
+      deleted_at: { $exists: false }
+    }),
+    enabled: !!project.id,
+    ...QUERY_CONFIG.projectDetailLazy
+  });
+
+  // Lazy load parts only when parts tab is active
+  const { data: parts = [] } = useQuery({
+    queryKey: ['projectParts', project.id],
+    queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
+    enabled: !!project.id && activeTab === 'parts',
+    ...QUERY_CONFIG.projectDetailLazy
+  });
+
+  // Only fetch inventory data when parts tab is active
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list(),
@@ -302,7 +293,27 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     refetchOnMount: false,
   });
 
-
+  // Lazy load chat messages only when needed for unread count or activity tab
+  const { data: chatMessages = [] } = useQuery({
+    queryKey: ['projectMessages', project.id],
+    queryFn: async () => {
+      try {
+        if (!base44.entities.ProjectMessage) return [];
+        const msgs = await base44.entities.ProjectMessage.filter({ project_id: project.id }, 'created_date');
+        return Array.isArray(msgs) ? msgs : [];
+      } catch (error) {
+        console.error('Error fetching project messages:', error);
+        return [];
+      }
+    },
+    enabled: !!project.id && activeTab === 'activity',
+    ...QUERY_CONFIG.projectDetailLazy,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
+  });
 
   const hasNewMessages = chatMessages.some(m => 
     new Date(m.created_date) > new Date(lastReadChat) && 
