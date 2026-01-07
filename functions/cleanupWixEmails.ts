@@ -73,11 +73,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('Un-threading complete');
+    const hasMore = wixMessages.length - processedIds.size > BATCH_SIZE;
+
+    console.log('Batch complete');
     return Response.json({
       success: true,
       unthreadedCount,
-      message: `Un-threaded ${unthreadedCount} Wix messages into separate threads`
+      hasMore,
+      message: `Un-threaded ${unthreadedCount} Wix messages. ${hasMore ? 'Run again to process more batches.' : 'All done!'}`
     });
 
   } catch (error) {
