@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    console.log('Starting Wix email cleanup...');
+    console.log('Starting Wix email un-threading...');
 
     // Find all messages from Wix CRM
     const allMessages = await base44.asServiceRole.entities.EmailMessage.list();
@@ -19,48 +19,41 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${wixMessages.length} Wix CRM messages`);
 
-    // Get unique thread IDs from these messages
-    const wixThreadIds = [...new Set(wixMessages.map(msg => msg.thread_id).filter(Boolean))];
-    console.log(`Found ${wixThreadIds.length} threads containing Wix messages`);
+    let unthreadedCount = 0;
 
-    let deletedMessages = 0;
-    let deletedThreads = 0;
-
-    // Delete all Wix messages
+    // Create a separate thread for each Wix message
     for (const message of wixMessages) {
       try {
-        await base44.asServiceRole.entities.EmailMessage.delete(message.id);
-        deletedMessages++;
-      } catch (err) {
-        console.error(`Failed to delete message ${message.id}:`, err.message);
-      }
-    }
-
-    // Check each thread - if it has no remaining messages, delete it
-    for (const threadId of wixThreadIds) {
-      try {
-        const remainingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
-          thread_id: threadId
+        // Create a new thread for this message
+        const newThread = await base44.asServiceRole.entities.EmailThread.create({
+          subject: message.subject || '(No Subject)',
+          gmail_thread_id: `wix-${message.id}`, // Unique thread ID
+          from_address: message.from_address,
+          to_addresses: message.to_addresses || [],
+          last_message_date: message.sent_at,
+          last_message_snippet: message.body_text?.substring(0, 200) || '',
+          status: 'Open',
+          priority: 'Normal',
+          message_count: 1
         });
 
-        if (remainingMessages.length === 0) {
-          await base44.asServiceRole.entities.EmailThread.delete(threadId);
-          deletedThreads++;
-          console.log(`Deleted empty thread ${threadId}`);
-        } else {
-          console.log(`Thread ${threadId} still has ${remainingMessages.length} messages, keeping it`);
-        }
+        // Update message to point to the new thread
+        await base44.asServiceRole.entities.EmailMessage.update(message.id, {
+          thread_id: newThread.id
+        });
+
+        unthreadedCount++;
+        console.log(`Un-threaded Wix message ${message.id} to new thread ${newThread.id}`);
       } catch (err) {
-        console.error(`Failed to process thread ${threadId}:`, err.message);
+        console.error(`Failed to un-thread message ${message.id}:`, err.message);
       }
     }
 
-    console.log('Cleanup complete');
+    console.log('Un-threading complete');
     return Response.json({
       success: true,
-      deletedMessages,
-      deletedThreads,
-      message: `Deleted ${deletedMessages} Wix messages and ${deletedThreads} empty threads`
+      unthreadedCount,
+      message: `Un-threaded ${unthreadedCount} Wix messages into separate threads`
     });
 
   } catch (error) {
