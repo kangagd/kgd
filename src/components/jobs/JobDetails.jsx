@@ -113,13 +113,14 @@ const customerTypeColors = {
 };
 
 const getInitials = (name) => {
-  if (!name) return "?";
-  return name.
-  split(" ").
-  map((n) => n[0]).
-  join("").
-  toUpperCase().
-  slice(0, 2);
+  if (!name || typeof name !== 'string') return "?";
+  const parts = name.trim().split(" ").filter(Boolean);
+  if (parts.length === 0) return "?";
+  return parts
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
 };
 
 const avatarColors = [

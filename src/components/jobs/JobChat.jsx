@@ -30,8 +30,18 @@ export default function JobChat({ jobId }) {
 
   const { data: messages = [] } = useQuery({
     queryKey: ['jobMessages', jobId],
-    queryFn: () => base44.entities.JobMessage?.filter({ job_id: jobId }, 'created_date') || [],
-    refetchInterval: 5000
+    queryFn: async () => {
+      try {
+        if (!base44.entities.JobMessage) return [];
+        const msgs = await base44.entities.JobMessage.filter({ job_id: jobId }, 'created_date');
+        return Array.isArray(msgs) ? msgs : [];
+      } catch (error) {
+        console.error('Error fetching job messages:', error);
+        return [];
+      }
+    },
+    refetchInterval: 5000,
+    enabled: !!jobId
   });
 
   const { data: job } = useQuery({
@@ -149,7 +159,7 @@ export default function JobChat({ jobId }) {
                     {msg.sender_name}
                   </p>
                   <p className="text-sm whitespace-pre-wrap">
-                    {msg.message.split(/(@\w+(?:\s+\w+)?)/).map((part, i) => {
+                    {(msg.message || '').split(/(@\w+(?:\s+\w+)?)/).map((part, i) => {
                       if (part.startsWith('@')) {
                         const mentionedName = part.substring(1);
                         const mentionedUser = allUsers.find(u => 
@@ -165,7 +175,7 @@ export default function JobChat({ jobId }) {
                           </span>
                         );
                       }
-                      return part;
+                      return <span key={i}>{part}</span>;
                     })}
                   </p>
                   <p className="text-xs opacity-70 mt-1">

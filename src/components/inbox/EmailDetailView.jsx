@@ -177,11 +177,19 @@ export default function EmailDetailView({
 
 
   const getSenderInitials = (name, email) => {
-    if (name) {
-      const parts = name.split(' ');
-      return parts.length > 1 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name[0].toUpperCase();
+    if (name && typeof name === 'string') {
+      const parts = name.trim().split(' ').filter(Boolean);
+      if (parts.length > 1 && parts[0][0] && parts[1][0]) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      if (parts.length > 0 && parts[0][0]) {
+        return parts[0][0].toUpperCase();
+      }
     }
-    return email[0].toUpperCase();
+    if (email && typeof email === 'string' && email[0]) {
+      return email[0].toUpperCase();
+    }
+    return '?';
   };
 
   return (
