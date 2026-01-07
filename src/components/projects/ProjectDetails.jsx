@@ -539,9 +539,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       
       const newJob = createJobResponse.data.job;
 
-      // Update cached jobs list with the new job
-      queryClient.setQueryData(['projectJobs', project.id], (old = []) => [...old, newJob]);
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      // Update batch cache with the new job
+      queryClient.setQueryData(['projectWithRelations', project.id], (oldData) => ({
+        ...oldData,
+        jobs: [...(oldData.jobs || []), newJob]
+      }));
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
@@ -770,8 +773,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       
       const newJob = createJobResponse.data.job;
 
-      // Refresh jobs and navigate to the new job
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
+      // Refresh batch data
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
@@ -838,10 +841,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         base44.entities.Task.update(task.id, { status: "Cancelled" })
       ));
 
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['projectJobs', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
       
       const cancelledCount = openJobs.length + allOpenTasks.length;
       toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} and ${allOpenTasks.length} task${allOpenTasks.length !== 1 ? 's' : ''} cancelled.`);
