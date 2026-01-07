@@ -356,7 +356,17 @@ Deno.serve(async (req) => {
           const messageDate = new Date(date).toISOString();
           const updateData = {
             last_message_snippet: detail.snippet,
-            gmail_thread_id: gmailThreadId // Ensure Gmail thread ID is always set
+            gmail_thread_id: gmailThreadId, // Ensure Gmail thread ID is always set
+            // CRITICAL: Preserve all existing project/customer links to prevent unlinking
+            project_id: existingThreads[0].project_id,
+            project_number: existingThreads[0].project_number,
+            project_title: existingThreads[0].project_title,
+            customer_id: existingThreads[0].customer_id,
+            customer_name: existingThreads[0].customer_name,
+            organisation_id: existingThreads[0].organisation_id,
+            organisation_name: existingThreads[0].organisation_name,
+            linked_to_project_at: existingThreads[0].linked_to_project_at,
+            linked_to_project_by: existingThreads[0].linked_to_project_by
           };
           // Only update last_message_date if this message is newer
           if (!existingThreads[0].last_message_date || new Date(messageDate) > new Date(existingThreads[0].last_message_date)) {
