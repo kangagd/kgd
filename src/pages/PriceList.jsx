@@ -294,13 +294,13 @@ export default function PriceList() {
         ) : (
           <div className="grid gap-3">
             {filteredItems.map((item) => {
-              // Get stock from VehicleStock (legacy)
-              const vehicleStockForItem = vehicleStock.filter(vs => vs.price_list_item_id === item.id);
+              // Get stock from VehicleStock (uses product_id field)
+              const vehicleStockForItem = vehicleStock.filter(vs => vs.product_id === item.id);
               const vehicleStockDisplay = vehicleStockForItem.map(vs => {
                 const vehicle = vehicles.find(v => v.id === vs.vehicle_id);
                 return {
                   location_name: vehicle?.name || 'Unknown Vehicle',
-                  quantity: vs.quantity || 0,
+                  quantity: vs.quantity_on_hand || 0,
                   location_id: vs.vehicle_id
                 };
               });
