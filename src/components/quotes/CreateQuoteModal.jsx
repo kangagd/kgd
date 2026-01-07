@@ -29,9 +29,9 @@ export default function CreateQuoteModal({
   useEffect(() => {
     if (isOpen) {
       loadTemplates();
-      // Set default quote name
+      // Set default quote name with project number
       const defaultName = project?.title 
-        ? `${project.title} – ${customer?.name || project.customer_name || 'Customer'}`
+        ? `${project.title}${project.project_number ? ` (#${project.project_number})` : ''} – ${customer?.name || project.customer_name || 'Customer'}`
         : job?.job_number 
           ? `Job #${job.job_number} – ${customer?.name || job.customer_name || 'Customer'}`
           : '';

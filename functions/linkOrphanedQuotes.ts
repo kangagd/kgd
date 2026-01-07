@@ -38,79 +38,113 @@ Deno.serve(async (req) => {
     // Process each orphaned quote
     for (const quote of orphanedQuotes) {
       try {
-        // Extract project number from quote name (e.g., "#3989" from "Quote - Garage Door for 154 Rainbow St (#3989)")
+        let matchedProject = null;
+        let matchMethod = null;
+        
+        // Method 1: Try to extract and match by project number
         const match = quote.name?.match(/#(\d+)/);
-        if (!match) {
-          results.notMatched++;
-          results.notMatchedReasons.push({
-            quoteId: quote.id,
-            quoteName: quote.name,
-            customerId: quote.customer_id,
-            customerName: quote.customer_name,
-            reason: "No project number found in quote name"
-          });
-          continue;
+        if (match) {
+          const projectNumber = parseInt(match[1], 10);
+          const customerProjects = projectMap.get(quote.customer_id);
+          
+          if (customerProjects) {
+            matchedProject = customerProjects.get(projectNumber);
+            if (matchedProject) {
+              matchMethod = 'project_number';
+            }
+          }
         }
-
-        const projectNumber = parseInt(match[1], 10);
         
-        // Find matching project by customer_id and project_number
-        const customerProjects = projectMap.get(quote.customer_id);
-        if (!customerProjects) {
-          results.notMatched++;
-          results.notMatchedReasons.push({
-            quoteId: quote.id,
-            quoteName: quote.name,
-            customerId: quote.customer_id,
-            customerName: quote.customer_name,
-            projectNumber: projectNumber,
-            reason: `No projects found for customer_id: ${quote.customer_id}`
-          });
-          continue;
-        }
-
-        let matchedProject = customerProjects.get(projectNumber);
-        
-        // If no match by project number, try matching by address
-        if (!matchedProject && quote.address_full) {
+        // Method 2: If no match yet, try matching by address (exact match)
+        if (!matchedProject && quote.address_full && quote.customer_id) {
           const normalizedQuoteAddress = quote.address_full.toLowerCase().trim();
-          const customerProjectsList = Array.from(customerProjects.values());
-          matchedProject = customerProjectsList.find(p => 
-            p.address_full && p.address_full.toLowerCase().trim() === normalizedQuoteAddress
-          );
+          const customerProjects = projectMap.get(quote.customer_id);
           
-          if (matchedProject) {
-            console.log(`Matched quote ${quote.id} by address to project ${matchedProject.id}`);
+          if (customerProjects) {
+            const customerProjectsList = Array.from(customerProjects.values());
+            matchedProject = customerProjectsList.find(p => 
+              p.address_full && p.address_full.toLowerCase().trim() === normalizedQuoteAddress
+            );
+            
+            if (matchedProject) {
+              matchMethod = 'address';
+            }
           }
         }
         
-        // If still no match, try fuzzy matching by quote name vs project title
-        if (!matchedProject && quote.name) {
-          const normalizedQuoteName = quote.name.toLowerCase().replace(/#\d+/g, '').trim();
-          const customerProjectsList = Array.from(customerProjects.values());
-          matchedProject = customerProjectsList.find(p => {
-            const normalizedProjectTitle = p.title.toLowerCase().trim();
-            // Check if quote name contains significant parts of project title
-            return normalizedQuoteName.includes(normalizedProjectTitle) || 
-                   normalizedProjectTitle.includes(normalizedQuoteName);
-          });
+        // Method 3: If still no match, try fuzzy matching by quote name vs project title
+        if (!matchedProject && quote.name && quote.customer_id) {
+          // Remove project number pattern and common prefixes
+          const normalizedQuoteName = quote.name
+            .toLowerCase()
+            .replace(/#\d+/g, '')
+            .replace(/^quote\s*-?\s*/i, '')
+            .replace(/\s+for\s+/i, ' ')
+            .trim();
           
-          if (matchedProject) {
-            console.log(`Matched quote ${quote.id} by name similarity to project ${matchedProject.id}`);
+          const customerProjects = projectMap.get(quote.customer_id);
+          
+          if (customerProjects && normalizedQuoteName.length > 10) {
+            const customerProjectsList = Array.from(customerProjects.values());
+            
+            // Try exact substring match first
+            matchedProject = customerProjectsList.find(p => {
+              const normalizedProjectTitle = p.title.toLowerCase().trim();
+              return normalizedQuoteName.includes(normalizedProjectTitle) || 
+                     normalizedProjectTitle.includes(normalizedQuoteName);
+            });
+            
+            // If no exact match, try matching key words (address, customer name components)
+            if (!matchedProject) {
+              const quoteWords = normalizedQuoteName.split(/\s+/).filter(w => w.length > 3);
+              
+              matchedProject = customerProjectsList.find(p => {
+                const normalizedProjectTitle = p.title.toLowerCase().trim();
+                const titleWords = normalizedProjectTitle.split(/\s+/);
+                
+                // Count matching words
+                const matchCount = quoteWords.filter(qw => 
+                  titleWords.some(tw => tw.includes(qw) || qw.includes(tw))
+                ).length;
+                
+                // Require at least 2 matching words
+                return matchCount >= 2;
+              });
+            }
+            
+            if (matchedProject) {
+              matchMethod = 'name_similarity';
+            }
           }
         }
         
+        // No match found - log detailed reason
         if (!matchedProject) {
           results.notMatched++;
-          const availableProjectNumbers = Array.from(customerProjects.keys());
+          
+          const customerProjects = projectMap.get(quote.customer_id);
+          const availableProjectNumbers = customerProjects 
+            ? Array.from(customerProjects.keys()) 
+            : [];
+          
+          const extractedNumber = match ? parseInt(match[1], 10) : null;
+          
           results.notMatchedReasons.push({
             quoteId: quote.id,
             quoteName: quote.name,
             customerId: quote.customer_id,
             customerName: quote.customer_name,
-            quoteAddress: quote.address_full,
-            projectNumber: projectNumber,
-            reason: `No match found by project number #${projectNumber}, address, or name similarity. Available project numbers: ${availableProjectNumbers.join(', ')}`
+            quoteAddress: quote.address_full || 'N/A',
+            extractedProjectNumber: extractedNumber,
+            reason: !quote.customer_id 
+              ? 'Quote has no customer_id'
+              : !customerProjects 
+                ? `No projects found for customer ${quote.customer_name} (${quote.customer_id})`
+                : extractedNumber && !customerProjects.get(extractedNumber)
+                  ? `Project #${extractedNumber} not found for customer. Available: ${availableProjectNumbers.join(', ')}`
+                  : !quote.address_full && !extractedNumber
+                    ? `No project number in name and no address to match. Customer has projects: ${availableProjectNumbers.join(', ')}`
+                    : `No match found. Tried: ${extractedNumber ? `#${extractedNumber}, ` : ''}${quote.address_full ? 'address, ' : ''}name similarity. Available projects: ${availableProjectNumbers.join(', ')}`
           });
           continue;
         }
@@ -121,6 +155,7 @@ Deno.serve(async (req) => {
           project_title: matchedProject.title
         });
 
+        console.log(`Linked quote ${quote.id} to project ${matchedProject.id} via ${matchMethod}`);
         results.linked++;
       } catch (error) {
         results.errors.push({
