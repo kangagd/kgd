@@ -294,6 +294,14 @@ export default function PriceList() {
         ) : (
           <div className="grid gap-3">
             {filteredItems.map((item) => {
+              // Add warehouse stock from legacy stock_level field
+              const warehouseStock = item.stock_level || 0;
+              const warehouseDisplay = warehouseStock > 0 ? [{
+                location_name: 'Warehouse',
+                quantity: warehouseStock,
+                location_id: 'warehouse'
+              }] : [];
+
               // Get stock from VehicleStock (uses product_id field)
               const vehicleStockForItem = vehicleStock.filter(vs => vs.product_id === item.id);
               const vehicleStockDisplay = vehicleStockForItem.map(vs => {
@@ -308,8 +316,8 @@ export default function PriceList() {
               // Get stock from new InventoryQuantity system
               const newStockByLocation = inventoryQuantities.filter(q => q.price_list_item_id === item.id);
 
-              // Combine both systems
-              const stockByLocation = [...vehicleStockDisplay, ...newStockByLocation];
+              // Combine all systems: warehouse first, then vehicles, then new system
+              const stockByLocation = [...warehouseDisplay, ...vehicleStockDisplay, ...newStockByLocation];
 
               return (
                 <PriceListCard
