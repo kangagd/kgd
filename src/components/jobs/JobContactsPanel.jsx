@@ -55,6 +55,12 @@ export default function JobContactsPanel({ job }) {
               email: pc.email || "",
               phone: pc.phone || "",
               role: pc.role || "",
+              address_full: job.address_full || "",
+              address_street: job.address_street || "",
+              address_suburb: job.address_suburb || "",
+              address_state: job.address_state || "",
+              address_postcode: job.address_postcode || "",
+              address_country: job.address_country || "Australia",
             });
             existingContacts.push(newJobContact);
           }
@@ -117,6 +123,12 @@ export default function JobContactsPanel({ job }) {
         email: finalEmail,
         phone: finalPhone,
         role: newContact.role || "",
+        address_full: job.address_full || "",
+        address_street: job.address_street || "",
+        address_suburb: job.address_suburb || "",
+        address_state: job.address_state || "",
+        address_postcode: job.address_postcode || "",
+        address_country: job.address_country || "Australia",
       });
     },
     onSuccess: () => {

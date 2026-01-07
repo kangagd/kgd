@@ -91,6 +91,12 @@ export default function ProjectContactsPanel({ project }) {
         phone: finalPhone,
         role: newContact.role || "",
         show_on_jobs: newContact.show_on_jobs,
+        address_full: project.address_full || "",
+        address_street: project.address_street || "",
+        address_suburb: project.address_suburb || "",
+        address_state: project.address_state || "",
+        address_postcode: project.address_postcode || "",
+        address_country: project.address_country || "Australia",
       });
     },
     onSuccess: async () => {
