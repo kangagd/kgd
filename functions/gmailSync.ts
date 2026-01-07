@@ -355,7 +355,8 @@ Deno.serve(async (req) => {
           // Update last message date and message count
           const messageDate = new Date(date).toISOString();
           const updateData = {
-            last_message_snippet: detail.snippet
+            last_message_snippet: detail.snippet,
+            gmail_thread_id: gmailThreadId // Ensure Gmail thread ID is always set
           };
           // Only update last_message_date if this message is newer
           if (!existingThreads[0].last_message_date || new Date(messageDate) > new Date(existingThreads[0].last_message_date)) {
