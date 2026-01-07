@@ -4,42 +4,20 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-export default function GmailConnect({ user, onSyncComplete }) {
-  const [isConnected, setIsConnected] = useState(false);
+export default function GmailConnect({ user, isGmailConnected, onSyncComplete }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState(null);
   const [gmailStatus, setGmailStatus] = useState(null);
 
   useEffect(() => {
-    const checkGmailStatus = async () => {
-      if (user?.gmail_access_token) {
-        setIsConnected(true);
-        setGmailStatus('connected');
-      } else if (user?.extended_role === 'manager' || user?.role === 'admin') {
-        // Check if admin has Gmail connected (for managers)
-        try {
-          const response = await base44.functions.invoke('gmailSync', {});
-          if (response.data && !response.data.error) {
-            setIsConnected(true);
-            setGmailStatus('using_admin');
-          } else {
-            setIsConnected(false);
-            setGmailStatus('not_connected');
-          }
-        } catch {
-          setIsConnected(false);
-          setGmailStatus('not_connected');
-        }
-      } else {
-        setIsConnected(false);
-        setGmailStatus('not_connected');
-      }
-    };
-    
-    if (user) {
-      checkGmailStatus();
+    if (user?.gmail_access_token) {
+      setGmailStatus('connected');
+    } else if (isGmailConnected) {
+      setGmailStatus('using_shared');
+    } else {
+      setGmailStatus('not_connected');
     }
-  }, [user]);
+  }, [user, isGmailConnected]);
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -84,10 +62,10 @@ export default function GmailConnect({ user, onSyncComplete }) {
     }
   };
 
-  if (!isConnected) {
+  if (!isGmailConnected) {
     return (
       <Button onClick={handleConnect} variant="outline" size="sm">
-        {user?.extended_role === 'manager' ? 'Gmail Not Connected (Contact Admin)' : 'Connect Gmail'}
+        {user?.extended_role === 'manager' || user?.role !== 'admin' ? 'Gmail Not Connected (Contact Admin)' : 'Connect Gmail'}
       </Button>
     );
   }
@@ -99,7 +77,7 @@ export default function GmailConnect({ user, onSyncComplete }) {
       variant="ghost"
       size="sm"
       className="gap-2"
-      title={gmailStatus === 'using_admin' ? 'Using shared Gmail connection' : 'Using your Gmail connection'}
+      title={gmailStatus === 'using_shared' ? 'Using shared Gmail connection' : 'Using your Gmail connection'}
     >
       <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
       {isSyncing ? 'Syncing...' : 'Sync'}
