@@ -185,12 +185,42 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const canCreateJobs = isAdminOrManager;
   const canViewFinancials = isAdminOrManager;
 
-  const { data: project = initialProject } = useQuery({
-    queryKey: ['project', initialProject.id],
-    queryFn: () => base44.entities.Project.get(initialProject.id),
-    initialData: initialProject,
+  // Single batch query for all project data
+  const { data: projectData, isLoading: isLoadingProjectData } = useQuery({
+    queryKey: ['projectWithRelations', initialProject.id],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getProjectWithRelations', { 
+        project_id: initialProject.id 
+      });
+      return response.data;
+    },
+    initialData: {
+      project: initialProject,
+      jobs: [],
+      quotes: [],
+      xeroInvoices: [],
+      parts: [],
+      purchaseOrders: [],
+      projectContacts: [],
+      tradeRequirements: [],
+      projectTasks: [],
+      projectMessages: [],
+      emailThreads: []
+    },
     ...QUERY_CONFIG.critical
   });
+
+  const project = projectData.project;
+  const jobs = projectData.jobs;
+  const quotes = projectData.quotes;
+  const xeroInvoices = projectData.xeroInvoices;
+  const parts = projectData.parts;
+  const purchaseOrders = projectData.purchaseOrders;
+  const projectContacts = projectData.projectContacts;
+  const tradeRequirements = projectData.tradeRequirements;
+  const projectTasks = projectData.projectTasks;
+  const chatMessages = projectData.projectMessages;
+  const emailThreads = projectData.emailThreads;
 
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
@@ -199,19 +229,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     setDescription(project.description || "");
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
-
-
-
-  // Always fetch jobs for consistency across all tabs
-  const { data: jobs = [] } = useQuery({
-    queryKey: ['projectJobs', project.id],
-    queryFn: () => base44.entities.Job.filter({ 
-      project_id: project.id,
-      deleted_at: { $exists: false }
-    }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.projectDetailLazy
-  });
 
   // Lazy load parts only when parts tab is active
   const { data: parts = [] } = useQuery({
