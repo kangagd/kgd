@@ -12,6 +12,17 @@ import { toast } from "sonner";
 export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreateProjectFromAI, onCreateJobFromAI }) {
   const threadId = thread?.id;
 
+  // Auto-collapse if thread is linked or closed
+  const shouldAutoCollapse = thread?.project_id || thread?.status === 'Closed' || thread?.status === 'Archived';
+  const [isCollapsed, setIsCollapsed] = React.useState(shouldAutoCollapse);
+
+  // Update collapsed state when thread changes
+  React.useEffect(() => {
+    if (shouldAutoCollapse) {
+      setIsCollapsed(true);
+    }
+  }, [shouldAutoCollapse]);
+
   // Auto-fetch AI insights when thread changes
   const {
     data: aiData,
