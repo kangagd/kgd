@@ -12,9 +12,7 @@ Deno.serve(async (req) => {
         // Allow all authenticated users to see user list (needed for mentions in chat)
 
         // Fetch all users using service role to bypass RLS
-        const users = await base44.asServiceRole.entities.User.filter({ 
-            status: { $ne: 'inactive' } 
-        });
+        const users = await base44.asServiceRole.entities.User.list();
 
         return Response.json({ 
             success: true, 
