@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     }
 
     // 1. Get all users for mention parsing using service role
-    const allUsers = await base44.asServiceRole.entities.User.list();
+    const allUsers = await base44.asServiceRole.entities.User.filter({});
     
     // 2. Parse mentions
     const mentionedUsers = [];
