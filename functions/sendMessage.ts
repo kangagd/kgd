@@ -35,9 +35,7 @@ Deno.serve(async (req) => {
     // 1. Get all users for mention parsing using service role
     let allUsers = [];
     try {
-      allUsers = await base44.asServiceRole.entities.User.filter({ 
-        status: { $ne: 'inactive' } 
-      });
+      allUsers = await base44.asServiceRole.entities.User.list();
       console.log(`[sendMessage] Fetched ${allUsers.length} users for mention parsing`);
     } catch (error) {
       console.error('[sendMessage] Failed to fetch users for mentions:', error);
