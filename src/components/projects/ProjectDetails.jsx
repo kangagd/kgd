@@ -421,8 +421,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       setShowInvoiceModal(false);
       toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
     },
@@ -441,7 +440,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       if (data.voided) {
         toast.info('Invoice was voided in Xero and removed from the app');
       }
@@ -482,8 +481,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         project_id: project.id
       });
 
-      queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
     } catch (error) {
@@ -646,7 +644,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           old_status: oldStage,
           completed_date: project.completed_date || new Date().toISOString().split('T')[0]
         });
-        queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+        queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
         queryClient.invalidateQueries({ queryKey: ['projects'] });
         queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
         toast.success('Project completed and warranty activated');
@@ -1692,22 +1690,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   }}
                   onAddTask={async (taskData) => {
                     await base44.entities.Task.create(taskData);
-                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
                     toast.success('Task created');
                   }}
                   onTaskUpdate={async (taskId, data) => {
                     await base44.entities.Task.update(taskId, data);
-                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
                     toast.success('Task updated');
                   }}
                   onTaskDelete={async (taskId) => {
                     await base44.entities.Task.delete(taskId);
-                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
                     toast.success('Task deleted');
                   }}
                   onTaskStatusChange={async (taskId, status) => {
                     await base44.entities.Task.update(taskId, { status });
-                    queryClient.invalidateQueries({ queryKey: ['projectTasks', project.id] });
+                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
                     toast.success('Task status updated');
                   }}
                 />
