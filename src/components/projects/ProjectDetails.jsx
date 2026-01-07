@@ -302,27 +302,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     refetchOnMount: false,
   });
 
-  // Lazy load chat messages only when needed for unread count or activity tab
-  const { data: chatMessages = [] } = useQuery({
-    queryKey: ['projectMessages', project.id],
-    queryFn: async () => {
-      try {
-        if (!base44.entities.ProjectMessage) return [];
-        const msgs = await base44.entities.ProjectMessage.filter({ project_id: project.id }, 'created_date');
-        return Array.isArray(msgs) ? msgs : [];
-      } catch (error) {
-        console.error('Error fetching project messages:', error);
-        return [];
-      }
-    },
-    enabled: !!project.id && activeTab === 'activity',
-    ...QUERY_CONFIG.projectDetailLazy,
-    onError: (error) => {
-      if (error?.response?.status === 429) {
-        toast.error('Rate limit hit – slowing down');
-      }
-    }
-  });
+
 
   const hasNewMessages = chatMessages.some(m => 
     new Date(m.created_date) > new Date(lastReadChat) && 
