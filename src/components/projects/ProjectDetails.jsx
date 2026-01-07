@@ -818,10 +818,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       ));
 
       // Cancel all open tasks related to this project
-      const projectTasks = await base44.entities.Task.filter({ 
+      const tasksToCancel = await base44.entities.Task.filter({ 
         project_id: project.id 
       });
-      const openProjectTasks = projectTasks.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
+      const openProjectTasks = tasksToCancel.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
       
       // Cancel all open tasks related to jobs in this project
       const jobIds = jobs.map(j => j.id);
