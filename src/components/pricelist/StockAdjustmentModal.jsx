@@ -18,54 +18,106 @@ import {
 import { recordStockMovement } from "@/components/utils/stockHelpers";
 import { toast } from "sonner";
 
-export default function StockAdjustmentModal({ item, open, onClose }) {
-  const [movementType, setMovementType] = useState("stock_in");
+export default function StockAdjustmentModal({ item, open, onClose, vehicles = [], locations = [] }) {
+  const [fromLocation, setFromLocation] = useState("");
+  const [toLocation, setToLocation] = useState("warehouse");
   const [quantity, setQuantity] = useState("");
   const [notes, setNotes] = useState("");
   const queryClient = useQueryClient();
   const { can } = usePermissions();
 
+  // Combine all locations: warehouse + vehicles + inventory locations
+  const allLocations = [
+    { id: 'warehouse', name: 'Warehouse', type: 'warehouse' },
+    ...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' })),
+    ...locations.filter(l => l.type !== 'warehouse') // Avoid duplicate warehouses
+  ];
+
   const adjustStockMutation = useMutation({
     mutationFn: async (data) => {
       const quantityValue = parseInt(data.quantity);
-      const adjustedQuantity = data.movementType === 'stock_out' ? -quantityValue : quantityValue;
+      const fromLoc = data.fromLocation || null;
+      const toLoc = data.toLocation || null;
 
-      // Map movement type to reason
-      const reasonMap = {
-        stock_in: "stock_in",
-        stock_out: "stock_out",
-        adjustment: "correction"
-      };
+      // Determine movement type
+      let movementType = 'adjustment';
+      if (!fromLoc && toLoc) {
+        movementType = 'stock_in';
+      } else if (fromLoc && !toLoc) {
+        movementType = 'stock_out';
+      } else if (fromLoc && toLoc) {
+        movementType = 'transfer';
+      }
 
-      // Use new StockMovement system
-      const result = await recordStockMovement({
-        stock_item_id: item.id,
-        quantity_delta: adjustedQuantity,
-        reason: reasonMap[data.movementType] || "manual_adjustment",
-        to_location: data.movementType === 'stock_in' ? 'warehouse' : null,
-        from_location: data.movementType === 'stock_out' ? 'warehouse' : null,
-        notes: data.notes
-      });
+      // Create StockMovement record
+      const fromLocationObj = fromLoc ? allLocations.find(l => l.id === fromLoc) : null;
+      const toLocationObj = toLoc ? allLocations.find(l => l.id === toLoc) : null;
 
-      // Also create legacy InventoryMovement for backward compatibility (deprecated)
-      await base44.entities.InventoryMovement.create({
+      await base44.entities.StockMovement.create({
         price_list_item_id: item.id,
         item_name: item.item,
-        movement_type: data.movementType,
-        quantity: adjustedQuantity,
-        previous_stock: result.previousStock,
-        new_stock: result.newStock,
-        notes: data.notes
+        from_location_id: fromLoc,
+        from_location_name: fromLocationObj?.name || null,
+        to_location_id: toLoc,
+        to_location_name: toLocationObj?.name || null,
+        quantity: quantityValue,
+        movement_type: movementType,
+        notes: data.notes,
       });
 
-      return result;
+      // Update InventoryQuantity records
+      if (fromLoc) {
+        const fromQty = await base44.entities.InventoryQuantity.filter({
+          price_list_item_id: item.id,
+          location_id: fromLoc
+        });
+        if (fromQty.length > 0) {
+          await base44.entities.InventoryQuantity.update(fromQty[0].id, {
+            quantity: (fromQty[0].quantity || 0) - quantityValue
+          });
+        }
+      }
+
+      if (toLoc) {
+        const toQty = await base44.entities.InventoryQuantity.filter({
+          price_list_item_id: item.id,
+          location_id: toLoc
+        });
+        if (toQty.length > 0) {
+          await base44.entities.InventoryQuantity.update(toQty[0].id, {
+            quantity: (toQty[0].quantity || 0) + quantityValue
+          });
+        } else {
+          // Create new quantity record
+          await base44.entities.InventoryQuantity.create({
+            price_list_item_id: item.id,
+            location_id: toLoc,
+            quantity: quantityValue,
+            item_name: item.item,
+            location_name: toLocationObj?.name || 'Unknown'
+          });
+        }
+      }
+
+      // Update legacy stock_level on PriceListItem if warehouse is involved
+      if (toLoc === 'warehouse' || fromLoc === 'warehouse') {
+        const delta = toLoc === 'warehouse' ? quantityValue : -quantityValue;
+        await base44.entities.PriceListItem.update(item.id, {
+          stock_level: Math.max(0, (item.stock_level || 0) + delta)
+        });
+      }
+
+      return { success: true };
     },
-    onSuccess: (result) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['priceListItems'] });
-      toast.success(`Stock adjusted: ${result.previousStock} → ${result.newStock}`);
+      queryClient.invalidateQueries({ queryKey: ['vehicle-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-quantities'] });
+      toast.success('Stock adjusted successfully');
       setQuantity("");
       setNotes("");
-      setMovementType("stock_in");
+      setFromLocation("");
+      setToLocation("warehouse");
       onClose();
     },
     onError: (error) => {
@@ -76,7 +128,8 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     adjustStockMutation.mutate({
-      movementType,
+      fromLocation,
+      toLocation,
       quantity,
       notes
     });
@@ -84,9 +137,8 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
 
   if (!item) return null;
 
-  const newStock = movementType === 'stock_out' 
-    ? item.stock_level - parseInt(quantity || 0)
-    : item.stock_level + parseInt(quantity || 0);
+  const isStockIn = !fromLocation && toLocation;
+  const isStockOut = fromLocation && !toLocation;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -97,30 +149,40 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <div className="text-sm text-slate-600 mb-1">Current Stock</div>
-            <div className="text-2xl font-bold text-slate-900">{item.stock_level}</div>
+            <div className="text-sm text-slate-600 mb-1">Current Stock (Warehouse)</div>
+            <div className="text-2xl font-bold text-slate-900">{item.stock_level || 0}</div>
           </div>
 
           <div>
-            <Label>Movement Type</Label>
-            <Select value={movementType} onValueChange={setMovementType}>
+            <Label>From Location</Label>
+            <Select value={fromLocation} onValueChange={setFromLocation}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="None (New stock)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="stock_in">
-                  <div className="flex items-center gap-2">
-                    <PackagePlus className="w-4 h-4 text-green-600" />
-                    Stock In (Receiving)
-                  </div>
-                </SelectItem>
-                <SelectItem value="stock_out">
-                  <div className="flex items-center gap-2">
-                    <PackageMinus className="w-4 h-4 text-red-600" />
-                    Stock Out (Manual)
-                  </div>
-                </SelectItem>
-                <SelectItem value="adjustment">Adjustment (Correction)</SelectItem>
+                <SelectItem value={null}>None (New stock)</SelectItem>
+                {allLocations.map(loc => (
+                  <SelectItem key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>To Location</Label>
+            <Select value={toLocation} onValueChange={setToLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder="None (Stock out)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>None (Stock out)</SelectItem>
+                {allLocations.map(loc => (
+                  <SelectItem key={loc.id} value={loc.id}>
+                    {loc.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -137,17 +199,16 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
             />
           </div>
 
-          {quantity && (
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="text-sm text-blue-600 mb-1">New Stock Level</div>
-              <div className={`text-2xl font-bold ${newStock < 0 ? 'text-red-600' : 'text-blue-900'}`}>
-                {newStock}
+          {quantity && (fromLocation || toLocation) && (
+            <div className={`rounded-lg p-4 border ${isStockIn ? 'bg-green-50 border-green-200' : isStockOut ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
+              <div className={`text-sm mb-1 ${isStockIn ? 'text-green-600' : isStockOut ? 'text-red-600' : 'text-blue-600'}`}>
+                {isStockIn ? 'Stock In' : isStockOut ? 'Stock Out' : 'Transfer'}
               </div>
-              {newStock < 0 && (
-                <div className="text-xs text-red-600 mt-1">
-                  Warning: Stock cannot be negative
-                </div>
-              )}
+              <div className="text-sm text-slate-600">
+                {fromLocation && `From: ${allLocations.find(l => l.id === fromLocation)?.name}`}
+                {fromLocation && toLocation && ' → '}
+                {toLocation && `To: ${allLocations.find(l => l.id === toLocation)?.name}`}
+              </div>
             </div>
           )}
 
@@ -177,7 +238,7 @@ export default function StockAdjustmentModal({ item, open, onClose }) {
                   <span className="flex-1">
                     <Button
                       type="submit"
-                      disabled={adjustStockMutation.isPending || !quantity || newStock < 0 || !can(PERMISSIONS.ADJUST_STOCK)}
+                      disabled={adjustStockMutation.isPending || !quantity || (!fromLocation && !toLocation) || !can(PERMISSIONS.ADJUST_STOCK)}
                       className="w-full bg-orange-600 hover:bg-orange-700"
                     >
                       {adjustStockMutation.isPending ? 'Adjusting...' : 'Adjust Stock'}
