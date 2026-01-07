@@ -92,15 +92,23 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const currentUser = await base44.auth.me();
     
-    if (!user) {
+    if (!currentUser) {
       return Response.json({ error: 'User not authenticated' }, { status: 401 });
     }
     
-    if (!user.gmail_access_token) {
+    // Find any user with same email that has Gmail connected
+    const usersWithSameEmail = await base44.asServiceRole.entities.User.filter({ 
+      email: currentUser.email 
+    });
+    let user = usersWithSameEmail.find(u => u.gmail_access_token);
+    
+    if (!user) {
       return Response.json({ error: 'Gmail not connected. Please connect Gmail first.' }, { status: 401 });
     }
+    
+    console.log('Sending email using Gmail connection from user:', user.email);
     
     // UPDATED CONTRACT: Accept both base44_thread_id and gmail_thread_id
     const { 
