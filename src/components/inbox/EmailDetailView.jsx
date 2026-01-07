@@ -308,6 +308,26 @@ export default function EmailDetailView({
                       >
                         <Forward className="w-4 h-4" />
                       </Button>
+
+                      {/* Assign User Avatar */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowAssignModal(true)}
+                        title={thread.assigned_to ? `Assigned to ${thread.assigned_to_name}` : "Assign to team member"}
+                        className="h-9 w-9"
+                      >
+                        {thread.assigned_to ? (
+                          <div className="w-6 h-6 bg-[#FAE008] rounded-full flex items-center justify-center">
+                            <span className="text-[10px] font-semibold text-[#111827]">
+                              {thread.assigned_to_name?.charAt(0)?.toUpperCase() || 'U'}
+                            </span>
+                          </div>
+                        ) : (
+                          <UserPlus className="w-4 h-4" />
+                        )}
+                      </Button>
+
                       <Button
                         variant="ghost"
                         size="icon"
@@ -330,11 +350,6 @@ export default function EmailDetailView({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setShowAssignModal(true)}>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Assign to Team Member
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
                       {userPermissions?.can_create_project_from_email && (
                         <DropdownMenuItem onClick={() => navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`)}>
                           Create Project
