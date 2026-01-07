@@ -255,6 +255,13 @@ Deno.serve(async (req) => {
 
         const headers = detail.payload.headers;
 
+        const fromAddressValue = headers.find(h => h.name === 'From')?.value || '';
+        // Skip Wix CRM emails to avoid consolidating all inquiries into one thread
+        if (fromAddressValue.includes('no-reply@crm.wix.com')) {
+          console.log(`Skipping Wix CRM email from ${fromAddressValue}`);
+          return false;
+        }
+
         const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
         const from = headers.find(h => h.name === 'From')?.value || '';
         const to = headers.find(h => h.name === 'To')?.value || '';
