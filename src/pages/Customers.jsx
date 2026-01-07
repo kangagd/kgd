@@ -53,7 +53,10 @@ export default function Customers() {
 
   const { data: allCustomers = [], isLoading, refetch } = useQuery({
     queryKey: ['allCustomers'],
-    queryFn: () => base44.entities.Customer.filter({ deleted_at: { $exists: false } }),
+    queryFn: async () => {
+      const all = await base44.entities.Customer.list();
+      return all.filter(c => !c.deleted_at);
+    },
     refetchInterval: 15000,
   });
 
