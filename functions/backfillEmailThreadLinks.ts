@@ -10,20 +10,30 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
+    // Process in batches to avoid timeout
+    const BATCH_SIZE = 20;
+    const { batch = 0 } = await req.json().catch(() => ({ batch: 0 }));
+    
+    console.log(`Running batch ${batch}...`);
+    
     // Fetch all threads without customer/project links
     const allThreads = await base44.asServiceRole.entities.EmailThread.list();
     const threadsToProcess = allThreads.filter(t => !t.customer_id && !t.project_id && !t.is_deleted);
     
-    console.log(`Processing ${threadsToProcess.length} threads for auto-linking...`);
+    const start = batch * BATCH_SIZE;
+    const batchThreads = threadsToProcess.slice(start, start + BATCH_SIZE);
+    
+    console.log(`Batch ${batch}: Processing ${batchThreads.length} of ${threadsToProcess.length} total threads`);
 
-    // Fetch all customers once for efficiency
+    // Fetch all customers and projects once for efficiency
     const customers = await base44.asServiceRole.entities.Customer.list();
+    const allProjects = await base44.asServiceRole.entities.Project.list();
     
     let linkedToCustomer = 0;
     let linkedToProject = 0;
     let noMatch = 0;
 
-    for (const thread of threadsToProcess) {
+    for (const thread of batchThreads) {
       try {
         // Extract all email addresses from thread
         const allEmails = [
@@ -38,9 +48,7 @@ Deno.serve(async (req) => {
 
         if (matchingCustomer) {
           // Find most recent open project for this customer
-          const projects = await base44.asServiceRole.entities.Project.filter({
-            customer_id: matchingCustomer.id
-          });
+          const projects = allProjects.filter(p => p.customer_id === matchingCustomer.id);
           
           const openProjects = projects.filter(p => 
             !['Completed', 'Lost', 'Cancelled'].includes(p.status)
@@ -74,12 +82,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    const hasMore = start + BATCH_SIZE < threadsToProcess.length;
+
     return Response.json({
       success: true,
-      processed: threadsToProcess.length,
+      batch,
+      processed: batchThreads.length,
+      total: threadsToProcess.length,
       linkedToProject,
       linkedToCustomer,
-      noMatch
+      noMatch,
+      hasMore,
+      nextBatch: hasMore ? batch + 1 : null,
+      message: hasMore 
+        ? `Batch ${batch} complete. Run again with {"batch": ${batch + 1}} to continue.`
+        : 'All batches complete!'
     });
   } catch (error) {
     console.error('Backfill error:', error);
