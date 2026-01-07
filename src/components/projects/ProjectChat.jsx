@@ -30,8 +30,18 @@ export default function ProjectChat({ projectId }) {
 
   const { data: messages = [] } = useQuery({
     queryKey: ['projectMessages', projectId],
-    queryFn: () => base44.entities.ProjectMessage?.filter({ project_id: projectId }, 'created_date') || [],
-    refetchInterval: 5000
+    queryFn: async () => {
+      try {
+        if (!base44.entities.ProjectMessage) return [];
+        const msgs = await base44.entities.ProjectMessage.filter({ project_id: projectId }, 'created_date');
+        return Array.isArray(msgs) ? msgs : [];
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+        return [];
+      }
+    },
+    refetchInterval: 5000,
+    enabled: !!projectId
   });
 
   const { data: allUsers = [] } = useQuery({
@@ -156,24 +166,24 @@ export default function ProjectChat({ projectId }) {
                     </span>
                   </div>
                   <p className="text-sm whitespace-pre-wrap leading-relaxed">
-                    {msg.message.split(/(@\w+(?:\s+\w+)?)/).map((part, i) => {
-                      if (part.startsWith('@')) {
-                        const mentionedName = part.substring(1);
-                        const mentionedUser = allUsers.find(u => 
-                          (u.display_name || u.full_name)?.toLowerCase() === mentionedName.toLowerCase()
-                        );
-                        const isCurrentUser = mentionedUser?.email === user?.email;
-                        return (
-                          <span 
-                            key={i} 
-                            className={`font-semibold ${isCurrentUser ? 'bg-blue-100 text-blue-800 px-1 rounded' : 'text-blue-600'}`}
-                          >
-                            {part}
-                          </span>
-                        );
-                      }
-                      return part;
-                    })}
+                   {(msg.message || '').split(/(@\w+(?:\s+\w+)?)/).map((part, i) => {
+                     if (part.startsWith('@')) {
+                       const mentionedName = part.substring(1);
+                       const mentionedUser = allUsers.find(u => 
+                         (u.display_name || u.full_name)?.toLowerCase() === mentionedName.toLowerCase()
+                       );
+                       const isCurrentUser = mentionedUser?.email === user?.email;
+                       return (
+                         <span 
+                           key={i} 
+                           className={`font-semibold ${isCurrentUser ? 'bg-blue-100 text-blue-800 px-1 rounded' : 'text-blue-600'}`}
+                         >
+                           {part}
+                         </span>
+                       );
+                     }
+                     return <span key={i}>{part}</span>;
+                   })}
                   </p>
                 </div>
               </div>
