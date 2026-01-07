@@ -1,82 +1,71 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-const BATCH_SIZE = 3; // Process 3 projects at a time to avoid rate limits
-const DELAY_BETWEEN_PROJECTS = 500; // 500ms delay between projects
-const DELAY_BETWEEN_BATCHES = 2000; // 2 second delay between batches
+const BATCH_SIZE = 5; // Process 5 projects per batch
+const MAX_EXECUTION_TIME = 50000; // 50 seconds (leave 10s buffer for Deno's 60s limit)
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function cleanupSingleProject(serviceBase44, projectId) {
-  console.log(`Cleaning up project ${projectId}...`);
+async function cleanupBatch(serviceBase44, projectIds) {
+  console.log(`Cleaning up ${projectIds.length} projects...`);
   
   const stats = {
     xero_invoices: 0,
     email_threads: 0,
     quotes: 0,
-    errors: []
+    projects: 0
   };
 
-  try {
-    // 1. Unlink all Xero invoices
-    const xeroInvoices = await serviceBase44.entities.XeroInvoice.filter({ project_id: projectId });
-    if (xeroInvoices.length > 0) {
-      for (const invoice of xeroInvoices) {
-        try {
-          await serviceBase44.entities.XeroInvoice.update(invoice.id, {
-            project_id: null,
-            customer_id: null,
-            customer_name: null
-          });
-          stats.xero_invoices++;
-          await delay(100); // Small delay between updates
-        } catch (err) {
-          stats.errors.push(`Invoice ${invoice.id}: ${err.message}`);
-        }
-      }
-    }
+  // Fetch all related data at once for efficiency
+  const allXeroInvoices = await serviceBase44.entities.XeroInvoice.list();
+  const allEmailThreads = await serviceBase44.entities.EmailThread.list();
+  const allQuotes = await serviceBase44.entities.Quote.list();
 
-    // 2. Unlink all email threads (both fields)
-    const emailThreads = await serviceBase44.entities.EmailThread.filter({ project_id: projectId });
-    const linkedThreads = await serviceBase44.entities.EmailThread.filter({ linked_project_id: projectId });
-    
-    const allThreads = [...emailThreads, ...linkedThreads];
-    if (allThreads.length > 0) {
-      for (const thread of allThreads) {
-        try {
-          await serviceBase44.entities.EmailThread.update(thread.id, {
-            project_id: null,
-            project_number: null,
-            project_title: null,
-            linked_project_id: null,
-            linked_project_title: null
-          });
-          stats.email_threads++;
-          await delay(100); // Small delay between updates
-        } catch (err) {
-          stats.errors.push(`Thread ${thread.id}: ${err.message}`);
-        }
-      }
-    }
+  // Filter to only those linked to deleted projects
+  const invoicesToUnlink = allXeroInvoices.filter(inv => projectIds.includes(inv.project_id));
+  const threadsToUnlink = allEmailThreads.filter(t => 
+    projectIds.includes(t.project_id) || projectIds.includes(t.linked_project_id)
+  );
+  const quotesToUnlink = allQuotes.filter(q => projectIds.includes(q.project_id));
 
-    // 3. Unlink all quotes
-    const quotes = await serviceBase44.entities.Quote.filter({ project_id: projectId });
-    if (quotes.length > 0) {
-      for (const quote of quotes) {
-        try {
-          await serviceBase44.entities.Quote.update(quote.id, {
-            project_id: null
-          });
-          stats.quotes++;
-          await delay(100); // Small delay between updates
-        } catch (err) {
-          stats.errors.push(`Quote ${quote.id}: ${err.message}`);
-        }
-      }
-    }
+  // Unlink in parallel batches
+  const updatePromises = [];
 
-    // 4. Clear project's primary links
+  // Unlink invoices
+  for (const invoice of invoicesToUnlink) {
+    updatePromises.push(
+      serviceBase44.entities.XeroInvoice.update(invoice.id, {
+        project_id: null,
+        customer_id: null,
+        customer_name: null
+      }).then(() => stats.xero_invoices++)
+    );
+  }
+
+  // Unlink threads
+  for (const thread of threadsToUnlink) {
+    updatePromises.push(
+      serviceBase44.entities.EmailThread.update(thread.id, {
+        project_id: null,
+        project_number: null,
+        project_title: null,
+        linked_project_id: null,
+        linked_project_title: null
+      }).then(() => stats.email_threads++)
+    );
+  }
+
+  // Unlink quotes
+  for (const quote of quotesToUnlink) {
+    updatePromises.push(
+      serviceBase44.entities.Quote.update(quote.id, {
+        project_id: null
+      }).then(() => stats.quotes++)
+    );
+  }
+
+  // Execute all updates in parallel
+  await Promise.allSettled(updatePromises);
+
+  // Clear project primary links
+  for (const projectId of projectIds) {
     await serviceBase44.entities.Project.update(projectId, {
       primary_quote_id: null,
       primary_xero_invoice_id: null,
@@ -84,11 +73,7 @@ async function cleanupSingleProject(serviceBase44, projectId) {
       xero_invoices: [],
       xero_payment_url: null
     });
-
-    console.log(`Completed cleanup for project ${projectId}:`, stats);
-  } catch (error) {
-    console.error(`Error cleaning project ${projectId}:`, error);
-    stats.errors.push(`Project ${projectId}: ${error.message}`);
+    stats.projects++;
   }
 
   return stats;
@@ -132,44 +117,42 @@ Deno.serve(async (req) => {
     const totals = {
       xero_invoices: 0,
       email_threads: 0,
-      quotes: 0
+      quotes: 0,
+      projects: 0
     };
 
-    const errors = [];
+    const startTime = Date.now();
     let cleaned = 0;
 
-    // Process in batches
+    // Process in batches with timeout protection
     for (let i = 0; i < deletedProjects.length; i += BATCH_SIZE) {
-      const batch = deletedProjects.slice(i, i + BATCH_SIZE);
-      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(deletedProjects.length / BATCH_SIZE);
-      
-      console.log(`Processing batch ${batchNum} of ${totalBatches} (${batch.length} projects)`);
-
-      // Process batch sequentially with delays
-      for (const project of batch) {
-        const stats = await cleanupSingleProject(serviceBase44, project.id);
-        totals.xero_invoices += stats.xero_invoices;
-        totals.email_threads += stats.email_threads;
-        totals.quotes += stats.quotes;
-        
-        if (stats.errors.length > 0) {
-          errors.push(...stats.errors);
-        }
-        
-        cleaned++;
-        
-        // Delay between projects within batch
-        await delay(DELAY_BETWEEN_PROJECTS);
+      // Check if we're approaching timeout
+      const elapsed = Date.now() - startTime;
+      if (elapsed > MAX_EXECUTION_TIME) {
+        console.log(`Stopping early to avoid timeout. Processed ${cleaned} of ${deletedProjects.length} projects.`);
+        return Response.json({
+          success: true,
+          partial: true,
+          total_cleaned: cleaned,
+          remaining: deletedProjects.length - cleaned,
+          totals,
+          message: `Cleaned ${cleaned} of ${deletedProjects.length} projects (stopped to avoid timeout). Run again to continue.`
+        });
       }
+
+      const batch = deletedProjects.slice(i, i + BATCH_SIZE);
+      const batchProjectIds = batch.map(p => p.id);
+      
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} projects)`);
+
+      const batchStats = await cleanupBatch(serviceBase44, batchProjectIds);
+      totals.xero_invoices += batchStats.xero_invoices;
+      totals.email_threads += batchStats.email_threads;
+      totals.quotes += batchStats.quotes;
+      totals.projects += batchStats.projects;
+      cleaned += batch.length;
 
       console.log(`Progress: ${cleaned}/${deletedProjects.length} projects cleaned`);
-
-      // Longer delay between batches to avoid rate limits
-      if (i + BATCH_SIZE < deletedProjects.length) {
-        console.log(`Waiting ${DELAY_BETWEEN_BATCHES}ms before next batch...`);
-        await delay(DELAY_BETWEEN_BATCHES);
-      }
     }
 
     console.log('Batch cleanup completed successfully');
@@ -178,8 +161,7 @@ Deno.serve(async (req) => {
       success: true,
       total_cleaned: cleaned,
       totals,
-      errors: errors.length > 0 ? errors : undefined,
-      message: `Successfully cleaned up ${cleaned} deleted project${cleaned !== 1 ? 's' : ''}${errors.length > 0 ? ` (${errors.length} errors)` : ''}`
+      message: `Successfully cleaned up ${cleaned} deleted project${cleaned !== 1 ? 's' : ''}`
     });
 
   } catch (error) {
