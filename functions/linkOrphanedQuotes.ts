@@ -69,7 +69,37 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const matchedProject = customerProjects.get(projectNumber);
+        let matchedProject = customerProjects.get(projectNumber);
+        
+        // If no match by project number, try matching by address
+        if (!matchedProject && quote.address_full) {
+          const normalizedQuoteAddress = quote.address_full.toLowerCase().trim();
+          const customerProjectsList = Array.from(customerProjects.values());
+          matchedProject = customerProjectsList.find(p => 
+            p.address_full && p.address_full.toLowerCase().trim() === normalizedQuoteAddress
+          );
+          
+          if (matchedProject) {
+            console.log(`Matched quote ${quote.id} by address to project ${matchedProject.id}`);
+          }
+        }
+        
+        // If still no match, try fuzzy matching by quote name vs project title
+        if (!matchedProject && quote.name) {
+          const normalizedQuoteName = quote.name.toLowerCase().replace(/#\d+/g, '').trim();
+          const customerProjectsList = Array.from(customerProjects.values());
+          matchedProject = customerProjectsList.find(p => {
+            const normalizedProjectTitle = p.title.toLowerCase().trim();
+            // Check if quote name contains significant parts of project title
+            return normalizedQuoteName.includes(normalizedProjectTitle) || 
+                   normalizedProjectTitle.includes(normalizedQuoteName);
+          });
+          
+          if (matchedProject) {
+            console.log(`Matched quote ${quote.id} by name similarity to project ${matchedProject.id}`);
+          }
+        }
+        
         if (!matchedProject) {
           results.notMatched++;
           const availableProjectNumbers = Array.from(customerProjects.keys());
@@ -78,8 +108,9 @@ Deno.serve(async (req) => {
             quoteName: quote.name,
             customerId: quote.customer_id,
             customerName: quote.customer_name,
+            quoteAddress: quote.address_full,
             projectNumber: projectNumber,
-            reason: `Project #${projectNumber} not found for this customer. Available project numbers: ${availableProjectNumbers.join(', ')}`
+            reason: `No match found by project number #${projectNumber}, address, or name similarity. Available project numbers: ${availableProjectNumbers.join(', ')}`
           });
           continue;
         }
