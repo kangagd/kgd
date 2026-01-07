@@ -39,13 +39,15 @@ export default function QuotesSection({
       
       // If we have a project (either direct or via job), fetch project quotes
       if (projectId) {
-        const projectQuotes = await base44.entities.Quote.filter({ project_id: projectId }, '-created_date');
+        const allQuotesList = await base44.entities.Quote.list();
+        const projectQuotes = allQuotesList.filter(q => q.project_id === projectId);
         allQuotes = [...projectQuotes];
       }
       
       // If we have a job, also fetch job-specific quotes
       if (jobId) {
-        const jobQuotes = await base44.entities.Quote.filter({ job_id: jobId }, '-created_date');
+        const allQuotesList = await base44.entities.Quote.list();
+        const jobQuotes = allQuotesList.filter(q => q.job_id === jobId);
         // Add job quotes that aren't already in the list (avoid duplicates)
         jobQuotes.forEach(jq => {
           if (!allQuotes.find(q => q.id === jq.id)) {
@@ -58,7 +60,7 @@ export default function QuotesSection({
       return allQuotes.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!(projectId || jobId),
-    staleTime: 0, // Always refetch to ensure latest quotes
+    staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true
   });
