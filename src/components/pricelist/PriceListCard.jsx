@@ -76,30 +76,35 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
 
             {/* Stock Info Row */}
             <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-[14px] text-[#4B5563] leading-[1.4]">
+            <div className="flex items-center gap-3 text-[14px] text-[#4B5563] leading-[1.4] flex-wrap">
               {(item.track_inventory !== false && item.in_inventory !== false) ? (
                 <>
-                  <span>
-                    Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[#111827]'}`}>
-                      {item.stock_level}
-                    </span>
-                  </span>
-                  <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
+                  {stockByLocation && stockByLocation.length > 0 ? (
+                    <>
+                      {stockByLocation.map((qty, idx) => (
+                        <span key={idx}>
+                          {qty.location_name}: <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
+                            {qty.quantity}
+                          </span>
+                        </span>
+                      ))}
+                      <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>
+                        Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[#111827]'}`}>
+                          {item.stock_level}
+                        </span>
+                      </span>
+                      <span className="text-[#6B7280]">Min: {item.min_stock_level}</span>
+                    </>
+                  )}
                 </>
               ) : (
                 <span className="text-slate-400 italic">Non-stock item</span>
               )}
             </div>
-
-              {inventorySummary && (item.track_inventory !== false && item.in_inventory !== false) && (
-                <div className="flex items-center text-xs text-slate-500 ml-auto mr-3">
-                  <span>Inv: {inventorySummary.total_on_hand}</span>
-                  <span className="mx-1">•</span>
-                  <span>WH: {inventorySummary.total_in_warehouse}</span>
-                  <span className="mx-1">•</span>
-                  <span>Veh: {inventorySummary.total_in_vehicles}</span>
-                </div>
-              )}
 
               {/* Quick Action Buttons */}
               <div className="flex items-center gap-1">
