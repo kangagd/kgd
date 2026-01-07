@@ -6,13 +6,22 @@
 export const QUERY_CONFIG = {
   // Critical data - always fresh, refetch on window focus
   critical: {
-    staleTime: 10000, // 10 seconds
+    staleTime: 30000, // 30 seconds - reduced refetches
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     retry: (failureCount, error) => {
-      // Don't retry on 429 rate limit errors
-      if (error?.response?.status === 429) return false;
-      return failureCount < 1; // Max 1 retry for other errors
+      // Retry 429 with exponential backoff
+      if (error?.response?.status === 429) {
+        return failureCount < 3; // Retry up to 3 times
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex, error) => {
+      // Exponential backoff for 429 errors: 1s, 2s, 4s
+      if (error?.response?.status === 429) {
+        return Math.min(1000 * Math.pow(2, attemptIndex), 4000);
+      }
+      return 1000;
     },
   },
 
@@ -23,19 +32,35 @@ export const QUERY_CONFIG = {
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     retry: (failureCount, error) => {
-      if (error?.response?.status === 429) return false;
-      return failureCount < 1;
+      if (error?.response?.status === 429) {
+        return failureCount < 3;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex, error) => {
+      if (error?.response?.status === 429) {
+        return Math.min(1000 * Math.pow(2, attemptIndex), 4000);
+      }
+      return 1000;
     },
   },
 
   // Frequent updates - refetch on focus and mount
   frequent: {
-    staleTime: 30000, // 30 seconds - increased from 10s
-    refetchOnWindowFocus: false, // Disabled for performance
+    staleTime: 60000, // 60 seconds - longer cache
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: (failureCount, error) => {
-      if (error?.response?.status === 429) return false;
-      return failureCount < 1;
+      if (error?.response?.status === 429) {
+        return failureCount < 3;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex, error) => {
+      if (error?.response?.status === 429) {
+        return Math.min(1000 * Math.pow(2, attemptIndex), 4000);
+      }
+      return 1000;
     },
   },
 
@@ -63,13 +88,21 @@ export const QUERY_CONFIG = {
 
   // Project detail lazy load - for tab-based data
   projectDetailLazy: {
-    staleTime: 30000, // 30 seconds
+    staleTime: 120000, // 2 minutes - much longer cache
     refetchOnWindowFocus: false,
-    refetchOnMount: true,
+    refetchOnMount: false, // Don't refetch on mount - use cached data
     keepPreviousData: true,
     retry: (failureCount, error) => {
-      if (error?.response?.status === 429) return false;
-      return failureCount < 1;
+      if (error?.response?.status === 429) {
+        return failureCount < 3;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex, error) => {
+      if (error?.response?.status === 429) {
+        return Math.min(1000 * Math.pow(2, attemptIndex), 4000);
+      }
+      return 1000;
     },
   },
 };
