@@ -9,12 +9,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Allow admin, manager, and regular users to see all users
-        const isAuthorized = user.role === 'admin' || user.extended_role === 'manager' || user.role === 'user';
-
-        if (!isAuthorized) {
-            return Response.json({ error: 'Forbidden - Admin or Manager access required' }, { status: 403 });
-        }
+        // Allow all authenticated users to see user list (needed for mentions in chat)
 
         // Fetch all users using service role to bypass RLS
         const users = await base44.asServiceRole.entities.User.filter({ 
