@@ -357,12 +357,14 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         payload.references = existingReferences;
       }
       
-      await base44.functions.invoke('gmailSendEmail', payload);
+      const response = await base44.functions.invoke('gmailSendEmail', payload);
 
       toast.success("Email sent successfully");
       await deleteDraft();
+      
+      // Pass threadId back to parent for cache invalidation
       if (onSent) {
-        await onSent();
+        await onSent(response.data?.threadId);
       }
       onClose();
     } catch (error) {

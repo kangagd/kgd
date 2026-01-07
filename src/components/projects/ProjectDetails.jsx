@@ -2104,12 +2104,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     setComposerMode(null);
                     setComposerMessage(null);
                   }}
-                  onSent={() => {
+                  onSent={async () => {
                     setComposerMode(null);
                     setComposerMessage(null);
-                    queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
-                    queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
-                    queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
+                    await queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+                    await queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
+                    await queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
+                    await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
+                    await queryClient.refetchQueries({ queryKey: ['projectEmailThreads', project.id] });
                     toast.success('Email sent successfully');
                   }}
                   onDraftSaved={() => {

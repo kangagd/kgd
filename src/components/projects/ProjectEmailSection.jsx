@@ -127,12 +127,17 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     setComposerMode('compose');
   };
 
-  const handleEmailSent = () => {
+  const handleEmailSent = async (threadId) => {
     setComposerMode(null);
     setSelectedMessage(null);
     setEditingDraft(null);
-    refetchMessages();
-    refetchDrafts();
+    
+    // Invalidate and refetch to show updated threads/messages
+    await queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+    await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
+    await queryClient.refetchQueries({ queryKey: ['projectEmailThreads', project.id] });
+    await refetchMessages();
+    await refetchDrafts();
   };
 
   const handleDraftSaved = () => {
