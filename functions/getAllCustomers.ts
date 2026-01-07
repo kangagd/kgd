@@ -16,8 +16,10 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Fetch all customers using service role to bypass RLS
-        const customers = await base44.asServiceRole.entities.Customer.list();
+        // Fetch all non-deleted customers using service role to bypass RLS
+        const customers = await base44.asServiceRole.entities.Customer.filter({
+            deleted_at: { $exists: false }
+        });
 
         return Response.json({ 
             success: true, 

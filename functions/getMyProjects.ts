@@ -15,12 +15,15 @@ Deno.serve(async (req) => {
 
     let projects;
     if (isAdmin || isManager) {
-      // Admins and managers can see all projects
-      projects = await base44.asServiceRole.entities.Project.list();
-    } else {
-      // Regular users see only their own projects
+      // Admins and managers can see all non-deleted projects
       projects = await base44.asServiceRole.entities.Project.filter({ 
-        created_by: user.email 
+        deleted_at: { $exists: false } 
+      });
+    } else {
+      // Regular users see only their own non-deleted projects
+      projects = await base44.asServiceRole.entities.Project.filter({ 
+        created_by: user.email,
+        deleted_at: { $exists: false }
       });
     }
 

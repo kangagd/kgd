@@ -103,7 +103,9 @@ export default function Inbox() {
     queryKey: ['emailThreads'],
     queryFn: async () => {
       const response = await base44.functions.invoke('getMyEmailThreads');
-      return response.data?.threads || [];
+      const allThreads = response.data?.threads || [];
+      // Filter out deleted threads on the frontend as backup
+      return allThreads.filter(t => !t.is_deleted);
     },
     enabled: !!userPermissions?.can_view,
     refetchInterval: 60000 // Auto-refresh every 60 seconds
