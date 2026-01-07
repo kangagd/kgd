@@ -461,6 +461,21 @@ export default function Schedule() {
     navigate(`${createPageUrl("Jobs")}?jobId=${job.id}`);
   }, [navigate]);
 
+  // Helper: Round time to nearest 30 minutes
+  const roundToNearestHalfHour = (timeStr) => {
+    if (!timeStr) return null;
+    try {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes;
+      const rounded = Math.round(totalMinutes / 30) * 30;
+      const newHours = Math.floor(rounded / 60) % 24;
+      const newMinutes = rounded % 60;
+      return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:00`;
+    } catch {
+      return null;
+    }
+  };
+
   // Handle drag end for rescheduling
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -478,7 +493,8 @@ export default function Schedule() {
     if (destParts[0] === 'day' && destParts.length >= 4) {
       newDate = `${destParts[1]}-${destParts[2]}-${destParts[3]}`;
       if (destParts.length >= 6) {
-        newTime = `${destParts[4]}:${destParts[5]}:00`;
+        const rawTime = `${destParts[4]}:${destParts[5]}:00`;
+        newTime = roundToNearestHalfHour(rawTime);
       }
     }
     
