@@ -52,7 +52,15 @@ export default function JobChat({ jobId }) {
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryFn: async () => {
+      try {
+        const response = await base44.functions.invoke('getAllUsers', {});
+        return response.data?.users || [];
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        return [];
+      }
+    }
   });
 
   const sendMessageMutation = useMutation({
