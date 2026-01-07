@@ -39,11 +39,25 @@ export default function CheckIn() {
       // Use backend function for consistency with other pages
       const response = await base44.functions.invoke('getMyJobs');
       const allJobs = response.data || [];
-      // Filter for scheduled/open jobs assigned to user
-      return allJobs.filter(job => 
-        (job.status === 'Scheduled' || job.status === 'Open') &&
-        job.assigned_to?.includes(user.email)
-      );
+      
+      // Filter for:
+      // 1. Scheduled/Open jobs assigned to user
+      // 2. OR any job where user has an active check-in (regardless of job status)
+      return allJobs.filter(job => {
+        const isAssigned = job.assigned_to?.includes(user.email);
+        const isScheduledOrOpen = job.status === 'Scheduled' || job.status === 'Open';
+        
+        // Always include if assigned and scheduled/open
+        if (isAssigned && isScheduledOrOpen) return true;
+        
+        // Also include if user has active check-in (even if job is Completed)
+        const userActiveCheckIn = checkIns.find(
+          ci => ci.job_id === job.id && 
+                ci.technician_email === user.email && 
+                !ci.check_out_time
+        );
+        return !!userActiveCheckIn;
+      });
     },
     enabled: !!user?.email,
     staleTime: 120000, // 2 minutes
