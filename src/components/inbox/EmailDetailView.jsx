@@ -14,7 +14,9 @@ import {
   FileText,
   Link as LinkIcon,
   X,
-  Trash2
+  Trash2,
+  UserPlus,
+  User
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -41,6 +43,8 @@ import EmailMessageItem from "./EmailMessageItem";
 import EmailAIInsightsPanel from "./EmailAIInsightsPanel";
 import CreateProjectFromEmailModal from "./CreateProjectFromEmailModal";
 import CreateJobFromEmailModal from "./CreateJobFromEmailModal";
+import AssignThreadModal from "./AssignThreadModal";
+import InternalNotesPanel from "./InternalNotesPanel";
 
 export default function EmailDetailView({
   thread,
@@ -64,6 +68,7 @@ export default function EmailDetailView({
 
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
   const [aiThread, setAiThread] = useState(thread);
 
   // Update aiThread when thread prop changes
@@ -197,6 +202,41 @@ export default function EmailDetailView({
       {/* Centered Content Container */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
+          {/* Assignment & Activity Info */}
+          {(thread.assigned_to || thread.last_worked_by) && (
+            <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] p-4 mb-6 space-y-2">
+              {thread.assigned_to && (
+                <div className="flex items-center gap-2 text-sm">
+                  <UserPlus className="w-4 h-4 text-[#6B7280]" />
+                  <span className="text-[#6B7280]">Assigned to:</span>
+                  <span className="font-medium text-[#111827]">{thread.assigned_to_name}</span>
+                  {thread.assigned_at && (
+                    <span className="text-xs text-[#9CA3AF]">
+                      ({format(parseISO(thread.assigned_at), 'MMM d, h:mm a')})
+                    </span>
+                  )}
+                </div>
+              )}
+              {thread.last_worked_by && (
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="w-4 h-4 text-[#6B7280]" />
+                  <span className="text-[#6B7280]">Last worked by:</span>
+                  <span className="font-medium text-[#111827]">{thread.last_worked_by_name}</span>
+                  {thread.last_worked_at && (
+                    <span className="text-xs text-[#9CA3AF]">
+                      ({format(parseISO(thread.last_worked_at), 'MMM d, h:mm a')})
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Internal Notes */}
+          <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] p-4 mb-6">
+            <InternalNotesPanel threadId={thread.id} />
+          </div>
+
           {/* AI Insights Panel */}
           <div className="mb-6">
             <EmailAIInsightsPanel
@@ -290,6 +330,11 @@ export default function EmailDetailView({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setShowAssignModal(true)}>
+                        <UserPlus className="w-4 h-4 mr-2" />
+                        Assign to Team Member
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       {userPermissions?.can_create_project_from_email && (
                         <DropdownMenuItem onClick={() => navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`)}>
                           Create Project
@@ -507,6 +552,18 @@ export default function EmailDetailView({
           onSuccess={(jobId, jobNumber) => {
             toast.success('Job created successfully');
             setShowCreateJobModal(false);
+            handleThreadUpdate();
+          }}
+        />
+      )}
+
+      {/* Assign Thread Modal */}
+      {showAssignModal && (
+        <AssignThreadModal
+          thread={thread}
+          open={showAssignModal}
+          onClose={() => {
+            setShowAssignModal(false);
             handleThreadUpdate();
           }}
         />
