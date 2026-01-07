@@ -690,6 +690,7 @@ export default function Schedule() {
                             isDragging={dragSnapshot.isDragging}
                             techniciansLookup={techniciansLookup}
                             hasActiveCheckIn={!!activeCheckInMap[job.id]}
+                            activeCheckIns={activeCheckInMap[job.id]?.checkIns || []}
                           />
                         </div>
                       )}
@@ -786,6 +787,7 @@ export default function Schedule() {
                                   isDragging={dragSnapshot.isDragging}
                                   techniciansLookup={techniciansLookup}
                                   hasActiveCheckIn={!!activeCheckInMap[job.id]}
+                                  activeCheckIns={activeCheckInMap[job.id]?.checkIns || []}
                                   visitLabel={job._isExpandedVisit ? `Visit ${job._visitIndex + 1}` : null}
                                 />
                               </div>
