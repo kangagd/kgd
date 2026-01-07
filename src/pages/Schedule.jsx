@@ -565,15 +565,34 @@ export default function Schedule() {
     jobsByTechEmail[UNASSIGNED_KEY] = [];
     techDisplayNames[UNASSIGNED_KEY] = 'Unassigned';
 
-    // Distribute jobs - a job can appear under multiple technicians if assigned to multiple
+    // Distribute jobs - if there's an active check-in, only show under checked-in technician(s)
     dayJobs.forEach(job => {
       const assignedEmails = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
+      
+      // Check if there are active check-ins for this job
+      const activeCheckIns = activeCheckInMap[job.id]?.checkIns || [];
+      const checkedInEmails = activeCheckIns.map(ci => ci.technician_email?.toLowerCase()).filter(Boolean);
       
       if (assignedEmails.length === 0) {
         // Unassigned
         jobsByTechEmail[UNASSIGNED_KEY].push(job);
+      } else if (checkedInEmails.length > 0) {
+        // Job has active check-ins - only show under checked-in technician(s)
+        checkedInEmails.forEach((checkedInEmail) => {
+          if (jobsByTechEmail[checkedInEmail] !== undefined) {
+            jobsByTechEmail[checkedInEmail].push(job);
+          } else {
+            // Unknown technician
+            if (!jobsByTechEmail[checkedInEmail]) {
+              jobsByTechEmail[checkedInEmail] = [];
+              const checkIn = activeCheckIns.find(ci => ci.technician_email?.toLowerCase() === checkedInEmail);
+              techDisplayNames[checkedInEmail] = checkIn?.technician_name || checkedInEmail;
+            }
+            jobsByTechEmail[checkedInEmail].push(job);
+          }
+        });
       } else {
-        // Add job under each assigned technician
+        // No active check-ins - show under all assigned technicians
         assignedEmails.forEach((rawEmail, idx) => {
           const email = rawEmail ? rawEmail.toLowerCase() : null;
           
