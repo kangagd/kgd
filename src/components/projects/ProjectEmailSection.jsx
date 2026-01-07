@@ -28,7 +28,10 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       }, '-last_message_date');
       return threads;
     },
-    enabled: !!project.id
+    enabled: !!project.id,
+    staleTime: 0, // Always refetch to ensure latest linked status
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Fetch messages for linked threads
@@ -65,19 +68,20 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   // Link thread mutation
   const linkThreadMutation = useMutation({
     mutationFn: async (threadId) => {
-      await base44.functions.invoke('linkEmailThreadToProject', {
+      const response = await base44.functions.invoke('linkEmailThreadToProject', {
         email_thread_id: threadId,
         project_id: project.id,
         set_as_primary: linkedThreads.length === 0
       });
-      return await base44.entities.EmailThread.get(threadId);
+      return response.data;
     },
     onSuccess: async () => {
       // CRITICAL: Invalidate all email queries to ensure inbox shows updated link status
-      queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-      queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
+      await queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+      await queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      await queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
+      await queryClient.refetchQueries({ queryKey: ['projectEmailThreads', project.id] });
       setShowLinkModal(false);
       toast.success('Email thread linked');
       if (onThreadLinked) onThreadLinked();

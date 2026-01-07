@@ -58,8 +58,9 @@ export default function QuotesSection({
       return allQuotes.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!(projectId || jobId),
-    refetchInterval: 120000, // Reduced to 2 minutes to avoid rate limits
-    staleTime: 60000 // Consider data fresh for 1 minute
+    staleTime: 0, // Always refetch to ensure latest quotes
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   const handleQuoteCreated = () => {

@@ -206,14 +206,20 @@ Deno.serve(async (req) => {
       const updates = {
         last_message_date: new Date().toISOString(),
         last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
-        message_count: (existingThread?.message_count || 0) + 1
+        message_count: (existingThread?.message_count || 0) + 1,
+        is_read: true // Mark as read when sending
       };
       
       // D) Priority: explicit projectId > existing thread.project_id
       // This ensures replies from ProjectEmailSection always link correctly
       if (projectId) {
-        // Explicit projectId provided (e.g., from ProjectEmailSection) - use it
+        // Explicit projectId provided - always use it and cache project fields
+        const projectData = await base44.asServiceRole.entities.Project.get(projectId);
         updates.project_id = projectId;
+        updates.project_number = projectData?.project_number || null;
+        updates.project_title = projectData?.title || null;
+        updates.customer_id = projectData?.customer_id || null;
+        updates.customer_name = projectData?.customer_name || null;
       } else if (existingThread.project_id) {
         // Thread already has a project - preserve it
         updates.project_id = existingThread.project_id;
