@@ -82,8 +82,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                   {stockByLocation && stockByLocation.length > 0 ? (
                     <>
                       {stockByLocation.map((qty, idx) => {
-                        const location = locations?.find(l => l.id === qty.location_id);
-                        const locationName = qty.location_name || location?.name || 'Unknown';
+                        const locationName = qty.location_name;
                         return (
                           <span key={idx}>
                             {locationName}: <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
@@ -97,7 +96,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                   ) : (
                     <>
                       <span>
-                        Stock: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[#111827]'}`}>
+                        Warehouse: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[#111827]'}`}>
                           {item.stock_level}
                         </span>
                       </span>
