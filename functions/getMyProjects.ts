@@ -16,40 +16,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log(`[getMyProjects] Fetching projects for user: ${user.email}, role: ${user.role}, extended_role: ${user.extended_role}`);
+    console.log(`[getMyProjects] Fetching projects for user: ${user.email}`);
 
-    // CRITICAL: Role-based access control
-    const isAdmin = user.role === 'admin';
-    const isManager = user.extended_role === 'manager';
-
+    // All authenticated users can see all projects (matches Project entity RLS: read = {})
     let projects = [];
     
-    if (isAdmin || isManager) {
-      // Admins and managers can see all projects (excluding soft-deleted ones)
-      try {
-        // CRITICAL: Use list() with high limit instead of filter({}) to get ALL records
-        const allProjects = await base44.asServiceRole.entities.Project.list('-created_date', 10000);
-        projects = Array.isArray(allProjects) ? allProjects.filter(p => p && !p.deleted_at) : [];
-        console.log(`[getMyProjects] Admin/Manager fetched ${projects.length} projects`);
-      } catch (fetchError) {
-        console.error('[getMyProjects] Failed to fetch all projects:', fetchError);
-        // FALLBACK: Return empty array rather than failing
-        projects = [];
-      }
-    } else {
-      // Regular users see only their own projects (excluding soft-deleted ones)
-      try {
-        // CRITICAL: Use list() with high limit to get ALL user projects
-        const allProjects = await base44.asServiceRole.entities.Project.list('-created_date', 10000);
-        projects = Array.isArray(allProjects) 
-          ? allProjects.filter(p => p && !p.deleted_at && p.created_by === user.email) 
-          : [];
-        console.log(`[getMyProjects] User fetched ${projects.length} own projects`);
-      } catch (fetchError) {
-        console.error('[getMyProjects] Failed to fetch user projects:', fetchError);
-        // FALLBACK: Return empty array rather than failing
-        projects = [];
-      }
+    try {
+      const allProjects = await base44.asServiceRole.entities.Project.list('-created_date', 10000);
+      projects = Array.isArray(allProjects) ? allProjects.filter(p => p && !p.deleted_at) : [];
+      console.log(`[getMyProjects] Fetched ${projects.length} projects`);
+    } catch (fetchError) {
+      console.error('[getMyProjects] Failed to fetch projects:', fetchError);
+      projects = [];
     }
 
     // CRITICAL: Always return valid array structure
