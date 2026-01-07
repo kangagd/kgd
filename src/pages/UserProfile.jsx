@@ -306,27 +306,53 @@ export default function UserProfile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-4">
-            <p className="text-sm text-slate-500">
-              Create your email signature using the editor below. You can add text, images, and formatting.
-            </p>
-            <div className="text-xs text-slate-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <strong>Tip:</strong> To add an image, click the image icon in the toolbar and paste your image URL.
+            <div className="space-y-2">
+              <Label htmlFor="signature_image">Signature Image/Logo</Label>
+              <Input
+                id="signature_image"
+                type="file"
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast.error('Image must be less than 2MB');
+                      return;
+                    }
+                    try {
+                      const result = await base44.integrations.Core.UploadFile({ file });
+                      const imageUrl = result.file_url;
+                      const imageHtml = `<p><img src="${imageUrl}" alt="Signature" style="max-width: 200px; height: auto;" /></p>`;
+                      setEmailSignature(emailSignature ? emailSignature + imageHtml : imageHtml);
+                      toast.success('Image uploaded');
+                    } catch (error) {
+                      toast.error('Failed to upload image');
+                    }
+                  }
+                }}
+              />
+              <p className="text-xs text-slate-500">Upload your logo or signature image (max 2MB)</p>
             </div>
-            <ReactQuill
-              theme="snow"
-              value={emailSignature}
-              onChange={setEmailSignature}
-              placeholder="Enter your email signature..."
-              className="bg-white rounded-lg [&_.ql-container]:min-h-[150px]"
-              modules={{
-                toolbar: [
-                  ['bold', 'italic', 'underline'],
-                  [{ 'color': [] }],
-                  [{ 'list': 'bullet' }],
-                  ['link', 'image']
-                ]
-              }}
-            />
+            
+            <div className="space-y-2">
+              <Label>Your Signature</Label>
+              <ReactQuill
+                theme="snow"
+                value={emailSignature}
+                onChange={setEmailSignature}
+                placeholder="Enter your email signature..."
+                className="bg-white rounded-lg [&_.ql-container]:min-h-[150px]"
+                modules={{
+                  toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'color': [] }],
+                    [{ 'list': 'bullet' }],
+                    ['link']
+                  ]
+                }}
+              />
+              <p className="text-xs text-slate-500">Use line breaks to format your signature. This will appear at the bottom of your emails.</p>
+            </div>
             <div className="border-t border-slate-200 pt-4">
               <p className="text-xs font-medium text-slate-600 mb-2">Preview:</p>
               <div 
