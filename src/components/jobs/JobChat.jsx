@@ -119,13 +119,10 @@ export default function JobChat({ jobId }) {
     inputRef.current?.focus();
   };
 
-  const filteredUsers = allUsers.filter(u => {
-    const search = mentionSearch.toLowerCase();
-    const matchesName = u.full_name?.toLowerCase().includes(search);
-    const matchesEmail = u.email?.toLowerCase().includes(search);
-    const isNotSelf = u.email !== user?.email;
-    return (matchesName || matchesEmail) && isNotSelf;
-  }).slice(0, 5);
+  const filteredUsers = allUsers.filter(u => 
+    u.full_name?.toLowerCase().includes(mentionSearch.toLowerCase()) &&
+    u.email !== user?.email
+  ).slice(0, 5);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
