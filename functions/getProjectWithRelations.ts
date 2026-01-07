@@ -32,10 +32,9 @@ Deno.serve(async (req) => {
       emailThreads
     ] = await Promise.all([
       base44.asServiceRole.entities.Project.get(project_id),
-      base44.asServiceRole.entities.Job.filter({ 
-        project_id, 
-        deleted_at: { $exists: false } 
-      }),
+      base44.asServiceRole.entities.Job.filter({ project_id }).then(jobs => 
+        jobs.filter(j => !j.deleted_at)
+      ),
       base44.asServiceRole.entities.Quote.filter({ project_id }),
       base44.asServiceRole.entities.XeroInvoice.filter({ project_id }),
       base44.asServiceRole.entities.Part.filter({ project_id }),
