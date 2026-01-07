@@ -338,66 +338,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
   }, [projectContacts, tradeRequirements, project.image_urls, project.quote_url, project.invoice_url, project.other_documents, handoverReports]);
 
-  // Lazy load invoices only when invoices tab or overview is active
-  const { data: xeroInvoices = [] } = useQuery({
-    queryKey: ['projectXeroInvoices', project.id],
-    queryFn: async () => {
-      const allInvoices = await base44.entities.XeroInvoice.filter({ project_id: project.id });
-      const uniqueInvoices = allInvoices.reduce((acc, inv) => {
-        if (!acc.find(i => sameId(i.xero_invoice_id, inv.xero_invoice_id))) {
-          acc.push(inv);
-        }
-        return acc;
-      }, []);
-      return uniqueInvoices;
-    },
-    enabled: !!project.id && (activeTab === 'invoices' || activeTab === 'overview'),
-    ...QUERY_CONFIG.projectDetailLazy,
-    onError: (error) => {
-      if (error?.response?.status === 429) {
-        toast.error('Rate limit hit – slowing down');
-      }
-    }
-  });
 
-  // Lazy load quotes only when quoting tab or overview is active
-  const { data: quotes = [] } = useQuery({
-    queryKey: ['projectQuotes', project.id],
-    queryFn: () => base44.entities.Quote.filter({ project_id: project.id }),
-    enabled: !!project.id && (activeTab === 'quoting' || activeTab === 'overview'),
-    ...QUERY_CONFIG.projectDetailLazy,
-    onError: (error) => {
-      if (error?.response?.status === 429) {
-        toast.error('Rate limit hit – slowing down');
-      }
-    }
-  });
-
-  // Lazy load purchase orders only when parts tab is active
-  const { data: purchaseOrders = [] } = useQuery({
-    queryKey: ['projectPurchaseOrders', project.id],
-    queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: project.id }),
-    enabled: !!project.id && activeTab === 'parts',
-    ...QUERY_CONFIG.projectDetailLazy,
-    onError: (error) => {
-      if (error?.response?.status === 429) {
-        toast.error('Rate limit hit – slowing down');
-      }
-    }
-  });
-
-  // Lazy load project emails only when activity tab is active
-  const { data: projectEmails = [] } = useQuery({
-    queryKey: ['projectEmails', project.id],
-    queryFn: () => base44.entities.ProjectEmail.filter({ project_id: project.id }),
-    enabled: !!project.id && activeTab === 'activity',
-    ...QUERY_CONFIG.projectDetailLazy,
-    onError: (error) => {
-      if (error?.response?.status === 429) {
-        toast.error('Rate limit hit – slowing down');
-      }
-    }
-  });
 
   React.useEffect(() => {
     let viewerRecordId = null;
