@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
     }
 
     // Get all jobs that have a project_id (regardless of status)
-    const allJobs = await base44.entities.Job.filter({
+    const allJobs = await base44.asServiceRole.entities.Job.filter({
       project_id: { $exists: true, $ne: null, $ne: '' }
     });
     
@@ -26,14 +26,14 @@ Deno.serve(async (req) => {
     for (const job of completedJobs) {
       try {
         // Get job summaries
-        const jobSummaries = await base44.entities.JobSummary.filter(
+        const jobSummaries = await base44.asServiceRole.entities.JobSummary.filter(
           { job_id: job.id }, 
           '-check_out_time'
         );
         const latestSummary = jobSummaries[0];
 
         // Fetch current project
-        const project = await base44.entities.Project.get(job.project_id);
+        const project = await base44.asServiceRole.entities.Project.get(job.project_id);
         if (!project) continue;
 
         // Merge images
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        await base44.entities.Project.update(job.project_id, projectUpdate);
+        await base44.asServiceRole.entities.Project.update(job.project_id, projectUpdate);
         results.synced++;
       } catch (err) {
         results.errors.push({ job_id: job.id, error: err.message });
