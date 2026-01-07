@@ -111,10 +111,21 @@ export default function Inbox() {
     refetchInterval: 60000 // Auto-refresh every 60 seconds
   });
 
-  // Fetch email drafts
+  // Fetch email drafts - show drafts from all users sharing the same email address
   const { data: drafts = [] } = useQuery({
-    queryKey: ['emailDrafts'],
-    queryFn: () => base44.entities.EmailDraft.filter({ created_by: user?.email }, '-updated_date'),
+    queryKey: ['emailDrafts', user?.email],
+    queryFn: async () => {
+      const userEmail = user?.email;
+      if (!userEmail) return [];
+      
+      // Get all users with the same email address
+      const usersWithSameEmail = await base44.entities.User.filter({ email: userEmail });
+      const userEmails = usersWithSameEmail.map(u => u.email);
+      
+      // Fetch drafts created by any user with this email
+      const allDrafts = await base44.entities.EmailDraft.list('-updated_date');
+      return allDrafts.filter(draft => userEmails.includes(draft.created_by));
+    },
     enabled: !!user?.email && !!userPermissions?.can_view
   });
   
