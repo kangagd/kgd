@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PackagePlus, Pencil, Trash2, ChevronDown, AlertCircle, Package } from "lucide-react";
+import { PackagePlus, Pencil, Trash2, ChevronDown, AlertCircle, Package, ArrowRightLeft } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import StockByLocationView from "@/components/inventory/StockByLocationView";
 
-export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, inventorySummary, canViewCosts }) {
+export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, onMoveStock, inventorySummary, stockByLocation, locations, canViewCosts }) {
   const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
   const isOutOfStock = item.stock_level === 0;
 
@@ -148,17 +149,17 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
             </div>
 
             {/* Expandable Details */}
-            {(item.description || item.notes) && (
+            {(item.description || item.notes || stockByLocation?.length > 0) && (
               <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#111827] transition-colors group w-full pt-2 border-t border-[#E5E7EB]">
-                <span>Details</span>
+                <span>Details & Stock Locations</span>
                 <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
               </CollapsibleTrigger>
             )}
           </div>
 
-          {(item.description || item.notes) && (
+          {(item.description || item.notes || stockByLocation?.length > 0) && (
             <CollapsibleContent className="pt-3">
-              <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-2">
+              <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-3">
                 {item.description && (
                   <div>
                     <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-1">Description</div>
@@ -169,6 +170,15 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                   <div>
                     <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-1">Notes</div>
                     <p className="text-[14px] text-[#4B5563] leading-[1.4] italic">{item.notes}</p>
+                  </div>
+                )}
+                {stockByLocation?.length > 0 && (
+                  <div className="pt-2 border-t border-[#E5E7EB]">
+                    <StockByLocationView 
+                      quantities={stockByLocation} 
+                      locations={locations}
+                      onMoveStock={onMoveStock ? () => onMoveStock(item) : null}
+                    />
                   </div>
                 )}
                 {!item.in_inventory && (
