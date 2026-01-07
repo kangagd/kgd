@@ -33,7 +33,8 @@ Deno.serve(async (req) => {
     console.log(`[sendMessage] User ${user.email} sending ${type} message to ${entityId}`);
 
     // 1. Get all users for mention parsing using service role
-    const allUsers = await base44.asServiceRole.entities.User.filter({});
+    // NOTE: Use list() instead of filter({}) to avoid RLS issues
+    const allUsers = await base44.asServiceRole.entities.User.list();
     
     // 2. Parse mentions
     const mentionedUsers = [];
