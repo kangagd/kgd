@@ -1,7 +1,7 @@
 import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
-import { Mail, Link as LinkIcon, Trash2, Sparkles, AlertTriangle } from "lucide-react";
+import { Mail, Link as LinkIcon, Trash2, Sparkles, AlertTriangle, UserCheck } from "lucide-react";
 import { EmailStatusBadge, EmailPriorityBadge } from "../common/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -127,6 +127,18 @@ export default function EmailThreadList({
               
               {thread.priority !== 'Normal' && (
                 <EmailPriorityBadge value={thread.priority} />
+              )}
+
+              {/* Assigned Badge */}
+              {thread.assigned_to && (
+                <Badge 
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 h-5 bg-[#FAE008]/20 text-[#111827] border-[#FAE008]"
+                  title={`Assigned to ${thread.assigned_to_name}`}
+                >
+                  <UserCheck className="w-2.5 h-2.5 mr-0.5" />
+                  {thread.assigned_to_name?.split(' ')[0]}
+                </Badge>
               )}
 
               {/* AI Priority indicator */}
