@@ -4,13 +4,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageSquare, Trash2, User } from "lucide-react";
+import { MessageSquare, Trash2, User, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function InternalNotesPanel({ threadId }) {
   const [newNote, setNewNote] = useState("");
   const [user, setUser] = useState(null);
+  const [isOpen, setIsOpen] = useState(() => {
+    const stored = localStorage.getItem(`internalNotes-${threadId}-open`);
+    return stored !== null ? stored === 'true' : true;
+  });
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -77,12 +82,22 @@ export default function InternalNotesPanel({ threadId }) {
     new Date(b.created_date) - new Date(a.created_date)
   );
 
+  React.useEffect(() => {
+    localStorage.setItem(`internalNotes-${threadId}-open`, isOpen);
+  }, [isOpen, threadId]);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-[#6B7280]">
-        <MessageSquare className="w-4 h-4" />
-        Internal Notes ({notes.length})
-      </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger className="w-full">
+        <div className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg hover:bg-[#F3F4F6] transition-colors">
+          <div className="flex items-center gap-2 text-sm font-medium text-[#6B7280]">
+            <MessageSquare className="w-4 h-4" />
+            Internal Notes ({notes.length})
+          </div>
+          <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-4 mt-2">
 
       {/* Add Note Form */}
       <form onSubmit={handleAddNote} className="space-y-2">
@@ -140,6 +155,7 @@ export default function InternalNotesPanel({ threadId }) {
           ))}
         </div>
       )}
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
