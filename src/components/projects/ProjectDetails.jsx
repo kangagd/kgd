@@ -1590,6 +1590,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
                 {project.title}
               </h2>
+              {project.project_number && (
+                <Badge variant="outline" className="text-[13px] font-semibold px-2.5 py-1">
+                  #{project.project_number}
+                </Badge>
+              )}
               <DuplicateBadge record={project} />
             </div>
             {project.contract_id && (
