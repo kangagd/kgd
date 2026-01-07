@@ -87,38 +87,57 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
 
   return (
     <Card className="border border-slate-200 shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between gap-3 py-3 px-4 border-b border-slate-100 bg-gradient-to-r from-purple-50/50 to-blue-50/50">
+      <CardHeader 
+        className="flex flex-row items-center justify-between gap-3 py-3 px-4 border-b border-slate-100 bg-gradient-to-r from-purple-50/50 to-blue-50/50 cursor-pointer hover:bg-purple-50/70 transition-colors"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
         <div className="flex-1">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <Sparkles className="w-4 h-4 text-purple-600" />
             AI Insights
+            {shouldAutoCollapse && (
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 ml-1">
+                Auto-collapsed
+              </Badge>
+            )}
           </CardTitle>
           <p className="text-xs text-slate-500 mt-0.5">
             Summarize, categorize, and get suggestions for this email
           </p>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          className="text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white"
-          disabled={!threadId || isFetching}
-          onClick={handleRerun}
-        >
-          {isFetching ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Running…
-            </>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            className="text-xs rounded-lg bg-purple-600 hover:bg-purple-700 text-white"
+            disabled={!threadId || isFetching}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRerun();
+            }}
+          >
+            {isFetching ? (
+              <>
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                Running…
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3 h-3 mr-1" />
+                Run AI
+              </>
+            )}
+          </Button>
+          {isCollapsed ? (
+            <ChevronDown className="w-4 h-4 text-slate-400" />
           ) : (
-            <>
-              <Sparkles className="w-3 h-3 mr-1" />
-              Run AI
-            </>
+            <ChevronUp className="w-4 h-4 text-slate-400" />
           )}
-        </Button>
+        </div>
       </CardHeader>
 
-      <CardContent className="p-4 space-y-4">
+      {!isCollapsed && (
+        <CardContent className="p-4 space-y-4">
         {!threadId && (
           <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
             <AlertCircle className="w-4 h-4 text-slate-400" />
