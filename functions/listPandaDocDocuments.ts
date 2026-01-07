@@ -46,11 +46,9 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
 
-    // Get existing linked document IDs for this specific project
+    // Get ALL existing linked document IDs (to show if doc is linked anywhere)
     const existingQuotes = await base44.entities.Quote.list();
-    const linkedDocIds = projectId 
-      ? new Set(existingQuotes.filter(q => q.project_id === projectId).map(q => q.pandadoc_document_id).filter(Boolean))
-      : new Set(existingQuotes.map(q => q.pandadoc_document_id).filter(Boolean));
+    const linkedDocIds = new Set(existingQuotes.map(q => q.pandadoc_document_id).filter(Boolean));
 
     // Return simplified document list with linked status
     const documents = (data.results || []).map(doc => ({
