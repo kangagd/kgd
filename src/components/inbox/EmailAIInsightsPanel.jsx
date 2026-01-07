@@ -286,7 +286,8 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
             </Button>
           </div>
         )}
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 }
