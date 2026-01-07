@@ -185,12 +185,45 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const canCreateJobs = isAdminOrManager;
   const canViewFinancials = isAdminOrManager;
 
-  const { data: project = initialProject } = useQuery({
-    queryKey: ['project', initialProject.id],
-    queryFn: () => base44.entities.Project.get(initialProject.id),
-    initialData: initialProject,
-    ...QUERY_CONFIG.critical
+  // Single batch query to fetch project + all relations in ONE call
+  const { data: projectData, isLoading: isProjectLoading } = useQuery({
+    queryKey: ['projectWithRelations', initialProject.id],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getProjectWithRelations', { 
+        project_id: initialProject.id 
+      });
+      return response.data;
+    },
+    initialData: {
+      project: initialProject,
+      jobs: [],
+      quotes: [],
+      xeroInvoices: [],
+      parts: [],
+      purchaseOrders: [],
+      projectContacts: [],
+      tradeRequirements: [],
+      projectTasks: [],
+      projectMessages: [],
+      projectEmails: [],
+      emailThreads: []
+    },
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
+
+  const project = projectData?.project || initialProject;
+  const jobs = projectData?.jobs || [];
+  const quotes = projectData?.quotes || [];
+  const xeroInvoices = projectData?.xeroInvoices || [];
+  const parts = projectData?.parts || [];
+  const purchaseOrders = projectData?.purchaseOrders || [];
+  const projectContacts = projectData?.projectContacts || [];
+  const tradeRequirements = projectData?.tradeRequirements || [];
+  const projectTasks = projectData?.projectTasks || [];
+  const chatMessages = projectData?.projectMessages || [];
+  const projectEmails = projectData?.projectEmails || [];
 
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
@@ -199,27 +232,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     setDescription(project.description || "");
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
-
-
-
-  // Always fetch jobs for consistency across all tabs
-  const { data: jobs = [] } = useQuery({
-    queryKey: ['projectJobs', project.id],
-    queryFn: () => base44.entities.Job.filter({ 
-      project_id: project.id,
-      deleted_at: { $exists: false }
-    }),
-    enabled: !!project.id,
-    ...QUERY_CONFIG.projectDetailLazy
-  });
-
-  // Lazy load parts only when parts tab is active
-  const { data: parts = [] } = useQuery({
-    queryKey: ['projectParts', project.id],
-    queryFn: () => base44.entities.Part.filter({ project_id: project.id }),
-    enabled: !!project.id && activeTab === 'parts',
-    ...QUERY_CONFIG.projectDetailLazy
-  });
 
   // Only fetch inventory data when parts tab is active
   const { data: priceListItems = [] } = useQuery({
