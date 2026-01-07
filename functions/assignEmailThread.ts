@@ -26,12 +26,12 @@ Deno.serve(async (req) => {
     // Update thread assignment
     await base44.asServiceRole.entities.EmailThread.update(thread_id, {
       assigned_to: assigned_to_email,
-      assigned_to_name: assignedUserData.full_name || assignedUserData.display_name,
+      assigned_to_name: assignedUserData.display_name || assignedUserData.full_name,
       assigned_by: user.email,
-      assigned_by_name: user.full_name || user.display_name,
+      assigned_by_name: user.display_name || user.full_name,
       assigned_at: new Date().toISOString(),
       last_worked_by: user.email,
-      last_worked_by_name: user.full_name || user.display_name,
+      last_worked_by_name: user.display_name || user.full_name,
       last_worked_at: new Date().toISOString(),
       status: 'In Progress'
     });
@@ -45,14 +45,14 @@ Deno.serve(async (req) => {
         user_email: assigned_to_email,
         type: 'email_assigned',
         title: 'Email Thread Assigned',
-        message: `${user.full_name || user.display_name} assigned you an email thread: "${thread.subject}"`,
+        message: `${user.display_name || user.full_name} assigned you an email thread: "${thread.subject}"`,
         link: `/Inbox?threadId=${thread_id}`,
         is_read: false,
         priority: 'normal',
         data: {
           thread_id: thread_id,
           assigned_by: user.email,
-          assigned_by_name: user.full_name || user.display_name
+          assigned_by_name: user.display_name || user.full_name
         }
       });
     }
@@ -63,14 +63,14 @@ Deno.serve(async (req) => {
         thread_id: thread_id,
         note: note.trim(),
         created_by: user.email,
-        created_by_name: user.full_name || user.display_name
+        created_by_name: user.display_name || user.full_name
       });
     }
     
     return Response.json({ 
       success: true,
       assigned_to: assigned_to_email,
-      assigned_to_name: assignedUserData.full_name || assignedUserData.display_name
+      assigned_to_name: assignedUserData.display_name || assignedUserData.full_name
     });
   } catch (error) {
     console.error('Error assigning thread:', error);
