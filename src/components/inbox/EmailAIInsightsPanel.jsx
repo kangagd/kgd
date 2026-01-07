@@ -138,14 +138,14 @@ export default function EmailAIInsightsPanel({ thread, onThreadUpdated, onCreate
 
       {!isCollapsed && (
         <CardContent className="p-4 space-y-4">
-          {!threadId && (
-          <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
-            <AlertCircle className="w-4 h-4 text-slate-400" />
-            <span>Select an email to see AI insights.</span>
-          </div>
-        )}
+            {!threadId && (
+            <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+              <AlertCircle className="w-4 h-4 text-slate-400" />
+              <span>Select an email to see AI insights.</span>
+            </div>
+          )}
 
-        {threadId && (isLoading || isFetching) && !hasInsights && (
+          {threadId && (isLoading || isFetching) && !hasInsights && (
           <div className="flex items-center justify-center gap-2 text-xs text-slate-500 py-8">
             <Loader2 className="w-4 h-4 animate-spin text-purple-600" />
             <span>Analyzing email with AI...</span>
