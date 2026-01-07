@@ -23,10 +23,10 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { projectId, jobId, templateId, quoteName, validDays = 30, lineItems = [], notes } = body;
+    const { project_id, job_id, templateId, quoteName, validDays = 30, lineItems = [], notes } = body;
 
-    if (!projectId && !jobId) {
-      return Response.json({ error: 'Either projectId or jobId is required' }, { status: 400 });
+    if (!project_id && !job_id) {
+      return Response.json({ error: 'Either project_id or job_id is required' }, { status: 400 });
     }
 
     if (!templateId) {
@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
     let customer = null;
     let address = '';
 
-    if (projectId) {
-      const projects = await base44.entities.Project.filter({ id: projectId });
+    if (project_id) {
+      const projects = await base44.entities.Project.filter({ id: project_id });
       project = projects[0];
       if (!project) {
         return Response.json({ error: 'Project not found' }, { status: 404 });
@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
       address = project.address_full || '';
     }
 
-    if (jobId) {
-      const jobs = await base44.entities.Job.filter({ id: jobId });
+    if (job_id) {
+      const jobs = await base44.entities.Job.filter({ id: job_id });
       job = jobs[0];
       if (!job) {
         return Response.json({ error: 'Job not found' }, { status: 404 });
@@ -141,8 +141,8 @@ Deno.serve(async (req) => {
       recipients: [recipient],
       tokens: tokens,
       metadata: {
-        project_id: projectId || '',
-        job_id: jobId || '',
+        project_id: project_id || '',
+        job_id: job_id || '',
         customer_id: customerId
       }
     };
@@ -194,8 +194,8 @@ Deno.serve(async (req) => {
 
     // Create Quote record in our database
     const quote = await base44.entities.Quote.create({
-      project_id: projectId || null,
-      job_id: jobId || null,
+      project_id: project_id || null,
+      job_id: job_id || null,
       customer_id: customerId,
       name: finalQuoteName,
       value: totalValue,
@@ -215,8 +215,8 @@ Deno.serve(async (req) => {
     });
 
     // Update project activity if quote is linked to a project
-    if (projectId) {
-      await updateProjectActivity(base44, projectId, 'Quote Created');
+    if (project_id) {
+      await updateProjectActivity(base44, project_id, 'Quote Created');
     }
 
     return Response.json({

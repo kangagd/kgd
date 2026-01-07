@@ -84,8 +84,8 @@ export default function CreateQuoteModal({
     setIsCreating(true);
     try {
       const response = await base44.functions.invoke('createPandaDocQuote', {
-        projectId: project?.id || null,
-        jobId: job?.id || null,
+        project_id: project?.id || null,
+        job_id: job?.id || null,
         templateId: selectedTemplate,
         quoteName: quoteName || undefined,
         validDays,

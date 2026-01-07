@@ -21,21 +21,21 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { pandadocDocumentId, projectId, jobId, customerId } = body;
+    const { pandadocDocumentId, project_id, job_id, customerId } = body;
 
     if (!pandadocDocumentId) {
       return Response.json({ error: 'pandadocDocumentId is required' }, { status: 400 });
     }
 
-    if (!projectId && !jobId) {
-      return Response.json({ error: 'Either projectId or jobId is required' }, { status: 400 });
+    if (!project_id && !job_id) {
+      return Response.json({ error: 'Either project_id or job_id is required' }, { status: 400 });
     }
 
     // GUARDRAIL: Check if already linked to THIS project - prevent duplicate links
-    if (projectId) {
+    if (project_id) {
       const existingQuotes = await base44.asServiceRole.entities.Quote.filter({
         pandadoc_document_id: pandadocDocumentId,
-        project_id: projectId
+        project_id: project_id
       });
 
       if (existingQuotes.length > 0) {
@@ -103,8 +103,8 @@ Deno.serve(async (req) => {
     let customerEmail = '';
     let customerPhone = '';
 
-    if (projectId) {
-      const projects = await base44.entities.Project.filter({ id: projectId });
+    if (project_id) {
+      const projects = await base44.entities.Project.filter({ id: project_id });
       if (projects[0]) {
         finalCustomerId = finalCustomerId || projects[0].customer_id;
         customerName = projects[0].customer_name || '';
@@ -113,8 +113,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (jobId) {
-      const jobs = await base44.entities.Job.filter({ id: jobId });
+    if (job_id) {
+      const jobs = await base44.entities.Job.filter({ id: job_id });
       if (jobs[0]) {
         finalCustomerId = finalCustomerId || jobs[0].customer_id;
         customerName = customerName || jobs[0].customer_name || '';
@@ -138,8 +138,8 @@ Deno.serve(async (req) => {
 
     // Create Quote record
     const quote = await base44.asServiceRole.entities.Quote.create({
-      project_id: projectId || null,
-      job_id: jobId || null,
+      project_id: project_id || null,
+      job_id: job_id || null,
       customer_id: finalCustomerId,
       name: pandadocDoc.name,
       value: value,
@@ -158,9 +158,9 @@ Deno.serve(async (req) => {
     });
 
     // Auto-populate project fields from quote if this is linked to a project
-    if (projectId) {
+    if (project_id) {
       try {
-        const project = await base44.asServiceRole.entities.Project.get(projectId);
+        const project = await base44.asServiceRole.entities.Project.get(project_id);
         const updates = {};
 
         // GUARDRAIL: Set as primary quote ONLY if no primary quote exists
@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
 
         // Update project if we have any changes
         if (Object.keys(updates).length > 0) {
-          await base44.asServiceRole.entities.Project.update(projectId, updates);
+          await base44.asServiceRole.entities.Project.update(project_id, updates);
         }
       } catch (error) {
         console.error('Failed to auto-populate project fields:', error);

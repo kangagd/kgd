@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
@@ -71,7 +72,7 @@ export default function FinancialsTab({ project, onUpdate }) {
   const handleLinkLegacyDocs = async () => {
     setLinkingLegacy(true);
     try {
-      const response = await base44.functions.invoke("linkLegacyFinanceForProject", { projectId: project.id });
+      const response = await base44.functions.invoke("linkLegacyFinanceForProject", { project_id: project.id });
       if (response.data?.success) {
         const updates = response.data.updates || {};
         if (Object.keys(updates).length > 0) {
@@ -1014,7 +1015,7 @@ export default function FinancialsTab({ project, onUpdate }) {
                 <div key={invoice.id} className="bg-white border border-[#E5E7EB] rounded-lg p-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <div className="font-medium text-[#111827]">Invoice #{invoice.xero_invoice_number}</div>
+                      <div className="font-medium text-[#111827]">{invoice.xero_invoice_number ? `Invoice #${invoice.xero_invoice_number}` : 'Invoice'}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <Badge variant="outline" className="text-[11px]">{invoice.status}</Badge>
                         {invoice.id === project.primary_xero_invoice_id && (

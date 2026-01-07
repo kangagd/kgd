@@ -258,10 +258,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { projectId } = await req.json();
+    const { project_id } = await req.json();
 
-    if (!projectId) {
-      return Response.json({ error: 'projectId is required' }, { status: 400 });
+    if (!project_id) {
+      return Response.json({ error: 'project_id is required' }, { status: 400 });
     }
 
     // Get Gmail user credentials
@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
 
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
 
-    const project = await base44.asServiceRole.entities.Project.get(projectId);
+    const project = await base44.asServiceRole.entities.Project.get(project_id);
     
     if (!project) {
       return Response.json({ error: 'Project not found' }, { status: 404 });
