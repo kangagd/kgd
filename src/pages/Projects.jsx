@@ -84,6 +84,7 @@ export default function Projects() {
     queryKey: ['projects'],
     queryFn: async () => {
       const response = await base44.functions.invoke('getMyProjects');
+      console.log(`[Projects Page] Received ${response.data?.projects?.length || 0} projects from backend`);
       return response.data?.projects || [];
     },
     ...QUERY_CONFIG.realtime,
@@ -95,6 +96,7 @@ export default function Projects() {
   });
 
   const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
+  console.log(`[Projects Page] Displaying ${projects.length} projects after filtering out deleted/lost`);
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: ['allJobs'],
