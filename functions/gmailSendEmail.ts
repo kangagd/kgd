@@ -183,23 +183,53 @@ Deno.serve(async (req) => {
     let emailThreadId = base44_thread_id;
     
     if (!emailThreadId) {
-      // Create new thread for this sent email
-      const newThread = await base44.asServiceRole.entities.EmailThread.create({
-        subject: subject,
-        gmail_thread_id: result.threadId,
-        from_address: user.gmail_email || user.email,
-        to_addresses: to.split(',').map(e => e.trim()),
-        last_message_date: new Date().toISOString(),
-        last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
-        status: 'Closed',
-        priority: 'Normal',
-        is_read: true,
-        message_count: 1,
-        project_id: projectId || null,
-        linked_job_id: jobId || null
+      // Try to find existing thread by subject + participants (same logic as gmailSync)
+      const normalizedSubject = subject.replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
+      const toAddrs = to.split(',').map(e => e.trim().toLowerCase());
+      const ccAddrs = cc ? cc.split(',').map(e => e.trim().toLowerCase()) : [];
+      const fromAddr = (user.gmail_email || user.email).toLowerCase();
+      
+      const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+      const matchingThreads = allThreads.filter(t => {
+        const threadSubject = (t.subject || '').replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
+        if (threadSubject !== normalizedSubject) return false;
+        
+        // Check if participants match
+        const threadFromAddr = (t.from_address || '').toLowerCase();
+        const threadToAddrs = (t.to_addresses || []).map(a => a.toLowerCase());
+        
+        const allCurrent = [fromAddr, ...toAddrs, ...ccAddrs];
+        const allThread = [threadFromAddr, ...threadToAddrs];
+        
+        // Check if there's overlap in participants
+        return allCurrent.some(addr => allThread.includes(addr));
       });
-      emailThreadId = newThread.id;
-    } else {
+      
+      if (matchingThreads.length > 0) {
+        // Use most recently updated thread
+        matchingThreads.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+        emailThreadId = matchingThreads[0].id;
+      } else {
+        // Create new thread for this sent email
+        const newThread = await base44.asServiceRole.entities.EmailThread.create({
+          subject: subject,
+          gmail_thread_id: result.threadId,
+          from_address: user.gmail_email || user.email,
+          to_addresses: to.split(',').map(e => e.trim()),
+          last_message_date: new Date().toISOString(),
+          last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
+          status: 'Closed',
+          priority: 'Normal',
+          is_read: true,
+          message_count: 1,
+          project_id: projectId || null,
+          linked_job_id: jobId || null
+        });
+        emailThreadId = newThread.id;
+      }
+    }
+    
+    if (emailThreadId) {
       // C) Update existing thread with reply activity
       // CRITICAL: Refetch thread to get latest project_id to avoid race conditions
       const existingThread = await base44.asServiceRole.entities.EmailThread.get(emailThreadId);
