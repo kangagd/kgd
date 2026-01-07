@@ -32,8 +32,20 @@ export default function CheckIn() {
     loadUser();
   }, []);
 
+  const { data: checkIns = [] } = useQuery({
+    queryKey: ['myCheckIns', user?.email],
+    queryFn: () => base44.entities.CheckInOut.filter({ 
+      technician_email: user?.email 
+    }, '-created_date'),
+    enabled: !!user?.email,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    retry: 1,
+  });
+
   const { data: jobs = [] } = useQuery({
-    queryKey: ['myJobs', user?.email],
+    queryKey: ['myJobs', user?.email, checkIns],
     queryFn: async () => {
       if (!user?.email) return [];
       // Use backend function for consistency with other pages
@@ -61,18 +73,6 @@ export default function CheckIn() {
     },
     enabled: !!user?.email,
     staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
-  });
-
-  const { data: checkIns = [] } = useQuery({
-    queryKey: ['myCheckIns', user?.email],
-    queryFn: () => base44.entities.CheckInOut.filter({ 
-      technician_email: user?.email 
-    }, '-created_date'),
-    enabled: !!user?.email,
-    staleTime: 60000, // 1 minute
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
