@@ -10,12 +10,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { projectId } = await req.json();
-    if (!projectId) {
-      return Response.json({ error: "projectId is required" }, { status: 400 });
+    const { project_id } = await req.json();
+    if (!project_id) {
+      return Response.json({ error: "project_id is required" }, { status: 400 });
     }
 
-    const project = await base44.entities.Project.get(projectId);
+    const project = await base44.entities.Project.get(project_id);
     if (!project) {
       return Response.json({ error: "Project not found" }, { status: 404 });
     }
@@ -37,14 +37,14 @@ Deno.serve(async (req) => {
     }
 
     // Fetch related jobs
-    const jobs = await base44.entities.Job.filter({ project_id: projectId });
+    const jobs = await base44.entities.Job.filter({ project_id: project_id });
     const completedJobs = jobs.filter(j => j.status === "Completed");
 
     // Fetch parts
-    const parts = await base44.entities.Part.filter({ project_id: projectId });
+    const parts = await base44.entities.Part.filter({ project_id: project_id });
 
     // Fetch photos
-    const photos = await base44.entities.Photo.filter({ project_id: projectId });
+    const photos = await base44.entities.Photo.filter({ project_id: project_id });
 
     const prompt = `
 You are preparing a FINAL client handover report for a completed project.
@@ -189,14 +189,14 @@ Keep all values as BULLET POINT ARRAYS.
     
     // Upload to storage
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const file = new File([blob], `handover-${project.project_number || projectId}.pdf`, { 
+    const file = new File([blob], `handover-${project.project_number || project_id}.pdf`, { 
       type: 'application/pdf' 
     });
     
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
     // Update project with handover metadata
-    await base44.asServiceRole.entities.Project.update(projectId, {
+    await base44.asServiceRole.entities.Project.update(project_id, {
       handover_pdf_url: file_url,
       handover_generated_at: new Date().toISOString(),
       handover_generated_by: user.email,

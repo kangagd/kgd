@@ -69,11 +69,11 @@ Deno.serve(async (req) => {
 
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { projectId } = await req.json();
-    if (!projectId) return Response.json({ error: 'projectId required' }, { status: 400 });
+    const { project_id } = await req.json();
+    if (!project_id) return Response.json({ error: 'project_id required' }, { status: 400 });
 
     // Load project
-    const project = await base44.entities.Project.get(projectId);
+    const project = await base44.entities.Project.get(project_id);
     if (!project) return Response.json({ error: 'Project not found' }, { status: 404 });
 
     const updates = {};
