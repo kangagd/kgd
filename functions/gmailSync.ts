@@ -278,8 +278,48 @@ Deno.serve(async (req) => {
           gmail_thread_id: gmailThreadId
         });
         
-        // If no exact Gmail thread ID match, try to find related threads by subject + email participants
-        // This handles cases where Gmail creates new thread IDs for replies
+        // If no match, try In-Reply-To header (explicit reply reference)
+        if (existingThreads.length === 0 && inReplyTo) {
+          const replyToMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+            message_id: inReplyTo
+          });
+          if (replyToMessages.length > 0 && replyToMessages[0].thread_id) {
+            const parentThread = await base44.asServiceRole.entities.EmailThread.filter({
+              id: replyToMessages[0].thread_id
+            });
+            if (parentThread.length > 0) {
+              existingThreads = parentThread;
+              console.log(`Matched thread via In-Reply-To header: ${inReplyTo}`);
+            }
+          }
+        }
+        
+        // If still no match, try References header (chain of message IDs)
+        if (existingThreads.length === 0) {
+          const references = headers.find(h => h.name === 'References')?.value;
+          if (references) {
+            const referenceIds = references.split(/\s+/).filter(Boolean);
+            // Check most recent reference first (reverse order)
+            for (const refId of referenceIds.reverse()) {
+              const refMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+                message_id: refId
+              });
+              if (refMessages.length > 0 && refMessages[0].thread_id) {
+                const refThread = await base44.asServiceRole.entities.EmailThread.filter({
+                  id: refMessages[0].thread_id
+                });
+                if (refThread.length > 0) {
+                  existingThreads = refThread;
+                  console.log(`Matched thread via References header: ${refId}`);
+                  break;
+                }
+              }
+            }
+          }
+        }
+        
+        // If no exact match via headers, try to find related threads by subject + email participants
+        // This handles edge cases where threading headers are missing
         if (existingThreads.length === 0) {
           const normalizedSubject = subject.replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
           const allThreads = await base44.asServiceRole.entities.EmailThread.list();
