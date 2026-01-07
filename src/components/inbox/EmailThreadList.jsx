@@ -137,7 +137,7 @@ export default function EmailThreadList({
                   title={`Assigned to ${thread.assigned_to_name}`}
                 >
                   <UserCheck className="w-2.5 h-2.5 mr-0.5" />
-                  {thread.assigned_to_name?.split(' ')[0]}
+                  {thread.assigned_to_name}
                 </Badge>
               )}
 
