@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Either projectId or jobId is required' }, { status: 400 });
     }
 
-    // Check if already linked to THIS project
+    // GUARDRAIL: Check if already linked to THIS project - prevent duplicate links
     if (projectId) {
       const existingQuotes = await base44.asServiceRole.entities.Quote.filter({
         pandadoc_document_id: pandadocDocumentId,
@@ -163,12 +163,12 @@ Deno.serve(async (req) => {
         const project = await base44.asServiceRole.entities.Project.get(projectId);
         const updates = {};
 
-        // Set as primary quote if no primary quote exists
+        // GUARDRAIL: Set as primary quote ONLY if no primary quote exists
         if (!project.primary_quote_id) {
           updates.primary_quote_id = quote.id;
         }
 
-        // Set total_project_value if empty/zero and quote has value
+        // GUARDRAIL: Set total_project_value ONLY if empty/zero - never override existing values
         if (value > 0 && (!project.total_project_value || project.total_project_value === 0)) {
           updates.total_project_value = value;
         }

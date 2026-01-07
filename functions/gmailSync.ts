@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
             updateData.last_message_date = messageDate;
           }
           
-          // Auto-link: If thread is NOT yet linked, try to link it now
+          // GUARDRAIL: Auto-link ONLY if thread is NOT yet linked - never override existing links
           if (!existingThreads[0].project_id) {
             try {
               const fromEmail = parseEmailAddress(from).toLowerCase();
@@ -374,7 +374,7 @@ Deno.serve(async (req) => {
           });
           threadId = newThread.id;
           
-          // Auto-link to customer and project based on email addresses
+          // GUARDRAIL: Auto-link new threads to customer and project based on email addresses
           try {
             const fromEmail = parseEmailAddress(from).toLowerCase();
             const allEmails = [fromEmail, ...to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase())];

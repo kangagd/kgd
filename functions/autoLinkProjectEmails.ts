@@ -210,9 +210,9 @@ async function processProject(base44, project, gmailUser, accessToken) {
 
   for (const thread of foundThreads) {
     try {
-      // Skip if already linked to any project
+      // GUARDRAIL: Skip if already linked to ANY project - never override existing links
       if (thread.project_id) {
-        console.log(`Thread ${thread.id} already linked to another project, skipping`);
+        console.log(`Thread ${thread.id} already linked to project ${thread.project_id}, skipping`);
         skippedCount++;
         continue;
       }

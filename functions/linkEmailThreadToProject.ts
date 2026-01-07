@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.EmailThread.update(email_thread_id, threadUpdates);
 
-    // Optionally set as primary thread on project
+    // GUARDRAIL: Optionally set as primary thread on project ONLY if no primary exists
     if (set_as_primary && !project.primary_email_thread_id) {
       await base44.asServiceRole.entities.Project.update(project_id, {
         primary_email_thread_id: email_thread_id

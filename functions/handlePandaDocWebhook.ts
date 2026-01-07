@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Apply updates if any
+      // GUARDRAIL: Apply status/value updates only - never touch project_id or job_id links
       if (Object.keys(updates).length > 0) {
         await base44.asServiceRole.entities.Quote.update(quote.id, updates);
         console.log(`Updated quote ${quote.id}:`, updates);

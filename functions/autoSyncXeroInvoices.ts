@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Handle voided invoices - delete them
+          // GUARDRAIL: Handle voided invoices - only unlink, don't delete project/job records
           if (finalStatus === 'VOIDED') {
             await base44.asServiceRole.entities.XeroInvoice.delete(invoice.id);
             
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
               action: 'deleted'
             });
           } else {
-            // Update invoice record
+            // GUARDRAIL: Update invoice status/amounts only - preserve project_id and job_id links
             await base44.asServiceRole.entities.XeroInvoice.update(invoice.id, {
               status: finalStatus,
               total_amount: xeroInvoice.Total,
@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
               raw_payload: xeroInvoice
             });
 
-            // Update linked job/project
+            // GUARDRAIL: Update payment URLs on linked records without changing the links themselves
             if (invoice.job_id) {
               await base44.asServiceRole.entities.Job.update(invoice.job_id, {
                 xero_payment_url: onlinePaymentUrl

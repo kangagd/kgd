@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
       console.warn('Failed to fetch online invoice URL during sync:', err);
     }
 
-    // If invoice is voided, delete it from the app
+    // GUARDRAIL: If invoice is voided, only unlink - don't delete project/job records
     if (xeroInvoice.Status === 'VOIDED') {
       // Unlink from job if linked
       if (invoiceRecord.job_id) {
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       creditNotesTotal = xeroInvoice.CreditNotes.reduce((sum, cn) => sum + (cn.Total || 0), 0);
     }
 
-    // Update our invoice record with latest data
+    // GUARDRAIL: Update invoice status/amounts only - preserve project_id and job_id links
     const updatedInvoice = await base44.asServiceRole.entities.XeroInvoice.update(invoice_id, {
       status: finalStatus,
       total_amount: xeroInvoice.Total,
@@ -176,14 +176,14 @@ Deno.serve(async (req) => {
       raw_payload: xeroInvoice
     });
 
-    // Update public payment URL on linked job if it exists
+    // GUARDRAIL: Update payment URLs on linked records without changing the links themselves
     if (invoiceRecord.job_id) {
       await base44.asServiceRole.entities.Job.update(invoiceRecord.job_id, {
         xero_payment_url: onlinePaymentUrl // Public customer-facing URL
       });
     }
 
-    // Update public payment URL on linked project if it exists
+    // GUARDRAIL: Update payment URLs on linked records without changing the links themselves
     if (invoiceRecord.project_id) {
       await base44.asServiceRole.entities.Project.update(invoiceRecord.project_id, {
         xero_payment_url: onlinePaymentUrl // Public customer-facing URL
