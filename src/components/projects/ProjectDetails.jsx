@@ -382,13 +382,15 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const updateProjectMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
     onSuccess: (data, variables) => {
-      // Optimistically update the cache with the new value
-      queryClient.setQueryData(['project', project.id], (oldData) => ({
+      // Optimistically update the batch query cache
+      queryClient.setQueryData(['projectWithRelations', project.id], (oldData) => ({
         ...oldData,
-        [variables.field]: variables.value
+        project: {
+          ...oldData.project,
+          [variables.field]: variables.value
+        }
       }));
-      // Only invalidate the specific project and projects list - not all related data
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
   });
@@ -396,13 +398,15 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const updateProjectFieldsMutation = useMutation({
     mutationFn: (fields) => base44.entities.Project.update(project.id, fields),
     onSuccess: (data, fields) => {
-      // Optimistically update the cache with all new values
-      queryClient.setQueryData(['project', project.id], (oldData) => ({
+      // Optimistically update the batch query cache
+      queryClient.setQueryData(['projectWithRelations', project.id], (oldData) => ({
         ...oldData,
-        ...fields
+        project: {
+          ...oldData.project,
+          ...fields
+        }
       }));
-      // Only invalidate the specific project and projects list
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
     }
   });
