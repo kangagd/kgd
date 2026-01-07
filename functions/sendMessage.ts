@@ -3,18 +3,34 @@ import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
   try {
+    // CRITICAL: Validate request method
+    if (req.method !== 'POST') {
+      return Response.json({ error: 'Method not allowed' }, { status: 405 });
+    }
+
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
     
-    if (!user) {
+    // CRITICAL: Authentication check
+    const user = await base44.auth.me();
+    if (!user || !user.email) {
+      console.error('[sendMessage] Authentication failed');
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { type, entityId, message } = await req.json();
 
-    if (!message || !type || !entityId) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    // CRITICAL: Validate required fields
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      return Response.json({ error: 'Valid message is required' }, { status: 400 });
     }
+    if (!type || !['project', 'job'].includes(type)) {
+      return Response.json({ error: 'Valid type (project/job) is required' }, { status: 400 });
+    }
+    if (!entityId || typeof entityId !== 'string') {
+      return Response.json({ error: 'Valid entityId is required' }, { status: 400 });
+    }
+
+    console.log(`[sendMessage] User ${user.email} sending ${type} message to ${entityId}`);
 
     // 1. Get all users for mention parsing using service role
     const allUsers = await base44.asServiceRole.entities.User.filter({});
