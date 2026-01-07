@@ -48,6 +48,16 @@ export default function PriceList() {
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
+  const { data: vehicleStock = [] } = useQuery({
+    queryKey: ["vehicle-stock"],
+    queryFn: () => base44.entities.VehicleStock.list("id"),
+  });
+
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ["vehicles"],
+    queryFn: () => base44.entities.Vehicle.list("name"),
+  });
+
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ["inventory-quantities"],
     queryFn: () => base44.entities.InventoryQuantity.list("id"),
@@ -284,7 +294,23 @@ export default function PriceList() {
         ) : (
           <div className="grid gap-3">
             {filteredItems.map((item) => {
-              const stockByLocation = inventoryQuantities.filter(q => q.price_list_item_id === item.id);
+              // Get stock from VehicleStock (legacy)
+              const vehicleStockForItem = vehicleStock.filter(vs => vs.price_list_item_id === item.id);
+              const vehicleStockDisplay = vehicleStockForItem.map(vs => {
+                const vehicle = vehicles.find(v => v.id === vs.vehicle_id);
+                return {
+                  location_name: vehicle?.name || 'Unknown Vehicle',
+                  quantity: vs.quantity || 0,
+                  location_id: vs.vehicle_id
+                };
+              });
+
+              // Get stock from new InventoryQuantity system
+              const newStockByLocation = inventoryQuantities.filter(q => q.price_list_item_id === item.id);
+
+              // Combine both systems
+              const stockByLocation = [...vehicleStockDisplay, ...newStockByLocation];
+
               return (
                 <PriceListCard
                   key={item.id}
@@ -297,7 +323,7 @@ export default function PriceList() {
                   onMoveStock={handleMoveStock}
                   inventorySummary={inventorySummaryByItem[item.id]}
                   stockByLocation={stockByLocation}
-                  locations={inventoryLocations}
+                  locations={[...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' })), ...inventoryLocations]}
                   canViewCosts={isAdminOrManager}
                 />
               );
