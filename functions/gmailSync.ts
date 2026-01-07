@@ -551,8 +551,8 @@ Deno.serve(async (req) => {
           });
 
           // Update project activity if thread is linked to a project
-          if (currentThread.linked_project_id) {
-            await updateProjectActivity(base44, currentThread.linked_project_id);
+          if (currentThread.project_id) {
+            await updateProjectActivity(base44, currentThread.project_id);
           }
 
           // Update project last contact timestamps
@@ -563,11 +563,11 @@ Deno.serve(async (req) => {
           }
 
           if (processedAttachments.length > 0) {
-            if (currentThread.linked_project_id) {
+            if (currentThread.project_id) {
               base44.functions.invoke('saveThreadAttachments', {
                 thread_id: threadId,
                 target_type: 'project',
-                target_id: currentThread.linked_project_id
+                target_id: currentThread.project_id
               }).catch(err => console.error('Auto-save attachments failed:', err));
             } else if (currentThread.linked_job_id) {
               base44.functions.invoke('saveThreadAttachments', {
