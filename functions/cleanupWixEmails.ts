@@ -11,18 +11,42 @@ Deno.serve(async (req) => {
 
     console.log('Starting Wix email un-threading...');
 
-    // Find all messages from Wix CRM
-    const allMessages = await base44.asServiceRole.entities.EmailMessage.list();
-    const wixMessages = allMessages.filter(msg => 
-      msg.from_address && msg.from_address.includes('no-reply@crm.wix.com')
+    // Process in batches to avoid timeout (502 errors)
+    const BATCH_SIZE = 50;
+    
+    // Filter Wix messages directly from database
+    const wixMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+      from_address: 'no-reply@crm.wix.com'
+    });
+
+    // Check which messages already have unique threads
+    const threads = await base44.asServiceRole.entities.EmailThread.list();
+    const processedIds = new Set(
+      threads
+        .filter(t => t.gmail_thread_id?.startsWith('wix-'))
+        .map(t => t.gmail_thread_id?.replace('wix-', ''))
+        .filter(Boolean)
     );
 
-    console.log(`Found ${wixMessages.length} Wix CRM messages`);
+    const toProcess = wixMessages
+      .filter(msg => !processedIds.has(msg.id))
+      .slice(0, BATCH_SIZE);
+
+    console.log(`Found ${toProcess.length} unprocessed Wix messages (${wixMessages.length - toProcess.length} already processed)`);
+
+    if (toProcess.length === 0) {
+      return Response.json({
+        success: true,
+        unthreadedCount: 0,
+        hasMore: false,
+        message: 'All Wix messages already un-threaded'
+      });
+    }
 
     let unthreadedCount = 0;
 
     // Create a separate thread for each Wix message
-    for (const message of wixMessages) {
+    for (const message of toProcess) {
       try {
         // Create a new thread for this message
         const newThread = await base44.asServiceRole.entities.EmailThread.create({
