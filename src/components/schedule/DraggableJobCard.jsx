@@ -14,7 +14,6 @@ export default function DraggableJobCard({
   isDragging = false,
   techniciansLookup = {},
   hasActiveCheckIn = false,
-  activeCheckIns = [],
   visitLabel = null
 }) {
   return (
@@ -116,35 +115,16 @@ export default function DraggableJobCard({
             {job.assigned_to && job.assigned_to.length > 0 && (
               <div className="flex items-center gap-2 pt-1">
                 <TechnicianAvatarGroup
-                  technicians={(() => {
-                    // If there are active check-ins, only show checked-in technicians
-                    if (hasActiveCheckIn && activeCheckIns.length > 0) {
-                      const checkedInEmails = activeCheckIns.map(ci => ci.technician_email?.toLowerCase());
-                      return job.assigned_to
-                        .filter(email => checkedInEmails.includes(email.toLowerCase()))
-                        .map((email, idx) => {
-                          const normalized = email.toLowerCase();
-                          const tech = techniciansLookup?.[normalized];
-                          return {
-                            email,
-                            display_name: tech?.display_name || tech?.full_name || job.assigned_to_name?.[idx] || email,
-                            full_name: tech?.full_name || job.assigned_to_name?.[idx] || email,
-                            id: email
-                          };
-                        });
-                    }
-                    // Otherwise show all assigned technicians
-                    return job.assigned_to.map((email, idx) => {
-                      const normalized = email.toLowerCase();
-                      const tech = techniciansLookup?.[normalized];
-                      return {
-                        email,
-                        display_name: tech?.display_name || tech?.full_name || job.assigned_to_name?.[idx] || email,
-                        full_name: tech?.full_name || job.assigned_to_name?.[idx] || email,
-                        id: email
-                      };
-                    });
-                  })()}
+                  technicians={job.assigned_to.map((email, idx) => {
+                    const normalized = email.toLowerCase();
+                    const tech = techniciansLookup?.[normalized];
+                    return {
+                      email,
+                      display_name: tech?.display_name || tech?.full_name || job.assigned_to_name?.[idx] || email,
+                      full_name: tech?.full_name || job.assigned_to_name?.[idx] || email,
+                      id: email
+                    };
+                  })}
                   maxDisplay={3}
                   size="xs"
                 />
