@@ -71,12 +71,12 @@ Deno.serve(async (req) => {
 
     // 3. Create Message Entity and Prepare Notification
     if (type === 'project') {
-      const projects = await base44.entities.Project.filter({ id: entityId });
+      const projects = await base44.asServiceRole.entities.Project.filter({ id: entityId });
       const project = projects[0];
       
       if (!project) throw new Error('Project not found');
 
-      newMessage = await base44.entities.ProjectMessage.create({
+      newMessage = await base44.asServiceRole.entities.ProjectMessage.create({
         project_id: entityId,
         sender_email: user.email,
         sender_name: user.display_name || user.full_name,
@@ -92,12 +92,12 @@ Deno.serve(async (req) => {
       relatedEntityType = 'Project';
 
     } else if (type === 'job') {
-      const jobs = await base44.entities.Job.filter({ id: entityId });
+      const jobs = await base44.asServiceRole.entities.Job.filter({ id: entityId });
       const job = jobs[0];
       
       if (!job) throw new Error('Job not found');
 
-      newMessage = await base44.entities.JobMessage.create({
+      newMessage = await base44.asServiceRole.entities.JobMessage.create({
         job_id: entityId,
         sender_email: user.email,
         sender_name: user.display_name || user.full_name,
