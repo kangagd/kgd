@@ -64,7 +64,7 @@ export default function CheckIn() {
     retry: 1,
   });
 
-  const activeCheckIn = checkIns.find(ci => !ci.check_out_time && ci.check_out_time !== "");
+  const activeCheckIn = checkIns.find(ci => !ci.check_out_time);
 
   const checkInMutation = useMutation({
     mutationFn: async (data) => {
@@ -90,18 +90,22 @@ export default function CheckIn() {
     mutationFn: async ({ checkInId, jobId, notes }) => {
       const checkOutTime = new Date().toISOString();
       const checkIn = checkIns.find(ci => ci.id === checkInId);
-      const duration = (new Date(checkOutTime) - new Date(checkIn.check_in_time)) / (1000 * 60 * 60);
+      const durationHours = (new Date(checkOutTime) - new Date(checkIn.check_in_time)) / (1000 * 60 * 60);
+      const durationMinutes = Math.round(durationHours * 60);
       
-      await base44.entities.CheckInOut.update(checkInId, {
-        check_out_time: checkOutTime,
-        check_out_notes: notes,
-        duration_hours: duration
+      // Use performCheckOut backend function for complete checkout logic
+      const response = await base44.functions.invoke('performCheckOut', {
+        jobId,
+        checkInId,
+        overview: notes,
+        outcome: 'completed',
+        checkOutTime,
+        durationHours,
+        durationMinutes,
+        imageUrls: [] // Basic checkout doesn't require images
       });
       
-      await base44.entities.Job.update(jobId, { 
-        status: 'Completed',
-        completion_notes: notes
-      });
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkIns'] });

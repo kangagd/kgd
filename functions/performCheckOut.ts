@@ -168,11 +168,12 @@ The summary should be a single paragraph, professional, and capture the key work
             throw new Error(`JobSummary creation failed: ${e.message}`);
         }
 
-        // Update Job - mark as completed unless outcome is return_visit_required
+        // Determine final job status
+        const finalStatus = (outcome === 'return_visit_required') ? (newStatus || 'Scheduled') : 'Completed';
+        console.log(`🔄 Updating Job ${jobId} with status: ${finalStatus}, outcome: ${outcome}`);
+
+        // Update Job
         try {
-            const finalStatus = (outcome === 'return_visit_required') ? newStatus : 'Completed';
-            console.log(`🔄 Updating Job ${jobId} with status: ${finalStatus}, outcome: ${outcome}`);
-            
             await base44.asServiceRole.entities.Job.update(jobId, {
                 overview: overview,
                 next_steps: nextSteps,
@@ -228,7 +229,6 @@ The summary should be a single paragraph, professional, and capture the key work
 
         // LOGISTICS AUTOMATION (Triggers C, E, F)
         try {
-            const finalStatus = (outcome === 'return_visit_required') ? newStatus : 'Completed';
             const jobType = job.job_type_name || job.job_type;
             if (jobType && finalStatus === 'Completed') {
                 // Find linked parts for this job
