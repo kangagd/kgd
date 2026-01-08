@@ -55,7 +55,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
         }
 
-        const { dry_run = true, limit = 50 } = await req.json();
+        const body = await req.json();
+        const dry_run = body.dry_run === false || body.dry_run === 'false' ? false : true;
+        const limit = body.limit || 50;
 
         console.log('[migrateLegacyInvoiceUrls] Starting migration', { dry_run, limit });
 
@@ -91,6 +93,9 @@ Deno.serve(async (req) => {
 
         for (const project of legacyProjects) {
             try {
+                // Rate limiting: delay between Xero API calls
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
                 // Search Xero for invoice matching project number
                 const searchQuery = `InvoiceNumber="${project.project_number}"`;
                 const searchResponse = await fetch(
