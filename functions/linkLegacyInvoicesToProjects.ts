@@ -26,8 +26,8 @@ Deno.serve(async (req) => {
 
         console.log(`[linkLegacyInvoicesToProjects] Found ${legacyProjects.length} projects with legacy URLs`);
 
-        // Get ALL XeroInvoices once
-        const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list();
+        // Get ALL XeroInvoices once (with explicit high limit to ensure we get everything)
+        const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list('-created_date', 5000);
         console.log(`[linkLegacyInvoicesToProjects] Loaded ${allInvoices.length} total XeroInvoices`);
 
         const actions = [];
