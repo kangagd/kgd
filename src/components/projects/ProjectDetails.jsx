@@ -204,12 +204,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     refetchOnMount: false,
   });
 
+  console.log('[ProjectDetails] projectData received:', projectData);
+  console.log('[ProjectDetails] projectData?.xeroInvoices:', projectData?.xeroInvoices);
+  
   const project = projectData?.project || initialProject;
   const jobs = projectData?.jobs || [];
   const quotes = projectData?.quotes || [];
   const xeroInvoices = projectData?.xeroInvoices || [];
   const parts = projectData?.parts || [];
   const purchaseOrders = projectData?.purchaseOrders || [];
+  
+  console.log('[ProjectDetails] Extracted xeroInvoices:', xeroInvoices);
   
   // DEBUG: Log invoice data
   React.useEffect(() => {
