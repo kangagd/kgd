@@ -34,31 +34,32 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     queryKey: ['inventory-for-item', selectedItemId],
     queryFn: async () => {
       if (!selectedItemId) return [];
-      
+
       // Get all inventory quantities for this item from all locations
       const quantities = await base44.entities.InventoryQuantity.filter({
         price_list_item_id: selectedItemId
       });
-      
+
       // Get all active locations (warehouses + vehicles)
       const allLocations = await base44.entities.InventoryLocation.list();
       const locationMap = new Map(allLocations.map(loc => [loc.id, loc]));
-      
+
       // Build locations with stock
       const locationsWithStock = [];
       for (const qty of quantities) {
-        if ((qty.quantity || 0) > 0) {
+        const qtyValue = qty.quantity ?? 0;
+        if (qtyValue > 0) {
           const location = locationMap.get(qty.location_id);
           if (location && location.is_active !== false) {
             locationsWithStock.push({
               ...location,
-              available_quantity: qty.quantity || 0,
+              available_quantity: qtyValue,
               quantity_id: qty.id
             });
           }
         }
       }
-      
+
       return locationsWithStock;
     },
     enabled: open && !!selectedItemId,
