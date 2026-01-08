@@ -75,7 +75,8 @@ Deno.serve(async (req) => {
     // Build reverse map to check for orphaned invoices
     const projectInvoiceMap = {};
     projects.forEach(proj => {
-      proj.xero_invoices.forEach(invId => {
+      const invoiceIds = proj.xero_invoices || [];
+      invoiceIds.forEach(invId => {
         projectInvoiceMap[invId] = proj.id;
       });
     });
