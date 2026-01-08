@@ -200,9 +200,20 @@ Deno.serve(async (req) => {
     // If pricing table fails due to data merge not enabled, retry without it
     if (!createResponse.ok) {
       const errorText = await createResponse.text();
+      console.error('[createPandaDocQuote] PandaDoc API error:', errorText);
+      
+      // Try to parse error as JSON for better error details
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson.detail || errorJson.message || JSON.stringify(errorJson);
+        console.error('[createPandaDocQuote] Parsed error details:', errorDetails);
+      } catch (e) {
+        // errorText is not JSON, use as-is
+      }
       
       if (errorText.includes('Data merge is disabled') && createDocPayload.pricing_tables) {
-        console.warn('Template does not support pricing table data merge, retrying without pricing_tables');
+        console.warn('[createPandaDocQuote] Template does not support pricing table data merge, retrying without pricing_tables');
         delete createDocPayload.pricing_tables;
         
         createResponse = await fetch(`${PANDADOC_API_URL}/documents`, {
@@ -216,18 +227,26 @@ Deno.serve(async (req) => {
         
         if (!createResponse.ok) {
           const retryErrorText = await createResponse.text();
-          console.error('PandaDoc create error (retry):', retryErrorText);
+          console.error('[createPandaDocQuote] PandaDoc create error (retry):', retryErrorText);
+          
+          let retryErrorDetails = retryErrorText;
+          try {
+            const errorJson = JSON.parse(retryErrorText);
+            retryErrorDetails = errorJson.detail || errorJson.message || JSON.stringify(errorJson);
+          } catch (e) {
+            // Not JSON
+          }
+          
           return Response.json({ 
             error: 'Failed to create PandaDoc document', 
-            details: retryErrorText 
-          }, { status: createResponse.status });
+            details: retryErrorDetails 
+          }, { status: 400 });
         }
       } else {
-        console.error('PandaDoc create error:', errorText);
         return Response.json({ 
           error: 'Failed to create PandaDoc document', 
-          details: errorText 
-        }, { status: createResponse.status });
+          details: errorDetails 
+        }, { status: 400 });
       }
     }
 
