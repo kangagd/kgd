@@ -172,7 +172,25 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
         location_id: selectedLocationId,
       });
 
-      // 3) Add cost to Project.materials_cost
+      // 3) Dual-write: sync VehicleStock if it's a vehicle location
+      if (selectedLocation?.type === 'vehicle' && selectedLocation.vehicle_id) {
+        try {
+          const vehicleStocks = await base44.entities.VehicleStock.filter({
+            vehicle_id: selectedLocation.vehicle_id,
+            product_id: selectedItemId
+          });
+          if (vehicleStocks.length > 0) {
+            const currentQty = vehicleStocks[0].quantity_on_hand || 0;
+            await base44.entities.VehicleStock.update(vehicleStocks[0].id, {
+              quantity_on_hand: Math.max(0, currentQty - qty)
+            });
+          }
+        } catch (err) {
+          console.warn('Failed to sync VehicleStock during usage:', err);
+        }
+      }
+
+      // 4) Add cost to Project.materials_cost
       await addUsageCostToProject({
         projectId: job.project_id,
         price_list_item_id: selectedItemId,
