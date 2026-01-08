@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export default function LinkEmailThreadModal({ open, onClose, projectId, onLink,
     enabled: open
   });
 
-  const filteredThreads = React.useMemo(() => {
+  const filteredThreads = useMemo(() => {
     if (!searchTerm || searchTerm.length < 2) return allThreads.slice(0, 20);
     const term = searchTerm.toLowerCase();
     return allThreads.filter(thread =>
