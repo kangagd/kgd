@@ -155,9 +155,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       }
     },
     initialData: initialJob,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 5000, // 5 seconds - reduce constant refetching
+    refetchOnWindowFocus: false, // Prevent auto-refetch on window focus
+    refetchOnMount: false, // Only refetch when invalidated
   });
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -221,9 +221,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: jobSummaries = [] } = useQuery({
     queryKey: ['jobSummaries', job.id],
     queryFn: () => base44.entities.JobSummary.filter({ job_id: job.id }, '-check_out_time'),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allProjectJobs = [] } = useQuery({
@@ -262,9 +262,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', job.id],
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 10000, // 10 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: handoverReports = [] } = useQuery({
@@ -290,7 +290,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       }
     },
     enabled: !!job.customer_id,
-    staleTime: 0 // Always refetch to get latest deleted_at status
+    staleTime: 30000, // 30 seconds - customer data rarely changes
+    refetchOnWindowFocus: false
   });
 
   const { data: contract } = useQuery({
@@ -311,9 +312,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['projectPartsForJob', job.project_id],
     queryFn: () => base44.entities.Part.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Fetch Purchase Orders for enriching parts with PO status
@@ -321,9 +322,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['purchaseOrdersForJob', job.project_id],
     queryFn: () => base44.entities.PurchaseOrder.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Enrich parts with PO status for accurate status derivation
@@ -343,9 +344,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['projectTradeRequirements', job.project_id],
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ project_id: job.project_id }),
     enabled: !!job.project_id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Detect logistics job - check is_logistics flag on JobType entity OR presence of logistics fields
@@ -356,18 +357,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['purchaseOrder', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrder.get(job.purchase_order_id),
     enabled: !!job.purchase_order_id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: purchaseOrderLines = [] } = useQuery({
     queryKey: ['purchaseOrderLines', job.purchase_order_id],
     queryFn: () => base44.entities.PurchaseOrderLine.filter({ purchase_order_id: job.purchase_order_id }),
     enabled: !!job.purchase_order_id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
 
@@ -392,9 +393,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       }
     },
     enabled: !!(job.purchase_order_id || job.vehicle_id || job.third_party_trade_id || job.is_logistics_job === true),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Fetch samples for logistics jobs
@@ -408,9 +409,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       return allSamples.filter(s => job.sample_ids.includes(s.id));
     },
     enabled: isLogisticsJob && !!(job.sample_ids && job.sample_ids.length > 0),
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: supplier } = useQuery({
@@ -423,9 +424,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['xeroInvoice', job.xero_invoice_id],
     queryFn: () => base44.entities.XeroInvoice.get(job.xero_invoice_id),
     enabled: !!job.xero_invoice_id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Fetch project-level invoices if job is linked to a project
@@ -434,25 +435,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryFn: async () => {
       if (!job.project_id) return [];
       
-      console.log('💰 Fetching invoices for project:', job.project_id);
-      
       try {
         // Fetch invoices where project_id matches
         const invoices = await base44.entities.XeroInvoice.filter({ 
           project_id: job.project_id 
         });
         
-        console.log('💰 Found project invoices:', invoices);
         return invoices;
       } catch (error) {
-        console.error('❌ Error fetching project invoices:', error);
+        console.error('Error fetching project invoices:', error);
         return [];
       }
     },
     enabled: !!job.project_id,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const activeCheckIn = checkIns.find((c) => !c.check_out_time && c.technician_email?.toLowerCase() === user?.email?.toLowerCase());
@@ -473,7 +471,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      // Don't invalidate all jobs - too broad
       toast.success("Checked in successfully");
     },
     onError: (error) => {
@@ -597,10 +596,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
       queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['projectJobSummaries'] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['project', job.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['projectJobSummaries', job.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      if (job.project_id) {
+        queryClient.invalidateQueries({ queryKey: ['projectWithRelations', job.project_id] });
+      }
+      // Don't invalidate all jobs/projects - too broad
     },
     onError: (error) => {
       setValidationError(error.message);
@@ -613,11 +614,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       return res.data.job;
     },
     onSuccess: (updatedJob) => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      // Optimistically update job cache
       queryClient.setQueryData(['job', job.id], (oldData) => ({
         ...oldData,
         ...updatedJob
       }));
+      // Only invalidate if critical display fields changed
+      if (updatedJob.status || updatedJob.scheduled_date || updatedJob.customer_name) {
+        queryClient.invalidateQueries({ queryKey: jobKeys.all });
+      }
     }
   });
 
@@ -1213,11 +1218,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         client_confirmed: newValue,
                         client_confirmed_at: newValue ? new Date().toISOString() : null
                       });
-                      await queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-                      await queryClient.refetchQueries({ queryKey: ['job', job.id] });
-                      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+                      // Optimistically update cache
+                      queryClient.setQueryData(['job', job.id], (oldData) => ({
+                        ...oldData,
+                        client_confirmed: newValue,
+                        client_confirmed_at: newValue ? new Date().toISOString() : null
+                      }));
                       toast.success(newValue ? 'Job marked as confirmed' : 'Job marked as unconfirmed');
                     } catch (error) {
+                      // Revert on error
+                      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
                       toast.error('Failed to update confirmation status');
                     }
                   }}
