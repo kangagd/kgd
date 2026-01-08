@@ -34,10 +34,10 @@ async function refreshAndGetConnection(base44) {
             expires_at: newExpiresAt
         });
 
-        return { ...connection, access_token: tokens.access_token, xero_tenant_id: connection.xero_tenant_id };
+        return { ...connection, access_token: tokens.access_token, xero_tenant_id: connection.tenant_id };
     }
 
-    return connection;
+    return { ...connection, xero_tenant_id: connection.tenant_id };
 }
 
 Deno.serve(async (req) => {
