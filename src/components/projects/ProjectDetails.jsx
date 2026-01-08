@@ -2056,6 +2056,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="invoices" className="mt-3">
+            {console.log('[ProjectDetails Invoices Tab] Rendering with:', {
+              xeroInvoicesLength: xeroInvoices.length,
+              xeroInvoices: xeroInvoices,
+              projectDataXeroInvoices: projectData?.xeroInvoices
+            })}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
               <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
