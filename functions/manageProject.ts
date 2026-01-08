@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
