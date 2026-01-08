@@ -1,39 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { updateProjectActivity } from './updateProjectActivity.js';
-
-const PART_STATUS = {
-    PENDING: "pending",
-    ON_ORDER: "on_order",
-    IN_TRANSIT: "in_transit",
-    IN_LOADING_BAY: "in_loading_bay",
-    IN_STORAGE: "in_storage",
-    IN_VEHICLE: "in_vehicle",
-    INSTALLED: "installed",
-    CANCELLED: "cancelled",
-};
-
-const PART_LOCATION = {
-  SUPPLIER: "supplier",
-  LOADING_BAY: "loading_bay",
-  WAREHOUSE_STORAGE: "warehouse_storage",
-  VEHICLE: "vehicle",
-  CLIENT_SITE: "client_site",
-};
-
-function determinePartStatus(toLocation) {
-    switch (toLocation) {
-        case PART_LOCATION.LOADING_BAY:
-            return PART_STATUS.IN_LOADING_BAY;
-        case PART_LOCATION.WAREHOUSE_STORAGE:
-            return PART_STATUS.IN_STORAGE;
-        case PART_LOCATION.VEHICLE:
-            return PART_STATUS.IN_VEHICLE;
-        case PART_LOCATION.CLIENT_SITE:
-            return PART_STATUS.INSTALLED;
-        default:
-            return null;
-    }
-}
+import { PART_STATUS, PART_LOCATION } from './shared/constants.js';
+import { determinePartStatus } from './shared/partHelpers.js';
 
 Deno.serve(async (req) => {
     try {

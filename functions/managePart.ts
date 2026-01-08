@@ -1,13 +1,6 @@
-// PARTIALLY DEPRECATED: Auto-logistics job creation logic in this function uses old Part schema.
-// For new logistics workflows, prefer using createLogisticsJobForPO and recordStockMovement.
-// The CRUD operations (create/update/delete Part) are still valid.
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { updateProjectActivity } from './updateProjectActivity.js';
-
-const LOGISTICS_PURPOSE = {
-  PART_PICKUP_FOR_INSTALL: "part_pickup_for_install",
-};
+import { LOGISTICS_PURPOSE } from './shared/constants.js';
 
 Deno.serve(async (req) => {
     try {
@@ -28,106 +21,9 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, part.project_id, 'Part Created');
             }
 
-            // LOGISTICS AUTOMATION LOGIC
-            // Only on create, if project_id exists and part is Ordered
-            if (part.project_id && 
-                (part.status === "Ordered" || part.status === "Pending") && // Relaxed to Pending/Ordered as usually created as Ordered
-                (part.supplier_id || part.supplier_name)) {
-                
-                try {
-                    // Fetch supplier if ID exists
-                    let supplier = null;
-                    if (part.supplier_id) {
-                        supplier = await base44.asServiceRole.entities.Supplier.get(part.supplier_id);
-                    }
-
-                    // Determine Fulfilment Preference
-                    // Default to pickup if not set
-                    let fulfilmentPreference = supplier?.fulfilment_preference || "pickup";
-
-                    // If mixed, try to infer from source_type
-                    if (fulfilmentPreference === "mixed") {
-                        const sourceType = (part.source_type || "").toLowerCase();
-                        if (sourceType.includes("pickup")) {
-                            fulfilmentPreference = "pickup";
-                        } else if (sourceType.includes("deliver") || sourceType.includes("delivery")) {
-                            fulfilmentPreference = "delivery";
-                        } else {
-                            fulfilmentPreference = "pickup"; // Default
-                        }
-                    } else if (fulfilmentPreference === "delivery") {
-                         // If preference is delivery, we should ideally create a delivery job
-                         // BUT if the user explicitly set source_type to "Supplier - Pickup Required", we might want to respect that?
-                         // The prompt says "Create a Material Delivery... if Supplier is usually Delivery".
-                         // And "If they are usually Delivery... automatically create...".
-                         // So we prioritize the supplier preference unless the source type STRONGLY contradicts?
-                         // Let's assume supplier preference + automation is key here.
-                         // However, if source_type is explicit "Pickup Required", it would be weird to create a Delivery job.
-                         // Let's trust the mixed logic: if source_type explicitly says Pickup, we do Pickup.
-                         // Otherwise if Supplier is Delivery, we do Delivery.
-                         const sourceType = (part.source_type || "").toLowerCase();
-                         if (sourceType.includes("pickup")) {
-                             fulfilmentPreference = "pickup";
-                         }
-                    }
-
-                    // Determine details
-                    const supplierName = supplier?.name || part.supplier_name || "Unknown Supplier";
-                    const project = await base44.asServiceRole.entities.Project.get(part.project_id);
-
-                    if (project) {
-                        // Use standardized JobType: "Material Pick Up - Warehouse"
-                        const jobTypeName = "Material Pick Up - Warehouse";
-                        const warehouseAddress = "866 Bourke Street, Waterloo";
-                        const supplierAddress = supplier?.pickup_address || supplier?.address_full || "Supplier address";
-
-                        // Find JobType (should exist from standardized set)
-                        let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
-                        
-                        if (jobTypes.length === 0) {
-                            console.error(`JobType "${jobTypeName}" not found. Skipping logistics job creation.`);
-                            return Response.json({ success: true, part });
-                        }
-                        
-                        const jobTypeId = jobTypes[0].id;
-                        const jobNotes = `Pickup parts for project ${project.title} from ${supplierName}.`;
-
-                        // Create Job with new logistics fields
-                        const logisticsJob = await base44.asServiceRole.entities.Job.create({
-                            job_type: jobTypeName,
-                            job_type_id: jobTypeId,
-                            job_type_name: jobTypeName,
-                            project_id: part.project_id,
-                            project_name: project.title,
-                            customer_id: project.customer_id,
-                            customer_name: project.customer_name,
-                            address: warehouseAddress,
-                            address_full: warehouseAddress,
-                            status: "Scheduled",
-                            notes: jobNotes,
-                            overview: `Part: ${part.category}${part.notes ? ' - ' + part.notes : ''}`,
-                            additional_info: `Order Ref: ${part.order_reference || 'N/A'}`,
-                            is_logistics_job: true,
-                            logistics_purpose: LOGISTICS_PURPOSE.PART_PICKUP_FOR_INSTALL,
-                            origin_address: warehouseAddress,
-                            destination_address: project.address_full || project.address || "Client Site",
-                        });
-
-                        // Update Part with linked job and location
-                        const currentLinks = part.linked_logistics_jobs || [];
-                        await base44.asServiceRole.entities.Part.update(part.id, {
-                            linked_logistics_jobs: [...currentLinks, logisticsJob.id],
-                            location: newLocation // Update location based on job type
-                        });
-
-                        // Update local part object
-                        part.linked_logistics_jobs = [...currentLinks, logisticsJob.id];
-                        part.location = newLocation;
-                    }
-                } catch (err) {
-                    console.error("Error auto-creating supplier logistics job:", err);
-                }
-            }
+            // DEPRECATED: Legacy logistics automation removed
+            // Use createLogisticsJobForPO for PO-based logistics
+            // Use recordStockMovement for manual part movements
 
         } else if (action === 'update') {
             // Fetch previous state for logic comparison
