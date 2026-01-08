@@ -39,7 +39,11 @@ Deno.serve(async (req) => {
       errors: []
     };
 
-    for (const vStock of vehicleStocks) {
+    // Helper to delay between operations to avoid rate limits
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    for (let i = 0; i < vehicleStocks.length; i++) {
+      const vStock = vehicleStocks[i];
       const location = locationsByVehicleId.get(vStock.vehicle_id);
       
       if (!location) {
@@ -78,6 +82,8 @@ Deno.serve(async (req) => {
             try {
               await base44.asServiceRole.entities.InventoryQuantity.update(existingQty.id, quantityData);
               results.updated.push({ id: existingQty.id, ...quantityData });
+              // Delay every 10 operations to avoid rate limits
+              if (i % 10 === 0) await delay(500);
             } catch (err) {
               results.errors.push({
                 id: existingQty.id,
@@ -98,6 +104,8 @@ Deno.serve(async (req) => {
           try {
             const created = await base44.asServiceRole.entities.InventoryQuantity.create(quantityData);
             results.created.push({ id: created.id, ...quantityData });
+            // Delay every 10 operations to avoid rate limits
+            if (i % 10 === 0) await delay(500);
           } catch (err) {
             results.errors.push({
               vehicle_id: vStock.vehicle_id,
