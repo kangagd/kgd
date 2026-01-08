@@ -44,8 +44,9 @@ Deno.serve(async (req) => {
       try {
         const validInvoices = [];
         let hadGhosts = false;
+        const invoiceIds = project.xero_invoices || [];
 
-        for (const invoiceId of project.xero_invoices) {
+        for (const invoiceId of invoiceIds) {
           const actualProjectId = invoiceToProjectMap[invoiceId];
           
           if (actualProjectId === project.id) {
