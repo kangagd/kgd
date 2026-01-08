@@ -23,7 +23,15 @@ export default function CreateInvoiceModal({
   type = "job", // "job" or "project"
   data = {}
 }) {
-  const [lineItems, setLineItems] = useState([{ description: "", amount: "", discount: "" }]);
+  const [lineItems, setLineItems] = useState([{ 
+    description: "", 
+    amount: "", 
+    discount: "",
+    quantity: 1,
+    sku: "",
+    priceListItemId: null,
+    isCustom: false
+  }]);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showPreview, setShowPreview] = useState(false);
@@ -41,7 +49,15 @@ export default function CreateInvoiceModal({
   );
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { description: "", amount: "", discount: "" }]);
+    setLineItems([...lineItems, { 
+      description: "", 
+      amount: "", 
+      discount: "",
+      quantity: 1,
+      sku: "",
+      priceListItemId: null,
+      isCustom: false
+    }]);
   };
 
   const removeLineItem = (index) => {
@@ -62,16 +78,31 @@ export default function CreateInvoiceModal({
       updated[index] = {
         description: item.description || item.item,
         amount: item.price.toString(),
-        discount: ""
+        discount: "",
+        quantity: 1,
+        sku: item.sku || "",
+        priceListItemId: item.id,
+        isCustom: false
       };
       setLineItems(updated);
     }
   };
 
+  const toggleCustomItem = (index) => {
+    const updated = [...lineItems];
+    updated[index].isCustom = !updated[index].isCustom;
+    if (updated[index].isCustom) {
+      // Clear price list selection when switching to custom
+      updated[index].priceListItemId = null;
+    }
+    setLineItems(updated);
+  };
+
   const calculateSubtotal = () => {
     return lineItems.reduce((sum, item) => {
       const amount = parseFloat(item.amount) || 0;
-      return sum + amount;
+      const quantity = parseFloat(item.quantity) || 1;
+      return sum + (amount * quantity);
     }, 0);
   };
 
@@ -121,14 +152,25 @@ export default function CreateInvoiceModal({
       lineItems: validItems.map(item => ({
         description: item.description,
         amount: parseFloat(item.amount),
-        discount: parseFloat(item.discount) || 0
+        discount: parseFloat(item.discount) || 0,
+        quantity: parseFloat(item.quantity) || 1,
+        sku: item.sku || "",
+        isCustom: item.isCustom || false
       })),
       total: calculateTotal()
     });
   };
 
   const handleClose = () => {
-    setLineItems([{ description: "", amount: "", discount: "" }]);
+    setLineItems([{ 
+      description: "", 
+      amount: "", 
+      discount: "",
+      quantity: 1,
+      sku: "",
+      priceListItemId: null,
+      isCustom: false
+    }]);
     setError("");
     setSearchTerm("");
     setShowPreview(false);
@@ -184,20 +226,34 @@ export default function CreateInvoiceModal({
               <div className="bg-white border-2 border-[#E5E7EB] rounded-lg p-4">
                 <h3 className="text-[14px] font-semibold text-[#111827] mb-3">Invoice Line Items</h3>
                 <div className="space-y-3">
-                  {lineItems.filter(item => item.description && parseFloat(item.amount) > 0).map((item, index) => (
-                    <div key={index} className="border-b border-[#E5E7EB] pb-3 last:border-0 last:pb-0">
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-medium text-[#111827] text-[14px]">{item.description}</span>
-                        <span className="font-semibold text-[#111827] text-[14px]">${parseFloat(item.amount).toFixed(2)}</span>
-                      </div>
-                      {item.discount && parseFloat(item.discount) > 0 && (
-                        <div className="flex justify-between items-center text-[13px] mt-1">
-                          <span className="text-red-600">Discount</span>
-                          <span className="text-red-600">-${parseFloat(item.discount).toFixed(2)}</span>
+                  {lineItems.filter(item => item.description && parseFloat(item.amount) > 0).map((item, index) => {
+                    const qty = parseFloat(item.quantity) || 1;
+                    const unitPrice = parseFloat(item.amount);
+                    const lineTotal = unitPrice * qty;
+                    
+                    return (
+                      <div key={index} className="border-b border-[#E5E7EB] pb-3 last:border-0 last:pb-0">
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="flex-1">
+                            <span className="font-medium text-[#111827] text-[14px]">{item.description}</span>
+                            {item.sku && (
+                              <div className="text-[12px] text-[#6B7280] mt-0.5">SKU: {item.sku}</div>
+                            )}
+                            <div className="text-[12px] text-[#6B7280] mt-0.5">
+                              Qty: {qty} × ${unitPrice.toFixed(2)}
+                            </div>
+                          </div>
+                          <span className="font-semibold text-[#111827] text-[14px]">${lineTotal.toFixed(2)}</span>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                        {item.discount && parseFloat(item.discount) > 0 && (
+                          <div className="flex justify-between items-center text-[13px] mt-1">
+                            <span className="text-red-600">Discount</span>
+                            <span className="text-red-600">-${parseFloat(item.discount).toFixed(2)}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -318,48 +374,66 @@ export default function CreateInvoiceModal({
                         )}
                       </div>
 
-                      <div>
-                        <Label className="text-[12px] text-[#6B7280] mb-1">Quick Select</Label>
-                        <Select 
-                          onValueChange={(value) => {
-                            selectPriceListItem(index, value);
-                            setSearchTerm("");
-                          }}
-                          onOpenChange={() => setSearchTerm("")}
+                      {!item.isCustom && (
+                        <div>
+                          <Label className="text-[12px] text-[#6B7280] mb-1">Quick Select from Price List</Label>
+                          <Select 
+                            onValueChange={(value) => {
+                              selectPriceListItem(index, value);
+                              setSearchTerm("");
+                            }}
+                            onOpenChange={() => setSearchTerm("")}
+                            disabled={item.isCustom}
+                          >
+                            <SelectTrigger className="h-9 text-sm border-[#E5E7EB]">
+                              <SelectValue placeholder="Select from Price List" />
+                            </SelectTrigger>
+                            <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
+                              <div className="px-2 py-2 border-b border-[#E5E7EB]">
+                                <Input
+                                  placeholder="Search items..."
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  className="h-8 text-sm"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onBlur={(e) => e.preventDefault()}
+                                  autoFocus={false}
+                                />
+                              </div>
+                              <div className="max-h-[200px] overflow-y-auto">
+                                {filteredPriceListItems.length === 0 ? (
+                                  <div className="px-2 py-3 text-sm text-[#6B7280] text-center">
+                                    No items found
+                                  </div>
+                                ) : (
+                                  filteredPriceListItems.map((priceItem) => (
+                                    <SelectItem key={priceItem.id} value={priceItem.id}>
+                                      <div className="flex items-center justify-between gap-3 w-full">
+                                        <span className="text-sm">{priceItem.item}</span>
+                                        <span className="text-xs text-[#6B7280]">${priceItem.price}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </div>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleCustomItem(index)}
+                          className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-colors ${
+                            item.isCustom 
+                              ? 'bg-[#FAE008] text-[#111827] font-medium' 
+                              : 'text-[#6B7280] hover:bg-[#F3F4F6]'
+                          }`}
                         >
-                          <SelectTrigger className="h-9 text-sm border-[#E5E7EB]">
-                            <SelectValue placeholder="Select from Price List" />
-                          </SelectTrigger>
-                          <SelectContent onCloseAutoFocus={(e) => e.preventDefault()}>
-                            <div className="px-2 py-2 border-b border-[#E5E7EB]">
-                              <Input
-                                placeholder="Search items..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-8 text-sm"
-                                onClick={(e) => e.stopPropagation()}
-                                onBlur={(e) => e.preventDefault()}
-                                autoFocus={false}
-                              />
-                            </div>
-                            <div className="max-h-[200px] overflow-y-auto">
-                              {filteredPriceListItems.length === 0 ? (
-                                <div className="px-2 py-3 text-sm text-[#6B7280] text-center">
-                                  No items found
-                                </div>
-                              ) : (
-                                filteredPriceListItems.map((priceItem) => (
-                                  <SelectItem key={priceItem.id} value={priceItem.id}>
-                                    <div className="flex items-center justify-between gap-3 w-full">
-                                      <span className="text-sm">{priceItem.item}</span>
-                                      <span className="text-xs text-[#6B7280]">${priceItem.price}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))
-                              )}
-                            </div>
-                          </SelectContent>
-                        </Select>
+                          <Package className="w-3 h-3" />
+                          {item.isCustom ? 'Custom Item' : 'Use Custom Item'}
+                        </button>
                       </div>
 
                       <div>
@@ -372,9 +446,34 @@ export default function CreateInvoiceModal({
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      {item.isCustom && (
                         <div>
-                          <Label className="text-[12px] text-[#6B7280] mb-1">Amount (excl. GST)</Label>
+                          <Label className="text-[12px] text-[#6B7280] mb-1">SKU (Optional)</Label>
+                          <Input
+                            placeholder="Product SKU"
+                            value={item.sku}
+                            onChange={(e) => updateLineItem(index, 'sku', e.target.value)}
+                            className="h-9 text-sm border-[#E5E7EB]"
+                          />
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-[12px] text-[#6B7280] mb-1">Quantity</Label>
+                          <Input
+                            type="number"
+                            step="1"
+                            min="1"
+                            placeholder="1"
+                            value={item.quantity}
+                            onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
+                            className="h-9 text-sm border-[#E5E7EB]"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-[12px] text-[#6B7280] mb-1">Unit Price</Label>
                           <div className="relative">
                             <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
                             <Input

@@ -52,7 +52,16 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { project_id } = normalizeParams(body);
-    const { invoicePayload } = body;
+    let { invoicePayload } = body;
+    
+    // Process line items to include SKU in ItemCode field for Xero
+    if (invoicePayload.LineItems) {
+      invoicePayload.LineItems = invoicePayload.LineItems.map(item => ({
+        ...item,
+        ItemCode: item.ItemCode || item.sku || "", // Use provided ItemCode, fallback to sku, or empty string
+      }));
+    }
+    
     const result = await createXeroInvoice(base44, invoicePayload);
 
     // Update project activity if linked to a project
