@@ -13,6 +13,7 @@ import { normalizeParams } from './shared/parameterNormalizer.js';
  * 4. Clear project's xero_payment_url if no other invoices remain
  */
 
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
