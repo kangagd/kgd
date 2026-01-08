@@ -12,6 +12,11 @@ Deno.serve(async (req) => {
         let project;
 
         if (action === 'create') {
+            // GUARDRAIL: Validate required fields
+            if (!data?.title?.trim()) {
+                return Response.json({ error: 'Project title is required' }, { status: 400 });
+            }
+
             let projectData = { ...data };
 
             // Auto-assign project number only if not provided
@@ -58,8 +63,21 @@ Deno.serve(async (req) => {
             // Refetch to get updated data
             project = await base44.asServiceRole.entities.Project.get(project.id);
         } else if (action === 'update') {
-            // Check if project_number is being updated
-            const oldProject = data.project_number ? await base44.asServiceRole.entities.Project.get(id) : null;
+            // GUARDRAIL: Verify project exists before updating
+            if (!id) {
+                return Response.json({ error: 'Project ID is required for update' }, { status: 400 });
+            }
+            
+            const oldProject = await base44.asServiceRole.entities.Project.get(id).catch(() => null);
+            if (!oldProject) {
+                return Response.json({ error: 'Project not found' }, { status: 404 });
+            }
+            
+            // GUARDRAIL: Prevent clearing critical fields
+            if (data.title === '' || data.title === null) {
+                return Response.json({ error: 'Project title cannot be empty' }, { status: 400 });
+            }
+            
             const oldProjectNumber = oldProject?.project_number;
             const newProjectNumber = data.project_number;
             
@@ -180,8 +198,29 @@ Deno.serve(async (req) => {
                 }
             }
         } else if (action === 'delete') {
-            // Get project before deletion to check for linked email thread
-            const projectToDelete = await base44.asServiceRole.entities.Project.get(id);
+            // GUARDRAIL: Verify project exists
+            if (!id) {
+                return Response.json({ error: 'Project ID is required for deletion' }, { status: 400 });
+            }
+            
+            const projectToDelete = await base44.asServiceRole.entities.Project.get(id).catch(() => null);
+            if (!projectToDelete) {
+                return Response.json({ error: 'Project not found' }, { status: 404 });
+            }
+            
+            // GUARDRAIL: Check for active jobs before deletion
+            const activeJobs = await base44.asServiceRole.entities.Job.filter({ 
+                project_id: id,
+                deleted_at: { $exists: false },
+                status: { $in: ['Scheduled', 'Open', 'In Progress'] }
+            });
+            
+            if (activeJobs.length > 0) {
+                return Response.json({ 
+                    error: `Cannot delete project with ${activeJobs.length} active job(s). Please complete or cancel jobs first.`,
+                    active_jobs: activeJobs.length
+                }, { status: 400 });
+            }
             
             // Unlink from any email threads
             if (projectToDelete?.source_email_thread_id) {

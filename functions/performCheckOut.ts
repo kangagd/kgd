@@ -27,13 +27,21 @@ Deno.serve(async (req) => {
             resolution
         } = await req.json();
 
-        // Sanitize inputs
-        const safeDurationHours = (typeof durationHours === 'number' && !isNaN(durationHours)) ? durationHours : 0;
-        const safeDurationMinutes = (typeof durationMinutes === 'number' && !isNaN(durationMinutes)) ? durationMinutes : 0;
-        const safeCheckOutTime = checkOutTime || new Date().toISOString();
-
+        // GUARDRAIL: Validate inputs
         if (!jobId || !checkInId) {
             return Response.json({ error: 'Job ID and CheckIn ID are required' }, { status: 400 });
+        }
+
+        // GUARDRAIL: Sanitize and validate inputs
+        const safeDurationHours = (typeof durationHours === 'number' && !isNaN(durationHours) && durationHours >= 0) ? durationHours : 0;
+        const safeDurationMinutes = (typeof durationMinutes === 'number' && !isNaN(durationMinutes) && durationMinutes >= 0) ? durationMinutes : 0;
+        const safeCheckOutTime = checkOutTime || new Date().toISOString();
+        
+        // GUARDRAIL: Prevent checkout more than 24 hours in the future
+        const checkOutDate = new Date(safeCheckOutTime);
+        const now = new Date();
+        if (checkOutDate > new Date(now.getTime() + 24 * 60 * 60 * 1000)) {
+            return Response.json({ error: 'Check-out time cannot be more than 24 hours in the future' }, { status: 400 });
         }
 
         // Fetch job to check if it's logistics
@@ -61,12 +69,22 @@ Deno.serve(async (req) => {
         }
 
         // Verify CheckIn ownership
-        const checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId);
+        const checkIn = await base44.asServiceRole.entities.CheckInOut.get(checkInId).catch(() => null);
         if (!checkIn) {
             return Response.json({ error: 'Check-in record not found' }, { status: 404 });
         }
+        
+        // GUARDRAIL: Prevent double checkout
+        if (checkIn.check_out_time) {
+            return Response.json({ 
+                error: 'This check-in has already been checked out',
+                existing_checkout: checkIn.check_out_time
+            }, { status: 400 });
+        }
 
-        if (checkIn.technician_email !== user.email && user.role !== 'admin' && user.role !== 'manager') {
+        // GUARDRAIL: Verify ownership
+        const isManager = user.extended_role === 'manager';
+        if (checkIn.technician_email !== user.email && user.role !== 'admin' && !isManager) {
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
 

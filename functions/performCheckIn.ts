@@ -53,6 +53,24 @@ Deno.serve(async (req) => {
         if (!job) {
             return Response.json({ error: 'Job not found' }, { status: 404 });
         }
+        
+        // GUARDRAIL: Prevent check-in to deleted jobs
+        if (job.deleted_at) {
+            return Response.json({ error: 'Cannot check in to deleted job' }, { status: 400 });
+        }
+        
+        // GUARDRAIL: Prevent duplicate check-ins
+        const existingCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+            job_id: jobId,
+            technician_email: user.email
+        });
+        const activeCheckIn = existingCheckIns.find(c => !c.check_out_time);
+        if (activeCheckIn) {
+            return Response.json({ 
+                error: 'You already have an active check-in for this job',
+                existing_check_in_id: activeCheckIn.id
+            }, { status: 400 });
+        }
 
         // 5. Authorization Logic
         if (user.role !== 'admin' && user.role !== 'manager') {

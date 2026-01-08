@@ -147,6 +147,14 @@ Deno.serve(async (req) => {
         let previousJob = null;
 
         if (action === 'create') {
+            // GUARDRAIL: Validate required fields
+            if (!data?.customer_id?.trim() && !data?.supplier_id) {
+                return Response.json({ error: 'Customer or Supplier is required' }, { status: 400 });
+            }
+            if (!data?.scheduled_date) {
+                return Response.json({ error: 'Scheduled date is required' }, { status: 400 });
+            }
+
             // Handle creation
             let jobData = { ...data };
 
@@ -291,8 +299,23 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Created');
             }
         } else if (action === 'update') {
-            previousJob = await base44.asServiceRole.entities.Job.get(id);
-            if (!previousJob) return Response.json({ error: 'Job not found' }, { status: 404 });
+            // GUARDRAIL: Verify job exists
+            if (!id) {
+                return Response.json({ error: 'Job ID is required for update' }, { status: 400 });
+            }
+            
+            previousJob = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+            if (!previousJob) {
+                return Response.json({ error: 'Job not found' }, { status: 404 });
+            }
+            
+            // GUARDRAIL: Prevent accidentally clearing critical fields
+            if (data.hasOwnProperty('customer_id') && !data.customer_id) {
+                return Response.json({ error: 'Customer cannot be removed from job' }, { status: 400 });
+            }
+            if (data.hasOwnProperty('scheduled_date') && !data.scheduled_date && previousJob.status === 'Scheduled') {
+                return Response.json({ error: 'Cannot remove scheduled date from scheduled job' }, { status: 400 });
+            }
             
             // CRITICAL: Check JobType entity for is_logistics flag
             let previousJobTypeIsLogistics = false;
@@ -370,8 +393,28 @@ Deno.serve(async (req) => {
 
             // Removed legacy PO receiving logic - now handled via logistics_outcome
         } else if (action === 'delete') {
-            // Get job before deletion to check for linked email thread
-            const jobToDelete = await base44.asServiceRole.entities.Job.get(id);
+            // GUARDRAIL: Verify job exists
+            if (!id) {
+                return Response.json({ error: 'Job ID is required for deletion' }, { status: 400 });
+            }
+            
+            const jobToDelete = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+            if (!jobToDelete) {
+                return Response.json({ error: 'Job not found' }, { status: 404 });
+            }
+            
+            // GUARDRAIL: Prevent deleting checked-in jobs
+            const activeCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                job_id: id
+            });
+            const unclosedCheckIns = activeCheckIns.filter(c => !c.check_out_time);
+            
+            if (unclosedCheckIns.length > 0) {
+                return Response.json({ 
+                    error: 'Cannot delete job with active check-in. Please check out first.',
+                    active_check_ins: unclosedCheckIns.length
+                }, { status: 400 });
+            }
             
             // Unlink from any email threads
             if (jobToDelete) {
