@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
         const dry_run = body.dry_run === false || body.dry_run === 'false' ? false : true;
         const limit = body.limit || 50;
 
-        console.log('[linkLegacyInvoicesToProjects] Starting', { dry_run, limit });
+        console.log('[batchLinkLegacyInvoices] Starting', { dry_run, limit });
 
         // Get all projects with legacy URLs
         const allProjects = await base44.asServiceRole.entities.Project.list();
@@ -24,11 +24,11 @@ Deno.serve(async (req) => {
             return hasLegacyUrl && notDeleted;
         }).slice(0, limit);
 
-        console.log(`[linkLegacyInvoicesToProjects] Found ${legacyProjects.length} projects with legacy URLs`);
+        console.log(`[batchLinkLegacyInvoices] Found ${legacyProjects.length} projects with legacy URLs`);
 
         // Get ALL XeroInvoices once (with explicit high limit to ensure we get everything)
         const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list('-created_date', 5000);
-        console.log(`[linkLegacyInvoicesToProjects] Loaded ${allInvoices.length} total XeroInvoices`);
+        console.log(`[batchLinkLegacyInvoices] Loaded ${allInvoices.length} total XeroInvoices`);
 
         const actions = [];
         let projectsUpdated = 0;
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
                 });
 
             } catch (error) {
-                console.error(`[linkLegacyInvoicesToProjects] Error processing project ${project.id}:`, error);
+                console.error(`[batchLinkLegacyInvoices] Error processing project ${project.id}:`, error);
                 actions.push({
                     project_id: project.id,
                     project_number: project.project_number,
@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
         });
 
     } catch (error) {
-        console.error('[linkLegacyInvoicesToProjects] Fatal error:', error);
+        console.error('[batchLinkLegacyInvoices] Fatal error:', error);
         return Response.json({ error: error.message }, { status: 500 });
     }
 });

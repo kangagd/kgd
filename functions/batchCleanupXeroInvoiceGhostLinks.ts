@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('cleanupXeroInvoiceGhostLinks error:', error);
+    console.error('batchCleanupXeroInvoiceGhostLinks error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    console.log('[autoSyncAllXeroInvoices] Starting sync...');
+    console.log('[batchSyncXeroInvoices] Starting sync...');
 
     const connection = await refreshAndGetXeroConnection(base44);
 
@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list('-updated_date', 500);
     const activeInvoices = allInvoices.filter(inv => inv.status !== 'VOIDED');
 
-    console.log(`[autoSyncAllXeroInvoices] Found ${activeInvoices.length} active invoices to sync`);
+    console.log(`[batchSyncXeroInvoices] Found ${activeInvoices.length} active invoices to sync`);
 
     let updated = 0;
     let errors = 0;
@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`[autoSyncAllXeroInvoices] Complete: ${updated} updated, ${errors} errors`);
+    console.log(`[batchSyncXeroInvoices] Complete: ${updated} updated, ${errors} errors`);
 
     return Response.json({
       success: true,
@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[autoSyncAllXeroInvoices] Fatal error:', error);
+    console.error('[batchSyncXeroInvoices] Fatal error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
