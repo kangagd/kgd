@@ -485,7 +485,7 @@ export default function Schedule() {
     if (!job) return;
     
     // Parse destination ID to get new date/time
-    // Format: "day-YYYY-MM-DD" or "day-YYYY-MM-DD-HH:MM"
+    // Format: "day-YYYY-MM-DD" or "day-YYYY-MM-DD-HH-MM"
     const destParts = destination.droppableId.split('-');
     let newDate = null;
     let newTime = null;
@@ -493,8 +493,8 @@ export default function Schedule() {
     if (destParts[0] === 'day' && destParts.length >= 4) {
       newDate = `${destParts[1]}-${destParts[2]}-${destParts[3]}`;
       if (destParts.length >= 6) {
-        const rawTime = `${destParts[4]}:${destParts[5]}:00`;
-        newTime = roundToNearestHalfHour(rawTime);
+        // Time from droppable ID is already the correct slot time (e.g., 10:00, 10:30)
+        newTime = `${destParts[4]}:${destParts[5]}`;
       }
     }
     
