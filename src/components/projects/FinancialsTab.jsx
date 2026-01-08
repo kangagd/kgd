@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
@@ -91,12 +90,7 @@ export default function FinancialsTab({ project, onUpdate }) {
     
     setUnlinkingInvoice(invoiceId);
     try {
-      await base44.entities.XeroInvoice.update(invoiceId, { project_id: null });
-      
-      // If it's the primary invoice, clear that too
-      if (project.primary_xero_invoice_id === invoiceId) {
-        onUpdate({ primary_xero_invoice_id: null });
-      }
+      await base44.functions.invoke('unlinkXeroInvoice', { invoiceEntityId: invoiceId });
 
       // Invalidate queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['projectXeroInvoices', project.id] });
