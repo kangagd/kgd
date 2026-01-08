@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
     // Parse options
     const body = await req.json().catch(() => ({}));
-    const dryRun = body.dry_run ?? body.dryRun ?? true;
+    const dryRun = body.dry_run ?? body.dryRun ?? false;
     const limit = body.limit || null;
 
     console.log(`[batchSyncJobAddresses] Starting sync - dry_run: ${dryRun}, limit: ${limit}`);
