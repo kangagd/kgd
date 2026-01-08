@@ -22,6 +22,8 @@ import {
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 import { handleEnterToNextField } from "../common/formNavigator";
+import MergeCustomersModal from "../customers/MergeCustomersModal";
+import { toast } from "sonner";
 
 export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting }) {
   const navigate = useNavigate();
@@ -93,6 +95,9 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergeData, setMergeData] = useState(null);
+  const [isMerging, setIsMerging] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -138,7 +143,25 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
   const organisations = allOrganisations.filter(org => !org.deleted_at && org.status === 'active');
 
   const createCustomerMutation = useMutation({
-    mutationFn: (data) => base44.entities.Customer.create(data),
+    mutationFn: async (data) => {
+      // Check for duplicates before creating
+      const duplicateCheck = await base44.functions.invoke('checkDuplicates', {
+        entity_type: 'Customer',
+        record: data
+      });
+      
+      if (duplicateCheck.data.is_potential_duplicate && duplicateCheck.data.matches?.length > 0) {
+        // Store merge data and show modal
+        setMergeData({
+          primaryCustomer: data,
+          duplicateCustomers: duplicateCheck.data.matches
+        });
+        setShowMergeModal(true);
+        throw new Error('DUPLICATE_DETECTED'); // Special error to prevent normal flow
+      }
+      
+      return base44.entities.Customer.create(data);
+    },
     onSuccess: async (newCustomer) => {
       await queryClient.refetchQueries({ queryKey: ['customers'] });
       setFormData({
@@ -153,7 +176,7 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         address_street: newCustomer.address_street || "",
         address_suburb: newCustomer.address_suburb || "",
         address_state: newCustomer.address_state || "",
-        address_postcode: newCustomer.address_postcode || "",
+        address_postcode: newCustomer.address_postcode || "Australia",
         address_country: newCustomer.address_country || "Australia",
         google_place_id: newCustomer.google_place_id || "",
         latitude: newCustomer.latitude || null,
@@ -174,6 +197,11 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         latitude: null,
         longitude: null
       });
+    },
+    onError: (error) => {
+      if (error.message !== 'DUPLICATE_DETECTED') {
+        toast.error(`Failed to create customer: ${error.message}`);
+      }
     }
   });
 
@@ -239,6 +267,62 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
     }
     
     createCustomerMutation.mutate(customerData);
+  };
+
+  const handleMergeCustomers = async (primaryCustomerId, duplicateCustomerId) => {
+    setIsMerging(true);
+    try {
+      const response = await base44.functions.invoke('mergeCustomers', {
+        primary_customer_id: primaryCustomerId,
+        duplicate_customer_id: duplicateCustomerId,
+        merge_data: true
+      });
+      
+      await queryClient.refetchQueries({ queryKey: ['customers'] });
+      
+      // Use the existing customer
+      setFormData({
+        ...formData,
+        customer_id: primaryCustomerId,
+        customer_name: mergeData.primaryCustomer.name,
+        customer_phone: mergeData.primaryCustomer.phone || "",
+        customer_email: mergeData.primaryCustomer.email || "",
+        address: mergeData.primaryCustomer.address_full || "",
+        address_full: mergeData.primaryCustomer.address_full || "",
+        address_street: mergeData.primaryCustomer.address_street || "",
+        address_suburb: mergeData.primaryCustomer.address_suburb || "",
+        address_state: mergeData.primaryCustomer.address_state || "",
+        address_postcode: mergeData.primaryCustomer.address_postcode || "",
+        address_country: mergeData.primaryCustomer.address_country || "Australia",
+        google_place_id: mergeData.primaryCustomer.google_place_id || "",
+        latitude: mergeData.primaryCustomer.latitude || null,
+        longitude: mergeData.primaryCustomer.longitude || null
+      });
+      
+      setShowMergeModal(false);
+      setShowNewCustomerDialog(false);
+      setMergeData(null);
+      setNewCustomerData({ 
+        name: "", 
+        phone: "", 
+        email: "",
+        address_full: "",
+        address_street: "",
+        address_suburb: "",
+        address_state: "",
+        address_postcode: "",
+        address_country: "Australia",
+        google_place_id: "",
+        latitude: null,
+        longitude: null
+      });
+      
+      toast.success(response.data.message || 'Customers merged successfully');
+    } catch (error) {
+      toast.error(`Failed to merge: ${error.message}`);
+    } finally {
+      setIsMerging(false);
+    }
   };
 
   const createOrganisationMutation = useMutation({
@@ -972,6 +1056,18 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MergeCustomersModal
+        open={showMergeModal}
+        onClose={() => {
+          setShowMergeModal(false);
+          setMergeData(null);
+        }}
+        primaryCustomer={mergeData?.primaryCustomer}
+        duplicateCustomers={mergeData?.duplicateCustomers}
+        onMerge={handleMergeCustomers}
+        isSubmitting={isMerging}
+      />
     </>
   );
 }
