@@ -1095,9 +1095,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     updateCustomerMutation.mutate({ id: job.customer_id, data });
   };
 
-  const handleDeleteClick = () => {
-    onDelete(job.id);
-    setShowDeleteConfirm(false);
+  const handleDeleteClick = async () => {
+    // GUARDRAIL: Use backend validation before deletion
+    try {
+      const response = await base44.functions.invoke('safeDelete', {
+        entity_type: 'Job',
+        entity_id: job.id
+      });
+      
+      if (response.data?.can_delete === false) {
+        toast.error(response.data.error || 'Cannot delete job with dependencies');
+        if (response.data.dependencies) {
+          toast.error(`Dependencies: ${response.data.dependencies.join(', ')}`);
+        }
+        setShowDeleteConfirm(false);
+        return;
+      }
+      
+      onDelete(job.id);
+      setShowDeleteConfirm(false);
+      toast.success('Job deleted successfully');
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete job');
+      setShowDeleteConfirm(false);
+    }
   };
 
   return (
