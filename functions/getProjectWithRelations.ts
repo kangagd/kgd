@@ -59,10 +59,19 @@ Deno.serve(async (req) => {
         console.error('[getProjectWithRelations] Failed to fetch quotes:', err);
         return [];
       }),
-      base44.asServiceRole.entities.XeroInvoice.filter({ project_id }).catch(err => {
-        console.error('[getProjectWithRelations] Failed to fetch xero invoices:', err);
-        return [];
-      }),
+      (async () => {
+        console.log(`[getProjectWithRelations] Fetching XeroInvoice with project_id: "${project_id}"`);
+        const invoices = await base44.asServiceRole.entities.XeroInvoice.filter({ project_id }).catch(err => {
+          console.error('[getProjectWithRelations] Failed to fetch xero invoices:', err);
+          return [];
+        });
+        console.log(`[getProjectWithRelations] Raw XeroInvoice.filter result:`, invoices);
+        console.log(`[getProjectWithRelations] XeroInvoice count: ${invoices?.length || 0}`);
+        if (invoices && invoices.length > 0) {
+          console.log(`[getProjectWithRelations] First invoice:`, invoices[0]);
+        }
+        return invoices;
+      })(),
       base44.asServiceRole.entities.Part.filter({ project_id }).catch(err => {
         console.error('[getProjectWithRelations] Failed to fetch parts:', err);
         return [];
