@@ -219,6 +219,19 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const xeroInvoices = projectData?.xeroInvoices || [];
   const parts = projectData?.parts || [];
   const purchaseOrders = projectData?.purchaseOrders || [];
+  
+  // DEBUG: Log invoice data
+  React.useEffect(() => {
+    console.log('[ProjectDetails] xeroInvoices from projectData:', {
+      count: xeroInvoices.length,
+      invoices: xeroInvoices.map(inv => ({
+        id: inv.id,
+        number: inv.xero_invoice_number,
+        project_id: inv.project_id,
+        matches: sameId(inv.project_id, project.id)
+      }))
+    });
+  }, [xeroInvoices, project.id]);
   const projectContacts = projectData?.projectContacts || [];
   const tradeRequirements = projectData?.tradeRequirements || [];
   const projectTasks = projectData?.projectTasks || [];
