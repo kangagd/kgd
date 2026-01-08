@@ -172,8 +172,32 @@ Deno.serve(async (req) => {
     // Refresh token if needed
     const accessToken = await refreshTokenIfNeeded(user, base44);
 
+    // Helper function for Gmail API calls with retry logic
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          
+          // If rate limited, wait and retry with exponential backoff
+          if (response.status === 429) {
+            const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000);
+            console.log(`Rate limited, waiting ${waitTime}ms before retry ${attempt}/${maxRetries}`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+          
+          return response;
+        } catch (error) {
+          if (attempt === maxRetries) throw error;
+          const waitTime = Math.min(500 * Math.pow(2, attempt), 5000);
+          console.log(`Request failed, retrying in ${waitTime}ms (${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+
     // Fetch recent inbox messages (limit 30)
-    const inboxResponse = await fetch(
+    const inboxResponse = await fetchWithRetry(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=INBOX',
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
@@ -185,7 +209,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch recent sent messages (limit 30)
-    const sentResponse = await fetch(
+    const sentResponse = await fetchWithRetry(
       'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=SENT',
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
@@ -237,7 +261,7 @@ Deno.serve(async (req) => {
            return false;
         }
 
-        const detailResponse = await fetch(
+        const detailResponse = await fetchWithRetry(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
           { headers: { 'Authorization': `Bearer ${accessToken}` } }
         );
