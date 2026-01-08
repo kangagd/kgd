@@ -34,10 +34,10 @@ async function refreshAndGetConnection(base44) {
             expires_at: newExpiresAt
         });
 
-        return { ...connection, access_token: tokens.access_token, xero_tenant_id: connection.tenant_id };
+        return { ...connection, access_token: tokens.access_token };
     }
 
-    return { ...connection, xero_tenant_id: connection.tenant_id };
+    return connection;
 }
 
 Deno.serve(async (req) => {
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
         let connection;
         try {
             connection = await refreshAndGetConnection(base44);
-            console.log('[migrateLegacyInvoiceUrls] Got Xero connection. Tenant:', connection.xero_tenant_id);
+            console.log('[migrateLegacyInvoiceUrls] Got Xero connection. Tenant:', connection.tenant_id, 'Alt field:', connection.xero_tenant_id);
         } catch (error) {
             console.error('[migrateLegacyInvoiceUrls] Error getting Xero credentials:', error);
             return Response.json({ 
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
                     {
                         headers: {
                             'Authorization': `Bearer ${connection.access_token}`,
-                            'xero-tenant-id': connection.xero_tenant_id,
+                            'xero-tenant-id': connection.tenant_id || connection.xero_tenant_id,
                             'Accept': 'application/json'
                         }
                     }
