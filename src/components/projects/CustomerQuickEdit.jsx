@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Edit, Check, X, Phone, Mail, Building2, Users, Plus } from "lucide-react";
+import { Edit, Check, X, Phone, Mail, Building2, Users, Plus, Search } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -27,6 +27,9 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
   const [isMerging, setIsMerging] = useState(false);
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
   const [orgSearchTerm, setOrgSearchTerm] = useState("");
+  const [showChangeCustomerDialog, setShowChangeCustomerDialog] = useState(false);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [isChangingCustomer, setIsChangingCustomer] = useState(false);
   const [newOrgData, setNewOrgData] = useState({
     name: "",
     organisation_type: undefined,
@@ -57,9 +60,26 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
     }
   });
 
+  const { data: allCustomers = [] } = useQuery({
+    queryKey: ['allCustomers'],
+    queryFn: async () => {
+      const customers = await base44.entities.Customer.list('-updated_date', 500);
+      return customers.filter(c => c.status === 'active' && !c.deleted_at);
+    },
+    enabled: showChangeCustomerDialog
+  });
+
   const filteredOrganisations = organisations.filter(org => 
     org.name?.toLowerCase().includes(orgSearchTerm.toLowerCase()) ||
     org.organisation_type?.toLowerCase().includes(orgSearchTerm.toLowerCase())
+  );
+
+  const filteredCustomers = allCustomers.filter(c => 
+    c.id !== customerId && (
+      c.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      c.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      c.phone?.includes(customerSearchTerm)
+    )
   );
 
   useEffect(() => {
@@ -197,6 +217,48 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
     }
   };
 
+  const handleChangeCustomer = async (newCustomerId) => {
+    setIsChangingCustomer(true);
+    try {
+      const newCustomer = allCustomers.find(c => c.id === newCustomerId);
+      if (!newCustomer) {
+        toast.error('Customer not found');
+        return;
+      }
+
+      // Update project with new customer
+      await base44.functions.invoke('manageProject', {
+        action: 'update',
+        id: projectId,
+        data: {
+          customer_id: newCustomerId,
+          customer_name: newCustomer.name,
+          customer_phone: newCustomer.phone,
+          customer_email: newCustomer.email
+        }
+      });
+
+      // Invalidate queries
+      queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['customer', customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customer', newCustomerId] });
+
+      setShowChangeCustomerDialog(false);
+      setCustomerSearchTerm("");
+      toast.success('Customer changed successfully');
+      
+      if (onCustomerUpdate) {
+        onCustomerUpdate({ customer_id: newCustomerId });
+      }
+    } catch (error) {
+      console.error('Error changing customer:', error);
+      toast.error('Failed to change customer');
+    } finally {
+      setIsChangingCustomer(false);
+    }
+  };
+
   const handleCreateOrganisation = async () => {
     if (!newOrgData.name?.trim()) return;
     
@@ -285,14 +347,25 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
       <div className="space-y-3">
         <div className="flex items-start justify-between">
           <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">{customer.name}</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsEditing(true)}
-            className="h-8 w-8 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]"
-          >
-            <Edit className="w-4 h-4" />
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowChangeCustomerDialog(true)}
+              className="h-8 w-8 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]"
+              title="Change customer"
+            >
+              <Users className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsEditing(true)}
+              className="h-8 w-8 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {customer.customer_type && (
@@ -641,6 +714,64 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
         onMerge={handleMergeCustomers}
         isSubmitting={isMerging}
       />
+
+      <Dialog open={showChangeCustomerDialog} onOpenChange={setShowChangeCustomerDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Change Customer</DialogTitle>
+          </DialogHeader>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
+            <Input
+              placeholder="Search customers by name, email, or phone..."
+              value={customerSearchTerm}
+              onChange={(e) => setCustomerSearchTerm(e.target.value)}
+              className="pl-10"
+              autoFocus
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-2 min-h-[300px]">
+            {filteredCustomers.length === 0 ? (
+              <div className="text-center py-12 text-[#9CA3AF]">
+                <Users className="w-12 h-12 mx-auto mb-3 text-[#E5E7EB]" />
+                <p className="text-[14px]">
+                  {customerSearchTerm ? 'No customers found' : 'Start typing to search customers'}
+                </p>
+              </div>
+            ) : (
+              filteredCustomers.slice(0, 20).map(cust => (
+                <button
+                  key={cust.id}
+                  onClick={() => handleChangeCustomer(cust.id)}
+                  disabled={isChangingCustomer}
+                  className="w-full text-left p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
+                >
+                  <div className="font-medium text-[14px] text-[#111827] mb-1">
+                    {cust.name}
+                  </div>
+                  {cust.customer_type && (
+                    <div className="text-[12px] text-[#6B7280] mb-1">
+                      {cust.customer_type}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 text-[12px] text-[#9CA3AF]">
+                    {cust.phone && <span>{cust.phone}</span>}
+                    {cust.email && <span>{cust.email}</span>}
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E7EB]">
+            <Button variant="outline" onClick={() => setShowChangeCustomerDialog(false)} disabled={isChangingCustomer}>
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
