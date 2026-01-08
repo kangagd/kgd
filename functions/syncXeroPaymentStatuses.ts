@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 async function refreshAndGetConnection(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
     // Get all unpaid/partially paid invoices
     const invoices = await base44.asServiceRole.entities.XeroInvoice.filter({
-      status: { $in: ['Authorised', 'Submitted'] }
+      status: { $in: ['AUTHORISED', 'SUBMITTED', 'OVERDUE'] }
     });
 
     const updates = [];

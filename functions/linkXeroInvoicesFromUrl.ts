@@ -156,15 +156,19 @@ Deno.serve(async (req) => {
           const newInvoice = await base44.asServiceRole.entities.XeroInvoice.create({
             xero_invoice_id: xeroInvoice.InvoiceID,
             project_id: project.id,
-            invoice_number: xeroInvoice.InvoiceNumber,
+            xero_invoice_number: xeroInvoice.InvoiceNumber,
             total: xeroInvoice.Total,
+            total_amount: xeroInvoice.Total,
             amount_due: xeroInvoice.AmountDue,
             amount_paid: xeroInvoice.AmountPaid,
             status: xeroInvoice.Status,
             date: xeroInvoice.Date,
+            issue_date: xeroInvoice.Date,
             due_date: xeroInvoice.DueDate,
             online_payment_url: project.xero_payment_url,
-            raw_data: xeroInvoice
+            online_invoice_url: project.xero_payment_url,
+            contact_name: xeroInvoice.Contact?.Name || project.customer_name,
+            raw_payload: xeroInvoice
           });
           invoiceEntityId = newInvoice.id;
           console.log(`Created new XeroInvoice entity for project ${project.project_number}`);

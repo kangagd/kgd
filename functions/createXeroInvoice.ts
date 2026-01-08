@@ -76,9 +76,13 @@ async function createXeroInvoice(base44, invoicePayload) {
     xero_invoice_id: invoice.InvoiceID,
     xero_invoice_number: invoice.InvoiceNumber,
     status: invoice.Status,
+    total: invoice.Total,
     total_amount: invoice.Total,
     amount_due: invoice.AmountDue,
-    amount_paid: invoice.AmountPaid,
+    amount_paid: invoice.AmountPaid || 0,
+    date: invoice.Date,
+    issue_date: invoice.Date,
+    due_date: invoice.DueDate,
     pdf_url: `https://go.xero.com/AccountsReceivable/View.aspx?InvoiceID=${invoice.InvoiceID}`
   };
 }
