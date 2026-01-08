@@ -1,5 +1,45 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+async function refreshAndGetConnection(base44) {
+    const connections = await base44.asServiceRole.entities.XeroConnection.list();
+    if (connections.length === 0) throw new Error('No Xero connection found');
+    
+    const connection = connections[0];
+    const expiresAt = new Date(connection.expires_at);
+    
+    if (expiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
+        const clientId = Deno.env.get('XERO_CLIENT_ID');
+        const clientSecret = Deno.env.get('XERO_CLIENT_SECRET');
+
+        const tokenResponse = await fetch('https://identity.xero.com/connect/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`
+            },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: connection.refresh_token
+            })
+        });
+
+        if (!tokenResponse.ok) throw new Error('Token refresh failed');
+        
+        const tokens = await tokenResponse.json();
+        const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+
+        await base44.asServiceRole.entities.XeroConnection.update(connection.id, {
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+            expires_at: newExpiresAt
+        });
+
+        return { ...connection, access_token: tokens.access_token, xero_tenant_id: connection.xero_tenant_id };
+    }
+
+    return connection;
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -24,34 +64,11 @@ Deno.serve(async (req) => {
 
         console.log(`[migrateLegacyInvoiceUrls] Found ${legacyProjects.length} projects with legacy invoice URLs`);
 
-        // Get Xero connection details (access token and tenant ID)
-        let xeroAccessToken;
-        let xeroTenantId;
+        // Get Xero connection with valid token
+        let connection;
         try {
-            // Fetch tenant ID from XeroConnection entity
-            const xeroConnections = await base44.asServiceRole.entities.XeroConnection.list();
-            if (xeroConnections.length === 0) {
-                return Response.json({ 
-                    error: 'No Xero connection found. Please connect to Xero first.' 
-                }, { status: 400 });
-            }
-            
-            const xeroConnection = xeroConnections[0];
-            xeroTenantId = xeroConnection.tenant_id;
-            
-            // ALWAYS refresh token to ensure it's valid
-            console.log('[migrateLegacyInvoiceUrls] Refreshing Xero token...');
-            const refreshResponse = await base44.asServiceRole.functions.invoke('refreshXeroToken');
-            
-            if (refreshResponse.data?.error) {
-                return Response.json({ 
-                    error: `Xero token refresh failed: ${refreshResponse.data.error}. Please reconnect to Xero.` 
-                }, { status: 401 });
-            }
-            
-            xeroAccessToken = refreshResponse.data.access_token;
-            console.log('[migrateLegacyInvoiceUrls] Token refreshed successfully. Tenant:', xeroTenantId);
-            
+            connection = await refreshAndGetConnection(base44);
+            console.log('[migrateLegacyInvoiceUrls] Got Xero connection. Tenant:', connection.xero_tenant_id);
         } catch (error) {
             console.error('[migrateLegacyInvoiceUrls] Error getting Xero credentials:', error);
             return Response.json({ 
@@ -72,8 +89,8 @@ Deno.serve(async (req) => {
                     `https://api.xero.com/api.xro/2.0/Invoices?where=${encodeURIComponent(searchQuery)}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${xeroAccessToken}`,
-                            'xero-tenant-id': xeroTenantId,
+                            'Authorization': `Bearer ${connection.access_token}`,
+                            'xero-tenant-id': connection.xero_tenant_id,
                             'Accept': 'application/json'
                         }
                     }
