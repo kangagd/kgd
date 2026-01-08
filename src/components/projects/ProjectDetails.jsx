@@ -446,7 +446,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const handleLinkExistingInvoice = async (invoice) => {
     setIsLinkingInvoice(true);
     try {
-      // Check if this invoice is already linked
+      // Check if already linked to THIS project
       const existing = await base44.entities.XeroInvoice.filter({ 
         xero_invoice_id: invoice.xero_invoice_id,
         project_id: project.id
@@ -459,28 +459,52 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         return;
       }
 
-      // Create XeroInvoice record linking to this project
-      await base44.entities.XeroInvoice.create({
-        xero_invoice_id: invoice.xero_invoice_id,
-        xero_invoice_number: invoice.xero_invoice_number,
-        status: invoice.status,
-        total: invoice.total,
-        total_amount: invoice.total,
-        amount_due: invoice.amount_due,
-        amount_paid: invoice.amount_paid,
-        date: invoice.date,
-        due_date: invoice.due_date,
-        contact_name: invoice.contact_name,
-        contact_id: invoice.contact_id,
-        pdf_url: invoice.pdf_url,
-        online_payment_url: invoice.online_payment_url,
-        project_id: project.id
+      // Find existing XeroInvoice entity (might be linked to another project)
+      const allExisting = await base44.entities.XeroInvoice.filter({ 
+        xero_invoice_id: invoice.xero_invoice_id
       });
 
+      let invoiceEntityId = allExisting[0]?.id;
+
+      // If entity exists, use linkXeroInvoice to handle unlinking from old project
+      if (invoiceEntityId) {
+        await base44.functions.invoke('linkXeroInvoice', {
+          projectId: project.id,
+          invoiceEntityId: invoiceEntityId,
+          setPrimary: !project.primary_xero_invoice_id
+        });
+      } else {
+        // Create new entity and link it
+        const newInvoice = await base44.entities.XeroInvoice.create({
+          xero_invoice_id: invoice.xero_invoice_id,
+          xero_invoice_number: invoice.xero_invoice_number,
+          status: invoice.status,
+          total: invoice.total,
+          total_amount: invoice.total,
+          amount_due: invoice.amount_due,
+          amount_paid: invoice.amount_paid,
+          date: invoice.date,
+          due_date: invoice.due_date,
+          contact_name: invoice.contact_name,
+          contact_id: invoice.contact_id,
+          pdf_url: invoice.pdf_url,
+          online_payment_url: invoice.online_payment_url,
+          project_id: project.id
+        });
+
+        await base44.functions.invoke('linkXeroInvoice', {
+          projectId: project.id,
+          invoiceEntityId: newInvoice.id,
+          setPrimary: !project.primary_xero_invoice_id
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
     } catch (error) {
+      console.error('Failed to link invoice:', error);
       toast.error('Failed to link invoice');
     } finally {
       setIsLinkingInvoice(false);

@@ -22,7 +22,7 @@ const statusColors = {
   VOIDED: "bg-red-100 text-red-700"
 };
 
-export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting, currentInvoiceId, projectId }) {
+export default function LinkInvoiceModal({ open, onClose, onSelect, isSubmitting, projectId }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
