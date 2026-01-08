@@ -31,6 +31,13 @@ export default function RescheduleConfirmModal({
 
   const [localTime, setLocalTime] = useState(newTime || job.scheduled_time || "");
 
+  // Update local time when newTime prop changes
+  React.useEffect(() => {
+    if (newTime) {
+      setLocalTime(newTime);
+    }
+  }, [newTime]);
+
   const oldDate = job.scheduled_date ? format(parseISO(job.scheduled_date), 'MMM d, yyyy') : 'Not set';
   const oldTime = job.scheduled_time || 'Not set';
   const formattedNewDate = newDate ? format(typeof newDate === 'string' ? parseISO(newDate) : newDate, 'MMM d, yyyy') : oldDate;
