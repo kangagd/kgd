@@ -624,10 +624,26 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Only admins can delete non-draft purchase orders' }, { status: 403 });
             }
 
-            // Delete associated parts first
+            // Delete associated parts first (cascade delete)
             const linkedParts = await base44.asServiceRole.entities.Part.filter({ purchase_order_id: id });
+            console.log(`[PO Delete] Found ${linkedParts.length} parts to delete for PO ${id}`);
             for (const part of linkedParts) {
+                console.log(`[PO Delete] Deleting part ${part.id} (${part.category})`);
                 await base44.asServiceRole.entities.Part.delete(part.id);
+            }
+            
+            // Double-check: Also delete parts that might have been linked via line items
+            const lines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
+            const partIdsFromLines = lines.map(line => line.part_id).filter(Boolean);
+            for (const partId of partIdsFromLines) {
+                if (!linkedParts.find(p => p.id === partId)) {
+                    console.log(`[PO Delete] Deleting orphaned part ${partId} from line items`);
+                    try {
+                        await base44.asServiceRole.entities.Part.delete(partId);
+                    } catch (err) {
+                        console.warn(`[PO Delete] Could not delete part ${partId}:`, err.message);
+                    }
+                }
             }
 
             // Delete associated line items
