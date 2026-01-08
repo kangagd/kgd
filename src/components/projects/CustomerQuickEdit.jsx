@@ -15,12 +15,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import AddressAutocomplete from "../common/AddressAutocomplete";
+import MergeCustomersModal from "../customers/MergeCustomersModal";
 
 export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpdate }) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({});
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergeData, setMergeData] = useState(null);
+  const [isMerging, setIsMerging] = useState(false);
   const [showNewOrgDialog, setShowNewOrgDialog] = useState(false);
   const [orgSearchTerm, setOrgSearchTerm] = useState("");
   const [newOrgData, setNewOrgData] = useState({
@@ -79,7 +83,7 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
     setIsSaving(true);
     try {
       // Update customer via backend function (handles duplicates and project syncing)
-      await base44.functions.invoke('updateCustomerInfo', {
+      const response = await base44.functions.invoke('updateCustomerInfo', {
         customerId,
         data: formData
       });
@@ -99,9 +103,62 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating customer:', error);
-      toast.error(error.message || 'Failed to update customer');
+      
+      // Check if this is a duplicate error (409)
+      if (error.response?.status === 409 && error.response?.data?.duplicates) {
+        // Show merge modal
+        setMergeData({
+          primaryCustomer: { ...formData, id: customerId },
+          duplicateCustomers: error.response.data.duplicates
+        });
+        setShowMergeModal(true);
+      } else {
+        toast.error(error.message || 'Failed to update customer');
+      }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleMergeCustomers = async (primaryCustomerId, duplicateCustomerId) => {
+    setIsMerging(true);
+    try {
+      const response = await base44.functions.invoke('mergeCustomers', {
+        primary_customer_id: duplicateCustomerId, // Use existing as primary
+        duplicate_customer_id: primaryCustomerId, // Merge current into existing
+        merge_data: true
+      });
+      
+      await queryClient.refetchQueries({ queryKey: ['customers'] });
+      await queryClient.refetchQueries({ queryKey: ['customer', duplicateCustomerId] });
+      await queryClient.refetchQueries({ queryKey: ['project', projectId] });
+      await queryClient.refetchQueries({ queryKey: ['projects'] });
+      
+      // Update project to use the existing customer
+      await base44.functions.invoke('manageProject', {
+        action: 'update',
+        id: projectId,
+        data: {
+          customer_id: duplicateCustomerId
+        }
+      });
+      
+      await queryClient.invalidateQueries({ queryKey: ['project', projectId] });
+      
+      setShowMergeModal(false);
+      setIsEditing(false);
+      setMergeData(null);
+      
+      toast.success(response.data.message || 'Customers merged successfully');
+      
+      if (onCustomerUpdate) {
+        onCustomerUpdate({ customer_id: duplicateCustomerId });
+      }
+    } catch (error) {
+      console.error('Merge error:', error);
+      toast.error(`Failed to merge: ${error.message}`);
+    } finally {
+      setIsMerging(false);
     }
   };
 
@@ -572,6 +629,18 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MergeCustomersModal
+        open={showMergeModal}
+        onClose={() => {
+          setShowMergeModal(false);
+          setMergeData(null);
+        }}
+        primaryCustomer={mergeData?.primaryCustomer}
+        duplicateCustomers={mergeData?.duplicateCustomers}
+        onMerge={handleMergeCustomers}
+        isSubmitting={isMerging}
+      />
     </div>
   );
 }
