@@ -40,25 +40,40 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
         price_list_item_id: selectedItemId
       });
       
+      console.log('Inventory quantities for item:', quantities);
+      
       // Filter to only locations with stock and get location details
       const locationsWithStock = [];
       for (const qty of quantities) {
-        if (qty.quantity > 0) {
+        if ((qty.quantity || 0) > 0) {
           try {
             const location = await base44.entities.InventoryLocation.get(qty.location_id);
-            if (location && location.is_active) {
+            console.log('Fetched location:', location);
+            if (location && location.is_active !== false) {
               locationsWithStock.push({
                 ...location,
-                available_quantity: qty.quantity,
+                available_quantity: qty.quantity || 0,
                 quantity_id: qty.id
               });
             }
           } catch (err) {
-            console.warn('Could not fetch location:', qty.location_id);
+            console.warn('Could not fetch location:', qty.location_id, err);
+            // Location might not exist, use cached name from quantity record
+            if (qty.location_name) {
+              locationsWithStock.push({
+                id: qty.location_id,
+                name: qty.location_name,
+                type: 'warehouse',
+                is_active: true,
+                available_quantity: qty.quantity || 0,
+                quantity_id: qty.id
+              });
+            }
           }
         }
       }
       
+      console.log('Available locations with stock:', locationsWithStock);
       return locationsWithStock;
     },
     enabled: open && !!selectedItemId,
