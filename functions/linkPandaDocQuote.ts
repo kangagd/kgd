@@ -152,8 +152,8 @@ Deno.serve(async (req) => {
 
     // Create Quote record
     const quoteData = {
-      project_id: project_id || null,
-      job_id: job_id || null,
+      project_id: finalProjectId || null,
+      job_id: finalJobId || null,
       customer_id: finalCustomerId,
       name: pandadocDoc.name || 'Untitled Quote',
       value: value,
