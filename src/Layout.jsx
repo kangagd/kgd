@@ -184,69 +184,48 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
+  // GUARDRAIL: Use React Query for active check-ins to ensure cache consistency
+  const { data: activeCheckInsData } = useQuery({
+    queryKey: ['activeCheckIns', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      
+      const checkIns = await base44.entities.CheckInOut.list();
+      const effectiveRole = getEffectiveRole(user);
+      const isManagerOrAdmin = effectiveRole === 'admin' || effectiveRole === 'manager';
+
+      // Filter for active check-ins (no check_out_time)
+      const activeCheckIns = isManagerOrAdmin 
+        ? checkIns.filter(c => !c.check_out_time)
+        : checkIns.filter(c => !c.check_out_time && c.technician_email === user.email);
+
+      if (activeCheckIns.length === 0) return null;
+
+      // Fetch job details for all active check-ins
+      const checkInsWithJobs = await Promise.all(
+        activeCheckIns.map(async (checkIn) => {
+          try {
+            const job = await base44.entities.Job.get(checkIn.job_id);
+            return { ...checkIn, job };
+          } catch (err) {
+            console.error("Error fetching job for check-in", err);
+            return { ...checkIn, job: null };
+          }
+        })
+      );
+
+      // For technicians, return single object; for admins/managers, return array
+      return isManagerOrAdmin ? checkInsWithJobs : checkInsWithJobs[0];
+    },
+    enabled: !!user,
+    staleTime: 30000, // 30 seconds - more responsive than 2 minutes
+    refetchInterval: 60000, // Refetch every minute
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+  });
+
   useEffect(() => {
-    let isCancelled = false;
-
-    const fetchActiveCheckIn = async () => {
-      if (!user?.email) {
-        if (!isCancelled) setActiveCheckIn(null);
-        return;
-      }
-      try {
-        // Fetch all active check-ins (managers/admins can see all via RLS)
-        const checkIns = await base44.entities.CheckInOut.list();
-
-        if (isCancelled) return;
-
-        // Filter for active check-ins (no check_out_time)
-        const effectiveRole = getEffectiveRole(user);
-        const isManagerOrAdmin = effectiveRole === 'admin' || effectiveRole === 'manager';
-
-        const activeCheckIns = isManagerOrAdmin 
-          ? checkIns.filter(c => !c.check_out_time) // Show all active check-ins
-          : checkIns.filter(c => !c.check_out_time && c.technician_email === user.email); // Show only own
-
-        if (activeCheckIns.length > 0) {
-            // Fetch job details for all active check-ins
-            try {
-              const checkInsWithJobs = await Promise.all(
-                activeCheckIns.map(async (checkIn) => {
-                  try {
-                    const job = await base44.entities.Job.get(checkIn.job_id);
-                    return { ...checkIn, job };
-                  } catch (err) {
-                    console.error("Error fetching job for check-in", err);
-                    return { ...checkIn, job: null };
-                  }
-                })
-              );
-
-              if (!isCancelled) {
-                // For technicians, return single object; for admins/managers, return array
-                setActiveCheckIn(isManagerOrAdmin ? checkInsWithJobs : checkInsWithJobs[0]);
-              }
-            } catch (err) {
-              console.error("Error fetching jobs for active check-ins", err);
-              if (!isCancelled) setActiveCheckIn(isManagerOrAdmin ? activeCheckIns : activeCheckIns[0]);
-            }
-        } else {
-            if (!isCancelled) setActiveCheckIn(null);
-        }
-      } catch (e) {
-        if (!isCancelled) console.error("Error fetching active check-in", e);
-      }
-    };
-
-    if (user) {
-      fetchActiveCheckIn();
-      // Poll every 2 minutes to reduce API load
-      const interval = setInterval(fetchActiveCheckIn, 120000);
-      return () => {
-        isCancelled = true;
-        clearInterval(interval);
-      };
-    }
-  }, [user]);
+    setActiveCheckIn(activeCheckInsData || null);
+  }, [activeCheckInsData]);
 
   useEffect(() => {
     const down = (e) => {

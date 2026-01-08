@@ -32,14 +32,15 @@ export default function CheckIn() {
     loadUser();
   }, []);
 
+  // GUARDRAIL: Use consistent query key 'activeCheckIns' for cache synchronization
   const { data: checkIns = [] } = useQuery({
-    queryKey: ['myCheckIns', user?.email],
+    queryKey: ['activeCheckIns', user?.email],
     queryFn: () => base44.entities.CheckInOut.filter({ 
       technician_email: user?.email 
     }, '-created_date'),
     enabled: !!user?.email,
-    staleTime: 60000, // 1 minute
-    refetchOnWindowFocus: false,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: true, // Ensure fresh data when returning to page
     refetchOnMount: true,
     retry: 1,
   });
@@ -88,8 +89,8 @@ export default function CheckIn() {
       return checkIn;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['checkIns'] });
-      queryClient.invalidateQueries({ queryKey: ['myCheckIns'] });
+      // GUARDRAIL: Invalidate all check-in related queries for consistency
+      queryClient.invalidateQueries({ queryKey: ['activeCheckIns'] });
       queryClient.invalidateQueries({ queryKey: ['myJobs'] });
       setSelectedJobId("");
       setNotes("");
@@ -122,8 +123,9 @@ export default function CheckIn() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['checkIns'] });
-      queryClient.invalidateQueries({ queryKey: ['myCheckIns'] });
+      // GUARDRAIL: Invalidate all check-in related queries + force immediate refetch
+      queryClient.invalidateQueries({ queryKey: ['activeCheckIns'] });
+      queryClient.refetchQueries({ queryKey: ['activeCheckIns'] }); // Force immediate refetch
       queryClient.invalidateQueries({ queryKey: ['myJobs'] });
       setNotes("");
       toast.success("Checked out successfully!");

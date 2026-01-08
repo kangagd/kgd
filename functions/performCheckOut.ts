@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
@@ -88,7 +88,8 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Unauthorized to check out this session' }, { status: 403 });
         }
 
-        // Update CheckInOut record with check-out details
+        // GUARDRAIL: Update CheckInOut record with check-out details
+        // This is the single source of truth for check-out status
         await base44.asServiceRole.entities.CheckInOut.update(checkInId, {
             check_out_time: safeCheckOutTime,
             check_out_notes: overview || "",
