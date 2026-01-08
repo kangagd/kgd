@@ -143,6 +143,7 @@ Deno.serve(async (req) => {
     }
 
     // CRITICAL: Safely deduplicate Xero invoices
+    console.log(`[getProjectWithRelations] Before deduplication - xeroInvoices:`, xeroInvoices);
     const uniqueXeroInvoices = Array.isArray(xeroInvoices) 
       ? xeroInvoices.reduce((acc, inv) => {
           if (inv && inv.xero_invoice_id && !acc.find(i => i.xero_invoice_id === inv.xero_invoice_id)) {
@@ -151,6 +152,7 @@ Deno.serve(async (req) => {
           return acc;
         }, [])
       : [];
+    console.log(`[getProjectWithRelations] After deduplication - uniqueXeroInvoices:`, uniqueXeroInvoices);
 
     console.log(`[getProjectWithRelations] Successfully fetched project ${project_id}: ${jobs.length} jobs, ${quotes.length} quotes, ${uniqueXeroInvoices.length} invoices, ${handoverReports.length} handover reports, ${samples.length} samples`);
     
