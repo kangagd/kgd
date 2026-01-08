@@ -1,44 +1,5 @@
 import { createClientFromRequest } from './shared/sdk.js';
-
-async function refreshAndGetConnection(base44) {
-  const connections = await base44.asServiceRole.entities.XeroConnection.list();
-  if (connections.length === 0) throw new Error('No Xero connection found');
-  
-  const connection = connections[0];
-  const expiresAt = new Date(connection.expires_at);
-  
-  if (expiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
-    const clientId = Deno.env.get('XERO_CLIENT_ID');
-    const clientSecret = Deno.env.get('XERO_CLIENT_SECRET');
-
-    const tokenResponse = await fetch('https://identity.xero.com/connect/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`
-      },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: connection.refresh_token
-      })
-    });
-
-    if (!tokenResponse.ok) throw new Error('Token refresh failed');
-    
-    const tokens = await tokenResponse.json();
-    const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
-
-    await base44.asServiceRole.entities.XeroConnection.update(connection.id, {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: newExpiresAt
-    });
-
-    return { ...connection, access_token: tokens.access_token };
-  }
-
-  return connection;
-}
+import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.js';
 
 Deno.serve(async (req) => {
   try {
@@ -53,7 +14,7 @@ Deno.serve(async (req) => {
 
     const { search = '', page = 1 } = await req.json().catch(() => ({}));
 
-    const connection = await refreshAndGetConnection(base44);
+    const connection = await refreshAndGetXeroConnection(base44);
 
     // Build Xero API URL with filters
     // Fetch invoices (Type=ACCREC), excluding voided and bills (Type=ACCPAY)
@@ -65,11 +26,7 @@ Deno.serve(async (req) => {
       const url = `https://api.xero.com/api.xro/2.0/Invoices?Statuses=DRAFT,SUBMITTED,AUTHORISED,PAID&Type=ACCREC&order=UpdatedDateUTC DESC&page=${currentPage}`;
       
       const xeroResponse = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${connection.access_token}`,
-          'xero-tenant-id': connection.xero_tenant_id,
-          'Accept': 'application/json'
-        }
+        headers: getXeroHeaders(connection)
       });
 
       if (!xeroResponse.ok) {
