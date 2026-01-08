@@ -541,17 +541,15 @@ export default function Schedule() {
     const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
-    // Generate time slots (7 AM to 6 PM in 30-minute intervals)
+    // Generate time slots (7 AM to 6 PM in 1-hour intervals)
     const timeSlots = [];
     for (let hour = 7; hour <= 18; hour++) {
-      for (let minute of [0, 30]) {
-        timeSlots.push({
-          hour,
-          minute,
-          label: `${hour === 12 ? 12 : hour > 12 ? hour - 12 : hour}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`,
-          value: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
-        });
-      }
+      timeSlots.push({
+        hour,
+        minute: 0,
+        label: `${hour === 12 ? 12 : hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`,
+        value: `${String(hour).padStart(2, '0')}:00`
+      });
     }
 
     // Group jobs by time slot
