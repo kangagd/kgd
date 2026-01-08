@@ -63,8 +63,14 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
   const { data: allCustomers = [] } = useQuery({
     queryKey: ['allCustomers'],
     queryFn: async () => {
-      const customers = await base44.entities.Customer.list('-updated_date', 500);
-      return customers.filter(c => c.status === 'active' && !c.deleted_at);
+      try {
+        const customers = await base44.entities.Customer.list('-updated_date', 500);
+        return customers.filter(c => c.status === 'active' && !c.deleted_at);
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+        toast.error('Failed to load customers');
+        return [];
+      }
     },
     enabled: showChangeCustomerDialog
   });
@@ -351,7 +357,10 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowChangeCustomerDialog(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowChangeCustomerDialog(true);
+              }}
               className="h-8 w-8 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]"
               title="Change customer"
             >
@@ -360,7 +369,10 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setIsEditing(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsEditing(true);
+              }}
               className="h-8 w-8 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]"
             >
               <Edit className="w-4 h-4" />
