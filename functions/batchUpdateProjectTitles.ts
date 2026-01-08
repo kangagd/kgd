@@ -134,7 +134,9 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { dryRun = true, limit = 100, minConfidence = 'medium' } = body;
+    const dryRun = body.dryRun ?? body.dry_run ?? true;
+    const limit = body.limit ?? 100;
+    const minConfidence = body.minConfidence ?? body.min_confidence ?? 'medium';
 
     // Fetch projects and customers
     const projects = await base44.asServiceRole.entities.Project.filter({
