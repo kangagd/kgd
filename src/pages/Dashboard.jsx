@@ -48,8 +48,11 @@ export default function Dashboard() {
 
   const { data: allJobs = [] } = useQuery({
     queryKey: jobKeys.all,
-    queryFn: () => base44.entities.Job.list('-scheduled_date'),
-    staleTime: 120000, // 2 minutes
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getMyJobs');
+      return response.data?.jobs || [];
+    },
+    staleTime: 120000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
@@ -59,8 +62,11 @@ export default function Dashboard() {
 
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
-    queryFn: () => base44.entities.CheckInOut.list('-created_date', 10),
-    staleTime: 120000, // 2 minutes
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getMyCheckIns');
+      return response.data?.checkIns || [];
+    },
+    staleTime: 120000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
@@ -68,8 +74,11 @@ export default function Dashboard() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-updated_date', 5),
-    staleTime: 120000, // 2 minutes
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getMyProjects');
+      return response.data?.projects || [];
+    },
+    staleTime: 120000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
@@ -79,9 +88,12 @@ export default function Dashboard() {
 
   const { data: allTasks = [] } = useQuery({
     queryKey: ['myTasks', user?.email],
-    queryFn: () => base44.entities.Task.filter({ assigned_to_email: user?.email }),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getMyTasks');
+      return response.data?.tasks || [];
+    },
     enabled: !!user?.email,
-    staleTime: 120000, // 2 minutes
+    staleTime: 120000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
@@ -106,16 +118,8 @@ export default function Dashboard() {
   const { data: unconfirmedJobs = [] } = useQuery({
     queryKey: ['jobs', 'unconfirmed', 'dashboard'],
     queryFn: async () => {
-      const jobs = await base44.entities.Job.filter({ 
-        client_confirmed: false,
-        status: 'Scheduled'
-      });
-      // Filter for jobs scheduled in the next 7 days, excluding logistics jobs
-      return jobs.filter(job => {
-        if (!job.scheduled_date || job.is_logistics_job) return false;
-        const scheduledDate = new Date(job.scheduled_date);
-        return scheduledDate >= new Date() && scheduledDate <= sevenDaysFromNow;
-      });
+      const response = await base44.functions.invoke('getUnconfirmedJobs');
+      return response.data?.jobs || [];
     },
     enabled: isAdminOrManager,
     staleTime: 120000,
@@ -127,9 +131,10 @@ export default function Dashboard() {
   // Fetch unbooked third party trades
   const { data: unbookedTrades = [] } = useQuery({
     queryKey: ['trades', 'unbooked', 'dashboard'],
-    queryFn: () => base44.entities.ProjectTradeRequirement.filter({ 
-      status: 'Required'
-    }),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getUnbookedTrades');
+      return response.data?.trades || [];
+    },
     enabled: isAdminOrManager,
     staleTime: 120000,
     refetchOnWindowFocus: false,
@@ -165,9 +170,12 @@ export default function Dashboard() {
 
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
-    queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getActivePurchaseOrders');
+      return response.data?.purchaseOrders || [];
+    },
     enabled: isAdminOrManager,
-    staleTime: 120000, // 2 minutes
+    staleTime: 120000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
@@ -181,10 +189,13 @@ export default function Dashboard() {
   ).slice(0, 5);
 
   const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
+    queryKey: ['projects', 'for-pos'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getMyProjects');
+      return response.data?.projects || [];
+    },
     enabled: isAdminOrManager && recentPurchaseOrders.length > 0,
-    staleTime: 120000, // 2 minutes
+    staleTime: 120000,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: 1,
