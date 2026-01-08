@@ -3,10 +3,40 @@ import { updateProjectActivity } from './updateProjectActivity.js';
 
 Deno.serve(async (req) => {
   try {
-    // PandaDoc webhooks don't require user auth
-    const base44 = createClientFromRequest(req);
+    // Validate PandaDoc webhook signature for security
+    const pandadocApiKey = Deno.env.get('PANDADOC_API_KEY');
+    const signature = req.headers.get('x-pandadoc-signature');
+    const timestamp = req.headers.get('x-pandadoc-timestamp');
+    
+    if (!signature || !timestamp) {
+      console.error('Missing PandaDoc webhook signature or timestamp');
+      return Response.json({ error: 'Invalid webhook' }, { status: 401 });
+    }
 
-    const body = await req.json();
+    const base44 = createClientFromRequest(req);
+    const bodyText = await req.text();
+    const body = JSON.parse(bodyText);
+
+    // Verify webhook signature using HMAC-SHA256
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(pandadocApiKey),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signatureData = encoder.encode(`${timestamp}:${bodyText}`);
+    const expectedSignature = await crypto.subtle.sign('HMAC', key, signatureData);
+    const expectedHex = Array.from(new Uint8Array(expectedSignature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    if (signature !== expectedHex) {
+      console.error('Invalid PandaDoc webhook signature');
+      return Response.json({ error: 'Invalid signature' }, { status: 401 });
+    }
     console.log('PandaDoc webhook received:', JSON.stringify(body));
 
     // PandaDoc sends events in this format
