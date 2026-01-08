@@ -24,11 +24,21 @@ Deno.serve(async (req) => {
 
         console.log(`[migrateLegacyInvoiceUrls] Found ${legacyProjects.length} projects with legacy invoice URLs`);
 
-        // Get Xero access token
+        // Get Xero connection details (access token and tenant ID)
         let xeroAccessToken;
+        let xeroTenantId;
         try {
             const xeroResponse = await base44.asServiceRole.functions.invoke('refreshXeroToken');
             xeroAccessToken = xeroResponse.data.access_token;
+            
+            // Fetch tenant ID from XeroConnection entity
+            const xeroConnections = await base44.asServiceRole.entities.XeroConnection.list();
+            if (xeroConnections.length === 0) {
+                return Response.json({ 
+                    error: 'No Xero connection found. Please connect to Xero first.' 
+                }, { status: 400 });
+            }
+            xeroTenantId = xeroConnections[0].tenant_id;
         } catch (error) {
             return Response.json({ 
                 error: 'Failed to get Xero access token. Ensure Xero is connected.' 
@@ -49,7 +59,7 @@ Deno.serve(async (req) => {
                     {
                         headers: {
                             'Authorization': `Bearer ${xeroAccessToken}`,
-                            'xero-tenant-id': Deno.env.get('XERO_TENANT_ID'),
+                            'xero-tenant-id': xeroTenantId,
                             'Accept': 'application/json'
                         }
                     }
