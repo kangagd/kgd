@@ -21,21 +21,25 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { pandadocDocumentId, project_id, job_id, customerId } = body;
+    const { pandadocDocumentId, project_id, job_id, projectId, jobId, customerId } = body;
+
+    // Support both snake_case and camelCase from frontend
+    const finalProjectId = project_id || projectId;
+    const finalJobId = job_id || jobId;
 
     if (!pandadocDocumentId) {
       return Response.json({ error: 'pandadocDocumentId is required' }, { status: 400 });
     }
 
-    if (!project_id && !job_id) {
-      return Response.json({ error: 'Either project_id or job_id is required' }, { status: 400 });
+    if (!finalProjectId && !finalJobId) {
+      return Response.json({ error: 'Either project_id/projectId or job_id/jobId is required' }, { status: 400 });
     }
 
     // GUARDRAIL: Check if already linked to THIS project - prevent duplicate links
-    if (project_id) {
+    if (finalProjectId) {
       const existingQuotes = await base44.asServiceRole.entities.Quote.filter({
         pandadoc_document_id: pandadocDocumentId,
-        project_id: project_id
+        project_id: finalProjectId
       });
 
       if (existingQuotes.length > 0) {
@@ -117,8 +121,8 @@ Deno.serve(async (req) => {
     let customerEmail = '';
     let customerPhone = '';
 
-    if (project_id) {
-      const projects = await base44.entities.Project.filter({ id: project_id });
+    if (finalProjectId) {
+      const projects = await base44.entities.Project.filter({ id: finalProjectId });
       if (projects[0]) {
         finalCustomerId = finalCustomerId || projects[0].customer_id;
         customerName = projects[0].customer_name || '';
@@ -127,8 +131,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (job_id) {
-      const jobs = await base44.entities.Job.filter({ id: job_id });
+    if (finalJobId) {
+      const jobs = await base44.entities.Job.filter({ id: finalJobId });
       if (jobs[0]) {
         finalCustomerId = finalCustomerId || jobs[0].customer_id;
         customerName = customerName || jobs[0].customer_name || '';
@@ -175,9 +179,9 @@ Deno.serve(async (req) => {
     const quote = await base44.asServiceRole.entities.Quote.create(quoteData);
 
     // Auto-populate project fields from quote if this is linked to a project
-    if (project_id) {
+    if (finalProjectId) {
       try {
-        const project = await base44.asServiceRole.entities.Project.get(project_id);
+        const project = await base44.asServiceRole.entities.Project.get(finalProjectId);
         const updates = {};
 
         // GUARDRAIL: Set as primary quote ONLY if no primary quote exists
@@ -210,7 +214,7 @@ Deno.serve(async (req) => {
 
         // Update project if we have any changes
         if (Object.keys(updates).length > 0) {
-          await base44.asServiceRole.entities.Project.update(project_id, updates);
+          await base44.asServiceRole.entities.Project.update(finalProjectId, updates);
         }
       } catch (error) {
         console.error('Failed to auto-populate project fields:', error);
