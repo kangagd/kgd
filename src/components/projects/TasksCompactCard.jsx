@@ -40,6 +40,9 @@ export default function TasksCompactCard({ tasks = [], onViewAll, onAddTask, ent
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {/* Debug info for development */}
+        {tasks.length === 0 && console.log('[TasksCompactCard] No tasks provided - tasks prop:', tasks)}
+        
         {/* Task List */}
         <div className="space-y-2">
           {tasks.length > 0 ? (

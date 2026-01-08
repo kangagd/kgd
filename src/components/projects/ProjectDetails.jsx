@@ -2106,6 +2106,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       <XeroInvoiceCard
                         key={invoice.id}
                         invoice={invoice}
+                        currentProjectId={project.id}
                         onRefreshStatus={() => syncProjectInvoiceMutation.mutate(invoice.id)}
                         onViewInXero={() => window.open(invoice.pdf_url, '_blank')}
                         onTakePayment={() => {

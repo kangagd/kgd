@@ -2,8 +2,10 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DollarSign, ExternalLink, RefreshCw, Calendar, Download, CheckCircle2, AlertCircle, Clock, CreditCard } from "lucide-react";
+import { DollarSign, ExternalLink, RefreshCw, Calendar, Download, CheckCircle2, AlertCircle, Clock, CreditCard, FolderKanban, Link2 } from "lucide-react";
 import { format } from "date-fns";
+import { createPageUrl } from "@/utils";
+import { useNavigate } from "react-router-dom";
 
 const invoiceStatusColors = {
   "Draft": "bg-slate-100 text-slate-700 border-slate-200",
@@ -27,13 +29,35 @@ const getPaymentStatus = (invoice) => {
   }
 };
 
-export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero, onDownloadPdf, onTakePayment, isRefreshing, isDownloading }) {
+export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero, onDownloadPdf, onTakePayment, isRefreshing, isDownloading, currentProjectId }) {
   const paymentStatus = getPaymentStatus(invoice);
   const PaymentIcon = paymentStatus.icon;
+  const navigate = useNavigate();
+  
+  // Check if invoice is linked to a different project
+  const isDifferentProject = currentProjectId && invoice.project_id && invoice.project_id !== currentProjectId;
 
   return (
-    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+    <Card className={`border shadow-sm rounded-lg ${isDifferentProject ? 'border-amber-300 bg-amber-50/30' : 'border-[#E5E7EB]'}`}>
       <CardContent className="p-4">
+        {isDifferentProject && (
+          <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded-lg flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-amber-800 font-medium">Linked to different project</p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`${createPageUrl("Projects")}?projectId=${invoice.project_id}`);
+                }}
+                className="text-xs text-amber-700 hover:text-amber-900 underline flex items-center gap-1 mt-1"
+              >
+                <Link2 className="w-3 h-3" />
+                View linked project
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
