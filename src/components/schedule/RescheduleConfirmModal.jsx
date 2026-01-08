@@ -41,7 +41,15 @@ export default function RescheduleConfirmModal({
   const oldDate = job.scheduled_date ? format(parseISO(job.scheduled_date), 'MMM d, yyyy') : 'Not set';
   const oldTime = job.scheduled_time || 'Not set';
   const formattedNewDate = newDate ? format(typeof newDate === 'string' ? parseISO(newDate) : newDate, 'MMM d, yyyy') : oldDate;
-  const formattedNewTime = localTime || oldTime;
+  
+  // Format time to HH:00 only (snap to hour)
+  const formatToHour = (timeStr) => {
+    if (!timeStr) return 'Not set';
+    const hour = timeStr.split(':')[0];
+    return `${hour}:00`;
+  };
+  
+  const formattedNewTime = localTime ? formatToHour(localTime) : oldTime;
 
   const dateChanged = newDate && job.scheduled_date !== (typeof newDate === 'string' ? newDate : format(newDate, 'yyyy-MM-dd'));
   const timeChanged = localTime && job.scheduled_time !== localTime;
