@@ -1,5 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
+import { normalizeParams } from './shared/parameterNormalizer.js';
 
 const PANDADOC_API_KEY = Deno.env.get("PANDADOC_API_KEY");
 const PANDADOC_API_URL = "https://api.pandadoc.com/public/v1";
@@ -23,13 +24,10 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { project_id, job_id, projectId, jobId, templateId, quoteName, validDays = 30, lineItems = [], notes } = body;
+    const { project_id, job_id } = normalizeParams(body);
+    const { templateId, quoteName, validDays = 30, lineItems = [], notes } = body;
 
-    // Support both snake_case and camelCase
-    const finalProjectId = project_id || projectId;
-    const finalJobId = job_id || jobId;
-
-    if (!finalProjectId && !finalJobId) {
+    if (!project_id && !job_id) {
       return Response.json({ error: 'Either project_id/projectId or job_id/jobId is required' }, { status: 400 });
     }
 
@@ -43,8 +41,8 @@ Deno.serve(async (req) => {
     let customer = null;
     let address = '';
 
-    if (finalProjectId) {
-      const projects = await base44.entities.Project.filter({ id: finalProjectId });
+    if (project_id) {
+      const projects = await base44.entities.Project.filter({ id: project_id });
       project = projects[0];
       if (!project) {
         return Response.json({ error: 'Project not found' }, { status: 404 });
@@ -52,8 +50,8 @@ Deno.serve(async (req) => {
       address = project.address_full || '';
     }
 
-    if (finalJobId) {
-      const jobs = await base44.entities.Job.filter({ id: finalJobId });
+    if (job_id) {
+      const jobs = await base44.entities.Job.filter({ id: job_id });
       job = jobs[0];
       if (!job) {
         return Response.json({ error: 'Job not found' }, { status: 404 });
@@ -145,8 +143,8 @@ Deno.serve(async (req) => {
       recipients: [recipient],
       tokens: tokens,
       metadata: {
-        project_id: finalProjectId || '',
-        job_id: finalJobId || '',
+        project_id: project_id || '',
+        job_id: job_id || '',
         customer_id: customerId
       }
     };
@@ -223,8 +221,8 @@ Deno.serve(async (req) => {
 
     // Create Quote record in our database
     const quote = await base44.entities.Quote.create({
-      project_id: finalProjectId || null,
-      job_id: finalJobId || null,
+      project_id: project_id || null,
+      job_id: job_id || null,
       customer_id: customerId,
       name: finalQuoteName,
       value: totalValue,
@@ -244,8 +242,8 @@ Deno.serve(async (req) => {
     });
 
     // Update project activity if quote is linked to a project
-    if (finalProjectId) {
-      await updateProjectActivity(base44, finalProjectId, 'Quote Created');
+    if (project_id) {
+      await updateProjectActivity(base44, project_id, 'Quote Created');
     }
 
     return Response.json({

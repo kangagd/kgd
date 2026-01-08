@@ -1,4 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from './shared/sdk.js';
+import { normalizeParams } from './shared/parameterNormalizer.js';
 
 async function refreshAndGetConnection(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
@@ -49,7 +50,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
     }
 
-    const { invoice_id } = await req.json();
+    const body = await req.json();
+    const { invoice_id } = normalizeParams(body);
 
     if (!invoice_id) {
       return Response.json({ error: 'invoice_id is required' }, { status: 400 });

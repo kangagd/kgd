@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from './shared/sdk.js';
 
 async function refreshAndGetConnection(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();

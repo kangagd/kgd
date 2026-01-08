@@ -1,4 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from './shared/sdk.js';
+import { normalizeParams } from './shared/parameterNormalizer.js';
 
 Deno.serve(async (req) => {
   try {
@@ -14,7 +15,8 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { quoteId } = body;
+    const { quote_id } = normalizeParams(body);
+    const quoteId = quote_id || body.quoteId;
 
     if (!quoteId) {
       return Response.json({ error: 'quoteId is required' }, { status: 400 });

@@ -1,5 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
+import { normalizeParams } from './shared/parameterNormalizer.js';
 
 const PANDADOC_API_KEY = Deno.env.get("PANDADOC_API_KEY");
 const PANDADOC_API_URL = "https://api.pandadoc.com/public/v1";

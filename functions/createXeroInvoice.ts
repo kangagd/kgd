@@ -1,5 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
+import { normalizeParams } from './shared/parameterNormalizer.js';
 
 async function refreshXeroTokenIfNeeded(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
@@ -102,7 +103,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden - Admin or Manager access required' }, { status: 403 });
     }
 
-    const { invoicePayload, project_id } = await req.json();
+    const body = await req.json();
+    const { project_id } = normalizeParams(body);
+    const { invoicePayload } = body;
     const result = await createXeroInvoice(base44, invoicePayload);
 
     // Update project activity if linked to a project
