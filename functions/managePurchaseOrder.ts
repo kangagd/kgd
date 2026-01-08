@@ -1,9 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
-import { PO_STATUS, PART_STATUS, PART_LOCATION } from './shared/constants.js';
-import { generateJobNumber } from './shared/jobNumberGenerator.js';
-import { mapPoStatusToPartStatus } from './shared/partHelpers.js';
-import { normaliseLegacyPoStatus } from './shared/poHelpers.js';
+import { PO_STATUS, PART_STATUS, PART_LOCATION, PO_DELIVERY_METHOD } from './shared/constants.js';
+import { mapPoStatusToPartStatus, linkPartsToPO } from './shared/partHelpers.js';
+import { normaliseLegacyPoStatus, resolvePoRef, firstNonEmpty } from './shared/poHelpers.js';
 
 // Helper: Sync Parts with PurchaseOrder status
 async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId = null) {
@@ -346,17 +345,9 @@ Deno.serve(async (req) => {
             if (attachments !== undefined) updateData.attachments = attachments || [];
             
             // --- PERMANENT GUARDRAIL: Normalize references ---
-            // Accept both top-level and data payloads
-            const incomingPoReference = firstNonEmpty(
-                po_reference,
-                data?.po_reference,
-                po_number,
-                data?.po_number,
-                order_reference,
-                data?.order_reference,
-                reference,
-                data?.reference
-            );
+            const incomingPoReference = resolvePoRef({
+                data, po_reference, po_number, reference, order_reference
+            });
             
             // Only update if a non-empty reference was provided
             if (incomingPoReference) {
@@ -498,9 +489,7 @@ Deno.serve(async (req) => {
             const newStatus = normalizedStatus;
 
             // Normalize canonical reference once from existing data
-            let normalizedRef = resolvePoRef({
-                po_reference: existing.po_reference,
-            });
+            let normalizedRef = existing.po_reference;
 
             // If still no reference, generate one from ID
             if (!normalizedRef) {
