@@ -45,13 +45,14 @@ export default function ProjectChat({ projectId }) {
   });
 
   const { data: allUsers = [] } = useQuery({
-    queryKey: ['allUsers'],
+    queryKey: ['users', 'mentions'],
     queryFn: async () => {
       try {
-        const response = await base44.functions.invoke('getAllUsers', {});
+        const response = await base44.functions.invoke('getUsersForMentions', {});
         return response.data?.users || [];
       } catch (error) {
         console.error('Error fetching users:', error);
+        toast.error('Could not load user list for mentions');
         return [];
       }
     }
