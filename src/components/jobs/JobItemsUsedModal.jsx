@@ -19,6 +19,7 @@ import { PackageMinus, Loader2 } from "lucide-react";
 export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved }) {
   const [selectedItemId, setSelectedItemId] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [selectedLocationId, setSelectedLocationId] = useState("");
   const queryClient = useQueryClient();
 
   // Fetch Price List Items
@@ -26,6 +27,41 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list('item'),
     enabled: open,
+  });
+
+  // Fetch available locations with inventory for selected item
+  const { data: availableLocations = [], isLoading: locationsLoading } = useQuery({
+    queryKey: ['inventory-for-item', selectedItemId],
+    queryFn: async () => {
+      if (!selectedItemId) return [];
+      
+      // Get all inventory quantities for this item
+      const quantities = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: selectedItemId
+      });
+      
+      // Filter to only locations with stock and get location details
+      const locationsWithStock = [];
+      for (const qty of quantities) {
+        if (qty.quantity > 0) {
+          try {
+            const location = await base44.entities.InventoryLocation.get(qty.location_id);
+            if (location && location.is_active) {
+              locationsWithStock.push({
+                ...location,
+                available_quantity: qty.quantity,
+                quantity_id: qty.id
+              });
+            }
+          } catch (err) {
+            console.warn('Could not fetch location:', qty.location_id);
+          }
+        }
+      }
+      
+      return locationsWithStock;
+    },
+    enabled: open && !!selectedItemId,
   });
 
   const priceListMap = useMemo(() => {
@@ -48,26 +84,22 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     );
   };
 
-  const adjustInventoryForUsage = async ({ price_list_item_id, quantity, vehicle }) => {
-    if (!price_list_item_id || !quantity) return;
+  const adjustInventoryForUsage = async ({ price_list_item_id, quantity, location_id }) => {
+    if (!price_list_item_id || !quantity || !location_id) return;
   
-    const fromLocationType = vehicle ? LOCATION_TYPE.VEHICLE : LOCATION_TYPE.WAREHOUSE;
-    const fromLocationId = vehicle ? vehicle.id : "warehouse_main";
-  
-    // Update InventoryQuantity
+    // Update InventoryQuantity for the selected location
     const existingRows = await base44.entities.InventoryQuantity.filter({
       price_list_item_id,
-      location_type: fromLocationType,
-      location_id: fromLocationId,
+      location_id: location_id,
     });
   
     if (existingRows && existingRows.length > 0) {
       const row = existingRows[0];
-      const currentQty = row.quantity_on_hand || 0;
+      const currentQty = row.quantity || 0;
       const newQty = Math.max(0, currentQty - quantity);
   
       await base44.entities.InventoryQuantity.update(row.id, {
-        quantity_on_hand: newQty,
+        quantity: newQty,
       });
     }
   
@@ -81,7 +113,7 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     }
   
     queryClient.invalidateQueries(["inventory-quantities"]);
-    queryClient.invalidateQueries(["inventory-quantities-for-vehicle", vehicle?.id]);
+    queryClient.invalidateQueries(["inventory-for-item", price_list_item_id]);
     queryClient.invalidateQueries(["priceListItems"]);
   };
 
@@ -112,14 +144,16 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
   const createMovementMutation = useMutation({
     mutationFn: async () => {
       const qty = Number(quantity);
-      if (!selectedItemId || !qty || qty <= 0) return;
+      if (!selectedItemId || !qty || qty <= 0 || !selectedLocationId) return;
 
+      const selectedLocation = availableLocations.find(loc => loc.id === selectedLocationId);
+      
       const payload = {
         price_list_item_id: selectedItemId,
         quantity: qty,
         movement_type: MOVEMENT_TYPE.USAGE,
-        from_location_type: vehicle ? LOCATION_TYPE.VEHICLE : LOCATION_TYPE.WAREHOUSE,
-        from_location_id: vehicle ? vehicle.id : "warehouse_main",
+        from_location_type: selectedLocation?.type === 'vehicle' ? LOCATION_TYPE.VEHICLE : LOCATION_TYPE.WAREHOUSE,
+        from_location_id: selectedLocationId,
         to_location_type: LOCATION_TYPE.OTHER,
         to_location_id: `job:${job.id}`,
         job_id: job.id,
@@ -135,7 +169,7 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
       await adjustInventoryForUsage({
         price_list_item_id: selectedItemId,
         quantity: qty,
-        vehicle,
+        location_id: selectedLocationId,
       });
 
       // 3) Add cost to Project.materials_cost
@@ -168,12 +202,25 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
       toast.error("Please enter a valid quantity");
       return;
     }
+    if (!selectedLocationId) {
+      toast.error("Please select a location");
+      return;
+    }
+    
+    // Check if selected quantity exceeds available
+    const selectedLocation = availableLocations.find(loc => loc.id === selectedLocationId);
+    if (selectedLocation && Number(quantity) > selectedLocation.available_quantity) {
+      toast.error(`Only ${selectedLocation.available_quantity} available at this location`);
+      return;
+    }
+    
     createMovementMutation.mutate();
   };
 
   const handleClose = () => {
     setSelectedItemId("");
     setQuantity("1");
+    setSelectedLocationId("");
     onClose();
   };
 
@@ -209,6 +256,38 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
           </div>
 
           <div className="space-y-2">
+            <Label>Location</Label>
+            <Select 
+              value={selectedLocationId} 
+              onValueChange={setSelectedLocationId}
+              disabled={!selectedItemId || locationsLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={
+                  !selectedItemId 
+                    ? "Select an item first..." 
+                    : locationsLoading 
+                      ? "Loading locations..." 
+                      : "Select location..."
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {availableLocations.length === 0 ? (
+                  <div className="p-2 text-center text-sm text-gray-500">
+                    {selectedItemId ? "No stock available at any location" : "Select an item first"}
+                  </div>
+                ) : (
+                  availableLocations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name} - {location.available_quantity} available
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label>Quantity</Label>
             <Input
               type="number"
@@ -217,11 +296,13 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="Qty"
+              disabled={!selectedLocationId}
             />
-          </div>
-
-          <div className="pt-2 text-xs text-gray-500">
-            Source: {vehicle ? `Vehicle: ${vehicle.name}` : "Warehouse (Default)"}
+            {selectedLocationId && availableLocations.find(loc => loc.id === selectedLocationId) && (
+              <p className="text-xs text-gray-500">
+                Available: {availableLocations.find(loc => loc.id === selectedLocationId).available_quantity}
+              </p>
+            )}
           </div>
 
           <DialogFooter>
