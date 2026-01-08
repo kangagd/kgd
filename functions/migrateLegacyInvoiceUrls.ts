@@ -39,24 +39,23 @@ Deno.serve(async (req) => {
             const xeroConnection = xeroConnections[0];
             xeroTenantId = xeroConnection.tenant_id;
             
-            // Check if token needs refresh
-            const now = Date.now();
-            const tokenExpiry = new Date(xeroConnection.expires_at).getTime();
+            // ALWAYS refresh token to ensure it's valid
+            console.log('[migrateLegacyInvoiceUrls] Refreshing Xero token...');
+            const refreshResponse = await base44.asServiceRole.functions.invoke('refreshXeroToken');
             
-            if (now >= tokenExpiry - 300000) { // Refresh if expiring within 5 minutes
-                console.log('[migrateLegacyInvoiceUrls] Token expired or expiring soon, refreshing...');
-                const refreshResponse = await base44.asServiceRole.functions.invoke('refreshXeroToken');
-                xeroAccessToken = refreshResponse.data.access_token;
-            } else {
-                xeroAccessToken = xeroConnection.access_token;
+            if (refreshResponse.data?.error) {
+                return Response.json({ 
+                    error: `Xero token refresh failed: ${refreshResponse.data.error}. Please reconnect to Xero.` 
+                }, { status: 401 });
             }
             
-            console.log('[migrateLegacyInvoiceUrls] Using Xero tenant:', xeroTenantId);
+            xeroAccessToken = refreshResponse.data.access_token;
+            console.log('[migrateLegacyInvoiceUrls] Token refreshed successfully. Tenant:', xeroTenantId);
             
         } catch (error) {
             console.error('[migrateLegacyInvoiceUrls] Error getting Xero credentials:', error);
             return Response.json({ 
-                error: `Failed to get Xero credentials: ${error.message}` 
+                error: `Failed to get Xero credentials: ${error.message}. You may need to reconnect to Xero.` 
             }, { status: 500 });
         }
 
