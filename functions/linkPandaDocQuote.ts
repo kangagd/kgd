@@ -54,7 +54,13 @@ Deno.serve(async (req) => {
     });
 
     if (!docResponse.ok) {
-      return Response.json({ error: 'Failed to fetch document from PandaDoc' }, { status: 500 });
+      const errorText = await docResponse.text();
+      console.error('PandaDoc fetch error:', errorText);
+      return Response.json({ 
+        error: 'Failed to fetch document from PandaDoc', 
+        details: errorText,
+        status: docResponse.status
+      }, { status: 500 });
     }
 
     const pandadocDoc = await docResponse.json();
@@ -62,24 +68,32 @@ Deno.serve(async (req) => {
     // Fetch the public sharing link
     let publicUrl = '';
     try {
-      const linksResponse = await fetch(`${PANDADOC_API_URL}/documents/${pandadocDocumentId}/session`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `API-Key ${PANDADOC_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          recipient: pandadocDoc.recipients?.[0]?.email || '',
-          lifetime: 31536000 // 1 year in seconds
-        })
-      });
-      
-      if (linksResponse.ok) {
-        const linksData = await linksResponse.json();
-        publicUrl = linksData.id ? `https://app.pandadoc.com/s/${linksData.id}` : '';
+      // Only create session if document has recipients
+      if (pandadocDoc.recipients && pandadocDoc.recipients.length > 0 && pandadocDoc.recipients[0].email) {
+        const linksResponse = await fetch(`${PANDADOC_API_URL}/documents/${pandadocDocumentId}/session`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            recipient: pandadocDoc.recipients[0].email,
+            lifetime: 31536000 // 1 year in seconds
+          })
+        });
+        
+        if (linksResponse.ok) {
+          const linksData = await linksResponse.json();
+          publicUrl = linksData.id ? `https://app.pandadoc.com/s/${linksData.id}` : '';
+        } else {
+          const errorText = await linksResponse.text();
+          console.warn('Failed to create session link:', errorText);
+        }
+      } else {
+        console.warn('No recipient email found, skipping session link creation');
       }
     } catch (linkError) {
-      console.error('Failed to fetch public link:', linkError);
+      console.error('Failed to fetch public link:', linkError.message);
     }
 
     // Map PandaDoc status to our status
@@ -137,25 +151,28 @@ Deno.serve(async (req) => {
     }
 
     // Create Quote record
-    const quote = await base44.asServiceRole.entities.Quote.create({
+    const quoteData = {
       project_id: project_id || null,
       job_id: job_id || null,
       customer_id: finalCustomerId,
-      name: pandadocDoc.name,
+      name: pandadocDoc.name || 'Untitled Quote',
       value: value,
       currency: pandadocDoc.grand_total?.currency || 'AUD',
       pandadoc_document_id: pandadocDoc.id,
-      pandadoc_public_url: publicUrl,
+      pandadoc_public_url: publicUrl || null,
       pandadoc_internal_url: `https://app.pandadoc.com/a/#/documents/${pandadocDoc.id}`,
       status: quoteStatus,
       sent_at: pandadocDoc.date_sent || null,
       viewed_at: null,
       accepted_at: quoteStatus === 'Accepted' ? new Date().toISOString() : null,
       expires_at: pandadocDoc.expiration_date || null,
-      customer_name: customerName,
-      customer_email: customerEmail,
-      customer_phone: customerPhone
-    });
+      customer_name: customerName || '',
+      customer_email: customerEmail || '',
+      customer_phone: customerPhone || ''
+    };
+
+    console.log('Creating Quote with data:', JSON.stringify(quoteData, null, 2));
+    const quote = await base44.asServiceRole.entities.Quote.create(quoteData);
 
     // Auto-populate project fields from quote if this is linked to a project
     if (project_id) {
