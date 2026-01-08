@@ -1074,8 +1074,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               customerId={project.customer_id}
               projectId={project.id}
               onCustomerUpdate={(updatedData) => {
-                queryClient.invalidateQueries({ queryKey: ['customer', project.customer_id] });
-                queryClient.invalidateQueries({ queryKey: ['project', project.id] });
+                queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+                queryClient.invalidateQueries({ queryKey: ['projects'] });
               }}
             />
 
