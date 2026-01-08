@@ -24,6 +24,8 @@ Deno.serve(async (req) => {
       project_id: { $ne: null } 
     });
 
+    console.log(`[batchCleanupXeroInvoiceGhostLinks] Checking ${projects.length} projects and ${invoices.length} invoices`);
+
     const results = {
       projects_checked: projects.length,
       invoices_checked: invoices.length,

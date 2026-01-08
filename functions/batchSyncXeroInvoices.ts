@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
 
     let updated = 0;
     let errors = 0;
+    let skipped = 0;
 
     for (const invoiceRecord of activeInvoices) {
       try {

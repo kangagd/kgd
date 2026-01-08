@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
       p.xero_payment_url && !p.primary_xero_invoice_id
     );
 
-    console.log(`Found ${projectsNeedingInvoices.length} projects with payment URLs but no linked invoices`);
+    console.log(`[batchLinkXeroInvoicesFromUrl] Found ${projectsNeedingInvoices.length} projects with payment URLs but no linked invoices`);
 
     let linkedCount = 0;
     let skippedCount = 0;

@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
 
         const actions = [];
         let projectsUpdated = 0;
+        let noMatchCount = 0;
 
         for (const project of legacyProjects) {
             try {

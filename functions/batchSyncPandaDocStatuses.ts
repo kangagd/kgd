@@ -42,6 +42,8 @@ Deno.serve(async (req) => {
       pandadoc_document_id: { $ne: null }
     });
 
+    console.log(`[batchSyncPandaDocStatuses] Starting sync for ${quotes.length} quotes`);
+
     const results = {
       total: quotes.length,
       synced: 0,
