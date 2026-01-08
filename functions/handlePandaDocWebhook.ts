@@ -142,12 +142,22 @@ Deno.serve(async (req) => {
           console.log(`Unhandled PandaDoc event: ${eventType}`);
       }
 
-      // Update value if provided
+      // Update value if provided (but respect financial locking)
       const grandTotalAmount = event.data?.grand_total?.amount || event.document?.grand_total?.amount;
       if (grandTotalAmount) {
         const newValue = parseFloat(grandTotalAmount);
         if (!isNaN(newValue)) {
-          updates.value = newValue;
+          // Check if project has financial value locked
+          if (quote.project_id) {
+            const project = await base44.asServiceRole.entities.Project.get(quote.project_id);
+            if (!project?.financial_value_locked) {
+              updates.value = newValue;
+            } else {
+              console.log(`Skipped value update for quote ${quote.id} - project financial_value_locked`);
+            }
+          } else {
+            updates.value = newValue;
+          }
         }
       }
 

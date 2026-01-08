@@ -162,19 +162,35 @@ Deno.serve(async (req) => {
       creditNotesTotal = xeroInvoice.CreditNotes.reduce((sum, cn) => sum + (cn.Total || 0), 0);
     }
 
-    // GUARDRAIL: Update invoice status/amounts only - preserve project_id and job_id links
-    const updatedInvoice = await base44.asServiceRole.entities.XeroInvoice.update(invoice_id, {
+    // Check if project has financial value locked before updating amounts
+    const updateData = {
       status: finalStatus,
-      total_amount: xeroInvoice.Total,
-      amount_due: xeroInvoice.AmountDue,
-      amount_paid: xeroInvoice.AmountPaid || 0,
       payment_terms: xeroInvoice.Terms || null,
       credit_notes_total: creditNotesTotal,
       last_payment_date: lastPaymentDate,
-      online_payment_url: onlinePaymentUrl, // Public customer-facing URL
-      online_invoice_url: onlinePaymentUrl, // Also save in online_invoice_url field
+      online_payment_url: onlinePaymentUrl,
+      online_invoice_url: onlinePaymentUrl,
       raw_payload: xeroInvoice
-    });
+    };
+
+    // Only update financial amounts if project doesn't have value locked
+    let canUpdateAmounts = true;
+    if (invoiceRecord.project_id) {
+      const project = await base44.asServiceRole.entities.Project.get(invoiceRecord.project_id);
+      if (project?.financial_value_locked) {
+        canUpdateAmounts = false;
+        console.log(`Skipped amount updates for invoice ${invoice_id} - project financial_value_locked`);
+      }
+    }
+
+    if (canUpdateAmounts) {
+      updateData.total_amount = xeroInvoice.Total;
+      updateData.amount_due = xeroInvoice.AmountDue;
+      updateData.amount_paid = xeroInvoice.AmountPaid || 0;
+    }
+
+    // GUARDRAIL: Update invoice status/amounts only - preserve project_id and job_id links
+    const updatedInvoice = await base44.asServiceRole.entities.XeroInvoice.update(invoice_id, updateData);
 
     // GUARDRAIL: Update payment URLs on linked records without changing the links themselves
     if (invoiceRecord.job_id) {
