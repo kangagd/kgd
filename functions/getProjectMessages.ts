@@ -19,7 +19,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'projectId is required' }, { status: 400 });
     }
 
-    // Use service role to fetch messages for all authenticated users
+    // Load the project to check access
+    const project = await base44.asServiceRole.entities.Project.get(projectId);
+    if (!project) {
+      return Response.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    // Check access: admin, manager, viewer, assigned technician, or creator
+    const isAdmin = user.role === 'admin';
+    const isManager = user.extended_role === 'manager';
+    const isViewer = user.extended_role === 'viewer';
+    const isAssigned = project.assigned_technicians && project.assigned_technicians.includes(user.email);
+    const isCreator = project.created_by === user.email;
+
+    if (!isAdmin && !isManager && !isViewer && !isAssigned && !isCreator) {
+      return Response.json({ error: 'You do not have access to this project' }, { status: 403 });
+    }
+
+    // Fetch messages using service role
     const messages = await base44.asServiceRole.entities.ProjectMessage.filter({ 
       project_id: projectId 
     });

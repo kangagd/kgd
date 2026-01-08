@@ -19,7 +19,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'jobId is required' }, { status: 400 });
     }
 
-    // Use service role to fetch messages for all authenticated users
+    // Load the job to check access
+    const job = await base44.asServiceRole.entities.Job.get(jobId);
+    if (!job) {
+      return Response.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    // Check access: admin, manager, or assigned technician
+    const isAdmin = user.role === 'admin';
+    const isManager = user.extended_role === 'manager';
+    const isAssigned = job.assigned_to && job.assigned_to.includes(user.email);
+
+    if (!isAdmin && !isManager && !isAssigned) {
+      return Response.json({ error: 'You do not have access to this job' }, { status: 403 });
+    }
+
+    // Fetch messages using service role
     const messages = await base44.asServiceRole.entities.JobMessage.filter({ 
       job_id: jobId 
     });

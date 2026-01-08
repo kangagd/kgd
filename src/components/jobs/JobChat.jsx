@@ -36,6 +36,7 @@ export default function JobChat({ jobId }) {
         return response.data?.messages || [];
       } catch (error) {
         console.error('Error fetching job messages:', error);
+        toast.error('Unable to load chat messages');
         return [];
       }
     },

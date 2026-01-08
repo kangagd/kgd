@@ -36,6 +36,7 @@ export default function ProjectChat({ projectId }) {
         return response.data?.messages || [];
       } catch (error) {
         console.error('Error fetching messages:', error);
+        toast.error('Unable to load chat messages');
         return [];
       }
     },
