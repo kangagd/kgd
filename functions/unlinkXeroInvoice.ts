@@ -27,6 +27,7 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.XeroInvoice.update(invoiceEntityId, {
       project_id: null,
+      job_id: null,
       customer_id: null,
       customer_name: null
     });
@@ -46,12 +47,32 @@ Deno.serve(async (req) => {
         }
         
         if (project.primary_xero_invoice_id === invoiceEntityId) {
-          updates.primary_xero_invoice_id = null;
+          updates.primary_xero_invoice_id = updates.xero_invoices && updates.xero_invoices.length > 0 
+            ? updates.xero_invoices[0] 
+            : null;
         }
         
         if (Object.keys(updates).length > 0) {
           await base44.asServiceRole.entities.Project.update(projectId, updates);
         }
+      }
+    }
+    
+    // Scan for and fix any ghost links in other projects
+    const allProjects = await base44.asServiceRole.entities.Project.filter({
+      xero_invoices: { $in: [invoiceEntityId] }
+    });
+    
+    for (const proj of allProjects) {
+      if (proj.id !== projectId) {
+        const cleanedInvoices = (proj.xero_invoices || []).filter(id => id !== invoiceEntityId);
+        const updates = { xero_invoices: cleanedInvoices };
+        
+        if (proj.primary_xero_invoice_id === invoiceEntityId) {
+          updates.primary_xero_invoice_id = cleanedInvoices.length > 0 ? cleanedInvoices[0] : null;
+        }
+        
+        await base44.asServiceRole.entities.Project.update(proj.id, updates);
       }
     }
 
