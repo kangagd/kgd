@@ -39,7 +39,11 @@ Deno.serve(async (req) => {
       projectTasks,
       projectMessages,
       projectEmails,
-      emailThreads
+      emailThreads,
+      handoverReports,
+      customer,
+      organisation,
+      samples
     ] = await Promise.all([
       base44.asServiceRole.entities.Project.get(project_id).catch(err => {
         console.error('[getProjectWithRelations] Failed to fetch project:', err);
@@ -90,6 +94,36 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.EmailThread.filter({ project_id }).catch(err => {
         console.error('[getProjectWithRelations] Failed to fetch email threads:', err);
         return [];
+      }),
+      base44.asServiceRole.entities.HandoverReport.filter({ project_id }).catch(err => {
+        console.error('[getProjectWithRelations] Failed to fetch handover reports:', err);
+        return [];
+      }),
+      // Fetch customer (use get if customer_id exists)
+      (async () => {
+        const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
+        if (proj?.customer_id) {
+          return base44.asServiceRole.entities.Customer.get(proj.customer_id).catch(err => {
+            console.error('[getProjectWithRelations] Failed to fetch customer:', err);
+            return null;
+          });
+        }
+        return null;
+      })(),
+      // Fetch organisation (use get if organisation_id exists)
+      (async () => {
+        const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
+        if (proj?.organisation_id) {
+          return base44.asServiceRole.entities.Organisation.get(proj.organisation_id).catch(err => {
+            console.error('[getProjectWithRelations] Failed to fetch organisation:', err);
+            return null;
+          });
+        }
+        return null;
+      })(),
+      base44.asServiceRole.entities.Sample.filter({ project_id }).catch(err => {
+        console.error('[getProjectWithRelations] Failed to fetch samples:', err);
+        return [];
       })
     ]);
 
@@ -109,7 +143,7 @@ Deno.serve(async (req) => {
         }, [])
       : [];
 
-    console.log(`[getProjectWithRelations] Successfully fetched project ${project_id}: ${jobs.length} jobs, ${quotes.length} quotes, ${uniqueXeroInvoices.length} invoices`);
+    console.log(`[getProjectWithRelations] Successfully fetched project ${project_id}: ${jobs.length} jobs, ${quotes.length} quotes, ${uniqueXeroInvoices.length} invoices, ${handoverReports.length} handover reports, ${samples.length} samples`);
 
     // CRITICAL: Always return valid structure with fallback arrays
     return Response.json({
@@ -124,7 +158,11 @@ Deno.serve(async (req) => {
       projectTasks: projectTasks || [],
       projectMessages: projectMessages || [],
       projectEmails: projectEmails || [],
-      emailThreads: emailThreads || []
+      emailThreads: emailThreads || [],
+      handoverReports: handoverReports || [],
+      customer: customer || null,
+      organisation: organisation || null,
+      samples: samples || []
     });
 
   } catch (error) {

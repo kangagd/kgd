@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     let projects = [];
     
     try {
-      const allProjects = await base44.asServiceRole.entities.Project.list('-created_date', 10000);
+      const allProjects = await base44.asServiceRole.entities.Project.list();
       projects = Array.isArray(allProjects) ? allProjects.filter(p => p && !p.deleted_at) : [];
       console.log(`[getMyProjects] Fetched ${projects.length} projects`);
     } catch (fetchError) {
