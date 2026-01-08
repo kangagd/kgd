@@ -192,6 +192,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const response = await base44.functions.invoke('getProjectWithRelations', { 
         project_id: initialProject.id 
       });
+      console.log('[ProjectDetails Query] Raw response:', response);
+      console.log('[ProjectDetails Query] response.data:', response.data);
+      console.log('[ProjectDetails Query] xeroInvoices count:', response.data?.xeroInvoices?.length);
       return response.data;
     },
     initialData: {
