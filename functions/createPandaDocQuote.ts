@@ -148,34 +148,28 @@ Deno.serve(async (req) => {
     };
 
     // Add pricing table if we have line items
-    // CRITICAL: Only add pricing table if template supports it (data_merge enabled)
-    // Otherwise, the template should have a static pricing table that user fills manually
+    // Try with pricing table first, fall back to tokens-only if template doesn't support it
     if (pricingItems.length > 0) {
-      try {
-        createDocPayload.pricing_tables = [
-          {
-            name: "PricingTable1",
-            options: {
-              currency: "AUD",
-              discount: { type: "absolute", value: 0 }
-            },
-            sections: [
-              {
-                title: "Products & Services",
-                default: true,
-                rows: pricingItems
-              }
-            ]
-          }
-        ];
-      } catch (e) {
-        console.warn('Pricing table merge disabled in template, skipping line items:', e);
-        // Template doesn't support data merge - user will need to fill pricing table manually
-      }
+      createDocPayload.pricing_tables = [
+        {
+          name: "PricingTable1",
+          options: {
+            currency: "AUD",
+            discount: { type: "absolute", value: 0 }
+          },
+          sections: [
+            {
+              title: "Products & Services",
+              default: true,
+              rows: pricingItems
+            }
+          ]
+        }
+      ];
     }
 
     // Call PandaDoc API to create document
-    const createResponse = await fetch(`${PANDADOC_API_URL}/documents`, {
+    let createResponse = await fetch(`${PANDADOC_API_URL}/documents`, {
       method: 'POST',
       headers: {
         'Authorization': `API-Key ${PANDADOC_API_KEY}`,
@@ -184,13 +178,38 @@ Deno.serve(async (req) => {
       body: JSON.stringify(createDocPayload)
     });
 
+    // If pricing table fails due to data merge not enabled, retry without it
     if (!createResponse.ok) {
       const errorText = await createResponse.text();
-      console.error('PandaDoc create error:', errorText);
-      return Response.json({ 
-        error: 'Failed to create PandaDoc document', 
-        details: errorText 
-      }, { status: createResponse.status });
+      
+      if (errorText.includes('Data merge is disabled') && createDocPayload.pricing_tables) {
+        console.warn('Template does not support pricing table data merge, retrying without pricing_tables');
+        delete createDocPayload.pricing_tables;
+        
+        createResponse = await fetch(`${PANDADOC_API_URL}/documents`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(createDocPayload)
+        });
+        
+        if (!createResponse.ok) {
+          const retryErrorText = await createResponse.text();
+          console.error('PandaDoc create error (retry):', retryErrorText);
+          return Response.json({ 
+            error: 'Failed to create PandaDoc document', 
+            details: retryErrorText 
+          }, { status: createResponse.status });
+        }
+      } else {
+        console.error('PandaDoc create error:', errorText);
+        return Response.json({ 
+          error: 'Failed to create PandaDoc document', 
+          details: errorText 
+        }, { status: createResponse.status });
+      }
     }
 
     const pandadocDoc = await createResponse.json();
