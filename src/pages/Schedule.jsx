@@ -470,7 +470,7 @@ export default function Schedule() {
       const rounded = Math.round(totalMinutes / 30) * 30;
       const newHours = Math.floor(rounded / 60) % 24;
       const newMinutes = rounded % 60;
-      return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:00`;
+      return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
     } catch {
       return null;
     }
