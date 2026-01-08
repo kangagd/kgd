@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -328,7 +328,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   });
 
   // Enrich parts with PO status for accurate status derivation
-  const enrichedProjectParts = React.useMemo(() => {
+  const enrichedProjectParts = useMemo(() => {
     const poById = Object.fromEntries(projectPurchaseOrders.map(po => [po.id, po]));
     return projectParts.map(p => {
       const linkedPO = p.purchase_order_id ? poById[p.purchase_order_id] : null;

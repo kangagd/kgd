@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { sameId } from "@/components/utils/id";
@@ -153,7 +153,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [projectInfoOpen, setProjectInfoOpen] = useState(false);
   const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
   const [commandMenuOpen, setCommandMenuOpen] = useState(false);
-  const addTradeRef = React.useRef(null);
+  const addTradeRef = useRef(null);
   const [composerMode, setComposerMode] = useState(null);
   const [composerMessage, setComposerMessage] = useState(null);
 
@@ -161,7 +161,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const urlParams = new URLSearchParams(window.location.search);
   const emailThreadId = propsEmailThreadId || urlParams.get('fromEmail') || initialProject?.source_email_thread_id;
 
-  React.useEffect(() => {
+  useEffect(() => {
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
@@ -217,7 +217,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   console.log('[ProjectDetails] Extracted xeroInvoices:', xeroInvoices);
   
   // DEBUG: Log invoice data
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('[ProjectDetails] xeroInvoices from projectData:', {
       count: xeroInvoices.length,
       invoices: xeroInvoices.map(inv => ({
@@ -239,7 +239,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
 
-  React.useEffect(() => {
+  useEffect(() => {
     setDescription(project.description || "");
     setNotes(project.notes || "");
   }, [project.description, project.notes]);
@@ -259,7 +259,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     ...QUERY_CONFIG.reference
   });
 
-  const inventoryByItem = React.useMemo(() => {
+  const inventoryByItem = useMemo(() => {
     const map = {};
     for (const item of priceListItems) {
       map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
@@ -321,7 +321,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
 
   // Auto-expand panels based on content
-  React.useEffect(() => {
+  useEffect(() => {
     if (projectContacts.length > 0 && !contactsOpen) setContactsOpen(true);
     if (tradeRequirements.length > 0 && !tradesOpen) setTradesOpen(true);
     if (((project.image_urls && project.image_urls.length > 0) || project.quote_url || project.invoice_url || (project.other_documents && project.other_documents.length > 0) || handoverReports.length > 0) && !mediaDocsOpen) setMediaDocsOpen(true);
@@ -329,7 +329,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
 
 
-  React.useEffect(() => {
+  useEffect(() => {
     let viewerRecordId = null;
     const updatePresence = async () => {
       try {
@@ -1035,7 +1035,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   const isInstallType = project.project_type && project.project_type.includes("Install");
   const showRequirementsTab = true; // Always show requirements tab for contacts and trades
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Auto-focus tabs based on project stage
     if (project.status === "Completed") {
       setActiveTab("summary");
@@ -1061,7 +1061,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   };
 
   // Memoize command bar counts
-  const commandBarCounts = React.useMemo(() => {
+  const commandBarCounts = useMemo(() => {
     const mediaCount = (project.image_urls || []).length;
     const docsCount = [
       project.quote_url,
