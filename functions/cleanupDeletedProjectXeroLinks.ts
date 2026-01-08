@@ -15,9 +15,12 @@ Deno.serve(async (req) => {
 
         console.log('[cleanupDeletedProjectXeroLinks] Starting', { dry_run });
 
-        // Fetch all deleted projects
-        const allProjects = await base44.asServiceRole.entities.Project.list('-deleted_at', 10000);
-        const deletedProjects = allProjects.filter(p => p.deleted_at);
+        // Fetch all deleted projects using filter to query specifically for deleted_at IS NOT NULL
+        const deletedProjects = await base44.asServiceRole.entities.Project.filter(
+            { deleted_at: { $ne: null } },
+            '-deleted_at',
+            10000
+        );
 
         console.log(`[cleanupDeletedProjectXeroLinks] Found ${deletedProjects.length} deleted projects`);
 
