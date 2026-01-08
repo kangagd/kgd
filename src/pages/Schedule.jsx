@@ -536,127 +536,42 @@ export default function Schedule() {
     setShowConfirmModal(true);
   };
 
-  // Render Day View with Drag and Drop
+  // Render Day View with Drag and Drop (Time Grid)
   const renderDayView = () => {
     const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
-    if (dayJobs.length === 0) {
-      return (
-        <Droppable droppableId={`day-${dateStr}`}>
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`flex flex-col items-center justify-center py-16 rounded-xl transition-colors ${
-                snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' : ''
-              }`}
-            >
-              <div className="w-16 h-16 bg-[#F3F4F6] rounded-full flex items-center justify-center mb-4">
-                <CalendarIcon className="w-8 h-8 text-[#6B7280]" />
-              </div>
-              <p className="text-[#4B5563] text-center">
-                {snapshot.isDraggingOver ? 'Drop job here to schedule' : 'No jobs scheduled for this day.'}
-              </p>
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      );
+    // Generate time slots (7 AM to 6 PM in 30-minute intervals)
+    const timeSlots = [];
+    for (let hour = 7; hour <= 18; hour++) {
+      for (let minute of [0, 30]) {
+        timeSlots.push({
+          hour,
+          minute,
+          label: `${hour === 12 ? 12 : hour > 12 ? hour - 12 : hour}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`,
+          value: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+        });
+      }
     }
 
-    // Group by technician using email to handle name changes/duplicates
-    const jobsByTechEmail = {};
-    const techDisplayNames = {};
-
-    // Initialize with known technicians
-    technicians.forEach(tech => {
-      const email = tech.email.toLowerCase();
-      jobsByTechEmail[email] = [];
-      techDisplayNames[email] = tech.display_name || tech.full_name;
+    // Group jobs by time slot
+    const jobsByTimeSlot = {};
+    timeSlots.forEach(slot => {
+      jobsByTimeSlot[slot.value] = [];
     });
     
-    // Initialize unassigned
-    const UNASSIGNED_KEY = 'unassigned';
-    jobsByTechEmail[UNASSIGNED_KEY] = [];
-    techDisplayNames[UNASSIGNED_KEY] = 'Unassigned';
+    // Unscheduled jobs (no time or outside range)
+    jobsByTimeSlot['unscheduled'] = [];
 
-    // Distribute jobs - if there's an active check-in, only show under checked-in technician(s)
     dayJobs.forEach(job => {
-      const assignedEmails = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
-      
-      // Check if there are active check-ins for this job
-      const activeCheckIns = activeCheckInMap[job.id]?.checkIns || [];
-      const checkedInEmails = activeCheckIns.map(ci => ci.technician_email?.toLowerCase()).filter(Boolean);
-      
-      if (assignedEmails.length === 0) {
-        // Unassigned
-        jobsByTechEmail[UNASSIGNED_KEY].push(job);
-      } else if (checkedInEmails.length > 0) {
-        // Job has active check-ins - only show under checked-in technician(s)
-        checkedInEmails.forEach((checkedInEmail) => {
-          if (jobsByTechEmail[checkedInEmail] !== undefined) {
-            jobsByTechEmail[checkedInEmail].push(job);
-          } else {
-            // Unknown technician
-            if (!jobsByTechEmail[checkedInEmail]) {
-              jobsByTechEmail[checkedInEmail] = [];
-              const checkIn = activeCheckIns.find(ci => ci.technician_email?.toLowerCase() === checkedInEmail);
-              techDisplayNames[checkedInEmail] = checkIn?.technician_name || checkedInEmail;
-            }
-            jobsByTechEmail[checkedInEmail].push(job);
-          }
-        });
+      const jobTime = job.scheduled_time?.substring(0, 5); // Get HH:MM
+      const slot = timeSlots.find(s => s.value === jobTime);
+      if (slot) {
+        jobsByTimeSlot[slot.value].push(job);
       } else {
-        // No active check-ins - show under all assigned technicians
-        assignedEmails.forEach((rawEmail, idx) => {
-          const email = rawEmail ? rawEmail.toLowerCase() : null;
-          
-          if (email && jobsByTechEmail[email] !== undefined) {
-            // Known technician
-            jobsByTechEmail[email].push(job);
-          } else if (email) {
-            // Unknown technician (maybe deleted or not in fetched list)
-            if (!jobsByTechEmail[email]) {
-              jobsByTechEmail[email] = [];
-              techDisplayNames[email] = job.assigned_to_name?.[idx] || email;
-            }
-            jobsByTechEmail[email].push(job);
-          }
-        });
+        jobsByTimeSlot['unscheduled'].push(job);
       }
     });
-
-    // Prepare render groups with global indices for drag-drop
-    let globalIndex = 0;
-    const groupsToRender = [];
-
-    // Helper to add group
-    const addGroup = (email, displayName) => {
-      const jobs = jobsByTechEmail[email];
-      if (jobs && jobs.length > 0) {
-        groupsToRender.push({
-          techName: displayName,
-          items: jobs.map(job => ({ job, index: globalIndex++ }))
-        });
-      }
-    };
-
-    // 1. Add active technicians in order
-    technicians.forEach(tech => {
-      const email = tech.email.toLowerCase();
-      addGroup(email, techDisplayNames[email]);
-    });
-
-    // 2. Add other groups (unknown techs and unassigned)
-    Object.keys(jobsByTechEmail).forEach(email => {
-      if (email === UNASSIGNED_KEY) return; // Handle last
-      if (technicians.some(t => t.email.toLowerCase() === email)) return; // Already handled
-      addGroup(email, techDisplayNames[email]);
-    });
-
-    // 3. Add unassigned last
-    addGroup(UNASSIGNED_KEY, techDisplayNames[UNASSIGNED_KEY]);
 
     // Get leaves for this day
     const dayLeaves = leaves.filter(leave => {
@@ -670,46 +585,21 @@ export default function Schedule() {
     });
 
     return (
-      <Droppable droppableId={`day-${dateStr}`}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={`space-y-6 min-h-[200px] rounded-xl p-2 -m-2 transition-colors ${
-              snapshot.isDraggingOver ? 'bg-[#FAE008]/10 border-2 border-dashed border-[#FAE008]' : ''
-            }`}
-          >
-            {groupsToRender.map(({ techName, items }) => {
-              // Find leaves for this technician
-              const techLeaves = dayLeaves.filter(leave => {
-                const techEmail = technicians.find(t => (t.display_name || t.full_name) === techName)?.email;
-                return techEmail && leave.technician_email.toLowerCase() === techEmail.toLowerCase();
-              });
-
-              return (
-                <div key={techName}>
-                  <h3 className="text-sm font-semibold text-[#4B5563] mb-3">
-                    {techName}
-                  </h3>
-                  {techLeaves.length > 0 && (
-                    <div className="mb-3 space-y-2">
-                      {techLeaves.map(leave => (
-                        <div key={leave.id} className="bg-gray-200 border-l-4 border-gray-500 p-3 rounded-lg">
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="font-medium text-gray-700">🚫 Unavailable</span>
-                            <span className="text-xs text-gray-600 capitalize px-2 py-0.5 bg-gray-300 rounded">
-                              {leave.leave_type}
-                            </span>
-                          </div>
-                          {leave.reason && (
-                            <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div className="space-y-3">
-                    {items.map(({ job, index }) => (
+      <div className="space-y-1">
+        {/* Unscheduled Jobs Section */}
+        {jobsByTimeSlot['unscheduled'].length > 0 && (
+          <Droppable droppableId={`day-${dateStr}`}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`mb-4 p-3 rounded-xl border-2 border-dashed transition-colors ${
+                  snapshot.isDraggingOver ? 'bg-orange-50 border-orange-300' : 'bg-[#F9FAFB] border-[#E5E7EB]'
+                }`}
+              >
+                <div className="text-xs font-semibold text-[#6B7280] mb-2">Unscheduled (No Time)</div>
+                <div className="space-y-2">
+                  {jobsByTimeSlot['unscheduled'].map((job, index) => (
                     <Draggable key={job.id} draggableId={job.id} index={index}>
                       {(dragProvided, dragSnapshot) => (
                         <div
@@ -729,15 +619,96 @@ export default function Schedule() {
                         </div>
                       )}
                     </Draggable>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
-            {provided.placeholder}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        )}
+
+        {/* Leaves Banner */}
+        {dayLeaves.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {dayLeaves.map(leave => (
+              <div key={leave.id} className="bg-gray-200 border-l-4 border-gray-500 p-3 rounded-lg">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium text-gray-700">🚫 {leave.technician_name} Unavailable</span>
+                  <span className="text-xs text-gray-600 capitalize px-2 py-0.5 bg-gray-300 rounded">
+                    {leave.leave_type}
+                  </span>
+                </div>
+                {leave.reason && (
+                  <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>
+                )}
+              </div>
+            ))}
           </div>
         )}
-      </Droppable>
+
+        {/* Time Grid */}
+        <div className="space-y-0.5">
+          {timeSlots.map((slot, slotIndex) => {
+            const slotJobs = jobsByTimeSlot[slot.value];
+            const droppableId = `day-${dateStr}-${String(slot.hour).padStart(2, '0')}-${String(slot.minute).padStart(2, '0')}`;
+            
+            return (
+              <Droppable key={slot.value} droppableId={droppableId}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`flex gap-2 min-h-[60px] rounded-lg border transition-colors ${
+                      snapshot.isDraggingOver 
+                        ? 'bg-[#FAE008]/20 border-[#FAE008] border-2' 
+                        : slotJobs.length > 0 
+                          ? 'bg-white border-[#E5E7EB]' 
+                          : 'bg-white border-[#E5E7EB] hover:border-[#D1D5DB]'
+                    }`}
+                  >
+                    {/* Time Label */}
+                    <div className="w-16 flex-shrink-0 p-2 text-xs font-medium text-[#6B7280] border-r border-[#E5E7EB]">
+                      {slot.label}
+                    </div>
+                    
+                    {/* Jobs Column */}
+                    <div className="flex-1 p-2 space-y-2">
+                      {slotJobs.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-xs text-[#9CA3AF]">
+                          {snapshot.isDraggingOver ? 'Drop here' : ''}
+                        </div>
+                      ) : (
+                        slotJobs.map((job, index) => (
+                          <Draggable key={job.id} draggableId={job.id} index={index}>
+                            {(dragProvided, dragSnapshot) => (
+                              <div
+                                ref={dragProvided.innerRef}
+                                {...dragProvided.draggableProps}
+                                {...dragProvided.dragHandleProps}
+                              >
+                                <DraggableJobCard
+                                  job={job}
+                                  onClick={() => setModalJob(job)}
+                                  onAddressClick={handleAddressClick}
+                                  onProjectClick={handleProjectClick}
+                                  isDragging={dragSnapshot.isDragging}
+                                  techniciansLookup={techniciansLookup}
+                                  hasActiveCheckIn={!!activeCheckInMap[job.id]}
+                                />
+                              </div>
+                            )}
+                          </Draggable>
+                        ))
+                      )}
+                      {provided.placeholder}
+                    </div>
+                  </div>
+                )}
+              </Droppable>
+            );
+          })}
+        </div>
+      </div>
     );
   };
 
