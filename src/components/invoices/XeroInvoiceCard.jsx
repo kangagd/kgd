@@ -6,6 +6,7 @@ import { DollarSign, ExternalLink, RefreshCw, Calendar, Download, CheckCircle2, 
 import { format } from "date-fns";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
+import { sameId } from "@/components/utils/id";
 
 const invoiceStatusColors = {
   "Draft": "bg-slate-100 text-slate-700 border-slate-200",
@@ -34,8 +35,8 @@ export default function XeroInvoiceCard({ invoice, onRefreshStatus, onViewInXero
   const PaymentIcon = paymentStatus.icon;
   const navigate = useNavigate();
   
-  // Check if invoice is linked to a different project
-  const isDifferentProject = currentProjectId && invoice.project_id && invoice.project_id !== currentProjectId;
+  // Check if invoice is linked to a different project using sameId helper
+  const isDifferentProject = currentProjectId && invoice.project_id && !sameId(invoice.project_id, currentProjectId);
 
   return (
     <Card className={`border shadow-sm rounded-lg ${isDifferentProject ? 'border-amber-300 bg-amber-50/30' : 'border-[#E5E7EB]'}`}>
