@@ -28,9 +28,6 @@ Deno.serve(async (req) => {
         let xeroAccessToken;
         let xeroTenantId;
         try {
-            const xeroResponse = await base44.asServiceRole.functions.invoke('refreshXeroToken');
-            xeroAccessToken = xeroResponse.data.access_token;
-            
             // Fetch tenant ID from XeroConnection entity
             const xeroConnections = await base44.asServiceRole.entities.XeroConnection.list();
             if (xeroConnections.length === 0) {
@@ -38,10 +35,28 @@ Deno.serve(async (req) => {
                     error: 'No Xero connection found. Please connect to Xero first.' 
                 }, { status: 400 });
             }
-            xeroTenantId = xeroConnections[0].tenant_id;
+            
+            const xeroConnection = xeroConnections[0];
+            xeroTenantId = xeroConnection.tenant_id;
+            
+            // Check if token needs refresh
+            const now = Date.now();
+            const tokenExpiry = new Date(xeroConnection.expires_at).getTime();
+            
+            if (now >= tokenExpiry - 300000) { // Refresh if expiring within 5 minutes
+                console.log('[migrateLegacyInvoiceUrls] Token expired or expiring soon, refreshing...');
+                const refreshResponse = await base44.asServiceRole.functions.invoke('refreshXeroToken');
+                xeroAccessToken = refreshResponse.data.access_token;
+            } else {
+                xeroAccessToken = xeroConnection.access_token;
+            }
+            
+            console.log('[migrateLegacyInvoiceUrls] Using Xero tenant:', xeroTenantId);
+            
         } catch (error) {
+            console.error('[migrateLegacyInvoiceUrls] Error getting Xero credentials:', error);
             return Response.json({ 
-                error: 'Failed to get Xero access token. Ensure Xero is connected.' 
+                error: `Failed to get Xero credentials: ${error.message}` 
             }, { status: 500 });
         }
 
@@ -66,11 +81,13 @@ Deno.serve(async (req) => {
                 );
 
                 if (!searchResponse.ok) {
+                    const errorText = await searchResponse.text();
+                    console.error(`[Xero API Error] Status: ${searchResponse.status}, Body: ${errorText}`);
                     actions.push({
                         project_id: project.id,
                         project_number: project.project_number,
                         action: 'error',
-                        message: `Xero API error: ${searchResponse.status}`
+                        message: `Xero API error: ${searchResponse.status} - ${errorText}`
                     });
                     continue;
                 }
