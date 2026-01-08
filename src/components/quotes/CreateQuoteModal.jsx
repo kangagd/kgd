@@ -105,7 +105,8 @@ export default function CreateQuoteModal({
       }
     } catch (error) {
       console.error('Create quote error:', error);
-      toast.error('Failed to create quote');
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message || 'Failed to create quote';
+      toast.error(errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -113,12 +114,15 @@ export default function CreateQuoteModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="create-quote-description">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#FAE008]" />
             Create PandaDoc Quote
           </DialogTitle>
+          <p id="create-quote-description" className="sr-only">
+            Create a new quote using a PandaDoc template. Configure quote details, line items, and validity period.
+          </p>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
