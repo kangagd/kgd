@@ -10,7 +10,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
         }
 
-        const { dry_run = true, limit = 50 } = await req.json();
+        const body = await req.json();
+        const dry_run = body.dry_run === false || body.dry_run === 'false' ? false : true;
+        const limit = body.limit || 50;
 
         console.log('[linkLegacyInvoicesToProjects] Starting', { dry_run, limit });
 
