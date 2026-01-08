@@ -144,6 +144,17 @@ Deno.serve(async (req) => {
       : [];
 
     console.log(`[getProjectWithRelations] Successfully fetched project ${project_id}: ${jobs.length} jobs, ${quotes.length} quotes, ${uniqueXeroInvoices.length} invoices, ${handoverReports.length} handover reports, ${samples.length} samples`);
+    
+    // DEBUG: Log invoice data structure
+    if (uniqueXeroInvoices.length > 0) {
+      console.log(`[getProjectWithRelations] Xero Invoices for project ${project_id}:`, JSON.stringify(uniqueXeroInvoices.map(inv => ({
+        id: inv.id,
+        xero_invoice_id: inv.xero_invoice_id,
+        xero_invoice_number: inv.xero_invoice_number,
+        project_id: inv.project_id,
+        status: inv.status
+      }))));
+    }
 
     // CRITICAL: Always return valid structure with fallback arrays
     return Response.json({
