@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from './shared/sdk.js';
 
 // Batch cleanup to remove ghost invoice links between projects and invoices
 Deno.serve(async (req) => {
