@@ -59,20 +59,18 @@ Deno.serve(async (req) => {
 
         console.log('[migrateLegacyInvoiceUrls] Starting migration', { dry_run, limit });
 
-        // Find all projects with legacy invoice_url but empty xero_invoices array
+        // Find all projects with legacy invoice URLs (regardless of xero_invoices array)
         const allProjects = await base44.asServiceRole.entities.Project.list();
         console.log(`[migrateLegacyInvoiceUrls] Total projects: ${allProjects.length}`);
         
         const legacyProjects = allProjects.filter(p => {
             const hasLegacyUrl = p.legacy_xero_invoice_url || p.invoice_url;
-            const hasNoXeroInvoices = !p.xero_invoices || p.xero_invoices.length === 0;
             const notDeleted = !p.deleted_at;
-            return hasLegacyUrl && hasNoXeroInvoices && notDeleted;
+            return hasLegacyUrl && notDeleted;
         }).slice(0, limit);
 
-        console.log(`[migrateLegacyInvoiceUrls] Projects with legacy URLs: ${allProjects.filter(p => p.legacy_xero_invoice_url || p.invoice_url).length}`);
-        console.log(`[migrateLegacyInvoiceUrls] Projects without xero_invoices: ${allProjects.filter(p => !p.xero_invoices || p.xero_invoices.length === 0).length}`);
-        console.log(`[migrateLegacyInvoiceUrls] Found ${legacyProjects.length} projects needing migration`);
+        console.log(`[migrateLegacyInvoiceUrls] Projects with legacy URLs: ${legacyProjects.length}`);
+        console.log(`[migrateLegacyInvoiceUrls] Processing first ${Math.min(limit, legacyProjects.length)} projects`);
 
         // Get Xero connection with valid token
         let connection;
