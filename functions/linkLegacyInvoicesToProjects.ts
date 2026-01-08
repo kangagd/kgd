@@ -63,11 +63,22 @@ Deno.serve(async (req) => {
                 const primaryInvoice = matchingInvoices[0]; // Use first as primary
 
                 if (!dry_run) {
+                    // Update the project with linked invoices
                     await base44.asServiceRole.entities.Project.update(project.id, {
                         xero_invoices: invoiceIds,
                         primary_xero_invoice_id: primaryInvoice.id,
                         xero_payment_url: primaryInvoice.online_payment_url || primaryInvoice.online_invoice_url || null
                     });
+
+                    // CRITICAL: Update each XeroInvoice to link back to the project
+                    for (const invoice of matchingInvoices) {
+                        await base44.asServiceRole.entities.XeroInvoice.update(invoice.id, {
+                            project_id: project.id,
+                            customer_id: project.customer_id,
+                            customer_name: project.customer_name
+                        });
+                    }
+
                     projectsUpdated++;
                 }
 
