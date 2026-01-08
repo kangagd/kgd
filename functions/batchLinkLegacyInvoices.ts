@@ -1,5 +1,6 @@
 import { createClientFromRequest } from './shared/sdk.js';
 
+// Batch link legacy invoice URLs to projects
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
