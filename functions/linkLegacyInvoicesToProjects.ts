@@ -39,13 +39,23 @@ Deno.serve(async (req) => {
                 
                 // Find all invoices matching this project number (exact + variations)
                 const matchingInvoices = allInvoices.filter(inv => {
-                    const invNumber = String(inv.xero_invoice_number || '');
-                    // Match exact (3540) or variations (3540.2, 3540B, 3540C, etc)
-                    return invNumber === projectNumber || 
-                           invNumber.startsWith(`${projectNumber}.`) ||
-                           invNumber.startsWith(`${projectNumber}B`) ||
-                           invNumber.startsWith(`${projectNumber}C`) ||
-                           invNumber.startsWith(`${projectNumber}D`);
+                    const invNumber = String(inv.xero_invoice_number || '').trim().toUpperCase();
+                    const projNum = projectNumber.toUpperCase();
+                    
+                    // Match exact (3540)
+                    if (invNumber === projNum) return true;
+                    
+                    // Match with decimal: 3540.1, 3540.2
+                    if (invNumber.startsWith(`${projNum}.`)) return true;
+                    
+                    // Match with ANY letter suffix: 3540A, 3540B, 3540C, etc.
+                    if (invNumber.startsWith(projNum)) {
+                        const suffix = invNumber.slice(projNum.length);
+                        // Check if suffix is one or more letters (A, B, C, AB, etc.)
+                        if (/^[A-Z]+$/.test(suffix)) return true;
+                    }
+                    
+                    return false;
                 });
 
                 if (matchingInvoices.length === 0) {
