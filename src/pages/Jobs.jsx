@@ -203,7 +203,22 @@ export default function Jobs() {
   });
 
   const createJobMutation = useMutation({
-    mutationFn: (data) => base44.functions.invoke('manageJob', { action: 'create', data }),
+    mutationFn: async (data) => {
+      const response = await base44.functions.invoke('manageJob', { action: 'create', data });
+      
+      // Sync address from project if job is linked to a project
+      if (response.data?.project_id) {
+        try {
+          await base44.functions.invoke('syncJobAddressesFromProject', {
+            project_id: response.data.project_id
+          });
+        } catch (err) {
+          console.error('Failed to sync address from project:', err);
+        }
+      }
+      
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
