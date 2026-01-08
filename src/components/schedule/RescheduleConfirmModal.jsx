@@ -89,15 +89,13 @@ export default function RescheduleConfirmModal({
                   </div>
                 )}
                 
-                {/* Time Selector */}
+                {/* Time Display (Read-only - determined by drop location) */}
                 <div>
                   <Label className="text-[13px] font-medium text-[#4B5563] mb-1.5">Time</Label>
-                  <Input
-                    type="time"
-                    value={localTime}
-                    onChange={(e) => handleTimeChange(e.target.value)}
-                    className="h-10"
-                  />
+                  <div className="flex items-center gap-2 h-10 px-3 border border-[#E5E7EB] rounded-lg bg-[#F9FAFB]">
+                    <Clock className="w-4 h-4 text-[#6B7280]" />
+                    <span className="font-semibold text-[#111827]">{formattedNewTime}</span>
+                  </div>
                   {timeChanged && (
                     <div className="flex items-center gap-2 text-xs mt-1.5 text-[#6B7280]">
                       <span className="line-through">{oldTime}</span>
