@@ -55,11 +55,15 @@ Deno.serve(async (req) => {
     let { invoicePayload } = body;
     
     // Process line items to include SKU in ItemCode field for Xero
+    // GUARDRAIL: Xero truncates ItemCode to 30 characters, so we truncate here to match
     if (invoicePayload.LineItems) {
-      invoicePayload.LineItems = invoicePayload.LineItems.map(item => ({
-        ...item,
-        ItemCode: item.ItemCode || item.sku || "", // Use provided ItemCode, fallback to sku, or empty string
-      }));
+      invoicePayload.LineItems = invoicePayload.LineItems.map(item => {
+        const sku = item.ItemCode || item.sku || "";
+        return {
+          ...item,
+          ItemCode: sku.substring(0, 30), // Truncate to 30 chars to match Xero's limit
+        };
+      });
     }
     
     const result = await createXeroInvoice(base44, invoicePayload);
