@@ -81,11 +81,16 @@ export default function CreateQuoteModal({
       return;
     }
 
+    if (!project?.id && !job?.id) {
+      toast.error('Quote must be linked to a project or job');
+      return;
+    }
+
     setIsCreating(true);
     try {
       const response = await base44.functions.invoke('createPandaDocQuote', {
-        project_id: project?.id || null,
-        job_id: job?.id || null,
+        projectId: project?.id || null,
+        jobId: job?.id || null,
         templateId: selectedTemplate,
         quoteName: quoteName || undefined,
         validDays,
