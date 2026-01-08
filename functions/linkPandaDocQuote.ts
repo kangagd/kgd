@@ -174,8 +174,38 @@ Deno.serve(async (req) => {
       customer_phone: customerPhone || ''
     };
 
-    console.log('Creating Quote with data:', JSON.stringify(quoteData, null, 2));
-    const quote = await base44.asServiceRole.entities.Quote.create(quoteData);
+    // CRITICAL: Check if a quote with this pandadoc_document_id already exists
+    // If it does, we need to unlink it from its old project first
+    const existingQuotes = await base44.asServiceRole.entities.Quote.filter({
+      pandadoc_document_id: pandadocDoc.id
+    });
+
+    let quote;
+    
+    if (existingQuotes.length > 0) {
+      // Quote already exists - unlink from old project first
+      const existingQuote = existingQuotes[0];
+      const oldProjectId = existingQuote.project_id;
+      
+      // Unlink from old project if needed
+      if (oldProjectId && oldProjectId !== project_id) {
+        const oldProject = await base44.asServiceRole.entities.Project.get(oldProjectId);
+        
+        if (oldProject && oldProject.primary_quote_id === existingQuote.id) {
+          await base44.asServiceRole.entities.Project.update(oldProjectId, {
+            primary_quote_id: null
+          });
+        }
+      }
+      
+      // Update existing quote with new data
+      await base44.asServiceRole.entities.Quote.update(existingQuote.id, quoteData);
+      quote = { ...existingQuote, ...quoteData };
+    } else {
+      // Create new quote
+      console.log('Creating Quote with data:', JSON.stringify(quoteData, null, 2));
+      quote = await base44.asServiceRole.entities.Quote.create(quoteData);
+    }
 
     // Auto-populate project fields from quote if this is linked to a project
     if (project_id) {

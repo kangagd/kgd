@@ -29,11 +29,15 @@ Deno.serve(async (req) => {
     }
 
     const projectId = quote.project_id;
+    const jobId = quote.job_id;
 
-    // Delete the quote
-    await base44.asServiceRole.entities.Quote.delete(quoteId);
+    // STEP 1: Clear quote's project/job references
+    await base44.asServiceRole.entities.Quote.update(quoteId, {
+      project_id: null,
+      job_id: null
+    });
 
-    // If this was the primary quote on a project, clear that reference
+    // STEP 2: Clear primary_quote_id on project if this was primary
     if (projectId) {
       const project = await base44.asServiceRole.entities.Project.get(projectId);
       if (project.primary_quote_id === quoteId) {
