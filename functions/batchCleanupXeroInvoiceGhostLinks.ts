@@ -1,6 +1,7 @@
 import { createClientFromRequest } from './shared/sdk.js';
 
 // Batch cleanup to remove ghost invoice links between projects and invoices
+// Admin-only batch cleanup function
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);

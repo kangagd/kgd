@@ -1,7 +1,7 @@
 import { createClientFromRequest } from './shared/sdk.js';
 import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.js';
 
-// Batch link Xero invoices from payment URLs
+// Batch link Xero invoices from payment URLs - admin only
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);

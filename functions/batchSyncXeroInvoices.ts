@@ -1,7 +1,7 @@
 import { createClientFromRequest } from './shared/sdk.js';
 import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.js';
 
-// Batch sync all Xero invoice statuses
+// Batch sync all Xero invoice statuses - scheduled task
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);

@@ -1,6 +1,6 @@
 import { createClientFromRequest } from './shared/sdk.js';
 
-// Batch sync all PandaDoc quote statuses
+// Batch sync all PandaDoc quote statuses - scheduled task
 // Status mapping from PandaDoc to internal statuses
 const mapPandaDocStatus = (pdStatus) => {
   const statusMap = {
