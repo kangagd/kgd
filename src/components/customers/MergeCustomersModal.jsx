@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,9 @@ export default function MergeCustomersModal({
   onMerge,
   isSubmitting 
 }) {
-  const [selectedDuplicate, setSelectedDuplicate] = React.useState(null);
+  const [selectedDuplicate, setSelectedDuplicate] = useState(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (duplicateCustomers?.length === 1) {
       setSelectedDuplicate(duplicateCustomers[0]);
     }
