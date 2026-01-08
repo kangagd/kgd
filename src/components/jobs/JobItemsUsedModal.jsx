@@ -35,45 +35,30 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     queryFn: async () => {
       if (!selectedItemId) return [];
       
-      // Get all inventory quantities for this item
+      // Get all inventory quantities for this item from all locations
       const quantities = await base44.entities.InventoryQuantity.filter({
         price_list_item_id: selectedItemId
       });
       
-      console.log('Inventory quantities for item:', quantities);
+      // Get all active locations (warehouses + vehicles)
+      const allLocations = await base44.entities.InventoryLocation.list();
+      const locationMap = new Map(allLocations.map(loc => [loc.id, loc]));
       
-      // Filter to only locations with stock and get location details
+      // Build locations with stock
       const locationsWithStock = [];
       for (const qty of quantities) {
         if ((qty.quantity || 0) > 0) {
-          try {
-            const location = await base44.entities.InventoryLocation.get(qty.location_id);
-            console.log('Fetched location:', location);
-            if (location && location.is_active !== false) {
-              locationsWithStock.push({
-                ...location,
-                available_quantity: qty.quantity || 0,
-                quantity_id: qty.id
-              });
-            }
-          } catch (err) {
-            console.warn('Could not fetch location:', qty.location_id, err);
-            // Location might not exist, use cached name from quantity record
-            if (qty.location_name) {
-              locationsWithStock.push({
-                id: qty.location_id,
-                name: qty.location_name,
-                type: 'warehouse',
-                is_active: true,
-                available_quantity: qty.quantity || 0,
-                quantity_id: qty.id
-              });
-            }
+          const location = locationMap.get(qty.location_id);
+          if (location && location.is_active !== false) {
+            locationsWithStock.push({
+              ...location,
+              available_quantity: qty.quantity || 0,
+              quantity_id: qty.id
+            });
           }
         }
       }
       
-      console.log('Available locations with stock:', locationsWithStock);
       return locationsWithStock;
     },
     enabled: open && !!selectedItemId,
