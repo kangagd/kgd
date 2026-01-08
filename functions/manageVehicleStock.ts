@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { syncVehicleStockQuantity, syncMovementRecord } from './shared/dualWriteInventory.js';
 
 Deno.serve(async (req) => {
     try {
@@ -50,9 +51,30 @@ Deno.serve(async (req) => {
                 performed_by_user_name: user.full_name || user.email
             });
 
-            // Update stock
-            await base44.entities.VehicleStock.update(currentStock.id, {
-                quantity_on_hand: newQty
+            // Update stock (dual-write to both systems)
+            await syncVehicleStockQuantity(base44, vehicle_id, product_id, newQty, currentStock.product_name);
+
+            // Record movement in both systems
+            const vehicle = await base44.entities.Vehicle.get(vehicle_id);
+            const locations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
+              vehicle_id, 
+              type: 'vehicle' 
+            });
+            const locationId = locations.length > 0 ? locations[0].id : null;
+
+            await syncMovementRecord(base44, {
+              vehicleId: vehicle_id,
+              productId: product_id,
+              jobId: job_id,
+              projectId: null,
+              movementType: 'job_usage',
+              quantityChange: -quantity,
+              reason: reason || 'Used on job',
+              userId: user.id,
+              userName: user.full_name || user.email,
+              fromLocationId: locationId,
+              toLocationId: null,
+              itemName: currentStock.product_name
             });
 
             return Response.json({ success: true, new_quantity: newQty });
@@ -96,9 +118,29 @@ Deno.serve(async (req) => {
                 performed_by_user_name: user.full_name || user.email
             });
 
-            // Update stock
-            await base44.entities.VehicleStock.update(currentStock.id, {
-                quantity_on_hand: new_quantity
+            // Update stock (dual-write to both systems)
+            await syncVehicleStockQuantity(base44, vehicle_id, product_id, new_quantity, currentStock.product_name);
+
+            // Record movement in both systems
+            const locations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
+              vehicle_id, 
+              type: 'vehicle' 
+            });
+            const locationId = locations.length > 0 ? locations[0].id : null;
+
+            await syncMovementRecord(base44, {
+              vehicleId: vehicle_id,
+              productId: product_id,
+              jobId: null,
+              projectId: null,
+              movementType: 'adjustment',
+              quantityChange: diff,
+              reason: reason || 'Manual adjustment',
+              userId: user.id,
+              userName: user.full_name || user.email,
+              fromLocationId: locationId,
+              toLocationId: locationId,
+              itemName: currentStock.product_name
             });
 
             return Response.json({ success: true, new_quantity });
@@ -137,8 +179,29 @@ Deno.serve(async (req) => {
                 performed_by_user_name: user.full_name || user.email
             });
 
-            await base44.entities.VehicleStock.update(currentStock.id, {
-                quantity_on_hand: newQty
+            // Update stock (dual-write to both systems)
+            await syncVehicleStockQuantity(base44, vehicle_id, product_id, newQty, currentStock.product_name);
+
+            // Record movement in both systems
+            const locations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
+              vehicle_id, 
+              type: 'vehicle' 
+            });
+            const locationId = locations.length > 0 ? locations[0].id : null;
+
+            await syncMovementRecord(base44, {
+              vehicleId: vehicle_id,
+              productId: product_id,
+              jobId: null,
+              projectId: null,
+              movementType: 'stock_in',
+              quantityChange: quantity,
+              reason: reason || 'Restock',
+              userId: user.id,
+              userName: user.full_name || user.email,
+              fromLocationId: null,
+              toLocationId: locationId,
+              itemName: currentStock.product_name
             });
 
             return Response.json({ success: true, new_quantity: newQty });
@@ -199,8 +262,29 @@ Deno.serve(async (req) => {
                     performed_by_user_name: user.full_name || user.email
                 });
 
-                await base44.entities.VehicleStock.update(currentStock.id, {
-                    quantity_on_hand: newQty
+                // Update stock (dual-write to both systems)
+                await syncVehicleStockQuantity(base44, vehicle_id, productId, newQty, product.item);
+
+                // Record movement
+                const locations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
+                  vehicle_id, 
+                  type: 'vehicle' 
+                });
+                const locationId = locations.length > 0 ? locations[0].id : null;
+
+                await syncMovementRecord(base44, {
+                  vehicleId: vehicle_id,
+                  productId: productId,
+                  jobId: null,
+                  projectId: null,
+                  movementType: 'adjustment',
+                  quantityChange: qty,
+                  reason: 'Initial addition of custom item',
+                  userId: user.id,
+                  userName: user.full_name || user.email,
+                  fromLocationId: null,
+                  toLocationId: locationId,
+                  itemName: product.item
                 });
             }
 
