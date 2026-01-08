@@ -126,20 +126,22 @@ Deno.serve(async (req) => {
       }
     };
 
-    // Map to simplified format
-    const mappedInvoices = invoices.map(inv => ({
-      xero_invoice_id: inv.InvoiceID,
-      xero_invoice_number: inv.InvoiceNumber,
-      contact_name: inv.Contact?.Name,
-      contact_id: inv.Contact?.ContactID,
-      reference: inv.Reference,
-      status: inv.Status,
-      total: inv.Total,
-      amount_due: inv.AmountDue,
-      amount_paid: inv.AmountPaid,
-      date: parseXeroDate(inv.Date),
-      due_date: parseXeroDate(inv.DueDate)
-    }));
+    // Map to simplified format and filter out bills (Type=ACCPAY)
+    const mappedInvoices = invoices
+      .filter(inv => inv.Type === 'ACCREC') // Only invoices, not bills
+      .map(inv => ({
+        xero_invoice_id: inv.InvoiceID,
+        xero_invoice_number: inv.InvoiceNumber,
+        contact_name: inv.Contact?.Name,
+        contact_id: inv.Contact?.ContactID,
+        reference: inv.Reference,
+        status: inv.Status,
+        total: inv.Total,
+        amount_due: inv.AmountDue,
+        amount_paid: inv.AmountPaid,
+        date: parseXeroDate(inv.Date),
+        due_date: parseXeroDate(inv.DueDate)
+      }));
 
     return Response.json({
       success: true,
