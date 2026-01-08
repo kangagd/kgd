@@ -1,4 +1,4 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // Batch sync all PandaDoc quote statuses - scheduled task
 // Status mapping from PandaDoc to internal statuses
