@@ -27,11 +27,16 @@ Deno.serve(async (req) => {
     const { project_id, job_id } = normalizeParams(body);
     const { templateId, quoteName, validDays = 30, lineItems = [], notes } = body;
 
+    console.log('[createPandaDocQuote] Request body:', JSON.stringify(body));
+    console.log('[createPandaDocQuote] Parsed params:', { project_id, job_id, templateId, quoteName, lineItems: lineItems?.length });
+
     if (!project_id && !job_id) {
+      console.error('[createPandaDocQuote] Missing project_id or job_id');
       return Response.json({ error: 'Either project_id/projectId or job_id/jobId is required' }, { status: 400 });
     }
 
     if (!templateId) {
+      console.error('[createPandaDocQuote] Missing templateId');
       return Response.json({ error: 'templateId is required' }, { status: 400 });
     }
 
@@ -129,6 +134,14 @@ Deno.serve(async (req) => {
       console.error("Failed to fetch template roles:", e);
     }
 
+    // Validate customer email
+    if (!customer.email) {
+      console.error('[createPandaDocQuote] Customer has no email address');
+      return Response.json({ 
+        error: 'Customer email is required to create a quote. Please add an email address to the customer record.' 
+      }, { status: 400 });
+    }
+
     const recipient = {
       email: customer.email,
       first_name: customer.name?.split(' ')[0] || '',
@@ -171,6 +184,8 @@ Deno.serve(async (req) => {
     }
 
     // Call PandaDoc API to create document
+    console.log('[createPandaDocQuote] Creating PandaDoc document with payload:', JSON.stringify(createDocPayload, null, 2));
+    
     let createResponse = await fetch(`${PANDADOC_API_URL}/documents`, {
       method: 'POST',
       headers: {
@@ -179,6 +194,8 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify(createDocPayload)
     });
+    
+    console.log('[createPandaDocQuote] PandaDoc API response status:', createResponse.status);
 
     // If pricing table fails due to data merge not enabled, retry without it
     if (!createResponse.ok) {
