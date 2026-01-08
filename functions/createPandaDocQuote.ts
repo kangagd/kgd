@@ -148,24 +148,30 @@ Deno.serve(async (req) => {
     };
 
     // Add pricing table if we have line items
+    // CRITICAL: Only add pricing table if template supports it (data_merge enabled)
+    // Otherwise, the template should have a static pricing table that user fills manually
     if (pricingItems.length > 0) {
-      createDocPayload.pricing_tables = [
-        {
-          name: "PricingTable1",
-          data_merge: true,
-          options: {
-            currency: "AUD",
-            discount: { type: "absolute", value: 0 }
-          },
-          sections: [
-            {
-              title: "Products & Services",
-              default: true,
-              rows: pricingItems
-            }
-          ]
-        }
-      ];
+      try {
+        createDocPayload.pricing_tables = [
+          {
+            name: "PricingTable1",
+            options: {
+              currency: "AUD",
+              discount: { type: "absolute", value: 0 }
+            },
+            sections: [
+              {
+                title: "Products & Services",
+                default: true,
+                rows: pricingItems
+              }
+            ]
+          }
+        ];
+      } catch (e) {
+        console.warn('Pricing table merge disabled in template, skipping line items:', e);
+        // Template doesn't support data merge - user will need to fill pricing table manually
+      }
     }
 
     // Call PandaDoc API to create document
