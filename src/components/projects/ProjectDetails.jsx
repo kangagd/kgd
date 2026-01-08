@@ -194,24 +194,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       });
       console.log('[ProjectDetails Query] Raw response:', response);
       console.log('[ProjectDetails Query] response.data:', response.data);
+      console.log('[ProjectDetails Query] response.data.xeroInvoices:', response.data?.xeroInvoices);
       console.log('[ProjectDetails Query] xeroInvoices count:', response.data?.xeroInvoices?.length);
+      console.log('[ProjectDetails Query] About to return:', response.data);
       return response.data;
     },
-    initialData: {
-      project: initialProject,
-      jobs: [],
-      quotes: [],
-      xeroInvoices: [],
-      parts: [],
-      purchaseOrders: [],
-      projectContacts: [],
-      tradeRequirements: [],
-      projectTasks: [],
-      projectMessages: [],
-      projectEmails: [],
-      emailThreads: []
-    },
-    staleTime: 5000, // 5 seconds - shorter stale time to pick up contact changes faster
+    staleTime: 5000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
