@@ -10,6 +10,7 @@ import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
 import EmailComposer from "../inbox/EmailComposer";
 import { Input } from "@/components/ui/input";
+import LinkEmailThreadModal from "./LinkEmailThreadModal";
 
 export default function ProjectEmailSection({ project, onThreadLinked }) {
   const queryClient = useQueryClient();
@@ -211,7 +212,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
           )}
 
           {/* Link Thread Modal */}
-          <LinkThreadModal
+          <LinkEmailThreadModal
             open={showLinkModal}
             onClose={() => setShowLinkModal(false)}
             projectId={project.id}
@@ -408,7 +409,7 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       )}
 
       {/* Link Thread Modal */}
-      <LinkThreadModal
+      <LinkEmailThreadModal
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         projectId={project.id}
@@ -418,120 +419,4 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     </div>
   );
 }
-
-// Link Thread Modal Component
-function LinkThreadModal({ open, onClose, projectId, onLink, isLinking }) {
   const [searchTerm, setSearchTerm] = useState("");
-  
-  const { data: threads = [], isLoading } = useQuery({
-    queryKey: ['emailThreadsForLinking', searchTerm],
-    queryFn: async () => {
-      if (!searchTerm || searchTerm.length < 2) return [];
-      
-      // Search threads by subject, from_address, or to_addresses
-      const allThreads = await base44.entities.EmailThread.list('-last_message_date', 100);
-      const searchLower = searchTerm.toLowerCase();
-      
-      return allThreads.filter(thread => 
-        thread.subject?.toLowerCase().includes(searchLower) ||
-        thread.from_address?.toLowerCase().includes(searchLower) ||
-        thread.to_addresses?.some(addr => addr.toLowerCase().includes(searchLower)) ||
-        thread.last_message_snippet?.toLowerCase().includes(searchLower)
-      );
-    },
-    enabled: open && searchTerm.length >= 2
-  });
-
-  if (!open) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div 
-        className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-4 border-b border-[#E5E7EB]">
-          <h3 className="text-[18px] font-semibold text-[#111827] mb-3">Link Email Thread</h3>
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 w-4 h-4 text-[#9CA3AF]" />
-            <Input
-              type="text"
-              placeholder="Search by subject, email address, or content..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-              autoFocus
-            />
-          </div>
-          {searchTerm.length > 0 && searchTerm.length < 2 && (
-            <p className="text-[12px] text-[#9CA3AF] mt-2">Type at least 2 characters to search</p>
-          )}
-        </div>
-        
-        <div className="flex-1 overflow-y-auto p-4">
-          {isLoading ? (
-            <div className="text-center py-8 text-[#6B7280]">Searching...</div>
-          ) : threads.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-[#6B7280]">
-                {searchTerm.length >= 2 ? 'No threads found' : 'Start typing to search email threads'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {threads.map(thread => {
-                const isLinkedToThis = thread.project_id === projectId;
-                const isLinkedElsewhere = thread.project_id && thread.project_id !== projectId;
-                
-                return (
-                  <div
-                    key={thread.id}
-                    onClick={() => !isLinking && !isLinkedToThis && onLink(thread.id)}
-                    className={`p-3 border rounded-lg transition-all ${
-                      isLinkedToThis 
-                        ? 'border-green-200 bg-green-50' 
-                        : isLinkedElsewhere
-                          ? 'border-amber-200 bg-amber-50 cursor-pointer hover:border-amber-300'
-                          : 'border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] cursor-pointer'
-                    } ${isLinking ? 'opacity-50 pointer-events-none' : ''}`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="text-[14px] font-semibold text-[#111827] truncate flex-1">
-                        {thread.subject || '(No subject)'}
-                      </h4>
-                      {isLinkedToThis && (
-                        <Badge variant="success" className="text-[10px] flex-shrink-0">
-                          Linked Here
-                        </Badge>
-                      )}
-                      {isLinkedElsewhere && (
-                        <Badge variant="warning" className="text-[10px] flex-shrink-0">
-                          Linked Elsewhere
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-[#6B7280]">From: {thread.from_address}</p>
-                    <p className="text-[12px] text-[#9CA3AF] mt-1">
-                      {thread.message_count || 0} msgs • {thread.last_message_date ? new Date(thread.last_message_date).toLocaleDateString() : ''}
-                    </p>
-                    {isLinkedElsewhere && thread.project_title && (
-                      <p className="text-[11px] text-amber-700 mt-1">
-                        Linked to: {thread.project_title}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="p-4 border-t border-[#E5E7EB] flex justify-end">
-          <Button variant="outline" onClick={onClose} disabled={isLinking}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
