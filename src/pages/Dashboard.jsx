@@ -183,7 +183,7 @@ export default function Dashboard() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    enabled: isAdminOrManager && recentPurchaseOrders.length > 0,
+    enabled: isAdminOrManager,
     staleTime: 120000, // 2 minutes
     refetchOnWindowFocus: false,
     refetchOnMount: true,

@@ -224,6 +224,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const projectTasks = projectData?.projectTasks || [];
   const chatMessages = projectData?.projectMessages || [];
   const projectEmails = projectData?.projectEmails || [];
+  const handoverReports = projectData?.handoverReports || [];
+  const customer = projectData?.customer || null;
 
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
@@ -261,25 +263,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     return map;
   }, [priceListItems, inventoryQuantities]);
 
-  const { data: customer } = useQuery({
-    queryKey: ['customer', project.customer_id],
-    queryFn: async () => {
-      try {
-        return await base44.entities.Customer.get(project.customer_id);
-      } catch (error) {
-        // Return cached customer data from project if fetch fails
-        return {
-          id: project.customer_id,
-          name: project.customer_name,
-          phone: project.customer_phone,
-          email: project.customer_email,
-          customer_type: project.customer_type
-        };
-      }
-    },
-    enabled: !!project.customer_id,
-    ...QUERY_CONFIG.critical
-  });
+  // Customer data is already fetched in batch query (projectData.customer)
+  // No separate query needed - prevents duplicate API calls
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -321,13 +306,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     }
   };
 
-  // Reference data - rarely changes, cache longer
-  const { data: handoverReports = [] } = useQuery({
-    queryKey: ["handover-reports", project.id],
-    queryFn: () => base44.entities.HandoverReport.filter({ project_id: project.id }),
-    enabled: !!project?.id,
-    ...QUERY_CONFIG.reference
-  });
+  // Handover reports are already fetched in batch query (projectData.handoverReports)
+  // No separate query needed - prevents duplicate API calls
 
 
 
@@ -391,7 +371,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         }
       }));
       queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      // Only invalidate global projects list if the change affects list view (title, status, etc.)
+      if (['title', 'status', 'customer_name', 'project_number', 'deleted_at'].includes(variables.field)) {
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
+      }
     }
   });
 
@@ -407,7 +390,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         }
       }));
       queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      // Only invalidate global projects list if critical display fields changed
+      const listDisplayFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'updated_date'];
+      if (Object.keys(fields).some(f => listDisplayFields.includes(f))) {
+        queryClient.invalidateQueries({ queryKey: ['projects'] });
+      }
     }
   });
 
@@ -645,7 +632,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           completed_date: project.completed_date || new Date().toISOString().split('T')[0]
         });
         queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-        queryClient.invalidateQueries({ queryKey: ['projects'] });
+        queryClient.invalidateQueries({ queryKey: ['projects'] }); // Stage change affects list
         queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
         toast.success('Project completed and warranty activated');
       } catch (error) {
@@ -920,12 +907,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     };
     
     base44.entities.Project.update(project.id, updates).then(() => {
-      queryClient.setQueryData(['project', project.id], (oldData) => ({
-        ...oldData,
-        ...updates
-      }));
-      queryClient.invalidateQueries({ queryKey: ['project', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects'] }); // Technician names affect list view
     });
   };
 
