@@ -47,6 +47,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // STEP 3: Scan for any other projects that might reference this quote (ghost links)
+    const allProjects = await base44.asServiceRole.entities.Project.filter({
+      primary_quote_id: quoteId
+    });
+
+    for (const proj of allProjects) {
+      if (proj.id !== projectId) {
+        await base44.asServiceRole.entities.Project.update(proj.id, {
+          primary_quote_id: null
+        });
+      }
+    }
+
     return Response.json({ success: true });
 
   } catch (error) {
