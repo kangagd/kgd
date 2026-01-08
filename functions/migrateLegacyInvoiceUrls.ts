@@ -5,6 +5,11 @@ async function refreshAndGetConnection(base44) {
     if (connections.length === 0) throw new Error('No Xero connection found');
     
     const connection = connections[0];
+    
+    // Use the correct field name for tenant ID
+    const tenantId = connection.xero_tenant_id || connection.tenant_id;
+    if (!tenantId) throw new Error('Xero tenant ID not found in connection');
+    
     const expiresAt = new Date(connection.expires_at);
     
     if (expiresAt.getTime() - Date.now() < 5 * 60 * 1000) {
@@ -34,10 +39,10 @@ async function refreshAndGetConnection(base44) {
             expires_at: newExpiresAt
         });
 
-        return { ...connection, access_token: tokens.access_token };
+        return { ...connection, access_token: tokens.access_token, tenant_id: tenantId };
     }
 
-    return connection;
+    return { ...connection, tenant_id: tenantId };
 }
 
 Deno.serve(async (req) => {
@@ -73,7 +78,7 @@ Deno.serve(async (req) => {
         let connection;
         try {
             connection = await refreshAndGetConnection(base44);
-            console.log('[migrateLegacyInvoiceUrls] Got Xero connection. Tenant:', connection.tenant_id, 'Alt field:', connection.xero_tenant_id);
+            console.log('[migrateLegacyInvoiceUrls] Got Xero connection. Tenant:', connection.tenant_id);
         } catch (error) {
             console.error('[migrateLegacyInvoiceUrls] Error getting Xero credentials:', error);
             return Response.json({ 
@@ -95,7 +100,7 @@ Deno.serve(async (req) => {
                     {
                         headers: {
                             'Authorization': `Bearer ${connection.access_token}`,
-                            'xero-tenant-id': connection.tenant_id || connection.xero_tenant_id,
+                            'xero-tenant-id': connection.tenant_id,
                             'Accept': 'application/json'
                         }
                     }
