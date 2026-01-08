@@ -1,4 +1,5 @@
 import { createClientFromRequest } from './shared/sdk.js';
+import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.js';
 
 Deno.serve(async (req) => {
   try {
@@ -9,72 +10,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Get fresh Xero connection with token refresh
-    const connections = await base44.asServiceRole.entities.XeroConnection.list();
-    let xeroConnection = connections[0];
-
-    if (!xeroConnection || !xeroConnection.refresh_token) {
-      return Response.json({ error: 'No Xero connection found. Please reconnect Xero.' }, { status: 400 });
-    }
-
-    // Check if token needs refresh (expires in less than 5 minutes)
-    const expiresAt = new Date(xeroConnection.expires_at);
-    const now = new Date();
-    const needsRefresh = (expiresAt.getTime() - now.getTime()) < 5 * 60 * 1000;
-
-    console.log('Token expires at:', xeroConnection.expires_at);
-    console.log('Needs refresh:', needsRefresh);
-
-    if (needsRefresh) {
-      console.log('Refreshing Xero token...');
-      const clientId = Deno.env.get('XERO_CLIENT_ID');
-      const clientSecret = Deno.env.get('XERO_CLIENT_SECRET');
-
-      const tokenResponse = await fetch('https://identity.xero.com/connect/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: xeroConnection.refresh_token
-        })
-      });
-
-      if (!tokenResponse.ok) {
-        const error = await tokenResponse.text();
-        console.error('Token refresh failed:', error);
-        return Response.json({ 
-          error: 'Token refresh failed. Please reconnect Xero.',
-          details: error
-        }, { status: 400 });
-      }
-
-      const tokens = await tokenResponse.json();
-      const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
-
-      await base44.asServiceRole.entities.XeroConnection.update(xeroConnection.id, {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: newExpiresAt
-      });
-
-      xeroConnection = {
-        ...xeroConnection,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_at: newExpiresAt
-      };
-
-      console.log('Token refreshed successfully');
-    }
-
-    console.log('Using access token (first 20 chars):', xeroConnection.access_token.substring(0, 20));
-    
-    if (!xeroConnection || !xeroConnection.access_token) {
-      return Response.json({ error: 'No Xero connection found' }, { status: 400 });
-    }
+    const xeroConnection = await refreshAndGetXeroConnection(base44);
 
     // Fetch projects with xero_payment_url but no primary_xero_invoice_id
     const allProjects = await base44.asServiceRole.entities.Project.list();
@@ -110,12 +46,7 @@ Deno.serve(async (req) => {
         const searchResponse = await fetch(
           `https://api.xero.com/api.xro/2.0/Invoices?where=InvoiceNumber=="${project.project_number}"`,
           {
-            headers: {
-              'Authorization': `Bearer ${xeroConnection.access_token}`,
-              'Xero-tenant-id': xeroConnection.xero_tenant_id,
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }
+            headers: getXeroHeaders(xeroConnection)
           }
         );
 
