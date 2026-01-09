@@ -98,14 +98,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'User not authenticated' }, { status: 401 });
     }
     
-    // Find any user with same email that has Gmail connected
-    const usersWithSameEmail = await base44.asServiceRole.entities.User.filter({ 
-      email: currentUser.email 
-    });
-    let user = usersWithSameEmail.find(u => u.gmail_access_token);
+    // Find any user in the system who has Gmail connected (shared account)
+    const allUsers = await base44.asServiceRole.entities.User.list();
+    let user = allUsers.find(u => u.gmail_access_token && u.gmail_refresh_token);
     
     if (!user) {
-      return Response.json({ error: 'Gmail not connected. Please connect Gmail first.' }, { status: 401 });
+      return Response.json({ error: 'Gmail not connected. Please ask an admin to connect Gmail.' }, { status: 401 });
     }
     
     console.log('Sending email using Gmail connection from user:', user.email);
