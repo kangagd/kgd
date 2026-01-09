@@ -196,9 +196,12 @@ Deno.serve(async (req) => {
       }))));
     }
 
+    // Filter restricted fields before returning
+    const filteredProject = filterRestrictedFields(user, 'Project', project);
+    
     // CRITICAL: Always return valid structure with fallback arrays
     return Response.json({
-      project,
+      project: filteredProject,
       jobs: jobs || [],
       quotes: quotes || [],
       xeroInvoices: uniqueXeroInvoices || [],
