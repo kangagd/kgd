@@ -264,7 +264,7 @@ export default function Layout({ children, currentPageName }) {
       ? viewerNavigationItems 
       : primaryNavigationItems;
 
-  // Filter navigation sections for regular users
+  // Filter navigation sections for regular users and managers
   const filteredNavigationSections = isRegularUser 
     ? navigationSections.map(section => {
         if (section.title === "Technicians") {
@@ -283,7 +283,17 @@ export default function Layout({ children, currentPageName }) {
         }
         return section;
       })
-    : navigationSections;
+    : effectiveRole === 'manager'
+      ? navigationSections.map(section => {
+          if (section.title === "Admin") {
+            return {
+              ...section,
+              items: section.items.filter(item => item.title !== "Reports")
+            };
+          }
+          return section;
+        })
+      : navigationSections;
 
   // Swipe to open menu
   useEffect(() => {

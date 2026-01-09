@@ -68,7 +68,7 @@ export default function Reports() {
     loadUser();
   }, []);
 
-  const hasAccess = user?.role === 'admin' || user?.role === 'manager';
+  const hasAccess = user?.role === 'admin';
   const shouldFetch = !loading && hasAccess;
 
   const { data: allProjects = [] } = useQuery({
@@ -313,7 +313,7 @@ export default function Reports() {
   }
 
   return (
-    <RequirePermission roles={['admin', 'manager']}>
+    <RequirePermission roles={['admin']}>
     <div className="p-4 md:p-5 lg:p-10 bg-[#ffffff] min-h-screen overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
