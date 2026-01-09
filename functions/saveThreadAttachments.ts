@@ -87,30 +87,14 @@ Deno.serve(async (req) => {
       return Response.json({ message: 'No messages found in thread' });
     }
 
-    // Find a user with Gmail access (prioritize current user if possible, else admin)
-    // Since this might be triggered by system/admin, find ANY admin with token if needed
-    const currentUser = await base44.auth.me().catch(() => null);
+    // Find any user in the system who has Gmail connected (shared account)
     let gmailUser = null;
-
-    if (currentUser) {
-      const users = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
-      if (users.length > 0 && users[0].gmail_access_token) {
-        gmailUser = users[0];
-      }
-    }
-
+    
+    const allUsers = await base44.asServiceRole.entities.User.list();
+    gmailUser = allUsers.find(u => u.gmail_access_token && u.gmail_refresh_token);
+    
     if (!gmailUser) {
-      const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
-      for (const admin of admins) {
-        if (admin.gmail_access_token) {
-          gmailUser = admin;
-          break;
-        }
-      }
-    }
-
-    if (!gmailUser) {
-      return Response.json({ error: 'No Gmail connected user found to fetch attachments' }, { status: 400 });
+      return Response.json({ error: 'Gmail not connected. Please ask an admin to connect Gmail.' }, { status: 401 });
     }
 
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
