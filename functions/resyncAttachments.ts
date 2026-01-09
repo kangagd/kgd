@@ -70,20 +70,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { project_id } = await req.json();
-
-    if (!project_id) {
-      return Response.json({ error: 'project_id is required' }, { status: 400 });
+    // Admin-only function
+    if (user.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Get all email threads linked to this project
+    // Get all email threads that are linked to projects
     const threads = await base44.asServiceRole.entities.EmailThread.filter({ 
-      project_id: project_id 
+      project_id: { $exists: true, $ne: null }
     });
 
     if (threads.length === 0) {
-      return Response.json({ message: 'No email threads linked to this project', saved: 0 });
+      return Response.json({ message: 'No email threads linked to projects', saved: 0 });
     }
+
+    console.log(`Found ${threads.length} threads linked to projects`);
 
     // Find any user with Gmail connection (shared account)
     const allUsers = await base44.asServiceRole.entities.User.list();
@@ -96,16 +97,19 @@ Deno.serve(async (req) => {
     console.log(`Using Gmail account: ${gmailUser.email}`);
     
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
-
-    // Get project data for saving attachments
-    const project = await base44.asServiceRole.entities.Project.get(project_id);
     
     let totalSaved = 0;
     const errors = [];
+    const projectsUpdated = new Set();
 
     // Process each thread
     for (const thread of threads) {
+      const projectId = thread.project_id;
+      if (!projectId) continue;
       try {
+        // Get project data
+        const project = await base44.asServiceRole.entities.Project.get(projectId);
+        
         // Get all messages for this thread
         const messages = await base44.asServiceRole.entities.EmailMessage.filter({ 
           thread_id: thread.id 
@@ -170,11 +174,11 @@ Deno.serve(async (req) => {
               const isImage = attachment.mime_type?.startsWith('image/');
               
               // Refetch project to avoid race conditions
-              const freshProject = await base44.asServiceRole.entities.Project.get(project_id);
+              const freshProject = await base44.asServiceRole.entities.Project.get(projectId);
               
               if (isImage) {
                 const updatedImages = [...(freshProject.image_urls || []), uploadResult.file_url];
-                await base44.asServiceRole.entities.Project.update(project_id, { 
+                await base44.asServiceRole.entities.Project.update(projectId, { 
                   image_urls: updatedImages 
                 });
               } else {
@@ -182,13 +186,14 @@ Deno.serve(async (req) => {
                   url: uploadResult.file_url, 
                   name: attachment.filename 
                 }];
-                await base44.asServiceRole.entities.Project.update(project_id, { 
+                await base44.asServiceRole.entities.Project.update(projectId, { 
                   other_documents: updatedDocs 
                 });
               }
 
               totalSaved++;
-              console.log(`Saved: ${attachment.filename} as ${isImage ? 'image' : 'document'}`);
+              projectsUpdated.add(projectId);
+              console.log(`Saved: ${attachment.filename} to project ${projectId} as ${isImage ? 'image' : 'document'}`);
               
             } catch (attachmentError) {
               console.error(`Failed to save ${attachment.filename}:`, attachmentError);
@@ -205,8 +210,10 @@ Deno.serve(async (req) => {
     return Response.json({ 
       success: true,
       saved: totalSaved,
+      projects_updated: projectsUpdated.size,
+      threads_processed: threads.length,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Saved ${totalSaved} attachment${totalSaved !== 1 ? 's' : ''} to project`
+      message: `Saved ${totalSaved} attachment${totalSaved !== 1 ? 's' : ''} across ${projectsUpdated.size} project${projectsUpdated.size !== 1 ? 's' : ''}`
     });
 
   } catch (error) {
