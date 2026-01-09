@@ -2,6 +2,7 @@ import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
 import { PO_STATUS, PART_STATUS, PART_LOCATION } from './shared/constants.js';
 import { generateJobNumber } from './shared/jobNumberGenerator.js';
+import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
 
 // Helper: Handle sample pickup job completion - move samples to vehicle
 async function handleSamplePickupCompletion(base44, job) {
@@ -245,6 +246,9 @@ Deno.serve(async (req) => {
             if (!previousJob) {
                 return Response.json({ error: 'Job not found' }, { status: 404 });
             }
+            
+            // PERMISSION CHECK: Technicians can only update assigned jobs
+            enforceJobUpdatePermission(user, previousJob);
             
             // GUARDRAIL: Prevent accidentally clearing critical fields
             if (data.hasOwnProperty('customer_id') && !data.customer_id) {

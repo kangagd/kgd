@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { filterRestrictedFields } from './shared/permissionHelpers.js';
 
 Deno.serve(async (req) => {
   try {
@@ -30,8 +31,11 @@ Deno.serve(async (req) => {
       projects = [];
     }
 
+    // Filter restricted fields for non-admin users
+    const filteredProjects = filterRestrictedFields(user, 'Project', projects);
+    
     // CRITICAL: Always return valid array structure
-    return Response.json({ projects: projects || [] });
+    return Response.json({ projects: filteredProjects || [] });
     
   } catch (error) {
     console.error('[getMyProjects] CRITICAL ERROR:', error);

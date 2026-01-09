@@ -1,5 +1,6 @@
 import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
+import { filterRestrictedFields, validateUpdate } from './shared/permissionHelpers.js';
 
 Deno.serve(async (req) => {
     try {
@@ -77,6 +78,9 @@ Deno.serve(async (req) => {
             if (data.title === '' || data.title === null) {
                 return Response.json({ error: 'Project title cannot be empty' }, { status: 400 });
             }
+            
+            // PERMISSION CHECK: Validate restricted fields not being updated
+            validateUpdate(user, 'Project', data);
             
             const oldProjectNumber = oldProject?.project_number;
             const newProjectNumber = data.project_number;
@@ -242,7 +246,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
         }
 
-        return Response.json({ success: true, project });
+        // Filter restricted fields before returning
+        const filteredProject = filterRestrictedFields(user, 'Project', project);
+        return Response.json({ success: true, project: filteredProject });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
