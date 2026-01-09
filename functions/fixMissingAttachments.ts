@@ -57,13 +57,15 @@ Deno.serve(async (req) => {
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
 
     // Find messages with inline images but no attachments
-    const messages = await base44.asServiceRole.entities.EmailMessage.list();
+    const messages = await base44.asServiceRole.entities.EmailMessage.filter({
+      body_html: { $exists: true, $ne: null }
+    });
     const messagesToFix = messages.filter(msg => 
       msg.body_html && 
       msg.body_html.includes('cid:') && 
       (!msg.attachments || msg.attachments.length === 0) &&
       msg.gmail_message_id
-    );
+    ).slice(0, 50); // Limit to 50 to avoid timeout
 
     console.log(`Found ${messagesToFix.length} messages with missing attachments`);
 
