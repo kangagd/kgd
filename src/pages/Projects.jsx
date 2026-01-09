@@ -496,7 +496,7 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
           const dateB = b.created_at || b.created_date || b.createdDate;
           return new Date(dateB) - new Date(dateA);
         } else if (sortBy === "stage") {
-          const stages = ["Lead", "Initial Site Visit", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
+          const stages = ["Lead", "Initial Site Visit", "Create Quote", "Quote Sent", "Quote Approved", "Final Measure", "Parts Ordered", "Scheduled", "Completed", "Warranty"];
           return stages.indexOf(a.status) - stages.indexOf(b.status);
         }
         return 0;
@@ -713,6 +713,7 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
                 <TabsTrigger value="all" className="whitespace-nowrap flex-shrink-0">All Projects</TabsTrigger>
                 <TabsTrigger value="Lead" className="whitespace-nowrap flex-shrink-0">Lead</TabsTrigger>
                 <TabsTrigger value="Initial Site Visit" className="whitespace-nowrap flex-shrink-0">Initial Site Visit</TabsTrigger>
+                <TabsTrigger value="Create Quote" className="whitespace-nowrap flex-shrink-0">Create Quote</TabsTrigger>
                 <TabsTrigger value="Quote Sent" className="whitespace-nowrap flex-shrink-0">Quote Sent</TabsTrigger>
                 <TabsTrigger value="Quote Approved" className="whitespace-nowrap flex-shrink-0">Quote Approved</TabsTrigger>
                 <TabsTrigger value="Final Measure" className="whitespace-nowrap flex-shrink-0">Final Measure</TabsTrigger>
@@ -752,6 +753,7 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
                       <SelectItem value="all">All Stages</SelectItem>
                       <SelectItem value="Lead">Lead</SelectItem>
                       <SelectItem value="Initial Site Visit">Initial Site Visit</SelectItem>
+                      <SelectItem value="Create Quote">Create Quote</SelectItem>
                       <SelectItem value="Quote Sent">Quote Sent</SelectItem>
                       <SelectItem value="Quote Approved">Quote Approved</SelectItem>
                       <SelectItem value="Final Measure">Final Measure</SelectItem>
