@@ -92,17 +92,22 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const currentUser = await base44.auth.me();
+    
+    // CRITICAL: Authenticate user first - any authenticated user can send emails
+    let currentUser;
+    try {
+      currentUser = await base44.auth.me();
+    } catch (authError) {
+      console.error('[gmailSendEmail] Authentication error:', authError);
+      return Response.json({ error: 'User not authenticated', details: authError.message }, { status: 401 });
+    }
     
     if (!currentUser) {
-      console.error('[gmailSendEmail] User authentication failed');
+      console.error('[gmailSendEmail] User authentication failed - currentUser is null');
       return Response.json({ error: 'User not authenticated' }, { status: 401 });
     }
     
-    console.log(`[gmailSendEmail] Authenticated user: ${currentUser.email}, role: ${currentUser.role}, extended_role: ${currentUser.extended_role}`);
-    
-    // CRITICAL: All authenticated users can send emails (RLS handled by entity operations using asServiceRole)
-    // No need for explicit permission check here - let entity RLS handle it
+    console.log(`[gmailSendEmail] ✅ Authenticated user: ${currentUser.email}, role: ${currentUser.role}, extended_role: ${currentUser.extended_role}`);
     
     // Find any user in the system who has Gmail connected (shared account)
     const allUsers = await base44.asServiceRole.entities.User.list();
