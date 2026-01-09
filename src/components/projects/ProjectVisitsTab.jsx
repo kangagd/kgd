@@ -260,6 +260,145 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
                 </Collapsible>
               )}
 
+              {/* Measurements Details */}
+              {visit.measurements && (
+                <Collapsible defaultOpen={false}>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors group">
+                    <span>Measurements</span>
+                    <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2">
+                    <div className="space-y-3">
+                      {/* Display notes if present */}
+                      {visit.measurements.notes && (
+                        <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
+                          <div className="text-xs font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Notes</div>
+                          <p className="text-sm text-[#111827]">{visit.measurements.notes}</p>
+                        </div>
+                      )}
+                      
+                      {/* Display additional_info if present (legacy) */}
+                      {visit.measurements.additional_info && (
+                        <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
+                          <div className="text-xs font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Additional Information</div>
+                          <p className="text-sm text-[#111827]">{visit.measurements.additional_info}</p>
+                        </div>
+                      )}
+
+                      {/* Display new_doors with additional_info (new format) */}
+                      {visit.measurements.new_doors && visit.measurements.new_doors.length > 0 && (
+                        <div className="space-y-2">
+                          {visit.measurements.new_doors.map((door, idx) => (
+                            <div key={idx}>
+                              {door.additional_info && (
+                                <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
+                                  <div className="text-xs font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">
+                                    Door {idx + 1} - Additional Information
+                                  </div>
+                                  <p className="text-sm text-[#111827]">{door.additional_info}</p>
+                                </div>
+                              )}
+                              {door.existing_door && door.existing_door.removal_required === "Y" && (
+                                <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg p-3 mt-2">
+                                  <div className="text-xs font-semibold text-[#DC2626] mb-2 uppercase tracking-wide">
+                                    Door {idx + 1} - Existing Door (Removal Required)
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    {door.existing_door.height_left && (
+                                      <div>
+                                        <span className="text-[#6B7280]">Height L:</span>
+                                        <span className="ml-1 font-medium text-[#111827]">{door.existing_door.height_left}mm</span>
+                                      </div>
+                                    )}
+                                    {door.existing_door.height_right && (
+                                      <div>
+                                        <span className="text-[#6B7280]">Height R:</span>
+                                        <span className="ml-1 font-medium text-[#111827]">{door.existing_door.height_right}mm</span>
+                                      </div>
+                                    )}
+                                    {door.existing_door.width && (
+                                      <div>
+                                        <span className="text-[#6B7280]">Width:</span>
+                                        <span className="ml-1 font-medium text-[#111827]">{door.existing_door.width}mm</span>
+                                      </div>
+                                    )}
+                                    {door.existing_door.type && (
+                                      <div>
+                                        <span className="text-[#6B7280]">Type:</span>
+                                        <span className="ml-1 font-medium text-[#111827]">{door.existing_door.type}</span>
+                                      </div>
+                                    )}
+                                    {door.existing_door.finish && (
+                                      <div>
+                                        <span className="text-[#6B7280]">Finish:</span>
+                                        <span className="ml-1 font-medium text-[#111827]">{door.existing_door.finish}</span>
+                                      </div>
+                                    )}
+                                    {door.existing_door.colour && (
+                                      <div>
+                                        <span className="text-[#6B7280]">Colour:</span>
+                                        <span className="ml-1 font-medium text-[#111827]">{door.existing_door.colour}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Display legacy existing_door if present */}
+                      {visit.measurements.existing_door && visit.measurements.existing_door.removal_required === "Y" && !visit.measurements.new_doors && (
+                        <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg p-3">
+                          <div className="text-xs font-semibold text-[#DC2626] mb-2 uppercase tracking-wide">
+                            Existing Door (Removal Required)
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            {visit.measurements.existing_door.height_left && (
+                              <div>
+                                <span className="text-[#6B7280]">Height L:</span>
+                                <span className="ml-1 font-medium text-[#111827]">{visit.measurements.existing_door.height_left}mm</span>
+                              </div>
+                            )}
+                            {visit.measurements.existing_door.height_right && (
+                              <div>
+                                <span className="text-[#6B7280]">Height R:</span>
+                                <span className="ml-1 font-medium text-[#111827]">{visit.measurements.existing_door.height_right}mm</span>
+                              </div>
+                            )}
+                            {visit.measurements.existing_door.width && (
+                              <div>
+                                <span className="text-[#6B7280]">Width:</span>
+                                <span className="ml-1 font-medium text-[#111827]">{visit.measurements.existing_door.width}mm</span>
+                              </div>
+                            )}
+                            {visit.measurements.existing_door.type && (
+                              <div>
+                                <span className="text-[#6B7280]">Type:</span>
+                                <span className="ml-1 font-medium text-[#111827]">{visit.measurements.existing_door.type}</span>
+                              </div>
+                            )}
+                            {visit.measurements.existing_door.finish && (
+                              <div>
+                                <span className="text-[#6B7280]">Finish:</span>
+                                <span className="ml-1 font-medium text-[#111827]">{visit.measurements.existing_door.finish}</span>
+                              </div>
+                            )}
+                            {visit.measurements.existing_door.colour && (
+                              <div>
+                                <span className="text-[#6B7280]">Colour:</span>
+                                <span className="ml-1 font-medium text-[#111827]">{visit.measurements.existing_door.colour}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
+
               {/* Footer with indicators and button */}
               <div className="flex items-center justify-between pt-3 border-t border-[#E5E7EB]">
                 <div className="flex items-center gap-3 text-xs text-[#6B7280]">
