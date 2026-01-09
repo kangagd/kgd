@@ -114,6 +114,8 @@ Deno.serve(async (req) => {
     }
 
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
+    
+    console.log(`Using Gmail account: ${gmailUser.email}`);
 
     // Fetch target entity (Project or Job)
     let targetEntity;
