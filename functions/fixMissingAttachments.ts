@@ -56,16 +56,32 @@ Deno.serve(async (req) => {
     console.log(`Using Gmail account: ${gmailUser.email}`);
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
 
-    // Find messages with inline images but no attachments
-    const messages = await base44.asServiceRole.entities.EmailMessage.filter({
-      body_html: { $exists: true, $ne: null }
-    });
-    const messagesToFix = messages.filter(msg => 
-      msg.body_html && 
-      msg.body_html.includes('cid:') && 
-      (!msg.attachments || msg.attachments.length === 0) &&
-      msg.gmail_message_id
-    ).slice(0, 50); // Limit to 50 to avoid timeout
+    // Find messages with inline images but no attachments - batch approach
+    const messagesToFix = [];
+    let cursor = null;
+    let total = 0;
+    
+    while (total < 50) {
+      const batch = cursor 
+        ? await base44.asServiceRole.entities.EmailMessage.list('-created_date', 100, cursor)
+        : await base44.asServiceRole.entities.EmailMessage.list('-created_date', 100);
+        
+      if (!batch || batch.length === 0) break;
+      
+      for (const msg of batch) {
+        if (msg.body_html && 
+            msg.body_html.includes('cid:') && 
+            (!msg.attachments || msg.attachments.length === 0) &&
+            msg.gmail_message_id) {
+          messagesToFix.push(msg);
+          total++;
+          if (total >= 50) break;
+        }
+      }
+      
+      if (batch.length < 100) break; // No more pages
+      cursor = batch[batch.length - 1].id;
+    }
 
     console.log(`Found ${messagesToFix.length} messages with missing attachments`);
 
