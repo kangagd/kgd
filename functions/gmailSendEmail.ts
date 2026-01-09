@@ -95,7 +95,20 @@ Deno.serve(async (req) => {
     const currentUser = await base44.auth.me();
     
     if (!currentUser) {
+      console.error('[gmailSendEmail] User authentication failed');
       return Response.json({ error: 'User not authenticated' }, { status: 401 });
+    }
+    
+    console.log(`[gmailSendEmail] Authenticated user: ${currentUser.email}, role: ${currentUser.role}, extended_role: ${currentUser.extended_role}`);
+    
+    // Allow admin, manager, and users with extended_role='manager' to send emails
+    const isAllowed = currentUser.role === 'admin' || 
+                      currentUser.extended_role === 'manager' || 
+                      currentUser.role === 'user';
+    
+    if (!isAllowed) {
+      console.error(`[gmailSendEmail] Permission denied for user: ${currentUser.email}`);
+      return Response.json({ error: 'Insufficient permissions to send emails' }, { status: 403 });
     }
     
     // Find any user in the system who has Gmail connected (shared account)
