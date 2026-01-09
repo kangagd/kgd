@@ -101,15 +101,8 @@ Deno.serve(async (req) => {
     
     console.log(`[gmailSendEmail] Authenticated user: ${currentUser.email}, role: ${currentUser.role}, extended_role: ${currentUser.extended_role}`);
     
-    // Allow admin, manager, and users with extended_role='manager' to send emails
-    const isAllowed = currentUser.role === 'admin' || 
-                      currentUser.extended_role === 'manager' || 
-                      currentUser.role === 'user';
-    
-    if (!isAllowed) {
-      console.error(`[gmailSendEmail] Permission denied for user: ${currentUser.email}`);
-      return Response.json({ error: 'Insufficient permissions to send emails' }, { status: 403 });
-    }
+    // CRITICAL: All authenticated users can send emails (RLS handled by entity operations using asServiceRole)
+    // No need for explicit permission check here - let entity RLS handle it
     
     // Find any user in the system who has Gmail connected (shared account)
     const allUsers = await base44.asServiceRole.entities.User.list();

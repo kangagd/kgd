@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     
     // Add internal note if provided
     if (note && note.trim()) {
-      await base44.entities.EmailThreadNote.create({
+      await base44.asServiceRole.entities.EmailThreadNote.create({
         thread_id: thread_id,
         note: note.trim(),
         created_by: user.email,
