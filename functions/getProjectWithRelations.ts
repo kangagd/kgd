@@ -55,22 +55,39 @@ Deno.serve(async (req) => {
         console.error('[getProjectWithRelations] Failed to fetch jobs:', err);
         return [];
       }),
-      base44.asServiceRole.entities.Quote.filter({ project_id }).catch(err => {
-        console.error('[getProjectWithRelations] Failed to fetch quotes:', err);
-        return [];
-      }),
       (async () => {
-        console.log(`[getProjectWithRelations] Fetching XeroInvoice with project_id: "${project_id}"`);
-        const invoices = await base44.asServiceRole.entities.XeroInvoice.filter({ project_id }).catch(err => {
-          console.error('[getProjectWithRelations] Failed to fetch xero invoices:', err);
+        const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
+        if (!proj?.quote_ids || proj.quote_ids.length === 0) {
           return [];
-        });
-        console.log(`[getProjectWithRelations] Raw XeroInvoice.filter result:`, invoices);
-        console.log(`[getProjectWithRelations] XeroInvoice count: ${invoices?.length || 0}`);
-        if (invoices && invoices.length > 0) {
-          console.log(`[getProjectWithRelations] First invoice:`, invoices[0]);
         }
-        return invoices;
+        // Fetch quotes using project's quote_ids array (source of truth)
+        const quotePromises = proj.quote_ids.map(id => 
+          base44.asServiceRole.entities.Quote.get(id).catch(err => {
+            console.error(`[getProjectWithRelations] Failed to fetch quote ${id}:`, err);
+            return null;
+          })
+        );
+        const quotes = await Promise.all(quotePromises);
+        return quotes.filter(q => q !== null);
+      })(),
+      (async () => {
+        const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
+        if (!proj?.xero_invoices || proj.xero_invoices.length === 0) {
+          console.log(`[getProjectWithRelations] No xero_invoices in project array`);
+          return [];
+        }
+        console.log(`[getProjectWithRelations] Fetching ${proj.xero_invoices.length} invoices from project.xero_invoices array`);
+        // Fetch invoices using project's xero_invoices array (source of truth)
+        const invoicePromises = proj.xero_invoices.map(id => 
+          base44.asServiceRole.entities.XeroInvoice.get(id).catch(err => {
+            console.error(`[getProjectWithRelations] Failed to fetch invoice ${id}:`, err);
+            return null;
+          })
+        );
+        const invoices = await Promise.all(invoicePromises);
+        const validInvoices = invoices.filter(inv => inv !== null);
+        console.log(`[getProjectWithRelations] Successfully fetched ${validInvoices.length} invoices`);
+        return validInvoices;
       })(),
       base44.asServiceRole.entities.Part.filter({ project_id }).catch(err => {
         console.error('[getProjectWithRelations] Failed to fetch parts:', err);
@@ -100,10 +117,21 @@ Deno.serve(async (req) => {
         console.error('[getProjectWithRelations] Failed to fetch project emails:', err);
         return [];
       }),
-      base44.asServiceRole.entities.EmailThread.filter({ project_id }).catch(err => {
-        console.error('[getProjectWithRelations] Failed to fetch email threads:', err);
-        return [];
-      }),
+      (async () => {
+        const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
+        const threads = await base44.asServiceRole.entities.EmailThread.filter({ project_id }).catch(err => {
+          console.error('[getProjectWithRelations] Failed to fetch email threads:', err);
+          return [];
+        });
+        // If project has primary_email_thread_id, ensure it's included
+        if (proj?.primary_email_thread_id && !threads.find(t => t.id === proj.primary_email_thread_id)) {
+          const primaryThread = await base44.asServiceRole.entities.EmailThread.get(proj.primary_email_thread_id).catch(() => null);
+          if (primaryThread) {
+            threads.unshift(primaryThread);
+          }
+        }
+        return threads;
+      })(),
       base44.asServiceRole.entities.HandoverReport.filter({ project_id }).catch(err => {
         console.error('[getProjectWithRelations] Failed to fetch handover reports:', err);
         return [];

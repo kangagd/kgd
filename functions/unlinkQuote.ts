@@ -37,26 +37,52 @@ Deno.serve(async (req) => {
       job_id: null
     });
 
-    // STEP 2: Clear primary_quote_id on project if this was primary
+    // STEP 2: Remove from project's quote_ids array and clear primary if needed
     if (projectId) {
       const project = await base44.asServiceRole.entities.Project.get(projectId);
-      if (project.primary_quote_id === quoteId) {
-        await base44.asServiceRole.entities.Project.update(projectId, {
-          primary_quote_id: null
-        });
+      
+      if (project) {
+        const updates = {};
+        
+        // Remove from quote_ids array
+        if (project.quote_ids && project.quote_ids.includes(quoteId)) {
+          updates.quote_ids = project.quote_ids.filter(id => id !== quoteId);
+        }
+        
+        // Clear primary if this was the primary quote
+        if (project.primary_quote_id === quoteId) {
+          updates.primary_quote_id = null;
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          await base44.asServiceRole.entities.Project.update(projectId, updates);
+        }
       }
     }
 
     // STEP 3: Scan for any other projects that might reference this quote (ghost links)
-    const allProjects = await base44.asServiceRole.entities.Project.filter({
-      primary_quote_id: quoteId
-    });
-
+    const allProjects = await base44.asServiceRole.entities.Project.filter({});
+    
     for (const proj of allProjects) {
       if (proj.id !== projectId) {
-        await base44.asServiceRole.entities.Project.update(proj.id, {
-          primary_quote_id: null
-        });
+        let needsUpdate = false;
+        const updates = {};
+        
+        // Check quote_ids array
+        if (proj.quote_ids && proj.quote_ids.includes(quoteId)) {
+          updates.quote_ids = proj.quote_ids.filter(id => id !== quoteId);
+          needsUpdate = true;
+        }
+        
+        // Check primary_quote_id
+        if (proj.primary_quote_id === quoteId) {
+          updates.primary_quote_id = null;
+          needsUpdate = true;
+        }
+        
+        if (needsUpdate) {
+          await base44.asServiceRole.entities.Project.update(proj.id, updates);
+        }
       }
     }
 

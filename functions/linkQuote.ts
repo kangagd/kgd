@@ -43,14 +43,26 @@ Deno.serve(async (req) => {
 
     const oldProjectId = quote.project_id;
 
-    // STEP 1: If linked to a different project, clear that project's primary_quote_id if needed
+    // STEP 1: If linked to a different project, unlink from old project
     if (oldProjectId && oldProjectId !== project_id) {
       const oldProject = await base44.asServiceRole.entities.Project.get(oldProjectId);
       
-      if (oldProject && oldProject.primary_quote_id === quoteId) {
-        await base44.asServiceRole.entities.Project.update(oldProjectId, {
-          primary_quote_id: null
-        });
+      if (oldProject) {
+        const updates = {};
+        
+        // Remove from quote_ids array
+        if (oldProject.quote_ids && oldProject.quote_ids.includes(quoteId)) {
+          updates.quote_ids = oldProject.quote_ids.filter(id => id !== quoteId);
+        }
+        
+        // Clear primary if this was the primary quote
+        if (oldProject.primary_quote_id === quoteId) {
+          updates.primary_quote_id = null;
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          await base44.asServiceRole.entities.Project.update(oldProjectId, updates);
+        }
       }
     }
 
@@ -62,15 +74,23 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.Quote.update(quoteId, quoteUpdates);
 
-    // STEP 3: Optionally set as primary on the new project
-    if (project_id && setPrimary) {
+    // STEP 3: Add to project's quote_ids array and optionally set as primary
+    if (project_id) {
       const project = await base44.asServiceRole.entities.Project.get(project_id);
       
-      if (!project.primary_quote_id || setPrimary) {
-        await base44.asServiceRole.entities.Project.update(project_id, {
-          primary_quote_id: quoteId
-        });
+      const currentQuoteIds = project.quote_ids || [];
+      const updatedQuoteIds = [...currentQuoteIds, quoteId]
+        .filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+      
+      const projectUpdates = {
+        quote_ids: updatedQuoteIds
+      };
+      
+      if (setPrimary || !project.primary_quote_id) {
+        projectUpdates.primary_quote_id = quoteId;
       }
+      
+      await base44.asServiceRole.entities.Project.update(project_id, projectUpdates);
     }
 
     return Response.json({

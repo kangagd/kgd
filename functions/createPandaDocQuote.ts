@@ -277,8 +277,23 @@ Deno.serve(async (req) => {
       address_full: address
     });
 
-    // Update project activity if quote is linked to a project
+    // Link quote to project by adding to quote_ids array
     if (project_id) {
+      const projectEntity = await base44.asServiceRole.entities.Project.get(project_id);
+      const currentQuoteIds = projectEntity.quote_ids || [];
+      const updatedQuoteIds = [...currentQuoteIds, quote.id]
+        .filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+      
+      const projectUpdates = {
+        quote_ids: updatedQuoteIds
+      };
+      
+      // Set as primary if no primary exists
+      if (!projectEntity.primary_quote_id) {
+        projectUpdates.primary_quote_id = quote.id;
+      }
+      
+      await base44.asServiceRole.entities.Project.update(project_id, projectUpdates);
       await updateProjectActivity(base44, project_id, 'Quote Created');
     }
 
