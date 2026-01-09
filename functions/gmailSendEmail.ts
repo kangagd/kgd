@@ -292,8 +292,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // C) Store sent message with proper threading metadata
-    await base44.entities.EmailMessage.create({
+    // C) Store sent message with proper threading metadata (use service role for reliability)
+    await base44.asServiceRole.entities.EmailMessage.create({
       thread_id: emailThreadId,
       gmail_message_id: result.id,
       from_address: user.gmail_email || user.email,
