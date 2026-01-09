@@ -357,7 +357,12 @@ export default function CustomerQuickEdit({ customerId, projectId, onCustomerUpd
             <Button
               variant="ghost"
               size="icon"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setShowChangeCustomerDialog(true);
               }}
