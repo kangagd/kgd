@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { ChevronDown, ChevronUp, Paperclip, ChevronRight, Reply, Forward, ExternalLink, X, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

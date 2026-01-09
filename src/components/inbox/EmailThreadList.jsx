@@ -1,4 +1,4 @@
-import React from "react";
+import { memo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { Mail, Link as LinkIcon, Trash2, Sparkles, AlertTriangle, UserCheck } from "lucide-react";

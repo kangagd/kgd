@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ export default function TasksPanel({
   const [urgencyFilter, setUrgencyFilter] = useState(initialFilter);
 
   // Listen for filter events
-  React.useEffect(() => {
+  useEffect(() => {
     const handleFilterEvent = (e) => {
       setUrgencyFilter(e.detail.filter);
     };

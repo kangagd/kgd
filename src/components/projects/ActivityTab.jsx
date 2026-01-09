@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, Fragment } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -217,7 +217,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   // Combine communication activities only
   // GUARDRAIL: This is ONLY for customer communication
   // DO NOT add: Quote events, Invoice events, Job events, PO events, Stage changes
-  const allActivities = React.useMemo(() => {
+  const allActivities = useMemo(() => {
     const activities = [];
     
     // ASSERTION: Verify no system entities leaked into this component
@@ -317,7 +317,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   }, [emailMessages, projectMessages, linkedThreads, draftEmails]);
 
   // Filter activities
-  const filteredActivities = React.useMemo(() => {
+  const filteredActivities = useMemo(() => {
     if (filter === 'all') return allActivities;
     if (filter === 'emails') return allActivities.filter(a => a.type === 'email' || a.type === 'draft');
     if (filter === 'manual') return allActivities.filter(a => a.type === 'manual');
@@ -574,7 +574,7 @@ function EmailThreadViewerModal({
   });
 
   // A) Fix message ordering: ascending (oldest → newest)
-  const threadMessages = React.useMemo(() => {
+  const threadMessages = useMemo(() => {
     if (!threadId) return [];
     return emailMessages
       .filter(msg => msg.thread_id === threadId)
@@ -582,7 +582,7 @@ function EmailThreadViewerModal({
   }, [threadId, emailMessages]);
 
   // B) Collapse logic: show only first and last 2 messages by default
-  const displayMessages = React.useMemo(() => {
+  const displayMessages = useMemo(() => {
     if (threadMessages.length <= 4 || showAllMessages) {
       return threadMessages;
     }
@@ -723,7 +723,7 @@ function EmailThreadViewerModal({
                     const isLast = threadMessages[threadMessages.length - 1]?.id === msg.id;
                     
                     return (
-                      <React.Fragment key={msg.id}>
+                      <Fragment key={msg.id}>
                         {/* Show "expand messages" button before the last messages if some are hidden */}
                         {!showAllMessages && hiddenMessageCount > 0 && idx === 1 && (
                          <div className="flex justify-center my-3">
@@ -772,7 +772,7 @@ function EmailThreadViewerModal({
                           }}
                           thread={threadFromList}
                         />
-                      </React.Fragment>
+                      </Fragment>
                     );
                   })}
                   {/* E) Auto-scroll anchor */}
