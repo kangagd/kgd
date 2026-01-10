@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 import AttachmentCard from "./AttachmentCard";
 import { processEmailForDisplay } from "@/components/utils/emailFormatting";
 import { sanitizeForDisplay } from "@/components/utils/emailSanitization";
+import SmartReplySuggestions from "./SmartReplySuggestions";
 
 function AttachmentsSection({ attachments, linkedJobId, linkedProjectId, threadSubject, gmailMessageId }) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -317,6 +318,17 @@ export default function EmailMessageView({ message, isFirst, isLast, linkedJobId
               </div>
             )}
           </div>
+
+          {/* Smart Replies Section */}
+          {isLast && onReply && (
+            <SmartReplySuggestions 
+              message={message}
+              thread={thread}
+              onSelectSuggestion={(suggestion) => {
+                onReply(message, thread, suggestion);
+              }}
+            />
+          )}
 
           {/* Action Buttons - More compact */}
           {(onReply || onForward) && (
