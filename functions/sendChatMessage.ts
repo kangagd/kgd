@@ -1,13 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Parse mentions from message text (format: @user_email)
+// Parse mentions from message text (format: @email@domain.com)
 function parseMentions(text) {
-  const mentionRegex = /@([a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+)/g;
+  const mentionRegex = /@([^\s@]+@[^\s]+)/g;
   const mentions = [];
   let match;
   while ((match = mentionRegex.exec(text)) !== null) {
-    if (!mentions.includes(match[1])) {
-      mentions.push(match[1]);
+    const email = match[1].trim();
+    if (email.includes('@') && !mentions.includes(email)) {
+      mentions.push(email);
     }
   }
   return mentions;
