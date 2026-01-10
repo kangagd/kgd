@@ -123,8 +123,8 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
                     title={viewer.user_name || viewer.user_email}
                   >
                     <span className="text-[9px] font-semibold text-green-700">
-                      {(viewer.user_name?.split(' ').map(n => n[0]).join('') || viewer.user_email?.charAt(0) || '?').toUpperCase()}
-                    </span>
+                       {(viewer.user_name?.split(' ').map(n => n[0]).join('') || '?').toUpperCase()}
+                     </span>
                   </div>
                 ))}
                 {thread.viewers.length > 3 && (
