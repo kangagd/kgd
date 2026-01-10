@@ -167,17 +167,17 @@ export default function EmailTemplates() {
               <SelectValue placeholder="Intent" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Intents</SelectItem>
-              <SelectItem value="Quote Request">Quote Request</SelectItem>
-              <SelectItem value="Follow-up">Follow-up</SelectItem>
-              <SelectItem value="Appointment Confirmation">Appointment Confirmation</SelectItem>
-              <SelectItem value="Job Completion">Job Completion</SelectItem>
-              <SelectItem value="Invoice Reminder">Invoice Reminder</SelectItem>
-              <SelectItem value="Thank You">Thank You</SelectItem>
-              <SelectItem value="Service Inquiry">Service Inquiry</SelectItem>
-              <SelectItem value="General Response">General Response</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
+               <SelectItem value="all">All Intents</SelectItem>
+               <SelectItem value="Quote">Quote</SelectItem>
+               <SelectItem value="Follow-up">Follow-up</SelectItem>
+               <SelectItem value="Appointment Confirmation">Appointment Confirmation</SelectItem>
+               <SelectItem value="Job Completion">Job Completion</SelectItem>
+               <SelectItem value="Invoice">Invoice</SelectItem>
+               <SelectItem value="Supplier Request">Supplier Request</SelectItem>
+               <SelectItem value="Supplier Order">Supplier Order</SelectItem>
+               <SelectItem value="General Response">General Response</SelectItem>
+               <SelectItem value="Other">Other</SelectItem>
+             </SelectContent>
           </Select>
         </div>
 
@@ -322,16 +322,16 @@ export default function EmailTemplates() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Quote Request">Quote Request</SelectItem>
-                      <SelectItem value="Follow-up">Follow-up</SelectItem>
-                      <SelectItem value="Appointment Confirmation">Appointment Confirmation</SelectItem>
-                      <SelectItem value="Job Completion">Job Completion</SelectItem>
-                      <SelectItem value="Invoice Reminder">Invoice Reminder</SelectItem>
-                      <SelectItem value="Thank You">Thank You</SelectItem>
-                      <SelectItem value="Service Inquiry">Service Inquiry</SelectItem>
-                      <SelectItem value="General Response">General Response</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
+                       <SelectItem value="Quote">Quote</SelectItem>
+                       <SelectItem value="Follow-up">Follow-up</SelectItem>
+                       <SelectItem value="Appointment Confirmation">Appointment Confirmation</SelectItem>
+                       <SelectItem value="Job Completion">Job Completion</SelectItem>
+                       <SelectItem value="Invoice">Invoice</SelectItem>
+                       <SelectItem value="Supplier Request">Supplier Request</SelectItem>
+                       <SelectItem value="Supplier Order">Supplier Order</SelectItem>
+                       <SelectItem value="General Response">General Response</SelectItem>
+                       <SelectItem value="Other">Other</SelectItem>
+                     </SelectContent>
                   </Select>
                 </div>
               </div>
