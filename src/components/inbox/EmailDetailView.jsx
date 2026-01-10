@@ -229,19 +229,6 @@ export default function EmailDetailView({
     setSelectedMessage(null);
   };
 
-  const handlePriorityChange = async (newPriority) => {
-    setUpdatingPriority(true);
-    try {
-      await base44.entities.EmailThread.update(thread.id, { priority: newPriority });
-      toast.success(`Priority updated to ${newPriority}`);
-      refetch();
-    } catch (error) {
-      toast.error("Failed to update priority");
-    } finally {
-      setUpdatingPriority(false);
-    }
-  };
-
   const handleThreadUpdate = () => {
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
     if (onThreadUpdate) {
