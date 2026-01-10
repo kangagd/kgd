@@ -45,6 +45,18 @@ const sanitizeBodyHtml = (html, inlineImages = []) => {
   // Fix encoding issues first
   sanitized = sanitizeInboundText(sanitized);
   
+  // CRITICAL: Remove <style> tags and their content to prevent CSS from showing as text
+  sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+  
+  // Remove <head> tags and their content
+  sanitized = sanitized.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
+  
+  // Extract body content if full HTML document
+  const bodyMatch = sanitized.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    sanitized = bodyMatch[1];
+  }
+  
   // Replace inline image references with actual URLs
   if (inlineImages && inlineImages.length > 0) {
     inlineImages.forEach(img => {
@@ -56,7 +68,7 @@ const sanitizeBodyHtml = (html, inlineImages = []) => {
     });
   }
   
-  // Remove dangerous tags
+  // Remove dangerous tags and attributes
   sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
   sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
   sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, '');
