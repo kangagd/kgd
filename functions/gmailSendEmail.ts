@@ -30,8 +30,9 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references) {
 
 Deno.serve(async (req) => {
   try {
-    // Parse request
-    const body = await req.json();
+    // Parse request (handle Base44 SDK wrapper)
+    const rawBody = await req.json();
+    const body = rawBody.data || rawBody;
     const { to, cc, bcc, subject, body_html, gmail_thread_id, in_reply_to, references } = body;
 
     console.log('Send request:', { to, subject, has_body: !!body_html });
