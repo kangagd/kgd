@@ -25,7 +25,7 @@ import { handleEnterToNextField } from "../common/formNavigator";
 import MergeCustomersModal from "../customers/MergeCustomersModal";
 import { toast } from "sonner";
 
-export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting, aiFilledFields = {} }) {
+export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(initialData || project || {
     customer_id: "",
@@ -60,9 +60,6 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
     contract_id: "",
     opened_date: ""
   });
-
-  // Track AI-filled fields for visual highlighting
-  const isAIFilled = (fieldName) => aiFilledFields && aiFilledFields[fieldName];
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ 
@@ -481,15 +478,7 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         <form onSubmit={handleSubmit} onKeyDownCapture={handleEnterToNextField}>
           <CardContent className="p-6 space-y-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="title">Project Title *</Label>
-                {isAIFilled('title') && (
-                  <span className="text-xs bg-[#FAE008] text-[#111827] px-2 py-0.5 rounded font-medium flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    AI filled
-                  </span>
-                )}
-              </div>
+              <Label htmlFor="title">Project Title *</Label>
               <Input
                 id="title"
                 data-nav="true"
@@ -497,11 +486,7 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
                 placeholder="e.g., Garage Door Replacement - Unit 6"
-                className={`border-2 focus:ring-2 focus:ring-[#fae008]/20 ${
-                  isAIFilled('title') 
-                    ? 'border-[#FAE008] bg-[#FFFEF5] focus:border-[#fae008]' 
-                    : 'border-slate-300 focus:border-[#fae008]'
-                }`}
+                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
               />
             </div>
 
@@ -616,21 +601,9 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="project_type">Type</Label>
-                  {isAIFilled('project_type') && (
-                    <span className="text-xs bg-[#FAE008] text-[#111827] px-2 py-0.5 rounded font-medium flex items-center gap-1">
-                      <Sparkles className="w-3 h-3" />
-                      AI filled
-                    </span>
-                  )}
-                </div>
+                <Label htmlFor="project_type">Type</Label>
                 <Select value={formData.project_type} onValueChange={(val) => setFormData({ ...formData, project_type: val })}>
-                  <SelectTrigger className={`border-2 ${
-                    isAIFilled('project_type') 
-                      ? 'border-[#FAE008] bg-[#FFFEF5]' 
-                      : 'border-slate-300'
-                  }`}>
+                  <SelectTrigger className="border-2 border-slate-300">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -774,29 +747,12 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
               </div>
             )}
 
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <label className="text-[14px] font-medium leading-[1.4] text-[#111827]">Description</label>
-                {isAIFilled('description') && (
-                  <span className="text-xs bg-[#FAE008] text-[#111827] px-2 py-0.5 rounded font-medium flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    AI filled
-                  </span>
-                )}
-              </div>
-              <div className={`border-2 rounded-lg overflow-hidden ${
-                isAIFilled('description') 
-                  ? 'border-[#FAE008] bg-[#FFFEF5]' 
-                  : 'border-slate-300'
-              }`}>
-                <RichTextField
-                  value={formData.description}
-                  onChange={(value) => setFormData({ ...formData, description: value })}
-                  placeholder="Describe the project scope and requirements…"
-                  showLabel={false}
-                />
-              </div>
-            </div>
+            <RichTextField
+              label="Description"
+              value={formData.description}
+              onChange={(value) => setFormData({ ...formData, description: value })}
+              placeholder="Describe the project scope and requirements…"
+            />
 
             <RichTextField
               label="Notes"
