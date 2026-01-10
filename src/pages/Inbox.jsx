@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Mail, AlertTriangle, Loader } from "lucide-react";
 import { toast } from "sonner";
 import ThreadRow from "@/components/inbox/ThreadRow";
@@ -8,6 +8,7 @@ import ThreadHeader from "@/components/inbox/ThreadHeader";
 import InboxFilterBar from "@/components/inbox/InboxFilterBar";
 import SharedComposer from "@/components/inbox/SharedComposer";
 import EmailDetailView from "@/components/inbox/EmailDetailView";
+import LinkThreadModal from "@/components/inbox/LinkThreadModal";
 
 export default function Inbox() {
   const queryClient = useQueryClient();
