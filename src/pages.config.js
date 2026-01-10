@@ -27,6 +27,7 @@ import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
+import WarehouseInventory from './pages/WarehouseInventory';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +61,7 @@ export const PAGES = {
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
+    "WarehouseInventory": WarehouseInventory,
 }
 
 export const pagesConfig = {
