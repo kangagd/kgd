@@ -8,19 +8,10 @@
  */
 export async function syncVehicleStockQuantity(base44, vehicleId, productId, newQuantity, itemName) {
   try {
-    // Update VehicleStock
-    const vehicleStockList = await base44.entities.VehicleStock.filter({
-      vehicle_id: vehicleId,
-      product_id: productId
-    });
+    // ARCHIVED: VehicleStock writes disabled - using InventoryQuantity only
+    // Legacy VehicleStock is no longer written to; archive when ready
 
-    if (vehicleStockList.length > 0) {
-      await base44.entities.VehicleStock.update(vehicleStockList[0].id, {
-        quantity_on_hand: newQuantity
-      });
-    }
-
-    // Update InventoryQuantity for the vehicle location
+    // Update InventoryQuantity for the vehicle location (SOURCE OF TRUTH)
     const locations = await base44.asServiceRole.entities.InventoryLocation.filter({
       vehicle_id: vehicleId,
       type: 'vehicle'
