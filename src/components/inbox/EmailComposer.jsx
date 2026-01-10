@@ -21,8 +21,8 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   
   // A) Enforce reply contract: validate required props
   const isReplyMode = mode === "reply";
-  const hasValidThreadContext = thread?.id && thread?.gmail_thread_id && message?.message_id;
-  const isReplyContextMissing = isReplyMode && !hasValidThreadContext;
+  const hasValidThreadContext = thread?.id && thread?.gmail_thread_id && (message?.message_id || message?.gmail_message_id);
+  const isReplyContextMissing = isReplyMode && !hasValidThreadContext && !existingDraft;
   
   // Smart recipient calculation for replies
   const getReplyRecipients = (replyAll = false) => {
