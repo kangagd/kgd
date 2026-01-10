@@ -97,7 +97,7 @@ export default function EmailDetailView({
         await base44.entities.EmailThreadViewer.create({
           thread_id: thread.id,
           user_email: user.email,
-          user_name: user.full_name || user.display_name,
+          user_name: user.display_name,
           last_seen: new Date().toISOString()
         });
       }

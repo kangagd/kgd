@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       const messagePayload = {
         message,
         sender_email: user.email,
-        sender_name: user.full_name || user.display_name
+        sender_name: user.display_name
       };
       
       if (mentionedEmails.length > 0) {
@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     if (mentionedEmails.length > 0) {
       const notifications = mentionedEmails.map(email => ({
         user_email: email,
-        title: `${user.full_name || user.display_name} mentioned you`,
+        title: `${user.display_name} mentioned you`,
         description: message.substring(0, 100),
         type: 'mention',
         entity_type: type,
