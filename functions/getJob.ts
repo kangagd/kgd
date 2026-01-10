@@ -41,6 +41,22 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Access denied' }, { status: 403 });
         }
 
+        // Auto-sync address from project if missing
+        if (!job.address_full || !job.address_full.trim()) {
+            try {
+                await base44.asServiceRole.functions.invoke('syncJobAddressFromProject', {
+                    job_id: jobId
+                });
+                // Fetch updated job
+                const updatedJob = await base44.asServiceRole.entities.Job.get(jobId);
+                return Response.json(updatedJob);
+            } catch (syncError) {
+                console.error('Address sync failed:', syncError);
+                // Still return job even if sync fails
+                return Response.json(job);
+            }
+        }
+
         return Response.json(job);
 
     } catch (error) {
