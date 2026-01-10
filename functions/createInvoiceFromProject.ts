@@ -39,15 +39,39 @@ Deno.serve(async (req) => {
       ? xeroSettings[0].default_sales_account_code 
       : "200";
 
-    // Build Xero invoice payload
-    const xeroLineItems = lineItems.map(item => ({
-      Description: item.description,
-      Quantity: item.quantity || 1,
-      UnitAmount: item.amount,
-      AccountCode: accountCode,
-      TaxType: "OUTPUT", // GST on Output (10%)
-      DiscountAmount: item.discount || 0
-    }));
+    // Fetch price list items for SKU/ItemCode mapping
+    const itemIds = lineItems.filter(item => item.price_list_item_id).map(item => item.price_list_item_id);
+    const priceListItems = itemIds.length > 0 
+      ? await base44.asServiceRole.entities.PriceListItem.filter({ id: { $in: itemIds } })
+      : [];
+    
+    const skuMap = {};
+    priceListItems.forEach(pli => {
+      skuMap[pli.id] = pli.sku;
+    });
+
+    // Build Xero invoice payload with SKU linking
+    const xeroLineItems = lineItems.map(item => {
+      const lineItem = {
+        Description: item.description,
+        Quantity: item.quantity || 1,
+        UnitAmount: item.amount,
+        AccountCode: accountCode,
+        TaxType: "OUTPUT" // GST on Output (10%)
+      };
+
+      // Link to Xero item by SKU if available
+      if (item.price_list_item_id && skuMap[item.price_list_item_id]) {
+        lineItem.ItemCode = skuMap[item.price_list_item_id];
+      }
+
+      // Add discount if applicable
+      if (item.discount || 0 > 0) {
+        lineItem.DiscountAmount = item.discount;
+      }
+
+      return lineItem;
+    });
 
     const invoicePayload = {
       Type: "ACCREC",
