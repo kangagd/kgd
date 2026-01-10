@@ -6,19 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import {
   Reply,
   Forward,
-  MoreVertical,
   ChevronDown,
   ChevronUp,
   Paperclip,
   Download,
-  FileText,
   Link as LinkIcon,
   X,
   Trash2,
   UserPlus,
   User,
-  Eye,
-  EyeOff,
   Zap
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
