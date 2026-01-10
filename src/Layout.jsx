@@ -894,14 +894,14 @@ export default function Layout({ children, currentPageName }) {
                      className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Inbox") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Inbox"
                    >
-                     <Mail className="w-5 h-5" />
+                     {iconMap.Mail && <iconMap.Mail className="w-5 h-5" />}
                    </Link>
                    <Link
                      to={createPageUrl("Schedule")}
                      className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Schedule") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Schedule"
                    >
-                     <Calendar className="w-5 h-5" />
+                     {iconMap.Calendar && <iconMap.Calendar className="w-5 h-5" />}
                    </Link>
                  </div>
              </div>
