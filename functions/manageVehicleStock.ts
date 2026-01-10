@@ -39,17 +39,8 @@ Deno.serve(async (req) => {
 
             const newQty = (currentStock.quantity_on_hand || 0) - quantity;
 
-            // Create movement
-            await base44.entities.VehicleStockMovement.create({
-                vehicle_id,
-                product_id,
-                job_id,
-                movement_type: 'ConsumeOnJob',
-                quantity_change: -quantity,
-                reason: reason || 'Used on job',
-                performed_by_user_id: user.id,
-                performed_by_user_name: user.full_name || user.email
-            });
+            // ARCHIVED: VehicleStockMovement writes disabled - using StockMovement only
+            // Legacy movement tracking disabled
 
             // Update stock (dual-write to both systems)
             await syncVehicleStockQuantity(base44, vehicle_id, product_id, newQty, currentStock.product_name);
@@ -107,16 +98,7 @@ Deno.serve(async (req) => {
             const diff = new_quantity - oldQty;
             if (diff === 0) return Response.json({ success: true, new_quantity: new_quantity });
 
-            // Create movement
-            await base44.entities.VehicleStockMovement.create({
-                vehicle_id,
-                product_id,
-                movement_type: 'Adjustment',
-                quantity_change: diff,
-                reason: reason || 'Manual adjustment',
-                performed_by_user_id: user.id,
-                performed_by_user_name: user.full_name || user.email
-            });
+            // ARCHIVED: VehicleStockMovement writes disabled - using StockMovement only
 
             // Update stock (dual-write to both systems)
             await syncVehicleStockQuantity(base44, vehicle_id, product_id, new_quantity, currentStock.product_name);
@@ -169,15 +151,7 @@ Deno.serve(async (req) => {
 
             const newQty = (currentStock.quantity_on_hand || 0) + quantity;
 
-            await base44.entities.VehicleStockMovement.create({
-                vehicle_id,
-                product_id,
-                movement_type: 'RestockFromWarehouse',
-                quantity_change: quantity,
-                reason: reason || 'Restock',
-                performed_by_user_id: user.id,
-                performed_by_user_name: user.full_name || user.email
-            });
+            // ARCHIVED: VehicleStockMovement writes disabled - using StockMovement only
 
             // Update stock (dual-write to both systems)
             await syncVehicleStockQuantity(base44, vehicle_id, product_id, newQty, currentStock.product_name);
@@ -252,15 +226,7 @@ Deno.serve(async (req) => {
             const newQty = (currentStock.quantity_on_hand || 0) + qty;
 
             if (qty > 0) {
-                 await base44.entities.VehicleStockMovement.create({
-                    vehicle_id,
-                    product_id: productId,
-                    movement_type: 'Adjustment', // Initial add
-                    quantity_change: qty,
-                    reason: 'Initial addition of custom item',
-                    performed_by_user_id: user.id,
-                    performed_by_user_name: user.full_name || user.email
-                });
+                 // ARCHIVED: VehicleStockMovement writes disabled
 
                 // Update stock (dual-write to both systems)
                 await syncVehicleStockQuantity(base44, vehicle_id, productId, newQty, product.item);
