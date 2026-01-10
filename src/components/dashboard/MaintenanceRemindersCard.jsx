@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Wrench, Calendar, AlertCircle, MapPin } from "lucide-react";
+import { Wrench, Calendar, AlertCircle, MapPin, Mail } from "lucide-react";
 import { format, parseISO, isPast, isFuture, addDays, isBefore } from "date-fns";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
