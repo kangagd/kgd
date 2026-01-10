@@ -9,14 +9,14 @@ export default function SmartReplySuggestions({ message, thread, onSelectSuggest
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    if (!expanded || suggestions.length > 0) return;
+    if (!expanded || suggestions.length > 0 || !message || !thread) return;
 
     const generateSuggestions = async () => {
       setLoading(true);
       try {
         const emailContext = `
 From: ${message.from_name || message.from_address}
-Subject: ${thread.subject}
+Subject: ${thread.subject || 'No subject'}
 Message: ${(message.body_text || message.body_html || '').substring(0, 500)}
         `.trim();
 
@@ -42,6 +42,7 @@ Return JSON like: [{"text": "suggestion 1"}, {"text": "suggestion 2"}, {"text": 
         setSuggestions(parsed.slice(0, 3));
       } catch (err) {
         console.error('Failed to generate smart replies:', err);
+        setSuggestions([]);
       } finally {
         setLoading(false);
       }
