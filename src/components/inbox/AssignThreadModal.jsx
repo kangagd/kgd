@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -19,15 +19,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { UserCheck, UserX } from "lucide-react";
 
 export default function AssignThreadModal({ thread, open, onClose }) {
   const [selectedUser, setSelectedUser] = useState("");
   const [note, setNote] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
 
   const { data: users = [] } = useQuery({
     queryKey: ['team-users'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      const result = await base44.functions.invoke('getTeamMembers', {});
+      return result.data?.users || [];
+    },
     enabled: open
   });
 
@@ -62,6 +71,27 @@ export default function AssignThreadModal({ thread, open, onClose }) {
     assignMutation.mutate();
   };
 
+  const handleUnassign = async () => {
+    try {
+      await base44.entities.EmailThread.update(thread.id, {
+        assigned_to: null,
+        assigned_to_name: null,
+        status: 'Open'
+      });
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      toast.success('Thread unassigned');
+      onClose();
+    } catch (error) {
+      toast.error('Failed to unassign thread');
+    }
+  };
+
+  const handleAssignToMe = () => {
+    if (currentUser) {
+      setSelectedUser(currentUser.email);
+    }
+  };
+
   // Filter active users
   const activeUsers = users.filter(u => u.email);
 
@@ -69,9 +99,42 @@ export default function AssignThreadModal({ thread, open, onClose }) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Assign Thread to Team Member</DialogTitle>
+          <DialogTitle>Assign Email Thread</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {thread.assigned_to && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm text-amber-800">
+                Currently assigned to: <strong>{thread.assigned_to_name}</strong>
+              </p>
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <Button 
+              type="button"
+              variant="outline" 
+              onClick={handleAssignToMe}
+              className="flex-1"
+              disabled={selectedUser === currentUser?.email}
+            >
+              <UserCheck className="w-4 h-4 mr-2" />
+              Assign to Me
+            </Button>
+            {thread.assigned_to && (
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={handleUnassign}
+                disabled={assignMutation.isPending}
+                className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <UserX className="w-4 h-4 mr-2" />
+                Unassign
+              </Button>
+            )}
+          </div>
+
           <div>
             <Label htmlFor="user">Assign To</Label>
             <Select value={selectedUser} onValueChange={setSelectedUser}>
