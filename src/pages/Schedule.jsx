@@ -670,33 +670,43 @@ export default function Schedule() {
                     </div>
                     
                     {/* Jobs Column */}
-                    <div className="flex-1 p-2 space-y-2">
+                    <div className="flex-1 p-2 space-y-2 relative">
                       {slotJobs.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-xs text-[#9CA3AF]">
                           {snapshot.isDraggingOver ? 'Drop here' : ''}
                         </div>
                       ) : (
-                        slotJobs.map((job, index) => (
-                          <Draggable key={job.id} draggableId={job.id} index={index}>
-                            {(dragProvided, dragSnapshot) => (
-                              <div
-                                ref={dragProvided.innerRef}
-                                {...dragProvided.draggableProps}
-                                {...dragProvided.dragHandleProps}
-                              >
-                                <DraggableJobCard
-                                  job={job}
-                                  onClick={() => setModalJob(job)}
-                                  onAddressClick={handleAddressClick}
-                                  onProjectClick={handleProjectClick}
-                                  isDragging={dragSnapshot.isDragging}
-                                  techniciansLookup={techniciansLookup}
-                                  hasActiveCheckIn={!!activeCheckInMap[job.id]}
-                                />
-                              </div>
-                            )}
-                          </Draggable>
-                        ))
+                        slotJobs.map((job, index) => {
+                          // Calculate job duration in hours
+                          const duration = job.expected_duration || 1;
+                          const numSlots = Math.ceil(duration);
+
+                          return (
+                            <Draggable key={job.id} draggableId={job.id} index={index}>
+                              {(dragProvided, dragSnapshot) => (
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  {...dragProvided.dragHandleProps}
+                                  style={{
+                                    ...dragProvided.draggableProps.style,
+                                    minHeight: `${numSlots * 60 - 8}px`
+                                  }}
+                                >
+                                  <DraggableJobCard
+                                    job={job}
+                                    onClick={() => setModalJob(job)}
+                                    onAddressClick={handleAddressClick}
+                                    onProjectClick={handleProjectClick}
+                                    isDragging={dragSnapshot.isDragging}
+                                    techniciansLookup={techniciansLookup}
+                                    hasActiveCheckIn={!!activeCheckInMap[job.id]}
+                                  />
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })
                       )}
                       {provided.placeholder}
                     </div>
