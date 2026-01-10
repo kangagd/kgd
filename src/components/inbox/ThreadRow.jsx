@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Mail, AlertCircle } from "lucide-react";
+import ProjectLinkChip from "./ProjectLinkChip";
 
 export default function ThreadRow({ thread, isSelected, onClick }) {
   const statusColors = {
@@ -37,22 +38,18 @@ export default function ThreadRow({ thread, isSelected, onClick }) {
           </Badge>
         </div>
 
-        {/* Customer, Project/Job, Last Activity */}
-        <div className="flex items-center gap-2 text-[12px] text-[#6B7280]">
+        {/* Customer, Job, & Linking State */}
+        <div className="flex items-center gap-2 flex-wrap">
           {thread.customer_name && (
-            <span className="truncate">{thread.customer_name}</span>
+            <span className="text-[12px] text-[#6B7280] truncate">{thread.customer_name}</span>
           )}
-          {(thread.project_title || thread.job_number) && (
+          {thread.job_number && (
             <>
-              <span>•</span>
-              {thread.project_title && (
-                <span className="truncate max-w-[150px]">{thread.project_title}</span>
-              )}
-              {thread.job_number && (
-                <span className="truncate">Job #{thread.job_number}</span>
-              )}
+              <span className="text-[#E5E7EB] text-[10px]">•</span>
+              <span className="text-[12px] text-[#6B7280]">Job #{thread.job_number}</span>
             </>
           )}
+          <ProjectLinkChip thread={thread} />
         </div>
 
         {/* Owner & Last Message Preview */}
