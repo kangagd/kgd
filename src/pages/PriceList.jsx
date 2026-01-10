@@ -289,8 +289,13 @@ export default function PriceList() {
         ) : (
           <div className="grid gap-3">
             {filteredItems.map((item) => {
-              // Get stock from InventoryQuantity (single source of truth)
-              const stockByLocation = inventoryQuantities.filter(q => q.price_list_item_id === item.id);
+              // Get all quantities for this item from all locations
+              const stockByLocation = inventoryQuantities
+                .filter(q => q.price_list_item_id === item.id)
+                .map(q => ({
+                  ...q,
+                  location_name: q.location_name || 'Unknown'
+                }));
 
               return (
                 <PriceListCard
@@ -304,7 +309,7 @@ export default function PriceList() {
                   onMoveStock={handleMoveStock}
                   inventorySummary={inventorySummaryByItem[item.id]}
                   stockByLocation={stockByLocation}
-                  locations={[...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' })), ...inventoryLocations]}
+                  locations={inventoryLocations}
                   canViewCosts={isAdminOrManager}
                 />
               );
