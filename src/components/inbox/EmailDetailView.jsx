@@ -46,7 +46,6 @@ import CreateJobFromEmailModal from "./CreateJobFromEmailModal";
 import AssignThreadModal from "./AssignThreadModal";
 import InternalNotesPanel from "./InternalNotesPanel";
 import PresenceIndicator from "./PresenceIndicator";
-import AISuggestionBanner from "./AISuggestionBanner";
 
 export default function EmailDetailView({
   thread,
@@ -317,13 +316,6 @@ export default function EmailDetailView({
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] p-4 mb-6">
             <InternalNotesPanel threadId={thread.id} />
           </div>
-
-          {/* AI Suggestion Banner */}
-          <AISuggestionBanner
-            thread={aiThread}
-            onActionTaken={() => setShowCreateProjectModal(true)}
-            onDismiss={handleThreadUpdate}
-          />
 
           {/* AI Insights Panel */}
           <div className="mb-6">
