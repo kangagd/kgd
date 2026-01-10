@@ -52,10 +52,14 @@ Deno.serve(async (req) => {
     let requestBody;
     try {
       const bodyText = await req.text();
+      console.log('[DEBUG] Raw body:', bodyText.substring(0, 300));
       const parsed = JSON.parse(bodyText);
+      console.log('[DEBUG] Parsed keys:', Object.keys(parsed));
+      console.log('[DEBUG] parsed.data type:', typeof parsed.data);
       
       // Base44 SDK wraps payload in a 'data' field
       requestBody = parsed.data ? (typeof parsed.data === 'string' ? JSON.parse(parsed.data) : parsed.data) : parsed;
+      console.log('[DEBUG] Final requestBody keys:', Object.keys(requestBody));
     } catch (jsonError) {
       console.error('JSON parse error:', jsonError);
       return Response.json({ error: 'Invalid JSON payload', stage }, { status: 400 });
@@ -68,6 +72,12 @@ Deno.serve(async (req) => {
       project_id, job_id,
       attachments
     } = requestBody;
+    
+    console.log('[DEBUG] Extracted:', { 
+      to: to ? `present (${to})` : 'MISSING', 
+      subject: subject ? `present (${subject})` : 'MISSING',
+      body_html: body_html ? `present (${body_html.length} chars)` : 'MISSING'
+    });
     
     stage = 'auth';
     const base44 = createClientFromRequest(req);
