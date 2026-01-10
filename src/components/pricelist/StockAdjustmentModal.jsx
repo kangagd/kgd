@@ -101,8 +101,6 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
         }
       }
 
-      // ARCHIVED: Legacy stock_level updates disabled - using InventoryQuantity only
-
       return { success: true };
     },
     onSuccess: () => {
