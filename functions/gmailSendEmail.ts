@@ -90,49 +90,79 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
 }
 
 Deno.serve(async (req) => {
+  console.log('[gmailSendEmail] ========== REQUEST START ==========');
+  console.log('[gmailSendEmail] Request method:', req.method);
+  console.log('[gmailSendEmail] Request headers:', Object.fromEntries(req.headers.entries()));
+  
   try {
+    console.log('[gmailSendEmail] Step 1: Creating Base44 client from request');
     const base44 = createClientFromRequest(req);
     
-    // CRITICAL: Authenticate user first - any authenticated user can send emails
+    console.log('[gmailSendEmail] Step 2: Authenticating user via base44.auth.me()');
     let currentUser;
     try {
       currentUser = await base44.auth.me();
+      console.log('[gmailSendEmail] ✅ Authentication successful');
     } catch (authError) {
-      console.error('[gmailSendEmail] Authentication error:', authError);
-      return Response.json({ error: 'User not authenticated', details: authError.message }, { status: 401 });
+      console.error('[gmailSendEmail] ❌ Authentication FAILED:', authError);
+      console.error('[gmailSendEmail] Auth error name:', authError.name);
+      console.error('[gmailSendEmail] Auth error message:', authError.message);
+      console.error('[gmailSendEmail] Auth error stack:', authError.stack);
+      return Response.json({ 
+        error: 'Authentication failed', 
+        details: authError.message,
+        errorType: authError.name
+      }, { status: 401 });
     }
     
     if (!currentUser) {
-      console.error('[gmailSendEmail] User authentication failed - currentUser is null');
-      return Response.json({ error: 'User not authenticated' }, { status: 401 });
+      console.error('[gmailSendEmail] ❌ currentUser is null/undefined after auth');
+      return Response.json({ error: 'User not authenticated - currentUser is null' }, { status: 401 });
     }
     
-    console.log(`[gmailSendEmail] ✅ Authenticated user: ${currentUser.email}, role: ${currentUser.role}, extended_role: ${currentUser.extended_role}`);
+    console.log(`[gmailSendEmail] ✅ User authenticated: ${currentUser.email}`);
+    console.log(`[gmailSendEmail]    - role: ${currentUser.role}`);
+    console.log(`[gmailSendEmail]    - extended_role: ${currentUser.extended_role}`);
+    
+    console.log('[gmailSendEmail] Step 3: Finding Gmail connection');
     
     // CRITICAL: Use current user's Gmail connection if they have one, otherwise find shared account
     let user = currentUser;
     
-    if (!currentUser.gmail_access_token || !currentUser.gmail_refresh_token) {
+    const hasOwnGmail = !!(currentUser.gmail_access_token && currentUser.gmail_refresh_token);
+    console.log(`[gmailSendEmail] User has own Gmail connection: ${hasOwnGmail}`);
+    
+    if (!hasOwnGmail) {
       console.log(`[gmailSendEmail] User ${currentUser.email} doesn't have Gmail connected, checking for shared account...`);
       
       // Try to find any user with Gmail connected (requires service role for admin/shared accounts)
       try {
+        console.log('[gmailSendEmail] Step 3a: Listing all users via service role...');
         const allUsers = await base44.asServiceRole.entities.User.list();
-        const connectedUser = allUsers.find(u => u.gmail_access_token && u.gmail_refresh_token);
+        console.log(`[gmailSendEmail] ✅ Found ${allUsers.length} total users`);
         
-        if (!connectedUser) {
-          console.error('[gmailSendEmail] No Gmail connection found in system');
+        const connectedUsers = allUsers.filter(u => u.gmail_access_token && u.gmail_refresh_token);
+        console.log(`[gmailSendEmail] Found ${connectedUsers.length} users with Gmail connected:`, connectedUsers.map(u => u.email));
+        
+        if (connectedUsers.length === 0) {
+          console.error('[gmailSendEmail] ❌ No Gmail connection found in system');
           return Response.json({ error: 'Gmail not connected. Please connect your Gmail account or ask an admin to set up a shared Gmail connection.' }, { status: 400 });
         }
         
-        user = connectedUser;
-        console.log(`[gmailSendEmail] Using shared Gmail connection from: ${user.email}`);
+        user = connectedUsers[0];
+        console.log(`[gmailSendEmail] ✅ Using shared Gmail connection from: ${user.email}`);
       } catch (listError) {
-        console.error('[gmailSendEmail] Failed to list users for shared connection:', listError);
-        return Response.json({ error: 'Gmail not connected. Please connect your Gmail account.' }, { status: 400 });
+        console.error('[gmailSendEmail] ❌ FAILED to list users for shared connection:', listError);
+        console.error('[gmailSendEmail] List error name:', listError.name);
+        console.error('[gmailSendEmail] List error message:', listError.message);
+        console.error('[gmailSendEmail] List error stack:', listError.stack);
+        return Response.json({ 
+          error: 'Failed to access Gmail connection', 
+          details: listError.message 
+        }, { status: 500 });
       }
     } else {
-      console.log(`[gmailSendEmail] Using user's own Gmail connection: ${currentUser.email}`);
+      console.log(`[gmailSendEmail] ✅ Using user's own Gmail connection: ${currentUser.email}`);
     }
     
     // UPDATED CONTRACT: Accept both base44_thread_id and gmail_thread_id
