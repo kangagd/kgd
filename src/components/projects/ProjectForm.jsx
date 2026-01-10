@@ -481,7 +481,15 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         <form onSubmit={handleSubmit} onKeyDownCapture={handleEnterToNextField}>
           <CardContent className="p-6 space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="title">Project Title *</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="title">Project Title *</Label>
+                {isAIFilled('title') && (
+                  <span className="text-xs bg-[#FAE008] text-[#111827] px-2 py-0.5 rounded font-medium flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    AI filled
+                  </span>
+                )}
+              </div>
               <Input
                 id="title"
                 data-nav="true"
@@ -489,7 +497,11 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 required
                 placeholder="e.g., Garage Door Replacement - Unit 6"
-                className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20"
+                className={`border-2 focus:ring-2 focus:ring-[#fae008]/20 ${
+                  isAIFilled('title') 
+                    ? 'border-[#FAE008] bg-[#FFFEF5] focus:border-[#fae008]' 
+                    : 'border-slate-300 focus:border-[#fae008]'
+                }`}
               />
             </div>
 
