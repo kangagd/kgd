@@ -119,16 +119,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     setComposerMode({ type: 'reply', thread: thread });
   };
 
-  const handleForward = (message, thread) => {
-    setSelectedMessage(message);
-    setComposerMode({ type: 'forward', thread: thread });
-  };
-
-  const handleCompose = () => {
-    setSelectedMessage(null);
-    setComposerMode('compose');
-  };
-
   const handleEmailSent = async (threadId) => {
     setComposerMode(null);
     setSelectedMessage(null);
