@@ -51,42 +51,41 @@ Deno.serve(async (req) => {
 
     // Parse mentions
     const mentionedEmails = parseMentions(message);
-    const mentionedUsers = [];
 
-    // Look up mentioned users via service role (no frontend User.list)
+    // Validate mentioned users exist
     if (mentionedEmails.length > 0) {
       const allUsers = await base44.asServiceRole.entities.User.list();
+      const validEmails = [];
       for (const email of mentionedEmails) {
         const mentionedUser = allUsers.find(u => u.email === email);
         if (mentionedUser) {
-          mentionedUsers.push({
-            id: mentionedUser.id,
-            email: mentionedUser.email,
-            name: mentionedUser.full_name || mentionedUser.display_name
-          });
+          validEmails.push(email);
         }
       }
+      // Update mentionedEmails to only contain valid users
+      mentionedEmails.length = 0;
+      mentionedEmails.push(...validEmails);
     }
 
     // Create message
     let createdMessage;
     try {
+      const messagePayload = {
+        message,
+        sender_email: user.email,
+        sender_name: user.full_name || user.display_name
+      };
+      
+      if (mentionedEmails.length > 0) {
+        messagePayload.mentioned_users = mentionedEmails;
+      }
+      
       if (type === 'project') {
-        createdMessage = await base44.asServiceRole.entities.ProjectMessage.create({
-          project_id: entityId,
-          message,
-          sender_email: user.email,
-          sender_name: user.full_name || user.display_name,
-          mentioned_users: mentionedUsers.length > 0 ? mentionedUsers : undefined
-        });
+        messagePayload.project_id = entityId;
+        createdMessage = await base44.asServiceRole.entities.ProjectMessage.create(messagePayload);
       } else if (type === 'job') {
-        createdMessage = await base44.asServiceRole.entities.JobMessage.create({
-          job_id: entityId,
-          message,
-          sender_email: user.email,
-          sender_name: user.full_name || user.display_name,
-          mentioned_users: mentionedUsers.length > 0 ? mentionedUsers : undefined
-        });
+        messagePayload.job_id = entityId;
+        createdMessage = await base44.asServiceRole.entities.JobMessage.create(messagePayload);
       }
     } catch (messageError) {
       console.error('Failed to create message:', messageError);
@@ -98,9 +97,9 @@ Deno.serve(async (req) => {
     }
 
     // Create notifications for mentioned users (non-blocking)
-    if (mentionedUsers.length > 0) {
-      const notifications = mentionedUsers.map(mu => ({
-        user_email: mu.email,
+    if (mentionedEmails.length > 0) {
+      const notifications = mentionedEmails.map(email => ({
+        user_email: email,
         title: `${user.full_name || user.display_name} mentioned you`,
         description: message.substring(0, 100),
         type: 'mention',
@@ -127,7 +126,7 @@ Deno.serve(async (req) => {
         created_date: createdMessage.created_date,
         sender_email: createdMessage.sender_email,
         sender_name: createdMessage.sender_name,
-        mentioned_users: mentionedUsers
+        mentioned_users: mentionedEmails
       }
     });
   } catch (error) {
