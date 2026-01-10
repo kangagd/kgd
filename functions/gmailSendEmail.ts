@@ -347,6 +347,12 @@ Deno.serve(async (req) => {
     
     return Response.json({ success: true, messageId: result.id, threadId: emailThreadId });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[gmailSendEmail] FATAL ERROR:', error);
+    console.error('[gmailSendEmail] Error stack:', error.stack);
+    return Response.json({ 
+      error: error.message || 'Failed to send email',
+      details: error.stack,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
   }
 });
