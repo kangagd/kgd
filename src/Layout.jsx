@@ -50,70 +50,63 @@ import PullToRefresh from "@/components/common/PullToRefresh";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 
 const primaryNavigationItems = [
-  { title: "Dashboard", url: createPageUrl("Dashboard"), iconName: "LayoutDashboard" },
-  { title: "Inbox", url: createPageUrl("Inbox"), iconName: "Mail" },
-  { title: "Tasks", url: createPageUrl("Tasks"), iconName: "CheckSquare" },
-  { title: "Schedule", url: createPageUrl("Schedule"), iconName: "Calendar" },
-  { title: "Projects", url: createPageUrl("Projects"), iconName: "FolderKanban" },
-  { title: "Jobs", url: createPageUrl("Jobs"), iconName: "Briefcase" },
+  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+  { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
+  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
 ];
-
-// Map icon names to components
-const iconMap = {
-  LayoutDashboard, Mail, CheckSquare, Calendar, FolderKanban, Briefcase,
-  Car, Wrench, Package, Truck, TestTube2, DollarSign, FileText, UserCircle,
-  Building2, Users, Shield, ImageIcon, TrendingUp
-};
 
 const navigationSections = [
   {
     title: "Customer Management",
     items: [
-      { title: "Contracts", url: createPageUrl("Contracts"), iconName: "FileText" },
-      { title: "Customers", url: createPageUrl("Customers"), iconName: "UserCircle" },
-      { title: "Organisations", url: createPageUrl("Organisations"), iconName: "Building2" },
+      { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
+      { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+      { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
     ]
   },
   {
     title: "Technicians",
     items: [
-      { title: "Fleet", url: createPageUrl("Fleet"), iconName: "Car" },
-      { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), iconName: "Wrench" },
-      { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), iconName: "Package" },
-      { title: "Supply & Logistics", url: createPageUrl("SupplyLogistics"), iconName: "Truck" },
-      { title: "Samples", url: createPageUrl("SamplesLibrary"), iconName: "TestTube2" },
-      { title: "Suppliers", url: createPageUrl("Suppliers"), iconName: "Package" },
-      { title: "Price List", url: createPageUrl("PriceList"), iconName: "DollarSign" },
+      { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
+      { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
+      { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), icon: Package },
+      { title: "Supply & Logistics", url: createPageUrl("SupplyLogistics"), icon: Truck },
+      { title: "Samples", url: createPageUrl("SamplesLibrary"), icon: TestTube2 },
+      { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
+      { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
     ]
   },
   {
     title: "Admin",
     items: [
-      { title: "Team", url: createPageUrl("Team"), iconName: "Users" },
-      { title: "Role Settings", url: createPageUrl("RoleSettings"), iconName: "Shield" },
-      { title: "Photos", url: createPageUrl("Photos"), iconName: "ImageIcon" },
-      { title: "Reports", url: createPageUrl("Reports"), iconName: "TrendingUp" },
+      { title: "Team", url: createPageUrl("Team"), icon: Users },
+      { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
+      { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
+      { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
     ]
   }
 ];
 
 const technicianNavigationItems = [
-  { title: "My Vehicle", url: createPageUrl("MyVehicle"), iconName: "Car" },
-  { title: "Schedule", url: createPageUrl("Schedule"), iconName: "Calendar" },
-  { title: "Jobs", url: createPageUrl("Jobs"), iconName: "Briefcase" },
-  { title: "Tasks", url: createPageUrl("Tasks"), iconName: "CheckSquare" },
-  { title: "Logistics", url: createPageUrl("Logistics"), iconName: "Truck" },
-  { title: "Suppliers", url: createPageUrl("Suppliers"), iconName: "Package" },
-  { title: "Photos", url: createPageUrl("Photos"), iconName: "ImageIcon" },
-  { title: "Price List", url: createPageUrl("PriceList"), iconName: "DollarSign" },
+  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
+  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
+  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
+  { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
+  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
 ];
 
 const viewerNavigationItems = [
-  { title: "Dashboard", url: createPageUrl("Dashboard"), iconName: "LayoutDashboard" },
-  { title: "Schedule", url: createPageUrl("Schedule"), iconName: "Calendar" },
-  { title: "Projects", url: createPageUrl("Projects"), iconName: "FolderKanban" },
-  { title: "Jobs", url: createPageUrl("Jobs"), iconName: "Briefcase" },
-  { title: "Customers", url: createPageUrl("Customers"), iconName: "UserCircle" },
+  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
+  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
+  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
+  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
 ];
 
 // Get effective role for user
@@ -518,7 +511,6 @@ export default function Layout({ children, currentPageName }) {
                   {/* Primary Navigation */}
                   {primaryNavigationItems.map((item) => {
                   const isActive = location.pathname === item.url;
-                  const IconComponent = iconMap[item.iconName];
                   return (
                     <Link
                       key={item.title}
@@ -535,7 +527,7 @@ export default function Layout({ children, currentPageName }) {
                       title={isCollapsed ? item.title : ''}
                     >
                       {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                      {IconComponent && <IconComponent className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />}
+                      <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
                       {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
                     </Link>
                   );
@@ -554,7 +546,6 @@ export default function Layout({ children, currentPageName }) {
                           <div className="space-y-1">
                             {section.items.map((item) => {
                               const isActive = location.pathname === item.url;
-                              const IconComponent = iconMap[item.iconName];
                               return (
                                 <Link
                                   key={item.title}
@@ -568,7 +559,7 @@ export default function Layout({ children, currentPageName }) {
                                   `}
                                 >
                                   {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                                  {IconComponent && <IconComponent className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />}
+                                  <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
                                   <span className="text-[14px]">{item.title}</span>
                                 </Link>
                               );
@@ -599,28 +590,27 @@ export default function Layout({ children, currentPageName }) {
                               </span>
                             </div>
                             <div className="space-y-1">
-                               {section.items.map((item) => {
-                                 const isActive = location.pathname === item.url;
-                                 const IconComponent = iconMap[item.iconName];
-                                 return (
-                                   <Link
-                                     key={item.title}
-                                     to={item.url}
-                                     onClick={() => setCollapsedMoreOpen(false)}
-                                     className={`
-                                       flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
-                                       ${isActive 
-                                         ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                                         : 'text-[#111827] hover:bg-[#F3F4F6]'
-                                       }
-                                     `}
-                                   >
-                                     {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                                     {IconComponent && <IconComponent className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />}
-                                     <span className="text-[14px]">{item.title}</span>
-                                   </Link>
-                                 );
-                               })}
+                              {section.items.map((item) => {
+                                const isActive = location.pathname === item.url;
+                                return (
+                                  <Link
+                                    key={item.title}
+                                    to={item.url}
+                                    onClick={() => setCollapsedMoreOpen(false)}
+                                    className={`
+                                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
+                                      ${isActive 
+                                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                        : 'text-[#111827] hover:bg-[#F3F4F6]'
+                                      }
+                                    `}
+                                  >
+                                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                                    <span className="text-[14px]">{item.title}</span>
+                                  </Link>
+                                );
+                              })}
                             </div>
                           </div>
                         ))}
@@ -742,24 +732,23 @@ export default function Layout({ children, currentPageName }) {
               )}
 
               {navigationItems.map((item) => {
-                 const isActive = location.pathname === item.url;
-                 const IconComponent = iconMap[item.iconName];
-                 return (
-                   <Link
-                     key={item.title}
-                     to={item.url}
-                     onClick={() => setTechMobileMenuOpen(false)}
-                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors no-underline ${
-                       isActive
-                         ? 'bg-[#FAE008] text-[#111827]'
-                         : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
-                     }`}
-                   >
-                     {IconComponent && <IconComponent className="w-5 h-5 flex-shrink-0" />}
-                     <span className="text-[14px] font-medium">{item.title}</span>
-                   </Link>
-                 );
-               })}
+                const isActive = location.pathname === item.url;
+                return (
+                  <Link
+                    key={item.title}
+                    to={item.url}
+                    onClick={() => setTechMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors no-underline ${
+                      isActive
+                        ? 'bg-[#FAE008] text-[#111827]'
+                        : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
+                    }`}
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-[14px] font-medium">{item.title}</span>
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         )}
@@ -854,17 +843,14 @@ export default function Layout({ children, currentPageName }) {
                          <div className="space-y-0.5">
                            {recentPages.map((page, idx) => {
                              const getIcon = () => {
-                               const iconConfig = {
-                                 project: { name: 'FolderKanban', color: 'text-[#6D28D9]' },
-                                 job: { name: 'Briefcase', color: 'text-[#2563EB]' },
-                                 customer: { name: 'UserCircle', color: 'text-[#16A34A]' },
-                                 email: { name: 'Mail', color: 'text-[#D97706]' },
-                                 form: { name: 'Plus', color: 'text-[#111827]' },
-                                 default: { name: 'Clock', color: 'text-[#9CA3AF]' }
-                               };
-                               const config = iconConfig[page.type] || iconConfig.default;
-                               const IconComponent = iconMap[config.name];
-                               return IconComponent ? <IconComponent className={`w-3.5 h-3.5 ${config.color}`} /> : null;
+                               switch(page.type) {
+                                 case 'project': return <FolderKanban className="w-3.5 h-3.5 text-[#6D28D9]" />;
+                                 case 'job': return <Briefcase className="w-3.5 h-3.5 text-[#2563EB]" />;
+                                 case 'customer': return <UserCircle className="w-3.5 h-3.5 text-[#16A34A]" />;
+                                 case 'email': return <Mail className="w-3.5 h-3.5 text-[#D97706]" />;
+                                 case 'form': return <Plus className="w-3.5 h-3.5 text-[#111827]" />;
+                                 default: return <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />;
+                               }
                              };
                              return (
                                <Link
@@ -887,21 +873,21 @@ export default function Layout({ children, currentPageName }) {
                      className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Tasks") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Tasks"
                    >
-                     {iconMap.CheckSquare && <iconMap.CheckSquare className="w-5 h-5" />}
+                     <CheckSquare className="w-5 h-5" />
                    </Link>
                    <Link
                      to={createPageUrl("Inbox")}
                      className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Inbox") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Inbox"
                    >
-                     {iconMap.Mail && <iconMap.Mail className="w-5 h-5" />}
+                     <Mail className="w-5 h-5" />
                    </Link>
                    <Link
                      to={createPageUrl("Schedule")}
                      className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Schedule") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Schedule"
                    >
-                     {iconMap.Calendar && <iconMap.Calendar className="w-5 h-5" />}
+                     <Calendar className="w-5 h-5" />
                    </Link>
                  </div>
              </div>
