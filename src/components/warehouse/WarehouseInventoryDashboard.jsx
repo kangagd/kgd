@@ -5,13 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Warehouse, Truck, Plus, AlertTriangle, TrendingDown } from 'lucide-react';
+import { Warehouse, Truck, Plus, AlertTriangle, TrendingDown, ArrowRightLeft, History } from 'lucide-react';
 import { toast } from 'sonner';
+import StockTransferModal from './StockTransferModal';
+import StockMovementHistory from './StockMovementHistory';
 
 export default function WarehouseInventoryDashboard() {
   const queryClient = useQueryClient();
   const [showCreateWarehouse, setShowCreateWarehouse] = useState(false);
   const [newWarehouseName, setNewWarehouseName] = useState('');
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showMovementHistory, setShowMovementHistory] = useState(false);
 
   // Fetch all locations (warehouses + vehicles)
   const { data: locations = [], isLoading: locationsLoading } = useQuery({
@@ -116,7 +121,7 @@ export default function WarehouseInventoryDashboard() {
       )}
 
       <Tabs defaultValue="warehouses" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="warehouses" className="gap-2">
             <Warehouse className="w-4 h-4" />
             Warehouses ({warehouses.length})
@@ -124,6 +129,10 @@ export default function WarehouseInventoryDashboard() {
           <TabsTrigger value="vehicles" className="gap-2">
             <Truck className="w-4 h-4" />
             Vehicles ({vehicles.length})
+          </TabsTrigger>
+          <TabsTrigger value="movements" className="gap-2">
+            <History className="w-4 h-4" />
+            Movements
           </TabsTrigger>
         </TabsList>
 
@@ -202,6 +211,18 @@ export default function WarehouseInventoryDashboard() {
                                   </p>
                                 )}
                               </div>
+                              <Button
+                                onClick={() => {
+                                  setSelectedItem(qty);
+                                  setTransferModalOpen(true);
+                                }}
+                                variant="ghost"
+                                size="sm"
+                                className="ml-2 p-1.5 h-8 w-8 hover:bg-[#FAE008]/20"
+                                title="Transfer stock"
+                              >
+                                <ArrowRightLeft className="w-3.5 h-3.5 text-[#6B7280]" />
+                              </Button>
                             </div>
                           );
                         })
@@ -275,7 +296,24 @@ export default function WarehouseInventoryDashboard() {
             })
           )}
         </TabsContent>
+
+        {/* MOVEMENTS TAB */}
+        <TabsContent value="movements" className="mt-4">
+          <StockMovementHistory />
+        </TabsContent>
       </Tabs>
+
+      {/* TRANSFER MODAL */}
+      {selectedItem && (
+        <StockTransferModal
+          open={transferModalOpen}
+          onClose={() => {
+            setTransferModalOpen(false);
+            setSelectedItem(null);
+          }}
+          item={selectedItem}
+        />
+      )}
     </div>
   );
 }
