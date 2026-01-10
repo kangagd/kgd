@@ -32,10 +32,9 @@ export default function StockByLocationView({ quantities, locations, onMoveStock
       <div className="grid gap-2">
         {quantities.map((qty) => {
           const location = locations?.find(l => l.id === qty.location_id);
-          if (!location) return null;
-
-          const isWarehouse = location.type === 'warehouse';
+          const isWarehouse = location?.type === 'warehouse';
           const Icon = isWarehouse ? Warehouse : Truck;
+          const displayName = qty.location_name || location?.name || 'Unknown Location';
 
           return (
             <Card key={qty.id} className="border border-[#E5E7EB]">
