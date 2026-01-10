@@ -79,7 +79,13 @@ Deno.serve(async (req) => {
       attachments
     } = requestBody;
     
-    console.log('Request payload:', { to, subject, body_html: body_html ? 'present' : 'missing' });
+    console.log('Request payload received:', { 
+      to: to ? `present (${to})` : 'MISSING', 
+      subject: subject ? `present (${subject})` : 'MISSING',
+      body_html: body_html ? `present (${body_html.length} chars)` : 'MISSING',
+      body_html_type: typeof body_html,
+      body_html_value_preview: body_html ? body_html.substring(0, 100) : 'N/A'
+    });
     
     stage = 'validate_fields';
     if (!to || !subject || !body_html) {
