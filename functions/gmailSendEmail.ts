@@ -60,15 +60,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Only admin and managers can send emails' }, { status: 403 });
     }
     
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
+      return Response.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+
     const { 
       to, cc, bcc, subject, body_html, 
       gmail_thread_id, 
       in_reply_to, references, 
       project_id, job_id,
       attachments
-    } = await req.json();
+    } = requestBody;
+    
+    console.log('Request payload:', { to, subject, body_html: body_html ? 'present' : 'missing' });
     
     if (!to || !subject || !body_html) {
+      console.error('Missing required fields:', { to: !!to, subject: !!subject, body_html: !!body_html });
       return Response.json({ error: 'Missing required fields: to, subject, body_html' }, { status: 400 });
     }
     
