@@ -52,8 +52,10 @@ Deno.serve(async (req) => {
     let requestBody;
     try {
       const bodyText = await req.text();
-      console.log('Raw request body:', bodyText.substring(0, 200));
-      requestBody = JSON.parse(bodyText);
+      const parsed = JSON.parse(bodyText);
+      
+      // Base44 SDK wraps payload in a 'data' field
+      requestBody = parsed.data ? (typeof parsed.data === 'string' ? JSON.parse(parsed.data) : parsed.data) : parsed;
     } catch (jsonError) {
       console.error('JSON parse error:', jsonError);
       return Response.json({ error: 'Invalid JSON payload', stage }, { status: 400 });
