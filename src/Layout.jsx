@@ -50,13 +50,20 @@ import PullToRefresh from "@/components/common/PullToRefresh";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 
 const primaryNavigationItems = [
-  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
-  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
-  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
+  { title: "Dashboard", url: createPageUrl("Dashboard"), iconName: "LayoutDashboard" },
+  { title: "Inbox", url: createPageUrl("Inbox"), iconName: "Mail" },
+  { title: "Tasks", url: createPageUrl("Tasks"), iconName: "CheckSquare" },
+  { title: "Schedule", url: createPageUrl("Schedule"), iconName: "Calendar" },
+  { title: "Projects", url: createPageUrl("Projects"), iconName: "FolderKanban" },
+  { title: "Jobs", url: createPageUrl("Jobs"), iconName: "Briefcase" },
 ];
+
+// Map icon names to components
+const iconMap = {
+  LayoutDashboard, Mail, CheckSquare, Calendar, FolderKanban, Briefcase,
+  Car, Wrench, Package, Truck, TestTube2, DollarSign, FileText, UserCircle,
+  Building2, Users, Shield, ImageIcon, TrendingUp
+};
 
 const navigationSections = [
   {
