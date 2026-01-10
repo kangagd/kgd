@@ -109,15 +109,31 @@ Deno.serve(async (req) => {
     
     console.log(`[gmailSendEmail] ✅ Authenticated user: ${currentUser.email}, role: ${currentUser.role}, extended_role: ${currentUser.extended_role}`);
     
-    // Find any user in the system who has Gmail connected (shared account)
-    const allUsers = await base44.asServiceRole.entities.User.list();
-    let user = allUsers.find(u => u.gmail_access_token && u.gmail_refresh_token);
+    // CRITICAL: Use current user's Gmail connection if they have one, otherwise find shared account
+    let user = currentUser;
     
-    if (!user) {
-      return Response.json({ error: 'Gmail not connected. Please ask an admin to connect Gmail.' }, { status: 401 });
+    if (!currentUser.gmail_access_token || !currentUser.gmail_refresh_token) {
+      console.log(`[gmailSendEmail] User ${currentUser.email} doesn't have Gmail connected, checking for shared account...`);
+      
+      // Try to find any user with Gmail connected (requires service role for admin/shared accounts)
+      try {
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        const connectedUser = allUsers.find(u => u.gmail_access_token && u.gmail_refresh_token);
+        
+        if (!connectedUser) {
+          console.error('[gmailSendEmail] No Gmail connection found in system');
+          return Response.json({ error: 'Gmail not connected. Please connect your Gmail account or ask an admin to set up a shared Gmail connection.' }, { status: 400 });
+        }
+        
+        user = connectedUser;
+        console.log(`[gmailSendEmail] Using shared Gmail connection from: ${user.email}`);
+      } catch (listError) {
+        console.error('[gmailSendEmail] Failed to list users for shared connection:', listError);
+        return Response.json({ error: 'Gmail not connected. Please connect your Gmail account.' }, { status: 400 });
+      }
+    } else {
+      console.log(`[gmailSendEmail] Using user's own Gmail connection: ${currentUser.email}`);
     }
-    
-    console.log('Sending email using Gmail connection from user:', user.email);
     
     // UPDATED CONTRACT: Accept both base44_thread_id and gmail_thread_id
     const { 
