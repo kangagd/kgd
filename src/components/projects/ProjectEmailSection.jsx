@@ -173,75 +173,23 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     <div className="space-y-4">
       {/* Composer */}
        {composerMode && (
-         <Card className="border border-[#E5E7EB]">
-           <CardContent className="p-4">
-             <EmailComposer
-               mode={composerMode.type || composerMode}
-               thread={composerMode.thread || null}
-               message={selectedMessage}
-               onClose={() => {
-                 setComposerMode(null);
-                 setSelectedMessage(null);
-               }}
-               onSent={handleEmailSent}
-               onDraftSaved={handleDraftSaved}
-               defaultTo={project.customer_email}
-               projectId={project.id}
-               existingDraft={editingDraft}
-             />
-           </CardContent>
-         </Card>
+         <div className="p-4 bg-white rounded-lg border border-[#E5E7EB]">
+           <EmailComposer
+             mode={composerMode.type || composerMode}
+             thread={composerMode.thread || null}
+             message={selectedMessage}
+             onClose={() => {
+               setComposerMode(null);
+               setSelectedMessage(null);
+             }}
+             onSent={handleEmailSent}
+             onDraftSaved={handleDraftSaved}
+             defaultTo={project.customer_email}
+             projectId={project.id}
+             existingDraft={editingDraft}
+           />
+         </div>
        )}
-
-       {/* Drafts Banner */}
-       {drafts.length > 0 && !composerMode && (
-        <Card className="border border-amber-200 bg-amber-50">
-          <CardContent className="p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <FileEdit className="w-4 h-4 text-amber-600" />
-              <span className="text-[13px] font-medium text-amber-800">
-                {drafts.length} Draft{drafts.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {drafts.slice(0, 3).map(draft => (
-                <div 
-                  key={draft.id}
-                  onClick={() => handleOpenDraft(draft)}
-                  className="flex items-center justify-between p-2 bg-white rounded border border-amber-100 cursor-pointer hover:border-amber-300 transition-colors"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-medium text-[#111827] truncate">
-                      {draft.subject || '(No subject)'}
-                    </p>
-                    <p className="text-[12px] text-[#6B7280] truncate">
-                      To: {draft.to_addresses?.join(', ') || '(No recipient)'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                    <Badge variant="outline" className="text-[10px]">
-                      {draft.mode === 'reply' ? 'Reply' : draft.mode === 'forward' ? 'Forward' : 'Draft'}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => handleDeleteDraft(e, draft.id)}
-                      className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {drafts.length > 3 && (
-                <p className="text-[12px] text-amber-600 text-center">
-                  +{drafts.length - 3} more draft{drafts.length - 3 !== 1 ? 's' : ''}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Loading State */}
       {isLoading ? (
