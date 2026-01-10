@@ -133,32 +133,41 @@ Deno.serve(async (req) => {
     console.log(`[gmailSendEmail] User has own Gmail connection: ${hasOwnGmail}`);
     
     if (!hasOwnGmail) {
-      console.log(`[gmailSendEmail] User ${currentUser.email} doesn't have Gmail connected, checking for shared account...`);
+      console.log(`[gmailSendEmail] User ${currentUser.email} doesn't have Gmail connected, trying shared account...`);
       
-      // Try to find any user with Gmail connected (requires service role for admin/shared accounts)
+      // Try to get shared Gmail account (admin@kangaroogd.com.au) directly
       try {
-        console.log('[gmailSendEmail] Step 3a: Listing all users via service role...');
-        const allUsers = await base44.asServiceRole.entities.User.list();
-        console.log(`[gmailSendEmail] ✅ Found ${allUsers.length} total users`);
+        console.log('[gmailSendEmail] Step 3a: Fetching shared Gmail account (admin@kangaroogd.com.au)...');
+        const sharedAccounts = await base44.asServiceRole.entities.User.filter({ 
+          email: 'admin@kangaroogd.com.au' 
+        });
         
-        const connectedUsers = allUsers.filter(u => u.gmail_access_token && u.gmail_refresh_token);
-        console.log(`[gmailSendEmail] Found ${connectedUsers.length} users with Gmail connected:`, connectedUsers.map(u => u.email));
-        
-        if (connectedUsers.length === 0) {
-          console.error('[gmailSendEmail] ❌ No Gmail connection found in system');
-          return Response.json({ error: 'Gmail not connected. Please connect your Gmail account or ask an admin to set up a shared Gmail connection.' }, { status: 400 });
+        if (sharedAccounts.length === 0) {
+          console.error('[gmailSendEmail] ❌ Shared Gmail account (admin@kangaroogd.com.au) not found');
+          return Response.json({ 
+            error: 'Gmail not connected. Please ask an admin to connect the shared Gmail account (admin@kangaroogd.com.au).' 
+          }, { status: 400 });
         }
         
-        user = connectedUsers[0];
+        const sharedUser = sharedAccounts[0];
+        
+        if (!sharedUser.gmail_access_token || !sharedUser.gmail_refresh_token) {
+          console.error('[gmailSendEmail] ❌ Shared Gmail account exists but has no tokens');
+          return Response.json({ 
+            error: 'Shared Gmail account is not connected. Please ask an admin to connect Gmail for admin@kangaroogd.com.au.' 
+          }, { status: 400 });
+        }
+        
+        user = sharedUser;
         console.log(`[gmailSendEmail] ✅ Using shared Gmail connection from: ${user.email}`);
-      } catch (listError) {
-        console.error('[gmailSendEmail] ❌ FAILED to list users for shared connection:', listError);
-        console.error('[gmailSendEmail] List error name:', listError.name);
-        console.error('[gmailSendEmail] List error message:', listError.message);
-        console.error('[gmailSendEmail] List error stack:', listError.stack);
+      } catch (fetchError) {
+        console.error('[gmailSendEmail] ❌ FAILED to fetch shared Gmail account:', fetchError);
+        console.error('[gmailSendEmail] Fetch error name:', fetchError.name);
+        console.error('[gmailSendEmail] Fetch error message:', fetchError.message);
+        console.error('[gmailSendEmail] Fetch error stack:', fetchError.stack);
         return Response.json({ 
-          error: 'Failed to access Gmail connection', 
-          details: listError.message 
+          error: 'Failed to access shared Gmail connection', 
+          details: fetchError.message 
         }, { status: 500 });
       }
     } else {
