@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
+import { gmailFetch } from './shared/gmailClient.js';
 
 const fixEncodingIssues = (text) => {
   if (text == null) return text;
@@ -90,38 +91,7 @@ const fixEncodingIssues = (text) => {
   return fixed;
 };
 
-async function refreshTokenIfNeeded(user, base44) {
-  const expiry = new Date(user.gmail_token_expiry);
-  const now = new Date();
-  
-  // Refresh if token expires in less than 5 minutes
-  if (expiry - now < 5 * 60 * 1000) {
-    const clientId = Deno.env.get('GMAIL_CLIENT_ID');
-    const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
-    
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        refresh_token: user.gmail_refresh_token,
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'refresh_token'
-      })
-    });
-    
-    const tokens = await tokenResponse.json();
-    
-    await base44.asServiceRole.entities.User.update(user.id, {
-      gmail_access_token: tokens.access_token,
-      gmail_token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-    });
-    
-    return tokens.access_token;
-  }
-  
-  return user.gmail_access_token;
-}
+
 
 function parseEmailAddress(addressString) {
   const match = addressString.match(/<(.+)>/);
@@ -139,83 +109,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch all users with the same email address
-    const users = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
-    if (users.length === 0) {
-      return Response.json({ error: 'User record not found' }, { status: 404 });
-    }
-    
-    // Find any user with this email that has Gmail connected
-    let user = users.find(u => u.gmail_access_token);
-    
-    // If no user with this email has Gmail, fallback to first user
-    if (!user) {
-      user = users[0];
-    }
+    // Use Service Account for Gmail access
+    const inboxData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
+      maxResults: 30,
+      labelIds: 'INBOX'
+    });
 
-    // If still no token and user is manager, try to use admin's Gmail connection
-    if (!user.gmail_access_token && currentUser.extended_role === 'manager') {
-      const adminUsers = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
-      const connectedAdmin = adminUsers.find(admin => admin.gmail_access_token);
-      if (connectedAdmin) {
-        user = connectedAdmin;
-        console.log('Manager using admin Gmail connection:', connectedAdmin.email);
-      }
-    }
-
-    if (!user.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected', synced: 0 }, { status: 200 });
-    }
-    
-    console.log('Using Gmail connection from user:', user.email, 'for current user:', currentUser.email);
-
-    // Refresh token if needed
-    const accessToken = await refreshTokenIfNeeded(user, base44);
-
-    // Helper function for Gmail API calls with retry logic
-    async function fetchWithRetry(url, options, maxRetries = 3) {
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          const response = await fetch(url, options);
-          
-          // If rate limited, wait and retry with exponential backoff
-          if (response.status === 429) {
-            const waitTime = Math.min(1000 * Math.pow(2, attempt), 10000);
-            console.log(`Rate limited, waiting ${waitTime}ms before retry ${attempt}/${maxRetries}`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-            continue;
-          }
-          
-          return response;
-        } catch (error) {
-          if (attempt === maxRetries) throw error;
-          const waitTime = Math.min(500 * Math.pow(2, attempt), 5000);
-          console.log(`Request failed, retrying in ${waitTime}ms (${attempt}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
-      }
-    }
-
-    // Fetch recent inbox messages (limit 30)
-    const inboxResponse = await fetchWithRetry(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=INBOX',
-      { headers: { 'Authorization': `Bearer ${accessToken}` } }
-    );
-
-    if (!inboxResponse.ok) {
-      const error = await inboxResponse.text();
-      console.error('Gmail inbox fetch failed:', error);
-      return Response.json({ error: 'Failed to fetch Gmail inbox', details: error, synced: 0 }, { status: 200 });
-    }
-
-    // Fetch recent sent messages (limit 30)
-    const sentResponse = await fetchWithRetry(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=30&labelIds=SENT',
-      { headers: { 'Authorization': `Bearer ${accessToken}` } }
-    );
-
-    const inboxData = await inboxResponse.json();
-    const sentData = sentResponse.ok ? await sentResponse.json() : { messages: [] };
+    const sentData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
+      maxResults: 30,
+      labelIds: 'SENT'
+    }).catch(() => ({ messages: [] }));
 
     console.log('=== Gmail Sync Started ===');
     console.log('Inbox messages:', inboxData.messages?.length || 0);
@@ -261,18 +164,12 @@ Deno.serve(async (req) => {
            return false;
         }
 
-        const detailResponse = await fetchWithRetry(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
-          { headers: { 'Authorization': `Bearer ${accessToken}` } }
+        const detail = await gmailFetch(
+          `/gmail/v1/users/me/messages/${message.id}`,
+          'GET'
         );
 
-        if (!detailResponse.ok) {
-          console.error(`Failed to fetch message ${message.id}`);
-          return false;
-        }
-
-        const detail = await detailResponse.json();
-        if (!detail.payload?.headers) {
+        if (!detail?.payload?.headers) {
           console.error(`Invalid message format for ${message.id}`);
           return false;
         }
@@ -603,9 +500,9 @@ Deno.serve(async (req) => {
         const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
         const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
         
-        const userEmail = user.gmail_email || user.email;
+        const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
         const isOutbound = message.isOutbound || 
-          fromAddress.toLowerCase() === userEmail.toLowerCase() ||
+          fromAddress.toLowerCase() === impersonateEmail.toLowerCase() ||
           detail.labelIds?.includes('SENT');
 
         const messageData = {
