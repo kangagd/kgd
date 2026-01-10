@@ -41,7 +41,7 @@ import {
 import EmailMessageItem from "./EmailMessageItem";
 
 import EmailAIInsightsPanel from "./EmailAIInsightsPanel";
-import CreateProjectFromEmailModal from "./CreateProjectFromEmailModal";
+import ProjectCreationModal from "./ProjectCreationModal";
 import CreateJobFromEmailModal from "./CreateJobFromEmailModal";
 import AssignThreadModal from "./AssignThreadModal";
 import InternalNotesPanel from "./InternalNotesPanel";
@@ -71,6 +71,7 @@ export default function EmailDetailView({
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [aiThread, setAiThread] = useState(thread);
+  const [aiData, setAiData] = useState(null);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -323,6 +324,7 @@ export default function EmailDetailView({
               thread={aiThread}
               onThreadUpdated={(updated) => {
                 setAiThread(updated);
+                setAiData(updated);
                 handleThreadUpdate();
               }}
               onCreateProjectFromAI={() => setShowCreateProjectModal(true)}
@@ -624,12 +626,13 @@ export default function EmailDetailView({
         </DialogContent>
       </Dialog>
 
-      {/* Create Project From Email Modal */}
+      {/* Create Project Modal - unified with or without AI data */}
       {showCreateProjectModal && (
-        <CreateProjectFromEmailModal
+        <ProjectCreationModal
           open={showCreateProjectModal}
           onClose={() => setShowCreateProjectModal(false)}
-          thread={aiThread}
+          thread={thread}
+          aiData={aiData}
           onSuccess={(projectId, projectTitle) => {
             toast.success('Project created successfully');
             setShowCreateProjectModal(false);
