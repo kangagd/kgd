@@ -52,6 +52,14 @@ Deno.serve(async (req) => {
     }
 
     const vehicleLocation = vehicleLocations[0];
+
+    // Verify vehicle still exists and technician is still assigned
+    const vehicle = await base44.entities.Vehicle.get(vehicleLocation.vehicle_id);
+    if (!vehicle || vehicle.assigned_user_id !== job.assigned_to?.[0]) {
+      return Response.json({ 
+        error: 'Vehicle assignment mismatch or technician reassigned' 
+      }, { status: 400 });
+    }
     const deducted = [];
 
     // For each line item, decrement from vehicle inventory
@@ -78,6 +86,7 @@ Deno.serve(async (req) => {
             location_id: vehicleLocation.id,
             price_list_item_id: lineItem.price_list_item_id,
             item_name: lineItem.item_name,
+            location_name: vehicleLocation.name,
             quantity: Math.max(0, -lineItem.quantity)
           });
         }
