@@ -887,7 +887,7 @@ export default function Layout({ children, currentPageName }) {
                      className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Tasks") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Tasks"
                    >
-                     <CheckSquare className="w-5 h-5" />
+                     {iconMap.CheckSquare && <iconMap.CheckSquare className="w-5 h-5" />}
                    </Link>
                    <Link
                      to={createPageUrl("Inbox")}
