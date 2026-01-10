@@ -48,11 +48,6 @@ export default function PriceList() {
     refetchInterval: 15000, // Refetch every 15 seconds
   });
 
-  const { data: vehicleStock = [] } = useQuery({
-    queryKey: ["vehicle-stock"],
-    queryFn: () => base44.entities.VehicleStock.list("id"),
-  });
-
   const { data: vehicles = [] } = useQuery({
     queryKey: ["vehicles"],
     queryFn: () => base44.entities.Vehicle.list("name"),
@@ -80,11 +75,11 @@ export default function PriceList() {
         };
       }
       const summary = map[iq.price_list_item_id];
-      summary.total_on_hand += iq.quantity_on_hand || 0;
+      summary.total_on_hand += iq.quantity || 0;
       if (iq.location_type === LOCATION_TYPE.VEHICLE) {
-        summary.total_in_vehicles += iq.quantity_on_hand || 0;
+        summary.total_in_vehicles += iq.quantity || 0;
       } else if (iq.location_type === LOCATION_TYPE.WAREHOUSE) {
-        summary.total_in_warehouse += iq.quantity_on_hand || 0;
+        summary.total_in_warehouse += iq.quantity || 0;
       }
     }
     return map;
@@ -294,30 +289,8 @@ export default function PriceList() {
         ) : (
           <div className="grid gap-3">
             {filteredItems.map((item) => {
-              // Add warehouse stock from legacy stock_level field
-              const warehouseStock = item.stock_level || 0;
-              const warehouseDisplay = warehouseStock > 0 ? [{
-                location_name: 'Warehouse',
-                quantity: warehouseStock,
-                location_id: 'warehouse'
-              }] : [];
-
-              // Get stock from VehicleStock (uses product_id field)
-              const vehicleStockForItem = vehicleStock.filter(vs => vs.product_id === item.id);
-              const vehicleStockDisplay = vehicleStockForItem.map(vs => {
-                const vehicle = vehicles.find(v => v.id === vs.vehicle_id);
-                return {
-                  location_name: vehicle?.name || 'Unknown Vehicle',
-                  quantity: vs.quantity_on_hand || 0,
-                  location_id: vs.vehicle_id
-                };
-              });
-
-              // Get stock from new InventoryQuantity system
-              const newStockByLocation = inventoryQuantities.filter(q => q.price_list_item_id === item.id);
-
-              // Combine all systems: warehouse first, then vehicles, then new system
-              const stockByLocation = [...warehouseDisplay, ...vehicleStockDisplay, ...newStockByLocation];
+              // Get stock from InventoryQuantity (single source of truth)
+              const stockByLocation = inventoryQuantities.filter(q => q.price_list_item_id === item.id);
 
               return (
                 <PriceListCard
