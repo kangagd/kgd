@@ -140,6 +140,9 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   const canUnlink = currentUser?.role === 'admin' || currentUser?.extended_role === 'manager';
   const canReply = currentUser?.role !== 'viewer';
 
+  // Fetch drafts hook
+  const { data: drafts = [], refetch: refetchDrafts } = useLinkThreadDrafts(project, linkedThreads);
+
   // No linked threads - show option to link
   if (linkedThreads.length === 0) {
     return (
