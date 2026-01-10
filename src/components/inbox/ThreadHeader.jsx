@@ -110,10 +110,30 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
             <span>{format(parseISO(thread.last_message_date), 'MMM d, yyyy')}</span>
           </div>
         )}
-        {thread.is_read && (
-          <div className="flex items-center gap-1 text-green-600">
-            <Check className="w-3.5 h-3.5" />
-            <span>Read</span>
+        {thread.viewers && thread.viewers.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Check className="w-3.5 h-3.5 text-green-600" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[#6B7280]">Read by:</span>
+              <div className="flex -space-x-1.5">
+                {thread.viewers.slice(0, 3).map((viewer, idx) => (
+                  <div
+                    key={idx}
+                    className="w-5 h-5 rounded-full bg-green-100 border border-white flex items-center justify-center"
+                    title={viewer.user_name || viewer.user_email}
+                  >
+                    <span className="text-[9px] font-semibold text-green-700">
+                      {(viewer.user_name?.split(' ').map(n => n[0]).join('') || viewer.user_email?.charAt(0) || '?').toUpperCase()}
+                    </span>
+                  </div>
+                ))}
+                {thread.viewers.length > 3 && (
+                  <div className="w-5 h-5 rounded-full bg-gray-200 border border-white flex items-center justify-center">
+                    <span className="text-[9px] font-semibold text-gray-700">+{thread.viewers.length - 3}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
