@@ -1,26 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Link as LinkIcon, Plus, RefreshCw, ExternalLink, Reply, Forward, FileEdit, Trash2, Search } from "lucide-react";
+import { Mail, LinkIcon, Plus, RefreshCw, ExternalLink, Reply, Forward, FileEdit, Trash2, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
 import EmailComposer from "../inbox/EmailComposer";
-import { Input } from "@/components/ui/input";
 import LinkEmailThreadModal from "./LinkEmailThreadModal";
 
 export default function ProjectEmailSection({ project, onThreadLinked }) {
   const queryClient = useQueryClient();
+  const [user, setUser] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [editingDraft, setEditingDraft] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch email threads linked to this project
+  // Load user for permission checks
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+    staleTime: Infinity
+  });
+
+  // ONLY fetch threads explicitly linked to this project
   const { data: linkedThreads = [], isLoading: threadLoading, refetch: refetchThreads } = useQuery({
     queryKey: ['projectEmailThreads', project.id],
     queryFn: async () => {
@@ -30,12 +36,11 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       return threads;
     },
     enabled: !!project.id,
-    staleTime: 0, // Always refetch to ensure latest linked status
-    refetchOnMount: true,
-    refetchOnWindowFocus: true
+    staleTime: 0,
+    refetchOnMount: true
   });
 
-  // Fetch messages for linked threads
+  // Fetch messages ONLY for linked threads
   const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
     queryKey: ['projectEmailMessages', project.id, linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
@@ -44,24 +49,10 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       for (const thread of linkedThreads) {
         const threadMessages = await base44.entities.EmailMessage.filter({ 
           thread_id: thread.id 
-        }, '-sent_at');
+        }, 'sent_at');
         allMessages.push(...threadMessages);
       }
       return allMessages;
-    },
-    enabled: linkedThreads.length > 0
-  });
-
-  const emailThread = linkedThreads[0];
-
-  // Fetch drafts related to this project's threads
-  const { data: drafts = [], refetch: refetchDrafts } = useQuery({
-    queryKey: ['projectEmailDrafts', project.id, linkedThreads.map(t => t.id).join(',')],
-    queryFn: async () => {
-      const user = await base44.auth.me();
-      const allDrafts = await base44.entities.EmailDraft.filter({ created_by: user.email }, '-updated_date');
-      const threadIds = linkedThreads.map(t => t.id);
-      return allDrafts.filter(d => threadIds.includes(d.thread_id));
     },
     enabled: linkedThreads.length > 0
   });
@@ -92,18 +83,28 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     }
   });
 
-  // Unlink thread mutation
+  // Unlink thread mutation (requires admin/manager)
   const unlinkThreadMutation = useMutation({
     mutationFn: async (threadId) => {
+      const userRole = currentUser?.role;
+      const isManager = currentUser?.extended_role === 'manager';
+      if (userRole !== 'admin' && !isManager) {
+        throw new Error('Insufficient permissions to unlink threads');
+      }
       await base44.entities.EmailThread.update(threadId, {
         project_id: null,
         project_number: null,
-        project_title: null
+        project_title: null,
+        linked_to_project_at: null,
+        linked_to_project_by: null
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
       toast.success('Email thread unlinked');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to unlink thread');
     }
   });
 
@@ -162,6 +163,8 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   };
 
   const isLoading = threadLoading || messagesLoading;
+  const canUnlink = currentUser?.role === 'admin' || currentUser?.extended_role === 'manager';
+  const canReply = currentUser?.role !== 'viewer';
 
   // No linked threads - show option to link
   if (linkedThreads.length === 0) {
@@ -226,8 +229,30 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
 
   return (
     <div className="space-y-4">
-      {/* Drafts Banner */}
-      {drafts.length > 0 && !composerMode && (
+      {/* Composer */}
+       {composerMode && (
+         <Card className="border border-[#E5E7EB]">
+           <CardContent className="p-4">
+             <EmailComposer
+               mode={composerMode.type || composerMode}
+               thread={composerMode.thread || null}
+               message={selectedMessage}
+               onClose={() => {
+                 setComposerMode(null);
+                 setSelectedMessage(null);
+               }}
+               onSent={handleEmailSent}
+               onDraftSaved={handleDraftSaved}
+               defaultTo={project.customer_email}
+               projectId={project.id}
+               existingDraft={editingDraft}
+             />
+           </CardContent>
+         </Card>
+       )}
+
+       {/* Drafts Banner */}
+       {drafts.length > 0 && !composerMode && (
         <Card className="border border-amber-200 bg-amber-50">
           <CardContent className="p-3">
             <div className="flex items-center gap-2 mb-2">
@@ -329,15 +354,28 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => unlinkThreadMutation.mutate(thread.id)}
-                        className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                        disabled={unlinkThreadMutation.isPending}
-                      >
-                        Unlink
-                      </Button>
+                      {canUnlink ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => unlinkThreadMutation.mutate(thread.id)}
+                          className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                          disabled={unlinkThreadMutation.isPending}
+                        >
+                          Unlink
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          className="h-8 text-slate-400"
+                          title="Only admins/managers can unlink threads"
+                        >
+                          <Lock className="w-3 h-3 mr-1" />
+                          Unlink
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
@@ -351,44 +389,52 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
                       <Plus className="w-4 h-4 mr-1" />
                       New Email
                     </Button>
-                    {threadMessages.length > 0 && (
-                      <>
-                        <Button
-                          onClick={() => handleReply(threadMessages[threadMessages.length - 1], thread)}
-                          variant="outline"
-                          size="sm"
-                          className="h-9"
-                        >
-                          <Reply className="w-4 h-4 mr-1" />
-                          Reply
-                        </Button>
-                        <Button
-                          onClick={() => handleForward(threadMessages[threadMessages.length - 1], thread)}
-                          variant="outline"
-                          size="sm"
-                          className="h-9"
-                        >
-                          <Forward className="w-4 h-4 mr-1" />
-                          Forward
-                        </Button>
-                      </>
-                    )}
+                    {canReply && threadMessages.length > 0 && (
+                       <>
+                         <Button
+                           onClick={() => handleReply(threadMessages[threadMessages.length - 1], thread)}
+                           variant="outline"
+                           size="sm"
+                           className="h-9"
+                         >
+                           <Reply className="w-4 h-4 mr-1" />
+                           Reply
+                         </Button>
+                         <Button
+                           onClick={() => handleForward(threadMessages[threadMessages.length - 1], thread)}
+                           variant="outline"
+                           size="sm"
+                           className="h-9"
+                         >
+                           <Forward className="w-4 h-4 mr-1" />
+                           Forward
+                         </Button>
+                       </>
+                     )}
                   </div>
 
                   {/* Messages */}
                   <div className="space-y-3">
                     {threadMessages.map((message) => (
-                      <EmailMessageView
-                        key={message.id}
-                        message={message}
-                        isFirst={true}
-                        linkedProjectId={project.id}
-                        threadSubject={thread.subject}
-                        gmailMessageId={message.gmail_message_id}
-                        onReply={handleReply}
-                        onForward={handleForward}
-                        thread={thread}
-                      />
+                      <div key={message.id} className="space-y-2">
+                        <EmailMessageView
+                          message={message}
+                          isFirst={true}
+                          linkedProjectId={project.id}
+                          threadSubject={thread.subject}
+                          gmailMessageId={message.gmail_message_id}
+                          onReply={canReply ? handleReply : null}
+                          onForward={canReply ? handleForward : null}
+                          thread={thread}
+                        />
+                        {/* AI Summary - optional */}
+                        {message.ai_summary && (
+                          <div className="ml-12 p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-2">
+                            <Sparkles className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-blue-800">{message.ai_summary}</p>
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </CardContent>
@@ -416,6 +462,21 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         onLink={(threadId) => linkThreadMutation.mutate(threadId)}
         isLinking={linkThreadMutation.isPending}
       />
-    </div>
-  );
-  }
+      </div>
+      );
+      }
+
+      // Fetch drafts for linked threads
+      function useLinkThreadDrafts(project, linkedThreads) {
+      return useQuery({
+      queryKey: ['projectEmailDrafts', project.id, linkedThreads.map(t => t.id).join(',')],
+      queryFn: async () => {
+      if (linkedThreads.length === 0) return [];
+      const user = await base44.auth.me();
+      const allDrafts = await base44.entities.EmailDraft.filter({ created_by: user.email }, '-updated_date');
+      const threadIds = linkedThreads.map(t => t.id);
+      return allDrafts.filter(d => threadIds.includes(d.thread_id));
+      },
+      enabled: linkedThreads.length > 0
+      });
+      }
