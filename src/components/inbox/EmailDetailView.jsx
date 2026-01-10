@@ -331,23 +331,41 @@ export default function EmailDetailView({
             </div>
           )}
 
-          {/* Internal Notes */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] p-4 mb-6">
-            <InternalNotesPanel threadId={thread.id} />
-          </div>
+          {/* Internal Notes - Collapsible */}
+          <button
+            onClick={() => setNotesExpanded(!notesExpanded)}
+            className="flex items-center gap-2 px-4 py-3 mb-4 w-full hover:bg-[#F9FAFB] rounded-lg transition-colors border border-[#E5E7EB] text-[14px] font-medium text-[#111827]"
+          >
+            <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${notesExpanded ? 'rotate-180' : ''}`} />
+            Internal Notes
+          </button>
+          {notesExpanded && (
+            <div className="bg-white rounded-lg border border-[#E5E7EB] p-4 mb-6">
+              <InternalNotesPanel threadId={thread.id} />
+            </div>
+          )}
 
-          {/* AI Insights Panel */}
-          <div className="mb-6">
-            <EmailAIInsightsPanel
-              thread={aiThread}
-              onThreadUpdated={(updated) => {
-                setAiThread(updated);
-                handleThreadUpdate();
-              }}
-              onCreateProjectFromAI={() => setShowCreateProjectModal(true)}
-              onCreateJobFromAI={() => setShowCreateJobModal(true)}
-            />
-          </div>
+          {/* AI Insights Panel - Collapsible */}
+          <button
+            onClick={() => setAiInsightsExpanded(!aiInsightsExpanded)}
+            className="flex items-center gap-2 px-4 py-3 mb-4 w-full hover:bg-[#F9FAFB] rounded-lg transition-colors border border-[#E5E7EB] text-[14px] font-medium text-[#111827]"
+          >
+            <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${aiInsightsExpanded ? 'rotate-180' : ''}`} />
+            AI Insights
+          </button>
+          {aiInsightsExpanded && (
+            <div className="bg-white rounded-lg border border-[#E5E7EB] p-4 mb-6">
+              <EmailAIInsightsPanel
+                thread={aiThread}
+                onThreadUpdated={(updated) => {
+                  setAiThread(updated);
+                  handleThreadUpdate();
+                }}
+                onCreateProjectFromAI={() => setShowCreateProjectModal(true)}
+                onCreateJobFromAI={() => setShowCreateJobModal(true)}
+              />
+            </div>
+          )}
 
           {/* Main Email Card */}
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
