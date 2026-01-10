@@ -136,22 +136,6 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     refetchDrafts();
   };
 
-  const handleOpenDraft = (draft) => {
-    setEditingDraft(draft);
-    setComposerMode(draft.mode || 'compose');
-  };
-
-  const handleDeleteDraft = async (e, draftId) => {
-    e.stopPropagation();
-    try {
-      await base44.entities.EmailDraft.delete(draftId);
-      refetchDrafts();
-      toast.success('Draft deleted');
-    } catch (error) {
-      toast.error('Failed to delete draft');
-    }
-  };
-
   const isLoading = threadLoading || messagesLoading;
   const canUnlink = currentUser?.role === 'admin' || currentUser?.extended_role === 'manager';
   const canReply = currentUser?.role !== 'viewer';
