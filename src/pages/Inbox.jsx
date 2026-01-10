@@ -18,6 +18,7 @@ export default function Inbox() {
   const [activeFilters, setActiveFilters] = useState({});
   const [showComposer, setShowComposer] = useState(false);
   const [composerMessage, setComposerMessage] = useState(null);
+  const [showLinkModal, setShowLinkModal] = useState(false);
 
   // Load current user
   useEffect(() => {
