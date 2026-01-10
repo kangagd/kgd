@@ -1,10 +1,13 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, parseISO } from "date-fns";
 import { Mail, Link as LinkIcon, Trash2, Sparkles, AlertTriangle, UserCheck } from "lucide-react";
 import { EmailStatusBadge, EmailPriorityBadge } from "../common/StatusBadge";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import PresenceIndicator from "./PresenceIndicator";
 
 export default function EmailThreadList({ 
   threads, 
@@ -17,6 +20,19 @@ export default function EmailThreadList({
   onBulkDelete,
   onDeleteThread
 }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  // Fetch thread viewers for presence
+  const { data: viewers = [] } = useQuery({
+    queryKey: ['thread-viewers'],
+    queryFn: () => base44.entities.EmailThreadViewer.list(),
+    refetchInterval: 10000, // Refresh every 10 seconds
+    enabled: !!user
+  });
   if (isLoading) {
     return (
       <div className="flex-1 overflow-y-auto p-4">
@@ -97,9 +113,15 @@ export default function EmailThreadList({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-[#6B7280] whitespace-nowrap">
-                {thread.last_message_date && format(parseISO(thread.last_message_date), 'MMM d')}
-              </span>
+              <div className="flex items-center gap-2">
+                <PresenceIndicator 
+                  viewers={viewers.filter(v => v.thread_id === thread.id)} 
+                  currentUserEmail={user?.email}
+                />
+                <span className="text-[11px] text-[#6B7280] whitespace-nowrap">
+                  {thread.last_message_date && format(parseISO(thread.last_message_date), 'MMM d')}
+                </span>
+              </div>
               {onDeleteThread && (
                 <button
                   onClick={(e) => {
@@ -130,7 +152,7 @@ export default function EmailThreadList({
               )}
 
               {/* Assigned Badge */}
-              {thread.assigned_to && (
+              {thread.assigned_to ? (
                 <Badge 
                   variant="outline"
                   className="text-[10px] px-1.5 py-0 h-5 bg-[#FAE008]/20 text-[#111827] border-[#FAE008]"
@@ -138,6 +160,14 @@ export default function EmailThreadList({
                 >
                   <UserCheck className="w-2.5 h-2.5 mr-0.5" />
                   {thread.assigned_to_name}
+                </Badge>
+              ) : (
+                <Badge 
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 h-5 bg-gray-100 text-[#6B7280] border-gray-300"
+                  title="Unassigned"
+                >
+                  Unassigned
                 </Badge>
               )}
 

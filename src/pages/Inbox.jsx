@@ -47,6 +47,7 @@ export default function Inbox() {
   });
   const debouncedSearchFilters = useDebounce(searchFilters, 250);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [assignmentFilter, setAssignmentFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [showFilters, setShowFilters] = useState(false);
@@ -311,10 +312,24 @@ export default function Inbox() {
     const matchesStatus = statusFilter === "all" || statusFilter === "sent" || thread.status === statusFilter;
     const matchesPriority = priorityFilter === "all" || thread.priority === priorityFilter;
 
+    // Assignment filter
+    const matchesAssignment = (() => {
+      switch(assignmentFilter) {
+        case "unassigned":
+          return !thread.assigned_to;
+        case "my_assigned":
+          return thread.assigned_to === user?.email;
+        case "team_assigned":
+          return !!thread.assigned_to;
+        default:
+          return true;
+      }
+    })();
+
     return matchesSearch && matchesSender && matchesRecipient && 
            matchesDateFrom && matchesDateTo && matchesAttachment && 
            matchesAttachmentName && matchesAdvancedStatus &&
-           matchesStatus && matchesPriority && matchesSentFilter;
+           matchesStatus && matchesPriority && matchesSentFilter && matchesAssignment;
   }).sort((a, b) => {
     switch(sortBy) {
       case "date":
@@ -331,7 +346,7 @@ export default function Inbox() {
       default:
         return 0;
     }
-  }), [threads, debouncedSearchFilters, statusFilter, priorityFilter, sortBy, messages, user?.gmail_email, user?.email]);
+  }), [threads, debouncedSearchFilters, statusFilter, assignmentFilter, priorityFilter, sortBy, messages, user?.gmail_email, user?.email]);
 
   const handleStatusChange = useCallback((threadId, newStatus) => {
     updateThreadMutation.mutate({ id: threadId, data: { status: newStatus } });
@@ -687,6 +702,19 @@ export default function Inbox() {
           </div>
 
           <div className="flex flex-col gap-3 mt-3">
+            {/* Assignment Filter Tabs */}
+            <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0">
+              <Tabs value={assignmentFilter} onValueChange={setAssignmentFilter} className="w-full">
+                <TabsList className="w-full grid grid-cols-4 gap-1 min-w-max md:min-w-0">
+                  <TabsTrigger value="all" className="whitespace-nowrap">All</TabsTrigger>
+                  <TabsTrigger value="unassigned" className="whitespace-nowrap">Unassigned</TabsTrigger>
+                  <TabsTrigger value="my_assigned" className="whitespace-nowrap">My Assigned</TabsTrigger>
+                  <TabsTrigger value="team_assigned" className="whitespace-nowrap">Team</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            {/* Status Filter Tabs */}
             <div className="flex gap-3">
               <div className="chip-container -mx-4 px-4 md:mx-0 md:px-0 flex-1">
                 <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">

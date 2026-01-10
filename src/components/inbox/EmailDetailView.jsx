@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -45,6 +45,7 @@ import CreateProjectFromEmailModal from "./CreateProjectFromEmailModal";
 import CreateJobFromEmailModal from "./CreateJobFromEmailModal";
 import AssignThreadModal from "./AssignThreadModal";
 import InternalNotesPanel from "./InternalNotesPanel";
+import PresenceIndicator from "./PresenceIndicator";
 
 export default function EmailDetailView({
   thread,
@@ -70,6 +71,75 @@ export default function EmailDetailView({
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [aiThread, setAiThread] = useState(thread);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  // Track presence - update viewer record
+  const updatePresenceMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      
+      // Find existing viewer record
+      const existing = await base44.entities.EmailThreadViewer.filter({
+        thread_id: thread.id,
+        user_email: user.email
+      });
+
+      if (existing.length > 0) {
+        // Update existing
+        await base44.entities.EmailThreadViewer.update(existing[0].id, {
+          last_seen: new Date().toISOString()
+        });
+      } else {
+        // Create new
+        await base44.entities.EmailThreadViewer.create({
+          thread_id: thread.id,
+          user_email: user.email,
+          user_name: user.full_name || user.display_name,
+          last_seen: new Date().toISOString()
+        });
+      }
+    }
+  });
+
+  // Update presence on mount and every 30 seconds
+  useEffect(() => {
+    if (!user || !thread.id) return;
+
+    updatePresenceMutation.mutate();
+    const interval = setInterval(() => {
+      updatePresenceMutation.mutate();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user?.email, thread.id]);
+
+  // Cleanup viewer on unmount
+  useEffect(() => {
+    return () => {
+      if (!user || !thread.id) return;
+      
+      base44.entities.EmailThreadViewer.filter({
+        thread_id: thread.id,
+        user_email: user.email
+      }).then(existing => {
+        if (existing.length > 0) {
+          base44.entities.EmailThreadViewer.delete(existing[0].id).catch(() => {});
+        }
+      }).catch(() => {});
+    };
+  }, []);
+
+  // Fetch thread viewers for presence
+  const { data: viewers = [] } = useQuery({
+    queryKey: ['thread-viewers', thread.id],
+    queryFn: () => base44.entities.EmailThreadViewer.filter({ thread_id: thread.id }),
+    refetchInterval: 10000, // Refresh every 10 seconds
+    enabled: !!user
+  });
 
   // Update aiThread when thread prop changes
   React.useEffect(() => {
@@ -202,6 +272,20 @@ export default function EmailDetailView({
       {/* Centered Content Container */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
+          {/* Presence Indicator */}
+          {viewers.length > 1 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
+              <div className="flex items-center gap-2">
+                <PresenceIndicator viewers={viewers} currentUserEmail={user?.email} />
+                <span className="text-sm text-blue-700">
+                  {viewers.filter(v => v.user_email !== user?.email).length === 1 
+                    ? 'Someone else is viewing this email' 
+                    : `${viewers.filter(v => v.user_email !== user?.email).length} others are viewing this email`}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Assignment & Activity Info */}
           {(thread.assigned_to || thread.last_worked_by) && (
             <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] p-4 mb-6 space-y-2">
