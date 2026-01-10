@@ -6,16 +6,22 @@ export const sanitizeInboundText = (text) => {
   if (!text) return text;
 
   return text
-    // Fix UTF-8 encoding issues (mojibake patterns)
+    // Fix broken UTF-8 sequences (mojibake from encoding mismatches)
+    // These patterns handle garbled characters like "â€™" → "'", "didnâ€™t" → "didn't"
+    .replace(/â€™/g, "'")   // â€™ → apostrophe
+    .replace(/â€œ/g, '"')   // â€œ → left quote
+    .replace(/â€\u009d/g, '"') // â€ → right quote
+    .replace(/â€"/g, '-')    // â€" → dash
+    .replace(/â€"/g, '-')    // â€" → dash (variant)
+    .replace(/â€˜/g, "'")   // â€˜ → left quote
+    .replace(/â€™/g, "'")   // â€™ → right quote/apostrophe
+    .replace(/â€¢/g, '•')   // â€¢ → bullet point
+    .replace(/â€¦/g, '...')  // â€¦ → ellipsis
     .replace(/Â¢/g, "'")    // Â¢ → apostrophe
     .replace(/Â¯/g, ' ')    // Â¯ → space
     .replace(/Â  /g, ' ')   // Â followed by spaces → single space
     .replace(/Â/g, '')      // Remove remaining Â characters
-    .replace(/â/g, "'")     // â (broken smart quote) → apostrophe
-    .replace(/â€/g, '')     // â€ (broken encoding prefix) → remove
-    .replace(/â€™/g, "'")   // â€™ (broken smart quote) → apostrophe
-    .replace(/â€œ/g, '"')   // â€œ (broken left quote) → quote
-    .replace(/â€/g, '"')    // â€ (broken right quote) → quote
+    .replace(/â/g, '')      // Remove stray â characters
     // Replace HTML non-breaking space entity
     .replace(/&nbsp;/g, ' ')
     // Replace narrow no-break space (common encoding issue)
