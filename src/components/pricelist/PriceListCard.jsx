@@ -94,14 +94,9 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                       <span className="text-[#6B7280]">• Min: {item.min_stock_level}</span>
                     </>
                   ) : (
-                    <>
-                      <span>
-                        Warehouse: <span className={`font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-[#111827]'}`}>
-                          {item.stock_level}
-                        </span>
-                      </span>
-                      <span className="text-[#6B7280]">• Min: {item.min_stock_level}</span>
-                    </>
+                   <>
+                     <span className="text-slate-400 italic">No stock in system</span>
+                   </>
                   )}
                 </>
               ) : (

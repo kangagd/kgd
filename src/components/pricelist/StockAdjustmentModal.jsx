@@ -98,14 +98,7 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
         }
       }
 
-      // Update legacy stock_level on PriceListItem if warehouse location is involved
-      const warehouseLoc = allLocations.find(l => l.type === 'warehouse');
-      if (warehouseLoc && (toLoc === warehouseLoc.id || fromLoc === warehouseLoc.id)) {
-        const delta = toLoc === warehouseLoc.id ? quantityValue : -quantityValue;
-        await base44.entities.PriceListItem.update(item.id, {
-          stock_level: Math.max(0, (item.stock_level || 0) + delta)
-        });
-      }
+      // ARCHIVED: Legacy stock_level updates disabled - using InventoryQuantity only
 
       return { success: true };
     },
