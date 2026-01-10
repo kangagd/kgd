@@ -195,13 +195,10 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-4">
-                <div className="h-4 bg-[#E5E7EB] rounded w-1/3 mb-3"></div>
-                <div className="h-3 bg-[#E5E7EB] rounded w-2/3 mb-2"></div>
-                <div className="h-3 bg-[#E5E7EB] rounded w-1/2"></div>
-              </CardContent>
-            </Card>
+            <div key={i} className="animate-pulse">
+              <div className="h-3 bg-[#F3F4F6] rounded w-1/3 mb-2"></div>
+              <div className="h-3 bg-[#F3F4F6] rounded w-2/3"></div>
+            </div>
           ))}
         </div>
       ) : (
@@ -213,132 +210,85 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
               .sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
 
             return (
-              <Card key={thread.id} className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                <CardHeader className="px-4 py-3 border-b border-[#E5E7EB]">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Mail className="w-5 h-5 text-[#FAE008]" />
-                        <CardTitle className="text-[16px] font-semibold text-[#111827] truncate">
-                          {thread.subject || 'Email Thread'}
-                        </CardTitle>
-                        <Badge variant="outline" className="text-[11px]">
-                          {threadMessages.length} msg
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+              <div key={thread.id} className="border-b border-[#E5E7EB] pb-4">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[15px] font-semibold text-[#111827] truncate">
+                      {thread.subject || 'Email Thread'}
+                    </h3>
+                    <p className="text-[12px] text-[#6B7280]">{threadMessages.length} messages</p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(createPageUrl('Inbox') + `?threadId=${thread.id}`, '_blank')}
+                      className="h-7 w-7 p-0"
+                      title="Open in Inbox"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Button>
+                    {canUnlink && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={handleRefresh}
-                        className="h-8"
+                        onClick={() => unlinkThreadMutation.mutate(thread.id)}
+                        className="h-7 px-2 text-[11px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={unlinkThreadMutation.isPending}
                       >
-                        <RefreshCw className="w-4 h-4" />
+                        Unlink
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(createPageUrl('Inbox') + `?threadId=${thread.id}`, '_blank')}
-                        className="h-8"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                      {canUnlink ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => unlinkThreadMutation.mutate(thread.id)}
-                          className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                          disabled={unlinkThreadMutation.isPending}
-                        >
-                          Unlink
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled
-                          className="h-8 text-slate-400"
-                          title="Only admins/managers can unlink threads"
-                        >
-                          <Lock className="w-3 h-3 mr-1" />
-                          Unlink
-                        </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reply button */}
+                {canReply && threadMessages.length > 0 && (
+                  <Button
+                    onClick={() => handleReply(threadMessages[threadMessages.length - 1], thread)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 mb-3 text-[12px]"
+                  >
+                    <Reply className="w-3 h-3 mr-1" />
+                    Reply
+                  </Button>
+                )}
+
+                {/* Messages */}
+                <div className="space-y-2">
+                  {threadMessages.map((message) => (
+                    <div key={message.id}>
+                      <EmailMessageView
+                        message={message}
+                        isFirst={true}
+                        linkedProjectId={project.id}
+                        threadSubject={thread.subject}
+                        gmailMessageId={message.gmail_message_id}
+                        onReply={canReply ? handleReply : null}
+                        thread={thread}
+                      />
+                      {/* AI Summary - optional */}
+                      {message.ai_summary && (
+                        <div className="ml-12 p-2 bg-blue-50 rounded-lg flex gap-2 mt-2">
+                          <Sparkles className="w-3 h-3 text-blue-600 flex-shrink-0 mt-0.5" />
+                          <p className="text-[12px] text-blue-700">{message.ai_summary}</p>
+                        </div>
                       )}
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <Button
-                      onClick={handleCompose}
-                      size="sm"
-                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      New Email
-                    </Button>
-                    {canReply && threadMessages.length > 0 && (
-                       <>
-                         <Button
-                           onClick={() => handleReply(threadMessages[threadMessages.length - 1], thread)}
-                           variant="outline"
-                           size="sm"
-                           className="h-9"
-                         >
-                           <Reply className="w-4 h-4 mr-1" />
-                           Reply
-                         </Button>
-                         <Button
-                           onClick={() => handleForward(threadMessages[threadMessages.length - 1], thread)}
-                           variant="outline"
-                           size="sm"
-                           className="h-9"
-                         >
-                           <Forward className="w-4 h-4 mr-1" />
-                           Forward
-                         </Button>
-                       </>
-                     )}
-                  </div>
-
-                  {/* Messages */}
-                  <div className="space-y-3">
-                    {threadMessages.map((message) => (
-                      <div key={message.id} className="space-y-2">
-                        <EmailMessageView
-                          message={message}
-                          isFirst={true}
-                          linkedProjectId={project.id}
-                          threadSubject={thread.subject}
-                          gmailMessageId={message.gmail_message_id}
-                          onReply={canReply ? handleReply : null}
-                          onForward={canReply ? handleForward : null}
-                          thread={thread}
-                        />
-                        {/* AI Summary - optional */}
-                        {message.ai_summary && (
-                          <div className="ml-12 p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-2">
-                            <Sparkles className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-blue-800">{message.ai_summary}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                  ))}
+                </div>
+              </div>
             );
           })}
 
           {/* Button to link more threads */}
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => setShowLinkModal(true)}
-            className="w-full border-dashed border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+            className="w-full text-[13px] text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB] border border-dashed border-[#E5E7EB]"
           >
-            <LinkIcon className="w-4 h-4 mr-2" />
+            <LinkIcon className="w-3.5 h-3.5 mr-2" />
             Link Another Email Thread
           </Button>
         </>
