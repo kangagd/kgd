@@ -143,61 +143,29 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
   // No linked threads - show option to link
   if (linkedThreads.length === 0) {
     return (
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-        <CardContent className="p-8 text-center">
-          <Mail className="w-12 h-12 text-[#E5E7EB] mx-auto mb-4" />
-          <h3 className="text-[16px] font-semibold text-[#111827] mb-2">No Emails</h3>
-          <p className="text-[14px] text-[#6B7280] mb-6">
-            Link an email thread to view project communications.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
-              onClick={() => setShowLinkModal(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
-            >
-              <LinkIcon className="w-4 h-4 mr-2" />
-              Link Email Thread
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleCompose}
-              className="border-[#E5E7EB]"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Email
-            </Button>
-          </div>
+      <div className="text-center py-6">
+        <Mail className="w-10 h-10 text-[#E5E7EB] mx-auto mb-3" />
+        <h3 className="text-[15px] font-medium text-[#111827] mb-1">No Emails</h3>
+        <p className="text-[13px] text-[#6B7280] mb-4">
+          Link an email thread to view communications.
+        </p>
+        <Button
+          onClick={() => setShowLinkModal(true)}
+          className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+        >
+          <LinkIcon className="w-4 h-4 mr-2" />
+          Link Email Thread
+        </Button>
 
-          {/* Email Composer */}
-          {composerMode && (
-            <div className="mt-6 text-left">
-              <EmailComposer
-                mode={composerMode.type || composerMode}
-                thread={composerMode.thread || null}
-                message={selectedMessage}
-                onClose={() => {
-                  setComposerMode(null);
-                  setSelectedMessage(null);
-                }}
-                onSent={handleEmailSent}
-                onDraftSaved={handleDraftSaved}
-                defaultTo={project.customer_email}
-                projectId={project.id}
-                existingDraft={editingDraft}
-              />
-            </div>
-          )}
-
-          {/* Link Thread Modal */}
-          <LinkEmailThreadModal
-            open={showLinkModal}
-            onClose={() => setShowLinkModal(false)}
-            projectId={project.id}
-            onLink={(threadId) => linkThreadMutation.mutate(threadId)}
-            isLinking={linkThreadMutation.isPending}
-          />
-        </CardContent>
-      </Card>
+        {/* Link Thread Modal */}
+        <LinkEmailThreadModal
+          open={showLinkModal}
+          onClose={() => setShowLinkModal(false)}
+          projectId={project.id}
+          onLink={(threadId) => linkThreadMutation.mutate(threadId)}
+          isLinking={linkThreadMutation.isPending}
+        />
+      </div>
     );
   }
 
