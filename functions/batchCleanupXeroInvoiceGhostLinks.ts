@@ -1,4 +1,4 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // Admin-only batch cleanup function to fix ghost invoice links
 Deno.serve(async (req) => {
