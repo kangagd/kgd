@@ -360,12 +360,16 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       
       const response = await base44.functions.invoke('gmailSendEmail', payload);
 
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to send email');
+      }
+
       toast.success("Email sent successfully");
       await deleteDraft();
       
-      // Pass threadId back to parent for cache invalidation
+      // Pass base44 threadId back to parent for cache invalidation
       if (onSent) {
-        await onSent(response.data?.threadId);
+        await onSent(response.data?.baseThreadId || response.data?.threadId);
       }
       onClose();
     } catch (error) {
