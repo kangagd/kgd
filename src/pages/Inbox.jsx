@@ -143,27 +143,28 @@ export default function Inbox() {
     enabled: !!userPermissions?.can_view && searchFilters.searchInBody
   });
 
-  // Auto-sync Gmail in background
+  // Auto-sync Gmail inbox in background
   useEffect(() => {
     if (!user || !userPermissions?.can_view) return;
     
-    const syncGmail = async () => {
+    const syncInbox = async () => {
       try {
-        const result = await base44.functions.invoke('gmailSync', {});
-        if (result?.data) {
+        const response = await base44.functions.invoke('gmailSyncInbox', {});
+        if (response.data?.success) {
+          console.log(`[Inbox] Synced ${response.data.syncedCount || 0} threads`);
           queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
         }
       } catch (error) {
         // Silent fail - don't disrupt user experience
-        console.error('Background sync failed:', error);
+        console.error('[Inbox] Background sync failed:', error);
       }
     };
     
     // Initial sync after a small delay
-    const timeout = setTimeout(syncGmail, 2000);
+    const timeout = setTimeout(syncInbox, 2000);
     
-    // Sync every 60 seconds
-    const interval = setInterval(syncGmail, 60000);
+    // Sync every 5 minutes
+    const interval = setInterval(syncInbox, 5 * 60 * 1000);
     
     return () => {
       clearTimeout(timeout);

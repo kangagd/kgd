@@ -205,21 +205,17 @@ export default function EmailDetailView({
     setSelectedMessage(null);
   };
 
-  const handleEmailSent = async () => {
-    // Wait a moment for the backend to finish saving
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  const handleEmailSent = async (baseThreadId) => {
+    // baseThreadId is the Base44 EmailThread.id returned from gmailSendEmail
     
-    // Auto-close thread after sending reply (backend already does this, but refresh UI)
-    // The gmailSendEmail function sets status to 'Closed' after sending
+    // Invalidate thread and message queries
+    queryClient.invalidateQueries({ queryKey: ['emailMessages', baseThreadId || thread.id] });
+    queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
     
-    // Invalidate all related queries
-    await queryClient.invalidateQueries({ queryKey: ['emailMessages'] });
-    await queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-    
-    // Force refetch
+    // Refetch current thread to show new message
     await refetch();
     
-    // Also update parent if callback exists
+    // Update parent if callback exists
     if (onThreadUpdate) {
       onThreadUpdate();
     }
