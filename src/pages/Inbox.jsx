@@ -279,6 +279,17 @@ export default function Inbox() {
           )}
         </div>
       </div>
+
+      {/* Link Thread Modal */}
+      {selectedThread && (
+        <LinkThreadModal
+          open={showLinkModal}
+          onClose={() => setShowLinkModal(false)}
+          threadId={selectedThread.id}
+          onLink={(projectId) => linkThreadMutation.mutate(projectId)}
+          isLinking={linkThreadMutation.isPending}
+        />
+      )}
     </div>
   );
 }
