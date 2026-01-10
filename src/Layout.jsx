@@ -652,15 +652,14 @@ export default function Layout({ children, currentPageName }) {
                 >
                   <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-[#111827] font-semibold text-sm">
-                      {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
+                      {user?.display_name?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                   {!isCollapsed && (
                     <div className="flex-1 min-w-0 text-left">
                       <p className="font-medium text-[#111827] text-[14px] truncate">
-                        {user?.display_name || user?.full_name || 'User'}
+                        {user?.display_name || 'User'}
                       </p>
-                      <p className="text-[12px] text-[#4B5563] truncate">{user?.email}</p>
                     </div>
                   )}
                 </button>
@@ -779,7 +778,7 @@ export default function Layout({ children, currentPageName }) {
                         >
                           <div className="w-8 h-8 bg-[#F3F4F6] rounded-full flex items-center justify-center">
                                   <span className="text-[#111827] font-semibold text-sm">
-                                    {(user?.display_name || user?.full_name)?.charAt(0)?.toUpperCase() || 'U'}
+                                    {user?.display_name?.charAt(0)?.toUpperCase() || 'U'}
                                   </span>
                                 </div>
                         </button>

@@ -93,10 +93,10 @@ export default function ThreadRow({ thread, isSelected, onClick }) {
             {thread.assigned_to && (
               <div 
                 className="w-6 h-6 rounded-full bg-[#FAE008]/20 flex items-center justify-center border border-[#FAE008]/30 flex-shrink-0"
-                title={thread.assigned_to_name || thread.assigned_to}
+                title={thread.assigned_to_name}
               >
                 <span className="text-[10px] font-semibold text-[#111827]">
-                  {getInitials(thread.assigned_to_name || thread.assigned_to)}
+                  {getInitials(thread.assigned_to_name)}
                 </span>
               </div>
             )}

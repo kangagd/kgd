@@ -48,7 +48,7 @@ export default function TechnicianAvatar({
   const colorIndex = hashString(identifier) % AVATAR_COLORS.length;
   const backgroundColor = AVATAR_COLORS[colorIndex];
   
-  const displayName = technician.display_name || technician.full_name || technician.name || "";
+  const displayName = technician.display_name || "";
   const initials = getInitials(displayName);
   
   // Size variants
@@ -74,7 +74,7 @@ export default function TechnicianAvatar({
         ${className}
       `}
       style={{ backgroundColor }}
-      title={technician.display_name || technician.full_name || technician.name}
+      title={technician.display_name}
     >
       {initials}
     </div>
