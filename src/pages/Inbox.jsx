@@ -33,12 +33,17 @@ export default function Inbox() {
     loadUser();
   }, []);
 
-  // Fetch all email threads
+  // Fetch all email threads with viewers
   const { data: threads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
     queryKey: ['emailThreads'],
     queryFn: async () => {
       const allThreads = await base44.entities.EmailThread.list('-last_message_date', 100);
-      return allThreads.filter(t => !t.is_deleted);
+      const viewers = await base44.entities.EmailThreadViewer.list();
+      
+      return allThreads.filter(t => !t.is_deleted).map(thread => ({
+        ...thread,
+        viewers: viewers.filter(v => v.thread_id === thread.id)
+      }));
     },
     enabled: !!user
   });
