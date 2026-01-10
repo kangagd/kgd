@@ -89,7 +89,7 @@ async function getAccessToken() {
   const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL');
 
   if (!serviceAccountJson || !impersonateEmail) {
-    throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_IMPERSONATE_USER_EMAIL');
+    throw new Error('Gmail Domain-Wide Delegation not configured. Contact admin to set GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_IMPERSONATE_USER_EMAIL environment variables.');
   }
 
   const serviceAccount = JSON.parse(serviceAccountJson);
