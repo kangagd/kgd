@@ -55,7 +55,11 @@ export default function PriceList() {
 
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ["inventory-quantities"],
-    queryFn: () => base44.entities.InventoryQuantity.list("id"),
+    queryFn: async () => {
+      // Fetch all quantities without filtering to get complete data
+      const allQuantities = await base44.entities.InventoryQuantity.list("id");
+      return allQuantities;
+    },
   });
 
   const { data: inventoryLocations = [] } = useQuery({
