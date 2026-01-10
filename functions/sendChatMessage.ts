@@ -70,25 +70,34 @@ Deno.serve(async (req) => {
 
     // Create message
     let createdMessage;
-    if (type === 'project') {
-      createdMessage = await base44.asServiceRole.entities.ProjectMessage.create({
-        project_id: entityId,
-        message,
-        sender_email: user.email,
-        sender_name: user.full_name || user.display_name,
-        mentioned_users: mentionedUsers.length > 0 ? mentionedUsers : undefined
-      });
-    } else if (type === 'job') {
-      createdMessage = await base44.asServiceRole.entities.JobMessage.create({
-        job_id: entityId,
-        message,
-        sender_email: user.email,
-        sender_name: user.full_name || user.display_name,
-        mentioned_users: mentionedUsers.length > 0 ? mentionedUsers : undefined
-      });
+    try {
+      if (type === 'project') {
+        createdMessage = await base44.asServiceRole.entities.ProjectMessage.create({
+          project_id: entityId,
+          message,
+          sender_email: user.email,
+          sender_name: user.full_name || user.display_name,
+          mentioned_users: mentionedUsers.length > 0 ? mentionedUsers : undefined
+        });
+      } else if (type === 'job') {
+        createdMessage = await base44.asServiceRole.entities.JobMessage.create({
+          job_id: entityId,
+          message,
+          sender_email: user.email,
+          sender_name: user.full_name || user.display_name,
+          mentioned_users: mentionedUsers.length > 0 ? mentionedUsers : undefined
+        });
+      }
+    } catch (messageError) {
+      console.error('Failed to create message:', messageError);
+      throw new Error(`Failed to create message: ${messageError.message}`);
     }
 
-    // Create notifications for mentioned users
+    if (!createdMessage) {
+      throw new Error('Message creation failed - no message returned');
+    }
+
+    // Create notifications for mentioned users (non-blocking)
     if (mentionedUsers.length > 0) {
       const notifications = mentionedUsers.map(mu => ({
         user_email: mu.email,
@@ -101,13 +110,13 @@ Deno.serve(async (req) => {
         is_read: false
       }));
 
-      await Promise.all(
+      Promise.all(
         notifications.map(notif =>
           base44.asServiceRole.entities.Notification.create(notif).catch(err =>
-            console.error('Failed to create notification:', err)
+            console.error('Failed to create notification for', notif.user_email, ':', err)
           )
         )
-      );
+      ).catch(err => console.error('Notification batch error:', err));
     }
 
     return Response.json({
