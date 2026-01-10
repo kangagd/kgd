@@ -1,13 +1,21 @@
-export const LOCATION_TYPE = {
+
+// Warehouse locations
+export const WAREHOUSE_LOCATION = {
   WAREHOUSE: "warehouse",
   VEHICLE: "vehicle",
-  OTHER: "other",
 };
 
-export const MOVEMENT_TYPE = {
-  RESTOCK: "restock",
-  USAGE: "usage",
+// Stock movement types
+export const STOCK_MOVEMENT_TYPE = {
   TRANSFER: "transfer",
-  RETURN: "return",
+  STOCK_IN: "stock_in",
+  STOCK_OUT: "stock_out",
   ADJUSTMENT: "adjustment",
+  JOB_USAGE: "job_usage",
 };
+
+// Deprecated - use WAREHOUSE_LOCATION instead
+export const LOCATION_TYPE = WAREHOUSE_LOCATION;
+
+// Deprecated - use STOCK_MOVEMENT_TYPE instead
+export const MOVEMENT_TYPE = STOCK_MOVEMENT_TYPE;

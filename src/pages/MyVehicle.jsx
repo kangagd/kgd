@@ -33,7 +33,7 @@ import RestockRequestModal from "../components/fleet/RestockRequestModal";
 import StockAdjustmentModal from "../components/fleet/StockAdjustmentModal";
 import StockUsageModal from "../components/fleet/StockUsageModal";
 import VehicleStockList from "../components/fleet/VehicleStockList";
-import { LOCATION_TYPE, MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
+import { WAREHOUSE_LOCATION, STOCK_MOVEMENT_TYPE } from "@/components/domain/inventoryConfig";
 
 export default function MyVehicle() {
   const [user, setUser] = useState(null);
