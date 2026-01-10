@@ -1,6 +1,6 @@
 import { createClientFromRequest } from './shared/sdk.js';
 
-// Admin-only batch cleanup function
+// Admin-only batch cleanup function to fix ghost invoice links
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -18,11 +18,10 @@ Deno.serve(async (req) => {
     const projectsWithInvoices = allProjects.filter(p => p.xero_invoices && p.xero_invoices.length > 0);
 
     // Get all XeroInvoice entities with project links
-    const allInvoices = await base44.asServiceRole.entities.XeroInvoice.filter({
-      project_id: { $ne: null }
-    });
+    const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list();
+    const invoicesWithProjectLinks = allInvoices.filter(i => i.project_id);
 
-    console.log(`[batchCleanupXeroInvoiceGhostLinks] Found ${projectsWithInvoices.length} projects and ${allInvoices.length} invoices to check`);
+    console.log(`[batchCleanupXeroInvoiceGhostLinks] Found ${projectsWithInvoices.length} projects and ${invoicesWithProjectLinks.length} invoices to check`);
 
     const actions = [];
     let projectsUpdated = 0;
@@ -87,18 +86,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // STEP 2: Clean up invoices linked to non-existent or incorrect projects
-    for (const invoice of allInvoices) {
+    // STEP 2: Clean up invoices linked to non-existent or incorrect projects (GHOST LINKS)
+    for (const invoice of invoicesWithProjectLinks) {
       try {
         const project = await base44.asServiceRole.entities.Project.get(invoice.project_id);
         
         if (!project) {
           // Project doesn't exist - unlink invoice
           await base44.asServiceRole.entities.XeroInvoice.update(invoice.id, {
-            project_id: null,
-            job_id: null,
-            customer_id: null,
-            customer_name: null
+            project_id: null
           });
           invoicesUpdated++;
           actions.push({
@@ -107,28 +103,28 @@ Deno.serve(async (req) => {
             invoice_number: invoice.xero_invoice_number,
             project_id: invoice.project_id
           });
+          console.log(`[batchCleanupXeroInvoiceGhostLinks] Unlinked invoice ${invoice.xero_invoice_number} from deleted project`);
         } else if (!project.xero_invoices || !project.xero_invoices.includes(invoice.id)) {
-          // Invoice claims to be linked to project, but project doesn't reference it
+          // GHOST LINK: Invoice claims to be linked to project, but project doesn't reference it
           await base44.asServiceRole.entities.XeroInvoice.update(invoice.id, {
-            project_id: null,
-            job_id: null,
-            customer_id: null,
-            customer_name: null
+            project_id: null
           });
           invoicesUpdated++;
           actions.push({
-            type: 'unlinked_orphaned_invoice',
+            type: 'removed_ghost_link',
             invoice_id: invoice.id,
             invoice_number: invoice.xero_invoice_number,
             project_id: invoice.project_id,
             project_number: project.project_number
           });
+          console.log(`[batchCleanupXeroInvoiceGhostLinks] Removed ghost link from invoice ${invoice.xero_invoice_number} (was linked to project #${project.project_number})`);
         }
       } catch (error) {
         console.error(`Error processing invoice ${invoice.id}:`, error);
         actions.push({
           type: 'error',
           invoice_id: invoice.id,
+          invoice_number: invoice.xero_invoice_number,
           error: error.message
         });
       }
@@ -141,7 +137,7 @@ Deno.serve(async (req) => {
       projects_updated: projectsUpdated,
       invoices_updated: invoicesUpdated,
       total_actions: actions.length,
-      actions
+      actions: actions
     });
 
   } catch (error) {
