@@ -122,7 +122,29 @@ export default function MyVehicle() {
 
   const { data: stock = [], isLoading: isStockLoading } = useQuery({
     queryKey: ['vehicleStock', vehicle?.id],
-    queryFn: () => base44.entities.VehicleStock.filter({ vehicle_id: vehicle.id }),
+    queryFn: async () => {
+      if (!vehicle?.id) return [];
+      const inventoryLoc = await base44.entities.InventoryLocation.filter({ 
+        type: 'vehicle',
+        vehicle_id: vehicle.id 
+      });
+      if (inventoryLoc.length === 0) return [];
+      
+      const quantities = await base44.entities.InventoryQuantity.filter({
+        location_id: inventoryLoc[0].id
+      });
+      
+      // Transform InventoryQuantity to VehicleStock shape for compatibility
+      return quantities.map(q => ({
+        id: q.id,
+        product_id: q.price_list_item_id,
+        product_name: q.item_name,
+        quantity_on_hand: q.quantity,
+        minimum_target_quantity: 5, // Default for display
+        category: 'Stock',
+        location_label: inventoryLoc[0].name
+      }));
+    },
     enabled: !!vehicle
   });
 
