@@ -8,9 +8,6 @@
  */
 export async function syncVehicleStockQuantity(base44, vehicleId, productId, newQuantity, itemName) {
   try {
-    // ARCHIVED: VehicleStock writes disabled - using InventoryQuantity only
-    // Legacy VehicleStock is no longer written to; archive when ready
-
     // Update InventoryQuantity for the vehicle location (SOURCE OF TRUTH)
     const locations = await base44.asServiceRole.entities.InventoryLocation.filter({
       vehicle_id: vehicleId,
