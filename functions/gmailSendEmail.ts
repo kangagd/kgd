@@ -48,6 +48,25 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
 Deno.serve(async (req) => {
   let stage = 'init';
   try {
+    stage = 'parse_request';
+    let requestBody;
+    try {
+      const bodyText = await req.text();
+      console.log('Raw request body:', bodyText.substring(0, 200));
+      requestBody = JSON.parse(bodyText);
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
+      return Response.json({ error: 'Invalid JSON payload', stage }, { status: 400 });
+    }
+
+    const { 
+      to, cc, bcc, subject, body_html, 
+      gmail_thread_id, 
+      in_reply_to, references, 
+      project_id, job_id,
+      attachments
+    } = requestBody;
+    
     stage = 'auth';
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -61,23 +80,6 @@ Deno.serve(async (req) => {
     if (!isAdminOrManager) {
       return Response.json({ error: 'Forbidden: Only admin and managers can send emails', stage }, { status: 403 });
     }
-    
-    stage = 'parse_request';
-    let requestBody;
-    try {
-      requestBody = await req.json();
-    } catch (jsonError) {
-      console.error('JSON parse error:', jsonError);
-      return Response.json({ error: 'Invalid JSON payload', stage }, { status: 400 });
-    }
-
-    const { 
-      to, cc, bcc, subject, body_html, 
-      gmail_thread_id, 
-      in_reply_to, references, 
-      project_id, job_id,
-      attachments
-    } = requestBody;
     
     console.log('Request payload received:', { 
       to: to ? `present (${to})` : 'MISSING', 
