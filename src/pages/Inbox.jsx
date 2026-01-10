@@ -285,9 +285,9 @@ export default function Inbox() {
         <LinkThreadModal
           open={showLinkModal}
           onClose={() => setShowLinkModal(false)}
-          threadId={selectedThread.id}
-          onLink={(projectId) => linkThreadMutation.mutate(projectId)}
-          isLinking={linkThreadMutation.isPending}
+          linkType="project"
+          onLinkProject={(projectId) => linkThreadMutation.mutate(projectId)}
+          onLinkJob={() => {}}
         />
       )}
     </div>
