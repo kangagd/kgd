@@ -73,7 +73,8 @@ export default function MoveStockModal({ isOpen, onClose, item, onSuccess }) {
         toLocationId,
         quantity: parseInt(quantity),
         movementType: 'transfer',
-        notes
+        notes,
+        triggerNotification: true
       });
 
       if (response.data?.success) {

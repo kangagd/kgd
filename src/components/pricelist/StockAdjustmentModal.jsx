@@ -51,6 +51,7 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
       // Create StockMovement record
       const fromLocationObj = fromLoc ? allLocations.find(l => l.id === fromLoc) : null;
       const toLocationObj = toLoc ? allLocations.find(l => l.id === toLoc) : null;
+      const user = await base44.auth.me();
 
       await base44.entities.StockMovement.create({
         price_list_item_id: item.id,
@@ -62,6 +63,8 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
         quantity: quantityValue,
         movement_type: movementType,
         notes: data.notes,
+        moved_by: user?.email,
+        moved_by_name: user?.display_name || user?.full_name
       });
 
       // Update InventoryQuantity records
@@ -142,7 +145,7 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <div className="text-sm text-slate-600 mb-1">Current Stock (Legacy)</div>
+            <div className="text-sm text-slate-600 mb-1">Warehouse Stock</div>
             <div className="text-2xl font-bold text-slate-900">{item.stock_level || 0}</div>
           </div>
 
