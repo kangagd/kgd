@@ -90,15 +90,31 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().split('T')[0];
     const dueDate = new Date(Date.now() + (xeroSettings.payment_terms_days || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+    // Fetch price list items for SKU/ItemCode mapping
+    const itemIds = lineItems.filter(item => item.price_list_item_id).map(item => item.price_list_item_id);
+    const priceListItems = itemIds.length > 0 
+      ? await base44.asServiceRole.entities.PriceListItem.filter({ id: { $in: itemIds } })
+      : [];
+    
+    const skuMap = {};
+    priceListItems.forEach(pli => {
+      skuMap[pli.id] = pli.sku;
+    });
+
     // Convert line items to Xero format (with discounts applied to line items)
     const xeroLineItems = lineItems.map((item) => {
       const lineItem = {
         Description: item.description,
-        Quantity: 1,
+        Quantity: item.quantity || 1,
         UnitAmount: item.amount,
         AccountCode: xeroSettings.default_account_code,
         TaxType: xeroSettings.default_tax_type
       };
+
+      // Link to Xero item by SKU if available
+      if (item.price_list_item_id && skuMap[item.price_list_item_id]) {
+        lineItem.ItemCode = skuMap[item.price_list_item_id];
+      }
 
       // Add discount to line item if applicable
       if (item.discount && item.discount > 0) {
