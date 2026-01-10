@@ -39,6 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import EmailMessageItem from "./EmailMessageItem";
+import AIThreadSuggestionBanner from "./AIThreadSuggestionBanner";
 
 import EmailAIInsightsPanel from "./EmailAIInsightsPanel";
 import CreateProjectFromEmailModal from "./CreateProjectFromEmailModal";
@@ -268,19 +269,35 @@ export default function EmailDetailView({
       {/* Centered Content Container */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
+          {/* AI Suggestion Banner - non-blocking */}
+           <AIThreadSuggestionBanner
+             thread={aiThread}
+             onDismiss={async () => {
+               await base44.entities.EmailThread.update(thread.id, {
+                 ai_suggestion_dismissed_at: new Date().toISOString()
+               });
+               setAiThread(prev => ({ ...prev, ai_suggestion_dismissed_at: new Date().toISOString() }));
+             }}
+             onCreateProject={() => setShowCreateProjectModal(true)}
+             onCreateJob={() => setShowCreateJobModal(true)}
+             onLinkProject={() => {
+               // TODO: implement link to suggested project or open link modal
+             }}
+           />
+
           {/* Presence Indicator */}
-          {viewers.length > 1 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
-              <div className="flex items-center gap-2">
-                <PresenceIndicator viewers={viewers} currentUserEmail={user?.email} />
-                <span className="text-sm text-blue-700">
-                  {viewers.filter(v => v.user_email !== user?.email).length === 1 
-                    ? 'Someone else is viewing this email' 
-                    : `${viewers.filter(v => v.user_email !== user?.email).length} others are viewing this email`}
-                </span>
-              </div>
-            </div>
-          )}
+           {viewers.length > 1 && (
+             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
+               <div className="flex items-center gap-2">
+                 <PresenceIndicator viewers={viewers} currentUserEmail={user?.email} />
+                 <span className="text-sm text-blue-700">
+                   {viewers.filter(v => v.user_email !== user?.email).length === 1 
+                     ? 'Someone else is viewing this email' 
+                     : `${viewers.filter(v => v.user_email !== user?.email).length} others are viewing this email`}
+                 </span>
+               </div>
+             </div>
+           )}
 
           {/* Assignment & Activity Info */}
           {(thread.assigned_to || thread.last_worked_by) && (
