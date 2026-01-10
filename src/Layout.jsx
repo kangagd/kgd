@@ -599,27 +599,28 @@ export default function Layout({ children, currentPageName }) {
                               </span>
                             </div>
                             <div className="space-y-1">
-                              {section.items.map((item) => {
-                                const isActive = location.pathname === item.url;
-                                return (
-                                  <Link
-                                    key={item.title}
-                                    to={item.url}
-                                    onClick={() => setCollapsedMoreOpen(false)}
-                                    className={`
-                                      flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
-                                      ${isActive 
-                                        ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
-                                        : 'text-[#111827] hover:bg-[#F3F4F6]'
-                                      }
-                                    `}
-                                  >
-                                    {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
-                                    <span className="text-[14px]">{item.title}</span>
-                                  </Link>
-                                );
-                              })}
+                               {section.items.map((item) => {
+                                 const isActive = location.pathname === item.url;
+                                 const IconComponent = iconMap[item.iconName];
+                                 return (
+                                   <Link
+                                     key={item.title}
+                                     to={item.url}
+                                     onClick={() => setCollapsedMoreOpen(false)}
+                                     className={`
+                                       flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
+                                       ${isActive 
+                                         ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                         : 'text-[#111827] hover:bg-[#F3F4F6]'
+                                       }
+                                     `}
+                                   >
+                                     {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                                     {IconComponent && <IconComponent className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />}
+                                     <span className="text-[14px]">{item.title}</span>
+                                   </Link>
+                                 );
+                               })}
                             </div>
                           </div>
                         ))}
