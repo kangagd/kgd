@@ -171,6 +171,7 @@ css
     line-height: 1.6;
     color: #111827;
     word-break: break-word;
+    overflow-wrap: break-word;
   }
 
   .gmail-email-body * {
@@ -178,18 +179,18 @@ css
     box-sizing: border-box;
   }
 
-  /* Preserve table layouts (common in email signatures) */
+  /* Preserve table layouts (common in email signatures and newsletters) */
   .gmail-email-body table {
     border-collapse: collapse;
     border-spacing: 0;
     width: auto !important;
     max-width: 100%;
+    display: table;
   }
 
   .gmail-email-body td,
   .gmail-email-body th {
-    /* Don't add borders - let email control this */
-    padding: 0;
+    /* Preserve email's own padding/borders */
     vertical-align: top;
   }
 
@@ -200,7 +201,6 @@ css
     cursor: pointer;
     word-wrap: break-word;
     overflow-wrap: break-word;
-    display: inline;
   }
 
   .gmail-email-body a:hover {
@@ -208,21 +208,25 @@ css
     text-decoration: underline;
   }
 
-  /* Images should be responsive - inline images render in place */
+  /* Images - properly responsive */
   .gmail-email-body img {
-    max-width: 100%;
-    height: auto;
-    vertical-align: middle;
-    display: inline-block;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    margin: 0.5em 0;
   }
 
-  /* Inline images in email body */
-  .gmail-email-body img[src^="http"],
-  .gmail-email-body img[src^="https"],
-  .gmail-email-body img[src^="data:"] {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
+  /* Inline images and small icons */
+  .gmail-email-body img[width] {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Images inside table cells (email signatures) */
+  .gmail-email-body td img,
+  .gmail-email-body th img {
+    display: inline-block;
+    vertical-align: middle;
   }
 
   /* Mobile responsive images */
@@ -231,7 +235,42 @@ css
       max-width: 100% !important;
       height: auto !important;
     }
+
+    .gmail-email-body table {
+      max-width: 100% !important;
+    }
   }
+
+  /* Text formatting - preserve bold, italic, underline */
+  .gmail-email-body strong,
+  .gmail-email-body b {
+    font-weight: 700;
+  }
+
+  .gmail-email-body em,
+  .gmail-email-body i {
+    font-style: italic;
+  }
+
+  .gmail-email-body u {
+    text-decoration: underline;
+  }
+
+  /* Headings */
+  .gmail-email-body h1,
+  .gmail-email-body h2,
+  .gmail-email-body h3,
+  .gmail-email-body h4,
+  .gmail-email-body h5,
+  .gmail-email-body h6 {
+    margin: 0.75em 0 0.5em 0;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+
+  .gmail-email-body h1 { font-size: 1.5em; }
+  .gmail-email-body h2 { font-size: 1.3em; }
+  .gmail-email-body h3 { font-size: 1.1em; }
 
   /* Preserve paragraph spacing */
   .gmail-email-body p {
@@ -250,7 +289,6 @@ css
   /* Divs that act as paragraphs */
   .gmail-email-body div {
     line-height: 1.6;
-    margin: 0.25em 0;
   }
 
   /* Fix spacing between inline elements */
@@ -291,6 +329,13 @@ css
   .gmail-email-body [style*="border-top"] {
     margin-top: 1em;
     padding-top: 0.75em;
+  }
+
+  /* Horizontal rules */
+  .gmail-email-body hr {
+    border: none;
+    border-top: 1px solid #E5E7EB;
+    margin: 1em 0;
   }
 
   /* Chip Container Scrolling */

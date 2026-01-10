@@ -204,12 +204,13 @@ export default function EmailMessageItem({ message, isLast, totalMessages, getSe
           {/* Email Body - Gmail-style rendering */}
           <div className="mb-4">
             <div 
-              className="gmail-email-body prose prose-sm max-w-none"
+              className="gmail-email-body"
               style={{
                 fontSize: '14px',
                 lineHeight: '1.6',
                 color: '#111827',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word'
               }}
             >
               {message.body_html && message.body_html.includes('<') ? (
