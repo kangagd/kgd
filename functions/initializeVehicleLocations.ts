@@ -9,11 +9,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
-    // Get all vehicles
+    // Get all vehicles and all quantities
     const vehicles = await base44.asServiceRole.entities.Vehicle.list();
+    const allQuantities = await base44.asServiceRole.entities.InventoryQuantity.list();
+    
     let locationsCreated = 0;
     let quantitiesLinked = 0;
 
+    // Get unique vehicle location names from InventoryQuantity records
+    const vehicleLocationNames = new Set();
+    for (const qty of allQuantities) {
+      if (qty.location_name && !qty.location_id) {
+        vehicleLocationNames.add(qty.location_name);
+      }
+    }
+
+    // Process each vehicle
     for (const vehicle of vehicles) {
       // Check if location already exists
       const existing = await base44.asServiceRole.entities.InventoryLocation.filter({
@@ -30,8 +41,6 @@ Deno.serve(async (req) => {
           name: vehicle.name,
           type: 'vehicle',
           vehicle_id: vehicle.id,
-          assigned_technician_email: vehicle.assigned_user_email,
-          assigned_technician_name: vehicle.assigned_user_name,
           is_active: true,
           description: `Stock location for vehicle ${vehicle.name}`
         });
@@ -39,16 +48,38 @@ Deno.serve(async (req) => {
         locationsCreated++;
       }
 
-      // Find any InventoryQuantity records with location_name matching vehicle name
-      // and link them to this location_id
-      const allQuantities = await base44.asServiceRole.entities.InventoryQuantity.list();
+      // Link quantities with matching location_name to this location
       for (const qty of allQuantities) {
         if (qty.location_name === vehicle.name && (!qty.location_id || qty.location_id !== locationId)) {
           await base44.asServiceRole.entities.InventoryQuantity.update(qty.id, {
-            location_id: locationId,
-            location_type: 'vehicle'
+            location_id: locationId
           });
           quantitiesLinked++;
+        }
+      }
+    }
+
+    // Create locations for any orphaned vehicle names not matching vehicles
+    for (const vehicleName of vehicleLocationNames) {
+      const matchingVehicle = vehicles.find(v => v.name === vehicleName);
+      if (!matchingVehicle) {
+        // Create a generic vehicle location for this name
+        const newLoc = await base44.asServiceRole.entities.InventoryLocation.create({
+          name: vehicleName,
+          type: 'vehicle',
+          is_active: true,
+          description: `Stock location for ${vehicleName}`
+        });
+        locationsCreated++;
+
+        // Link quantities with this location_name
+        for (const qty of allQuantities) {
+          if (qty.location_name === vehicleName && !qty.location_id) {
+            await base44.asServiceRole.entities.InventoryQuantity.update(qty.id, {
+              location_id: newLoc.id
+            });
+            quantitiesLinked++;
+          }
         }
       }
     }
