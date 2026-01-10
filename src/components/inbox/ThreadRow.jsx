@@ -59,11 +59,11 @@ export default function ThreadRow({ thread, isSelected, onClick }) {
            </div>
          </div>
 
-        {/* Project Chip - if linked */}
+        {/* Project Link - if linked */}
          {linkingState.isLinked && linkingState.linkedProjectTitle && (
-           <div className="flex items-center gap-1.5 text-[12px] mb-2 px-2 py-1 bg-green-50 border border-green-200 rounded w-fit">
-             <LinkIcon className="w-3 h-3 text-green-600 flex-shrink-0" />
-             <span className="text-green-700 font-medium truncate max-w-[220px]">
+           <div className="flex items-center gap-1 text-[12px] mb-2 flex-wrap">
+             <LinkIcon className="w-3 h-3 text-[#6B7280] flex-shrink-0" />
+             <span className="text-[#111827] font-medium truncate max-w-[220px]">
                #{linkingState.linkedProjectNumber} {linkingState.linkedProjectTitle}
              </span>
            </div>
