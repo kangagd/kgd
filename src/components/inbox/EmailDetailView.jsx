@@ -66,6 +66,8 @@ export default function EmailDetailView({
   const [showFullHeader, setShowFullHeader] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState(null);
   const [attachmentsExpanded, setAttachmentsExpanded] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [aiInsightsExpanded, setAiInsightsExpanded] = useState(false);
   const [updatingPriority, setUpdatingPriority] = useState(false);
 
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
