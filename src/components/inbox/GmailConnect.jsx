@@ -63,9 +63,17 @@ export default function GmailConnect({ user, isGmailConnected, onSyncComplete })
   };
 
   if (!isGmailConnected) {
+    // Only allow admin@kangaroogd.com.au to connect Gmail
+    const canConnect = user?.email === 'admin@kangaroogd.com.au';
+    
     return (
-      <Button onClick={handleConnect} variant="outline" size="sm">
-        {user?.extended_role === 'manager' || user?.role !== 'admin' ? 'Gmail Not Connected (Contact Admin)' : 'Connect Gmail'}
+      <Button 
+        onClick={canConnect ? handleConnect : undefined} 
+        variant="outline" 
+        size="sm"
+        disabled={!canConnect}
+      >
+        {canConnect ? 'Connect Gmail' : 'Gmail Not Connected (Contact Admin)'}
       </Button>
     );
   }
