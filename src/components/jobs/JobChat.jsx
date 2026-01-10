@@ -208,7 +208,6 @@ export default function JobChat({ jobId }) {
                   </div>
                   <div>
                     <div className="text-sm font-medium">{u.display_name}</div>
-                    <div className="text-xs text-gray-500">{u.email}</div>
                   </div>
                 </button>
               ))}

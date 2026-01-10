@@ -209,7 +209,6 @@ export default function ProjectChat({ projectId }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate">{u.display_name}</div>
-                  <div className="text-xs text-gray-500 truncate">{u.email}</div>
                 </div>
               </button>
             ))}
