@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, User, Clock, Check } from 'lucide-react';
+import { ChevronDown, User, Clock, Check, Mail } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
   Select,
