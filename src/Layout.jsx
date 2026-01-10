@@ -854,14 +854,17 @@ export default function Layout({ children, currentPageName }) {
                          <div className="space-y-0.5">
                            {recentPages.map((page, idx) => {
                              const getIcon = () => {
-                               switch(page.type) {
-                                 case 'project': return <FolderKanban className="w-3.5 h-3.5 text-[#6D28D9]" />;
-                                 case 'job': return <Briefcase className="w-3.5 h-3.5 text-[#2563EB]" />;
-                                 case 'customer': return <UserCircle className="w-3.5 h-3.5 text-[#16A34A]" />;
-                                 case 'email': return <Mail className="w-3.5 h-3.5 text-[#D97706]" />;
-                                 case 'form': return <Plus className="w-3.5 h-3.5 text-[#111827]" />;
-                                 default: return <Clock className="w-3.5 h-3.5 text-[#9CA3AF]" />;
-                               }
+                               const iconConfig = {
+                                 project: { name: 'FolderKanban', color: 'text-[#6D28D9]' },
+                                 job: { name: 'Briefcase', color: 'text-[#2563EB]' },
+                                 customer: { name: 'UserCircle', color: 'text-[#16A34A]' },
+                                 email: { name: 'Mail', color: 'text-[#D97706]' },
+                                 form: { name: 'Plus', color: 'text-[#111827]' },
+                                 default: { name: 'Clock', color: 'text-[#9CA3AF]' }
+                               };
+                               const config = iconConfig[page.type] || iconConfig.default;
+                               const IconComponent = iconMap[config.name];
+                               return IconComponent ? <IconComponent className={`w-3.5 h-3.5 ${config.color}`} /> : null;
                              };
                              return (
                                <Link
