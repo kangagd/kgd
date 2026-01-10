@@ -114,6 +114,18 @@ export default function Inbox() {
     }
   };
 
+  // Track thread view
+  useEffect(() => {
+    if (selectedThread && user) {
+      base44.entities.EmailThreadViewer.create({
+        thread_id: selectedThread.id,
+        user_email: user.email,
+        user_name: user.full_name,
+        last_seen: new Date().toISOString()
+      }).catch(err => console.error('Failed to track viewer:', err));
+    }
+  }, [selectedThread?.id, user?.email]);
+
   // Handle email sent
   const handleComposerSent = async () => {
     setShowComposer(false);
