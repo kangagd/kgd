@@ -64,7 +64,6 @@ export default function Inbox() {
   const [showComposer, setShowComposer] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
   const [showHistorySearch, setShowHistorySearch] = useState(false);
-  const [isGmailConnected, setIsGmailConnected] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -72,15 +71,6 @@ export default function Inbox() {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        
-        // Check Gmail connection
-        try {
-          const result = await base44.functions.invoke('checkGmailConnection', {});
-          setIsGmailConnected(result?.data?.connected || false);
-        } catch (error) {
-          console.error('Error checking Gmail connection:', error);
-          setIsGmailConnected(false);
-        }
         
         // Load user permissions
         const permissions = await base44.entities.EmailPermission.filter({ user_email: currentUser.email });
