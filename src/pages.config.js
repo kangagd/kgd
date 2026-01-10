@@ -6,7 +6,6 @@ import EmailSettings from './pages/EmailSettings';
 import EmailTemplates from './pages/EmailTemplates';
 import Fleet from './pages/Fleet';
 import Home from './pages/Home';
-import Inbox from './pages/Inbox';
 import Jobs from './pages/Jobs';
 import Logistics from './pages/Logistics';
 import MyVehicle from './pages/MyVehicle';
@@ -27,6 +26,7 @@ import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
+import Inbox from './pages/Inbox';
 import __Layout from './Layout.jsx';
 
 
@@ -39,7 +39,6 @@ export const PAGES = {
     "EmailTemplates": EmailTemplates,
     "Fleet": Fleet,
     "Home": Home,
-    "Inbox": Inbox,
     "Jobs": Jobs,
     "Logistics": Logistics,
     "MyVehicle": MyVehicle,
@@ -60,6 +59,7 @@ export const PAGES = {
     "Team": Team,
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
+    "Inbox": Inbox,
 }
 
 export const pagesConfig = {

@@ -46,26 +46,29 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
 }
 
 Deno.serve(async (req) => {
+  let stage = 'init';
   try {
+    stage = 'auth';
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ error: 'Unauthorized', stage }, { status: 401 });
     }
 
     // Only admin and manager can send emails (technicians require explicit permission)
     const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
     if (!isAdminOrManager) {
-      return Response.json({ error: 'Forbidden: Only admin and managers can send emails' }, { status: 403 });
+      return Response.json({ error: 'Forbidden: Only admin and managers can send emails', stage }, { status: 403 });
     }
     
+    stage = 'parse_request';
     let requestBody;
     try {
       requestBody = await req.json();
     } catch (jsonError) {
       console.error('JSON parse error:', jsonError);
-      return Response.json({ error: 'Invalid JSON payload' }, { status: 400 });
+      return Response.json({ error: 'Invalid JSON payload', stage }, { status: 400 });
     }
 
     const { 
@@ -78,19 +81,21 @@ Deno.serve(async (req) => {
     
     console.log('Request payload:', { to, subject, body_html: body_html ? 'present' : 'missing' });
     
+    stage = 'validate_fields';
     if (!to || !subject || !body_html) {
       console.error('Missing required fields:', { to: !!to, subject: !!subject, body_html: !!body_html });
-      return Response.json({ error: 'Missing required fields: to, subject, body_html' }, { status: 400 });
+      return Response.json({ error: 'Missing required fields: to, subject, body_html', stage }, { status: 400 });
     }
     
     // Enforce reply safety check
     if (gmail_thread_id && !in_reply_to) {
       return Response.json(
-        { error: 'Reply requires RFC Message-ID (in_reply_to)' },
+        { error: 'Reply requires RFC Message-ID (in_reply_to)', stage },
         { status: 400 }
       );
     }
     
+    stage = 'create_mime';
     const encodedMessage = createMimeMessage(to, subject, body_html, cc, bcc, in_reply_to, references, attachments);
     
     const sendBody = { raw: encodedMessage };
@@ -98,6 +103,7 @@ Deno.serve(async (req) => {
       sendBody.threadId = gmail_thread_id;
     }
     
+    stage = 'gmail_send';
     const result = await gmailDwdFetch('/gmail/v1/users/me/messages/send', 'POST', sendBody);
     
     // Upload attachments and get URLs for storage
@@ -245,7 +251,11 @@ Deno.serve(async (req) => {
       gmail_thread_id: result.threadId
     });
   } catch (error) {
-    console.error('Error sending email:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error(`Error at stage '${stage}':`, error);
+    return Response.json({ 
+      error: error.message, 
+      stage,
+      details: error.toString() 
+    }, { status: 500 });
   }
 });
