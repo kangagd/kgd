@@ -145,14 +145,7 @@ export default function Inbox() {
 
   // Auto-sync Gmail in background
   useEffect(() => {
-    // Allow auto-sync for:
-    // 1. Users with gmail_access_token
-    // 2. Managers (using admin's token)
-    // 3. Any user (backend will check if another user with same email has token)
-    if (!user) return;
-    
-    // Only skip sync if user is viewer/regular user without permission
-    if (!userPermissions?.can_view) return;
+    if (!user || !userPermissions?.can_view) return;
     
     const syncGmail = async () => {
       try {
@@ -169,7 +162,7 @@ export default function Inbox() {
     // Initial sync after a small delay
     const timeout = setTimeout(syncGmail, 2000);
     
-    // Sync every 60 seconds (reduced frequency to avoid rate limits)
+    // Sync every 60 seconds
     const interval = setInterval(syncGmail, 60000);
     
     return () => {
