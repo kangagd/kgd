@@ -337,17 +337,16 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         cc: cc || undefined,
         bcc: bcc || undefined,
         subject,
-        body,
+        body_html: body,
         attachments: attachments.length > 0 ? attachments : undefined,
-        projectId: projectId || thread?.project_id || undefined,
-        jobId: jobId || thread?.linked_job_id || undefined
+        project_id: projectId || thread?.project_id || undefined,
+        job_id: jobId || thread?.linked_job_id || undefined
       };
       
-      // Pass separate Base44 and Gmail thread IDs for replies
-      if (mode === "reply" && thread?.id && thread?.gmail_thread_id && message?.message_id) {
-        payload.base44_thread_id = thread.id;
+      // Pass Gmail thread ID and RFC headers for replies
+      if (mode === "reply" && thread?.gmail_thread_id && message?.message_id) {
         payload.gmail_thread_id = thread.gmail_thread_id;
-        payload.inReplyTo = message.message_id;
+        payload.in_reply_to = message.message_id;
         
         // Build references chain from existing references
         const existingReferences = message.in_reply_to 

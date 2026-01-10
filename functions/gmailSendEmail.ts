@@ -1,50 +1,6 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
-
-async function refreshTokenIfNeeded(base44, user) {
-  // If no token expiry set or token is expired/close to expiring
-  const expiryTime = user.gmail_token_expiry ? new Date(user.gmail_token_expiry).getTime() : 0;
-  const now = Date.now();
-  
-  if (!user.gmail_refresh_token) {
-    throw new Error('Gmail refresh token not found. Please reconnect Gmail.');
-  }
-  
-  if (expiryTime - now < 5 * 60 * 1000) {
-    const clientId = Deno.env.get('GMAIL_CLIENT_ID');
-    const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
-    
-    if (!clientId || !clientSecret) {
-      throw new Error('Gmail credentials not configured');
-    }
-    
-    const response = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: user.gmail_refresh_token,
-        grant_type: 'refresh_token'
-      })
-    });
-    
-    const tokens = await response.json();
-    
-    if (!response.ok || tokens.error) {
-      throw new Error(`Token refresh failed: ${tokens.error_description || tokens.error || 'Unknown error'}`);
-    }
-    
-    await base44.auth.updateMe({
-      gmail_access_token: tokens.access_token,
-      gmail_token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-    });
-    
-    return tokens.access_token;
-  }
-  
-  return user.gmail_access_token;
-}
+import { gmailFetch } from './shared/gmailClient.js';
 
 function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, attachments) {
   const boundary = `boundary_${Date.now()}`;
@@ -90,138 +46,48 @@ function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, at
 }
 
 Deno.serve(async (req) => {
-  console.log('[gmailSendEmail] ========== REQUEST START ==========');
-  console.log('[gmailSendEmail] Request method:', req.method);
-  console.log('[gmailSendEmail] Request headers:', Object.fromEntries(req.headers.entries()));
-  
   try {
-    console.log('[gmailSendEmail] Step 1: Creating Base44 client from request');
     const base44 = createClientFromRequest(req);
-    
-    console.log('[gmailSendEmail] Step 2: Authenticating user via base44.auth.me()');
-    let currentUser;
-    try {
-      currentUser = await base44.auth.me();
-      console.log('[gmailSendEmail] ✅ Authentication successful');
-    } catch (authError) {
-      console.error('[gmailSendEmail] ❌ Authentication FAILED:', authError);
-      console.error('[gmailSendEmail] Auth error name:', authError.name);
-      console.error('[gmailSendEmail] Auth error message:', authError.message);
-      console.error('[gmailSendEmail] Auth error stack:', authError.stack);
-      return Response.json({ 
-        error: 'Authentication failed', 
-        details: authError.message,
-        errorType: authError.name
-      }, { status: 401 });
+    const user = await base44.auth.me();
+
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only admin and manager can send emails (technicians require explicit permission)
+    const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
+    if (!isAdminOrManager) {
+      return Response.json({ error: 'Forbidden: Only admin and managers can send emails' }, { status: 403 });
     }
     
-    if (!currentUser) {
-      console.error('[gmailSendEmail] ❌ currentUser is null/undefined after auth');
-      return Response.json({ error: 'User not authenticated - currentUser is null' }, { status: 401 });
-    }
-    
-    console.log(`[gmailSendEmail] ✅ User authenticated: ${currentUser.email}`);
-    console.log(`[gmailSendEmail]    - role: ${currentUser.role}`);
-    console.log(`[gmailSendEmail]    - extended_role: ${currentUser.extended_role}`);
-    
-    console.log('[gmailSendEmail] Step 3: Finding Gmail connection');
-    
-    // CRITICAL: Use current user's Gmail connection if they have one, otherwise find shared account
-    let user = currentUser;
-    
-    const hasOwnGmail = !!(currentUser.gmail_access_token && currentUser.gmail_refresh_token);
-    console.log(`[gmailSendEmail] User has own Gmail connection: ${hasOwnGmail}`);
-    
-    if (!hasOwnGmail) {
-      console.log(`[gmailSendEmail] User ${currentUser.email} doesn't have Gmail connected, trying shared account...`);
-      
-      // Try to get shared Gmail account (admin@kangaroogd.com.au) directly
-      try {
-        console.log('[gmailSendEmail] Step 3a: Fetching shared Gmail account (admin@kangaroogd.com.au)...');
-        const sharedAccounts = await base44.asServiceRole.entities.User.filter({ 
-          email: 'admin@kangaroogd.com.au' 
-        });
-        
-        if (sharedAccounts.length === 0) {
-          console.error('[gmailSendEmail] ❌ Shared Gmail account (admin@kangaroogd.com.au) not found');
-          return Response.json({ 
-            error: 'Gmail not connected. Please ask an admin to connect the shared Gmail account (admin@kangaroogd.com.au).' 
-          }, { status: 400 });
-        }
-        
-        const sharedUser = sharedAccounts[0];
-        
-        if (!sharedUser.gmail_access_token || !sharedUser.gmail_refresh_token) {
-          console.error('[gmailSendEmail] ❌ Shared Gmail account exists but has no tokens');
-          return Response.json({ 
-            error: 'Shared Gmail account is not connected. Please ask an admin to connect Gmail for admin@kangaroogd.com.au.' 
-          }, { status: 400 });
-        }
-        
-        user = sharedUser;
-        console.log(`[gmailSendEmail] ✅ Using shared Gmail connection from: ${user.email}`);
-      } catch (fetchError) {
-        console.error('[gmailSendEmail] ❌ FAILED to fetch shared Gmail account:', fetchError);
-        console.error('[gmailSendEmail] Fetch error name:', fetchError.name);
-        console.error('[gmailSendEmail] Fetch error message:', fetchError.message);
-        console.error('[gmailSendEmail] Fetch error stack:', fetchError.stack);
-        return Response.json({ 
-          error: 'Failed to access shared Gmail connection', 
-          details: fetchError.message 
-        }, { status: 500 });
-      }
-    } else {
-      console.log(`[gmailSendEmail] ✅ Using user's own Gmail connection: ${currentUser.email}`);
-    }
-    
-    // UPDATED CONTRACT: Accept both base44_thread_id and gmail_thread_id
     const { 
-      to, cc, bcc, subject, body, 
-      base44_thread_id, gmail_thread_id, 
-      inReplyTo, references, 
-      attachments, projectId, jobId 
+      to, cc, bcc, subject, body_html, 
+      gmail_thread_id, 
+      in_reply_to, references, 
+      project_id, job_id,
+      attachments
     } = await req.json();
     
-    // Debug: Log attachments to verify they're received
-    console.log('Received attachments:', attachments ? attachments.length : 0, attachments);
-    
-    if (!to || !subject || !body) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!to || !subject || !body_html) {
+      return Response.json({ error: 'Missing required fields: to, subject, body_html' }, { status: 400 });
     }
     
     // Enforce reply safety check
-    if (gmail_thread_id && !inReplyTo) {
+    if (gmail_thread_id && !in_reply_to) {
       return Response.json(
-        { error: 'Reply requires RFC Message-ID (inReplyTo)' },
+        { error: 'Reply requires RFC Message-ID (in_reply_to)' },
         { status: 400 }
       );
     }
     
-    const accessToken = await refreshTokenIfNeeded(base44, user);
-    
-    const encodedMessage = createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, attachments);
-    
-    // Use gmail_thread_id for Gmail API call if provided
-    const sendUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/send`;
+    const encodedMessage = createMimeMessage(to, subject, body_html, cc, bcc, in_reply_to, references, attachments);
     
     const sendBody = { raw: encodedMessage };
-    if (gmail_thread_id) sendBody.threadId = gmail_thread_id;
-    
-    const response = await fetch(sendUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(sendBody)
-    });
-    
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Gmail API error: ${error}`);
+    if (gmail_thread_id) {
+      sendBody.threadId = gmail_thread_id;
     }
     
-    const result = await response.json();
+    const result = await gmailFetch('/gmail/v1/users/me/messages/send', 'POST', sendBody);
     
     // Upload attachments and get URLs for storage
     const uploadedAttachments = [];
@@ -251,117 +117,98 @@ Deno.serve(async (req) => {
       }
     }
     
-    // C) Persist reply under the SAME EmailThread (use base44_thread_id)
-    let emailThreadId = base44_thread_id;
+    // Find or create EmailThread
+    let emailThreadId = null;
     
-    if (!emailThreadId) {
-      // Try to find existing thread by subject + participants (same logic as gmailSync)
-      const normalizedSubject = subject.replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
-      const toAddrs = to.split(',').map(e => e.trim().toLowerCase());
-      const ccAddrs = cc ? cc.split(',').map(e => e.trim().toLowerCase()) : [];
-      const fromAddr = (user.gmail_email || user.email).toLowerCase();
-      
-      const allThreads = await base44.asServiceRole.entities.EmailThread.list();
-      const matchingThreads = allThreads.filter(t => {
-        const threadSubject = (t.subject || '').replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
-        if (threadSubject !== normalizedSubject) return false;
-        
-        // Check if participants match
-        const threadFromAddr = (t.from_address || '').toLowerCase();
-        const threadToAddrs = (t.to_addresses || []).map(a => a.toLowerCase());
-        
-        const allCurrent = [fromAddr, ...toAddrs, ...ccAddrs];
-        const allThread = [threadFromAddr, ...threadToAddrs];
-        
-        // Check if there's overlap in participants
-        return allCurrent.some(addr => allThread.includes(addr));
+    if (gmail_thread_id) {
+      // Find existing thread by Gmail thread ID
+      const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
+        gmail_thread_id: gmail_thread_id
       });
       
-      if (matchingThreads.length > 0) {
-        // Use most recently updated thread
-        matchingThreads.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
-        emailThreadId = matchingThreads[0].id;
-      } else {
-        // Create new thread for this sent email
-        const newThread = await base44.asServiceRole.entities.EmailThread.create({
-          subject: subject,
-          gmail_thread_id: result.threadId,
-          from_address: user.gmail_email || user.email,
-          to_addresses: to.split(',').map(e => e.trim()),
+      if (existingThreads.length > 0) {
+        emailThreadId = existingThreads[0].id;
+        
+        // Update thread metadata
+        const updates = {
           last_message_date: new Date().toISOString(),
-          last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
-          status: 'Closed',
-          priority: 'Normal',
-          is_read: true,
-          message_count: 1,
-          project_id: projectId || null,
-          linked_job_id: jobId || null
-        });
-        emailThreadId = newThread.id;
+          last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
+          message_count: (existingThreads[0].message_count || 0) + 1,
+          is_read: true
+        };
+        
+        // Update project linkage if provided
+        if (project_id) {
+          const projectData = await base44.asServiceRole.entities.Project.get(project_id);
+          updates.project_id = project_id;
+          updates.project_number = projectData?.project_number || null;
+          updates.project_title = projectData?.title || null;
+          updates.customer_id = projectData?.customer_id || null;
+          updates.customer_name = projectData?.customer_name || null;
+        }
+        
+        await base44.asServiceRole.entities.EmailThread.update(emailThreadId, updates);
       }
     }
     
-    if (emailThreadId) {
-      // C) Update existing thread with reply activity
-      // CRITICAL: Refetch thread to get latest project_id to avoid race conditions
-      const existingThread = await base44.asServiceRole.entities.EmailThread.get(emailThreadId);
-      const updates = {
+    // Create new thread if not found
+    if (!emailThreadId) {
+      const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
+      const newThread = await base44.asServiceRole.entities.EmailThread.create({
+        subject: subject,
+        gmail_thread_id: result.threadId,
+        from_address: impersonateEmail,
+        to_addresses: to.split(',').map(e => e.trim()),
         last_message_date: new Date().toISOString(),
-        last_message_snippet: body.replace(/<[^>]*>/g, '').substring(0, 100),
-        message_count: (existingThread?.message_count || 0) + 1,
-        is_read: true // Mark as read when sending
-      };
-      
-      // D) Priority: explicit projectId > existing thread.project_id
-      // This ensures replies from ProjectEmailSection always link correctly
-      if (projectId) {
-        // Explicit projectId provided - always use it and cache project fields
-        const projectData = await base44.asServiceRole.entities.Project.get(projectId);
-        updates.project_id = projectId;
-        updates.project_number = projectData?.project_number || null;
-        updates.project_title = projectData?.title || null;
-        updates.customer_id = projectData?.customer_id || null;
-        updates.customer_name = projectData?.customer_name || null;
-      } else if (existingThread.project_id) {
-        // Thread already has a project - preserve it
-        updates.project_id = existingThread.project_id;
-      }
-      
-      await base44.asServiceRole.entities.EmailThread.update(emailThreadId, updates);
+        last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
+        status: 'Closed',
+        priority: 'Normal',
+        is_read: true,
+        message_count: 1,
+        project_id: project_id || null,
+        linked_job_id: job_id || null
+      });
+      emailThreadId = newThread.id;
     }
     
     // Fetch the sent message to get its proper Message-ID header
-    const sentMessageResponse = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${result.id}?format=metadata&metadataHeaders=Message-ID`,
-      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    const sentMessageData = await gmailFetch(
+      `/gmail/v1/users/me/messages/${result.id}`,
+      'GET',
+      null,
+      { format: 'metadata', metadataHeaders: 'Message-ID' }
     );
     
-    let gmailMessageId = result.id;
-    if (sentMessageResponse.ok) {
-      const sentMessageData = await sentMessageResponse.json();
-      const messageIdHeader = sentMessageData.payload?.headers?.find(h => h.name === 'Message-ID');
+    let rfcMessageId = result.id;
+    if (sentMessageData?.payload?.headers) {
+      const messageIdHeader = sentMessageData.payload.headers.find(h => h.name === 'Message-ID');
       if (messageIdHeader?.value) {
-        gmailMessageId = messageIdHeader.value;
+        rfcMessageId = messageIdHeader.value;
       }
     }
 
-    // C) Store sent message with proper threading metadata (use service role for reliability)
+    // Store sent message with audit fields
+    const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
+    
     await base44.asServiceRole.entities.EmailMessage.create({
       thread_id: emailThreadId,
       gmail_message_id: result.id,
-      from_address: user.gmail_email || user.email,
-      from_name: user.full_name,
+      message_id: rfcMessageId,
+      from_address: impersonateEmail,
+      from_name: user.display_name || user.full_name,
       to_addresses: to.split(',').map(e => e.trim()),
       cc_addresses: cc ? cc.split(',').map(e => e.trim()) : [],
       bcc_addresses: bcc ? bcc.split(',').map(e => e.trim()) : [],
       subject: subject,
-      body_html: body,
+      body_html: body_html,
       is_outbound: true,
       sent_at: new Date().toISOString(),
-      message_id: gmailMessageId,
-      // B) Preserve reply headers for proper threading
-      in_reply_to: inReplyTo || null,
-      attachments: uploadedAttachments.length > 0 ? uploadedAttachments : []
+      in_reply_to: in_reply_to || null,
+      references: references || null,
+      attachments: uploadedAttachments.length > 0 ? uploadedAttachments : [],
+      // Audit fields
+      sent_by_user_id: user.id,
+      sent_by_user_email: user.email
     });
     
     // Mark thread as closed after sending reply
@@ -369,14 +216,10 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.EmailThread.update(emailThreadId, { status: 'Closed' });
     }
     
-    // Update project activity if email is linked to a project
-    // D) Use project_id from thread if not explicitly provided
-    const finalProjectId = projectId || (await base44.asServiceRole.entities.EmailThread.get(emailThreadId)).project_id;
-    
-    if (finalProjectId) {
-      // C) Update activity type based on whether this is a reply
-      const activityType = base44_thread_id ? 'Email Reply Sent' : 'Email Sent';
-      await updateProjectActivity(base44, finalProjectId, activityType);
+    // Update project activity if linked
+    if (project_id) {
+      const activityType = gmail_thread_id ? 'Email Reply Sent' : 'Email Sent';
+      await updateProjectActivity(base44, project_id, activityType);
       
       // Update project last contact timestamps
       base44.functions.invoke('updateProjectLastContactFromThread', {
@@ -384,14 +227,14 @@ Deno.serve(async (req) => {
       }).catch(err => console.error('Update project contact failed:', err));
     }
     
-    return Response.json({ success: true, messageId: result.id, threadId: emailThreadId });
-  } catch (error) {
-    console.error('[gmailSendEmail] FATAL ERROR:', error);
-    console.error('[gmailSendEmail] Error stack:', error.stack);
     return Response.json({ 
-      error: error.message || 'Failed to send email',
-      details: error.stack,
-      timestamp: new Date().toISOString()
-    }, { status: 500 });
+      success: true, 
+      messageId: result.id, 
+      threadId: emailThreadId,
+      gmail_thread_id: result.threadId
+    });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
