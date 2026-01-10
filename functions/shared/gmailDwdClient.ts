@@ -92,16 +92,29 @@ function pemToArrayBuffer(pem) {
  * @returns {Promise<string>} Access token
  */
 export async function getGmailAccessToken() {
-  const serviceAccountEmail = Deno.env.get('GOOGLE_WORKSPACE_SERVICE_ACCOUNT_CLIENT_EMAIL');
-  const privateKeyRaw = Deno.env.get('GOOGLE_WORKSPACE_SERVICE_ACCOUNT_PRIVATE_KEY');
-  const impersonateEmail = Deno.env.get('GMAIL_DWD_IMPERSONATE_EMAIL') || 'admin@kangaroogd.com.au';
+  const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
+  const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
+  
+  if (!serviceAccountJson) {
+    throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_JSON environment variable');
+  }
+  
+  let serviceAccount;
+  try {
+    serviceAccount = JSON.parse(serviceAccountJson);
+  } catch (error) {
+    throw new Error('Invalid GOOGLE_SERVICE_ACCOUNT_JSON: must be valid JSON');
+  }
+  
+  const serviceAccountEmail = serviceAccount.client_email;
+  const privateKeyRaw = serviceAccount.private_key;
   
   if (!serviceAccountEmail) {
-    throw new Error('Missing GOOGLE_WORKSPACE_SERVICE_ACCOUNT_CLIENT_EMAIL environment variable');
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON missing client_email field');
   }
   
   if (!privateKeyRaw) {
-    throw new Error('Missing GOOGLE_WORKSPACE_SERVICE_ACCOUNT_PRIVATE_KEY environment variable');
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON missing private_key field');
   }
   
   // Handle escaped newlines in private key

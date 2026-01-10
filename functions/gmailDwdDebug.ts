@@ -102,11 +102,39 @@ Deno.serve(async (req) => {
     }
     
     // Load environment variables
-    const serviceAccountEmail = Deno.env.get('GOOGLE_WORKSPACE_SERVICE_ACCOUNT_CLIENT_EMAIL');
-    const privateKeyRaw = Deno.env.get('GOOGLE_WORKSPACE_SERVICE_ACCOUNT_PRIVATE_KEY');
-    const impersonateEmail = Deno.env.get('GMAIL_DWD_IMPERSONATE_EMAIL') || 'admin@kangaroogd.com.au';
+    const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
+    const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
     const scopesRaw = Deno.env.get('GOOGLE_WORKSPACE_DWD_SCOPES');
     const scopes = scopesRaw ? scopesRaw.split(',').map(s => s.trim()) : DEFAULT_SCOPES;
+    
+    // Parse service account JSON
+    let serviceAccount;
+    let serviceAccountEmail;
+    let privateKeyRaw;
+    
+    if (!serviceAccountJson) {
+      return Response.json({
+        success: false,
+        stage: 'env_validation',
+        error: 'Missing GOOGLE_SERVICE_ACCOUNT_JSON environment variable',
+        envCheck: {
+          serviceAccountJson: false,
+          impersonateEmail: !!impersonateEmail
+        }
+      }, { status: 500 });
+    }
+    
+    try {
+      serviceAccount = JSON.parse(serviceAccountJson);
+      serviceAccountEmail = serviceAccount.client_email;
+      privateKeyRaw = serviceAccount.private_key;
+    } catch (error) {
+      return Response.json({
+        success: false,
+        stage: 'env_validation',
+        error: 'Invalid GOOGLE_SERVICE_ACCOUNT_JSON: ' + error.message
+      }, { status: 500 });
+    }
     
     // Validate environment variables
     const envCheck = {
@@ -120,7 +148,7 @@ Deno.serve(async (req) => {
       return Response.json({
         success: false,
         stage: 'env_validation',
-        error: 'Missing required environment variables',
+        error: 'GOOGLE_SERVICE_ACCOUNT_JSON missing required fields (client_email or private_key)',
         envCheck,
         config: {
           serviceAccountEmail: serviceAccountEmail ? maskToken(serviceAccountEmail) : '[missing]',
