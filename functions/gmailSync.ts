@@ -1,128 +1,602 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { gmailDwdFetch } from './shared/gmailDwdClient.js';
+import { updateProjectActivity } from './updateProjectActivity.js';
+import { gmailFetch } from './shared/gmailClient.js';
 
-// Sync emails from shared inbox
+const fixEncodingIssues = (text) => {
+  if (text == null) return text;
+  let fixed = String(text);
+
+  // 1) Common HTML entities
+  fixed = fixed
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#8217;/g, "'")   // '
+    .replace(/&#8216;/g, "'")   // '
+    .replace(/&#8220;/g, '"')   // "
+    .replace(/&#8221;/g, '"')   // "
+    .replace(/&#8211;/g, "–")  // –
+    .replace(/&#8212;/g, "—"); // —
+
+  // 2) UTF-8 → Windows-1252 mojibake patterns
+  const mojibakeReplacements = [
+    // Smart quotes & dashes (â… sequences)
+    [/â/g, "'"],
+    [/â/g, "'"],
+    [/â/g, """],
+    [/â/g, """],
+    [/â/g, "–"],
+    [/â/g, "—"],
+    [/â¦/g, "…"],
+
+    // Variants already in the old helper
+    [/â€™/g, "'"],
+    [/â€˜/g, "'"],
+    [/â€œ/g, """],
+    [/â€/g, """],
+    [/â€¢/g, "•"],
+
+    // Spaces / NBSP / odd spacing
+    [/Â /g, " "],
+    [/Â/g, " "],
+    [/â€‰/g, " "],
+    [/â €/g, " "],
+
+    // Misc symbols
+    [/Â°/g, "°"],
+    [/â‚¬/g, "€"],
+    [/â ·/g, "·"],
+    [/â ·â(\d+)/g, " ·$1"],
+    [/Ã¢â‚¬â„¢/g, "'"],
+  ];
+
+  for (const [pattern, replacement] of mojibakeReplacements) {
+    fixed = fixed.replace(pattern, replacement);
+  }
+
+  // 3) Accented characters (Ã… style patterns)
+  const accentReplacements = [
+    [/Ã /g, "à"],
+    [/Ã¡/g, "á"],
+    [/Ã¢/g, "â"],
+    [/Ã£/g, "ã"],
+    [/Ã¤/g, "ä"],
+    [/Ã¨/g, "è"],
+    [/Ã©/g, "é"],
+    [/Ãª/g, "ê"],
+    [/Ã«/g, "ë"],
+    [/Ã¬/g, "ì"],
+    [/Ã­/g, "í"],
+    [/Ã®/g, "î"],
+    [/Ã¯/g, "ï"],
+    [/Ã²/g, "ò"],
+    [/Ã³/g, "ó"],
+    [/Ã´/g, "ô"],
+    [/Ãµ/g, "õ"],
+    [/Ã¶/g, "ö"],
+    [/Ã¹/g, "ù"],
+    [/Ãº/g, "ú"],
+    [/Ã»/g, "û"],
+    [/Ã¼/g, "ü"],
+  ];
+
+  for (const [pattern, replacement] of accentReplacements) {
+    fixed = fixed.replace(pattern, replacement);
+  }
+
+  return fixed;
+};
+
+
+
+function parseEmailAddress(addressString) {
+  const match = addressString.match(/<(.+)>/);
+  return match ? match[1] : addressString;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user || (user.role !== 'admin' && user.extended_role !== 'manager')) {
-      return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    
+    // Check authentication first
+    const currentUser = await base44.auth.me();
+    console.log('Current user:', currentUser);
+    if (!currentUser) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch threads from Gmail (last 50)
-    const threadsData = await gmailDwdFetch('/threads', 'GET', null, { 
-      maxResults: 50,
-      q: '-in:spam -in:trash'
+    // Use Service Account for Gmail access
+    const inboxData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
+      maxResults: 30,
+      labelIds: 'INBOX'
     });
 
-    const threads = threadsData.threads || [];
-    let syncedCount = 0;
-    let skippedCount = 0;
+    const sentData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
+      maxResults: 30,
+      labelIds: 'SENT'
+    }).catch(() => ({ messages: [] }));
 
-    for (const thread of threads) {
-      // Check if thread already exists
-      const existing = await base44.asServiceRole.entities.EmailThread.filter({
-        gmail_thread_id: thread.id
-      });
+    console.log('=== Gmail Sync Started ===');
+    console.log('Inbox messages:', inboxData.messages?.length || 0);
+    console.log('Sent messages:', sentData.messages?.length || 0);
 
-      if (existing.length > 0) {
-        skippedCount++;
-        continue;
+    // Deduplicate messages using interleaving to ensure mix
+    const messageMap = new Map();
+    const inboxMsgs = inboxData.messages || [];
+    const sentMsgs = sentData.messages || [];
+    const maxLength = Math.max(inboxMsgs.length, sentMsgs.length);
+
+    for (let i = 0; i < maxLength; i++) {
+      if (i < inboxMsgs.length) {
+        const m = inboxMsgs[i];
+        if (!messageMap.has(m.id)) {
+          messageMap.set(m.id, { ...m, isOutbound: false });
+        }
       }
+      if (i < sentMsgs.length) {
+        const m = sentMsgs[i];
+        if (messageMap.has(m.id)) {
+          messageMap.get(m.id).isOutbound = true;
+        } else {
+          messageMap.set(m.id, { ...m, isOutbound: true });
+        }
+      }
+    }
+    
+    const allMessages = Array.from(messageMap.values());
 
-      // Fetch full thread details
-      const fullThread = await gmailDwdFetch(`/threads/${thread.id}`, 'GET', null, {
-        format: 'full'
-      });
+    if (allMessages.length === 0) {
+      return Response.json({ synced: 0, message: 'No messages to sync' });
+    }
 
-      const messages = fullThread.messages || [];
-      if (messages.length === 0) continue;
+    // Helper function to process a single message
+    async function processMessage(message) {
+      try {
+        // Quick check if already exists
+        const existing = await base44.asServiceRole.entities.EmailMessage.filter({
+           gmail_message_id: message.id
+        });
+        if (existing.length > 0) {
+           return false;
+        }
 
-      const firstMessage = messages[0];
-      const lastMessage = messages[messages.length - 1];
+        const detail = await gmailFetch(
+          `/gmail/v1/users/me/messages/${message.id}`,
+          'GET'
+        );
 
-      // Parse headers
-      const getHeader = (msg, name) => {
-        const header = msg.payload?.headers?.find(h => h.name === name);
-        return header?.value || '';
-      };
+        if (!detail?.payload?.headers) {
+          console.error(`Invalid message format for ${message.id}`);
+          return false;
+        }
 
-      const subject = getHeader(firstMessage, 'Subject') || '(No subject)';
-      const from = getHeader(lastMessage, 'From');
-      const to = getHeader(lastMessage, 'To');
-      
-      // Extract snippet
-      const snippet = lastMessage.snippet || '';
+        const headers = detail.payload.headers;
 
-      // Create thread
-      const newThread = await base44.asServiceRole.entities.EmailThread.create({
-        gmail_thread_id: thread.id,
-        subject,
-        from_address: from.match(/<(.+)>/)?.[1] || from,
-        to_addresses: to.split(',').map(e => e.trim()),
-        last_message_date: new Date(parseInt(lastMessage.internalDate)).toISOString(),
-        last_message_snippet: snippet,
-        status: 'Open',
-        priority: 'Normal',
-        is_read: false,
-        message_count: messages.length
-      });
+        const fromAddressValue = headers.find(h => h.name === 'From')?.value || '';
+        // Skip Wix CRM emails to avoid consolidating all inquiries into one thread
+        if (fromAddressValue.includes('no-reply@crm.wix.com')) {
+          console.log(`Skipping Wix CRM email from ${fromAddressValue}`);
+          return false;
+        }
 
-      // Store messages
-      for (const msg of messages) {
-        const messageFrom = getHeader(msg, 'From');
-        const messageTo = getHeader(msg, 'To');
-        const messageSubject = getHeader(msg, 'Subject');
-        const messageId = getHeader(msg, 'Message-ID');
-        const inReplyTo = getHeader(msg, 'In-Reply-To');
-        const references = getHeader(msg, 'References');
+        const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+        const from = headers.find(h => h.name === 'From')?.value || '';
+        const to = headers.find(h => h.name === 'To')?.value || '';
+        const date = headers.find(h => h.name === 'Date')?.value;
+        const messageId = headers.find(h => h.name === 'Message-ID')?.value;
+        const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value;
 
-        // Extract body
-        let bodyHtml = '';
-        let bodyText = '';
+        if (!date) {
+          console.error(`Missing date for message ${message.id}`);
+          return false;
+        }
         
-        if (msg.payload?.body?.data) {
-          bodyText = atob(msg.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-        } else if (msg.payload?.parts) {
-          for (const part of msg.payload.parts) {
-            if (part.mimeType === 'text/html' && part.body?.data) {
-              bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            } else if (part.mimeType === 'text/plain' && part.body?.data) {
-              bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+        // Use gmail message ID as fallback if Message-ID header is missing
+        const effectiveMessageId = messageId || message.id;
+
+        // Use Gmail's threadId to group messages into threads
+        const gmailThreadId = detail.threadId;
+        
+        // Check if thread already exists by Gmail thread ID
+        let existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
+          gmail_thread_id: gmailThreadId
+        });
+        
+        // If no match, try In-Reply-To header (explicit reply reference)
+        if (existingThreads.length === 0 && inReplyTo) {
+          const replyToMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+            message_id: inReplyTo
+          });
+          if (replyToMessages.length > 0 && replyToMessages[0].thread_id) {
+            const parentThread = await base44.asServiceRole.entities.EmailThread.filter({
+              id: replyToMessages[0].thread_id
+            });
+            if (parentThread.length > 0) {
+              existingThreads = parentThread;
+              console.log(`Matched thread via In-Reply-To header: ${inReplyTo}`);
             }
           }
         }
+        
+        // If still no match, try References header (chain of message IDs)
+        if (existingThreads.length === 0) {
+          const references = headers.find(h => h.name === 'References')?.value;
+          if (references) {
+            const referenceIds = references.split(/\s+/).filter(Boolean);
+            // Check most recent reference first (reverse order)
+            for (const refId of referenceIds.reverse()) {
+              const refMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+                message_id: refId
+              });
+              if (refMessages.length > 0 && refMessages[0].thread_id) {
+                const refThread = await base44.asServiceRole.entities.EmailThread.filter({
+                  id: refMessages[0].thread_id
+                });
+                if (refThread.length > 0) {
+                  existingThreads = refThread;
+                  console.log(`Matched thread via References header: ${refId}`);
+                  break;
+                }
+              }
+            }
+          }
+        }
+        
+        // If no exact match via headers, try to find related threads by subject + email participants
+        // This handles edge cases where threading headers are missing
+        if (existingThreads.length === 0) {
+          const normalizedSubject = subject.replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
+          const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+          
+          existingThreads = allThreads.filter(t => {
+            const threadSubject = (t.subject || '').replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
+            if (threadSubject !== normalizedSubject) return false;
+            
+            // Check if participants match (from/to overlap)
+            const fromAddr = parseEmailAddress(from).toLowerCase();
+            const toAddrs = to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase());
+            const threadFromAddr = (t.from_address || '').toLowerCase();
+            const threadToAddrs = (t.to_addresses || []).map(a => a.toLowerCase());
+            
+            const allCurrent = [fromAddr, ...toAddrs];
+            const allThread = [threadFromAddr, ...threadToAddrs];
+            
+            // Check if there's overlap in participants
+            return allCurrent.some(addr => allThread.includes(addr));
+          });
+          
+          // Use the most recently updated matching thread
+          if (existingThreads.length > 0) {
+            existingThreads.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+            existingThreads = [existingThreads[0]];
+          }
+        }
 
-        await base44.asServiceRole.entities.EmailMessage.create({
-          thread_id: newThread.id,
-          gmail_message_id: msg.id,
-          message_id: messageId,
-          from_address: messageFrom.match(/<(.+)>/)?.[1] || messageFrom,
-          from_name: messageFrom.replace(/<.+>/, '').trim(),
-          to_addresses: messageTo.split(',').map(e => e.trim()),
-          subject: messageSubject,
-          body_html: bodyHtml || bodyText.replace(/\n/g, '<br>'),
-          body_text: bodyText,
-          sent_at: new Date(parseInt(msg.internalDate)).toISOString(),
-          in_reply_to: inReplyTo,
-          references: references,
-          is_outbound: false
-        });
+        let threadId;
+
+        if (existingThreads.length > 0) {
+          threadId = existingThreads[0].id;
+          // Update last message date and message count
+          const messageDate = new Date(date).toISOString();
+          const updateData = {
+            last_message_snippet: detail.snippet,
+            gmail_thread_id: gmailThreadId, // Ensure Gmail thread ID is always set
+            // CRITICAL: Preserve all existing project/customer links to prevent unlinking
+            project_id: existingThreads[0].project_id,
+            project_number: existingThreads[0].project_number,
+            project_title: existingThreads[0].project_title,
+            customer_id: existingThreads[0].customer_id,
+            customer_name: existingThreads[0].customer_name,
+            organisation_id: existingThreads[0].organisation_id,
+            organisation_name: existingThreads[0].organisation_name,
+            linked_to_project_at: existingThreads[0].linked_to_project_at,
+            linked_to_project_by: existingThreads[0].linked_to_project_by
+          };
+          // Only update last_message_date if this message is newer
+          if (!existingThreads[0].last_message_date || new Date(messageDate) > new Date(existingThreads[0].last_message_date)) {
+            updateData.last_message_date = messageDate;
+          }
+          
+          // GUARDRAIL: Auto-link ONLY if thread is NOT yet linked - never override existing links
+          if (!existingThreads[0].project_id) {
+            try {
+              const fromEmail = parseEmailAddress(from).toLowerCase();
+              const allEmails = [fromEmail, ...to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase())];
+              
+              // Find matching customers
+              const customers = await base44.asServiceRole.entities.Customer.list();
+              const matchingCustomer = customers.find(c => 
+                c.email && allEmails.includes(c.email.toLowerCase())
+              );
+              
+              if (matchingCustomer) {
+                // Find most recent open project for this customer
+                const projects = await base44.asServiceRole.entities.Project.filter({
+                  customer_id: matchingCustomer.id
+                });
+                
+                const openProjects = projects.filter(p => 
+                  !['Completed', 'Lost', 'Cancelled'].includes(p.status)
+                ).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+                
+                const projectToLink = openProjects[0];
+                
+                if (projectToLink) {
+                  updateData.customer_id = matchingCustomer.id;
+                  updateData.customer_name = matchingCustomer.name;
+                  updateData.project_id = projectToLink.id;
+                  updateData.project_number = projectToLink.project_number;
+                  updateData.project_title = projectToLink.title;
+                  updateData.linked_to_project_at = new Date().toISOString();
+                  updateData.linked_to_project_by = 'system';
+                  console.log(`Auto-linked existing thread ${threadId} to project ${projectToLink.id}`);
+                } else {
+                  updateData.customer_id = matchingCustomer.id;
+                  updateData.customer_name = matchingCustomer.name;
+                  console.log(`Auto-linked existing thread ${threadId} to customer ${matchingCustomer.id}`);
+                }
+              }
+            } catch (linkError) {
+              console.error('Auto-link error for existing thread:', linkError.message);
+            }
+          }
+          
+          await base44.asServiceRole.entities.EmailThread.update(threadId, updateData);
+        } else {
+          // Create new thread with Gmail thread ID
+          const newThread = await base44.asServiceRole.entities.EmailThread.create({
+            subject,
+            gmail_thread_id: gmailThreadId,
+            from_address: parseEmailAddress(from),
+            to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
+            last_message_date: new Date(date).toISOString(),
+            last_message_snippet: detail.snippet,
+            status: 'Open',
+            priority: 'Normal',
+            message_count: 1
+          });
+          threadId = newThread.id;
+          
+          // GUARDRAIL: Auto-link new threads to customer and project based on email addresses
+          try {
+            const fromEmail = parseEmailAddress(from).toLowerCase();
+            const allEmails = [fromEmail, ...to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase())];
+            
+            // Find matching customers
+            const customers = await base44.asServiceRole.entities.Customer.list();
+            const matchingCustomer = customers.find(c => 
+              c.email && allEmails.includes(c.email.toLowerCase())
+            );
+            
+            if (matchingCustomer) {
+              // Find most recent open project for this customer
+              const projects = await base44.asServiceRole.entities.Project.filter({
+                customer_id: matchingCustomer.id
+              });
+              
+              const openProjects = projects.filter(p => 
+                !['Completed', 'Lost', 'Cancelled'].includes(p.status)
+              ).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+              
+              const projectToLink = openProjects[0];
+              
+              if (projectToLink) {
+                await base44.asServiceRole.entities.EmailThread.update(threadId, {
+                  customer_id: matchingCustomer.id,
+                  customer_name: matchingCustomer.name,
+                  project_id: projectToLink.id,
+                  project_number: projectToLink.project_number,
+                  project_title: projectToLink.title,
+                  linked_to_project_at: new Date().toISOString(),
+                  linked_to_project_by: 'system'
+                });
+                console.log(`Auto-linked thread ${threadId} to project ${projectToLink.id}`);
+              } else {
+                await base44.asServiceRole.entities.EmailThread.update(threadId, {
+                  customer_id: matchingCustomer.id,
+                  customer_name: matchingCustomer.name
+                });
+                console.log(`Auto-linked thread ${threadId} to customer ${matchingCustomer.id}`);
+              }
+            }
+          } catch (linkError) {
+            console.error('Auto-link error:', linkError.message);
+          }
+        }
+
+        // Double check check message existence (race condition safety)
+        let existingMessagesCheck = [];
+        try {
+          existingMessagesCheck = await base44.asServiceRole.entities.EmailMessage.filter({
+            gmail_message_id: message.id
+          });
+        } catch (filterError) {
+          console.log(`Filter error for ${message.id}`, filterError.message);
+        }
+        
+        if (existingMessagesCheck.length > 0) {
+          return false;
+        }
+        
+        // Extract body and attachments
+        let bodyHtml = '';
+        let bodyText = detail.snippet || '';
+        const attachments = [];
+        const inlineImages = [];
+
+        const processParts = (parts) => {
+          if (!parts || !Array.isArray(parts)) return;
+          for (const part of parts) {
+            try {
+              if (part.mimeType === 'text/html' && part.body?.data) {
+                const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+                if (decoded) bodyHtml = decoded;
+              } else if (part.mimeType === 'text/plain' && part.body?.data) {
+                const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+                if (decoded) bodyText = decoded;
+              }
+              
+              if (part.filename && part.filename.length > 0) {
+                const attachmentId = part.body?.attachmentId;
+                if (attachmentId) {
+                  const contentIdHeader = part.headers?.find(h => h.name.toLowerCase() === 'content-id');
+                  const contentDisposition = part.headers?.find(h => h.name.toLowerCase() === 'content-disposition');
+                  const contentId = contentIdHeader?.value?.replace(/[<>]/g, '');
+                  const isInline = contentDisposition?.value?.toLowerCase().includes('inline') || !!contentId;
+                  
+                  const attachmentData = {
+                    filename: part.filename,
+                    mime_type: part.mimeType,
+                    size: parseInt(part.body.size) || 0,
+                    attachment_id: attachmentId,
+                    gmail_message_id: message.id,
+                    content_id: contentId || null,
+                    is_inline: isInline
+                  };
+                  
+                  attachments.push(attachmentData);
+                  if (isInline && contentId) {
+                    inlineImages.push(attachmentData);
+                  }
+                }
+              }
+              
+              if (part.parts) {
+                processParts(part.parts);
+              }
+            } catch (err) {
+              console.error('Error processing part:', err);
+            }
+          }
+        };
+
+        try {
+          if (detail.payload.body?.data) {
+            const decoded = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            if (decoded) bodyText = decoded;
+          }
+        } catch (err) {
+          console.error('Error decoding body:', err);
+        }
+        
+        if (detail.payload.parts) {
+          processParts(detail.payload.parts);
+        }
+
+        const processedAttachments = attachments.map(att => ({
+          filename: att.filename,
+          mime_type: att.mime_type,
+          size: att.size,
+          attachment_id: att.attachment_id,
+          gmail_message_id: att.gmail_message_id,
+          content_id: att.content_id || null,
+          is_inline: att.is_inline || false
+        }));
+        
+        const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
+        const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
+        
+        const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
+        const isOutbound = message.isOutbound || 
+          fromAddress.toLowerCase() === impersonateEmail.toLowerCase() ||
+          detail.labelIds?.includes('SENT');
+
+        const messageData = {
+          thread_id: threadId,
+          gmail_message_id: message.id,
+          from_address: fromAddress,
+          to_addresses: toAddresses.length > 0 ? toAddresses : [fromAddress],
+          sent_at: new Date(date).toISOString(),
+          subject: fixEncodingIssues(subject || '(No Subject)'),
+          body_html: fixEncodingIssues(bodyHtml),
+          body_text: fixEncodingIssues(bodyText),
+          message_id: effectiveMessageId,
+          is_outbound: isOutbound,
+          attachments: processedAttachments.length > 0 ? processedAttachments : undefined
+        };
+        
+        if (inReplyTo) {
+          messageData.in_reply_to = inReplyTo;
+        }
+        
+        try {
+          await base44.asServiceRole.entities.EmailMessage.create(messageData);
+        } catch (createError) {
+          console.error(`>>> FAILED TO CREATE MESSAGE: ${createError.message}`);
+          return false;
+        }
+        
+        // Update thread message count and auto-save attachments
+        try {
+          const currentThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
+          await base44.asServiceRole.entities.EmailThread.update(threadId, {
+            message_count: (currentThread.message_count || 0) + 1
+          });
+
+          // Update project activity if thread is linked to a project
+          if (currentThread.project_id) {
+            await updateProjectActivity(base44, currentThread.project_id);
+          }
+
+          // Update project last contact timestamps
+          if (currentThread.project_id) {
+            base44.functions.invoke('updateProjectLastContactFromThread', {
+              email_thread_id: threadId
+            }).catch(err => console.error('Update project contact failed:', err));
+          }
+
+          if (processedAttachments.length > 0) {
+            if (currentThread.project_id) {
+              base44.functions.invoke('saveThreadAttachments', {
+                thread_id: threadId,
+                target_type: 'project',
+                target_id: currentThread.project_id
+              }).catch(err => console.error('Auto-save attachments failed:', err));
+            } else if (currentThread.linked_job_id) {
+              base44.functions.invoke('saveThreadAttachments', {
+                thread_id: threadId,
+                target_type: 'job',
+                target_id: currentThread.linked_job_id
+              }).catch(err => console.error('Auto-save attachments failed:', err));
+            }
+          }
+        } catch (e) {
+          console.log('Error updating thread:', e.message);
+        }
+
+        return true; // Synced successfully
+      } catch (msgError) {
+        console.error(`Error processing message ${message.id}:`, msgError.message);
+        return false;
       }
-
-      syncedCount++;
     }
 
-    return Response.json({
-      success: true,
-      synced: syncedCount,
-      skipped: skippedCount,
-      total: threads.length
-    });
+    // Process with concurrency
+    const CONCURRENCY = 3;
+    const queue = allMessages.slice(0, 60); // Limit total processing to 60
+    const results = [];
+    
+    console.log(`Processing ${queue.length} messages with concurrency ${CONCURRENCY}...`);
+    
+    for (let i = 0; i < queue.length; i += CONCURRENCY) {
+      const chunk = queue.slice(i, i + CONCURRENCY);
+      const chunkResults = await Promise.all(chunk.map(m => processMessage(m)));
+      results.push(...chunkResults);
+    }
+    
+    const syncedCount = results.filter(Boolean).length;
+
+    console.log(`=== Gmail Sync Complete: ${syncedCount} new messages synced ===`);
+    return Response.json({ synced: syncedCount, total: queue.length });
   } catch (error) {
     console.error('Gmail sync error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      error: error.message || 'Sync failed', 
+      synced: 0 
+    }, { status: 200 });
   }
 });
