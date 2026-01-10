@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
-import { gmailFetch } from './shared/gmailClient.js';
+import { gmailDwdFetch } from './shared/gmailDwdClient.js';
 
 function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, attachments) {
   const boundary = `boundary_${Date.now()}`;
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
       sendBody.threadId = gmail_thread_id;
     }
     
-    const result = await gmailFetch('/gmail/v1/users/me/messages/send', 'POST', sendBody);
+    const result = await gmailDwdFetch('/gmail/v1/users/me/messages/send', 'POST', sendBody);
     
     // Upload attachments and get URLs for storage
     const uploadedAttachments = [];
@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
     }
     
     // Fetch the sent message to get its proper Message-ID header
-    const sentMessageData = await gmailFetch(
+    const sentMessageData = await gmailDwdFetch(
       `/gmail/v1/users/me/messages/${result.id}`,
       'GET',
       null,
