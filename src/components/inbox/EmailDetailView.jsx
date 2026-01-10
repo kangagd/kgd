@@ -392,19 +392,6 @@ export default function EmailDetailView({
                     </button>
                   </div>
                   )}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#6B7280]">Priority:</span>
-                      <Select value={thread.priority || "Normal"} onValueChange={handlePriorityChange} disabled={updatingPriority}>
-                        <SelectTrigger className="h-7 w-[120px] text-[13px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="High">🔴 High</SelectItem>
-                          <SelectItem value="Normal">🟡 Normal</SelectItem>
-                          <SelectItem value="Low">🟢 Low</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
