@@ -25,7 +25,7 @@ import { handleEnterToNextField } from "../common/formNavigator";
 import MergeCustomersModal from "../customers/MergeCustomersModal";
 import { toast } from "sonner";
 
-export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting }) {
+export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting, aiFilledFields = {} }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState(initialData || project || {
     customer_id: "",
@@ -60,6 +60,9 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
     contract_id: "",
     opened_date: ""
   });
+
+  // Track AI-filled fields for visual highlighting
+  const isAIFilled = (fieldName) => aiFilledFields && aiFilledFields[fieldName];
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ 
