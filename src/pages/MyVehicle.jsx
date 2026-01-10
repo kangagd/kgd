@@ -164,9 +164,15 @@ export default function MyVehicle() {
     queryKey: ["inventory-quantities-for-vehicle", vehicle?.id],
     queryFn: async () => {
       if (!vehicle?.id) return [];
+      // Get vehicle location first
+      const vehicleLocations = await base44.entities.InventoryLocation.filter({
+        type: 'vehicle',
+        vehicle_id: vehicle.id
+      });
+      if (vehicleLocations.length === 0) return [];
+      // Then get quantities for that location
       const all = await base44.entities.InventoryQuantity.filter({
-        location_type: LOCATION_TYPE.VEHICLE,
-        location_id: vehicle.id,
+        location_id: vehicleLocations[0].id,
       });
       return all;
     },
@@ -191,14 +197,19 @@ export default function MyVehicle() {
     queryKey: ["stock-usage-today", vehicle?.id],
     queryFn: async () => {
       if (!vehicle?.id) return [];
-      // Filter for usage movements from this vehicle
+      // Get vehicle location first
+      const vehicleLocations = await base44.entities.InventoryLocation.filter({
+        type: 'vehicle',
+        vehicle_id: vehicle.id
+      });
+      if (vehicleLocations.length === 0) return [];
+      // Filter for usage movements from this vehicle location
       const all = await base44.entities.StockMovement.filter({
-        from_location_type: LOCATION_TYPE.VEHICLE,
-        from_location_id: vehicle.id,
-        movement_type: MOVEMENT_TYPE.USAGE,
+        from_location_id: vehicleLocations[0].id,
+        movement_type: 'job_usage',
       });
       
-      // Client-side date filter for "today" since we don't have date filters in the API yet for some backends
+      // Client-side date filter for "today"
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       return all.filter(m => new Date(m.created_at) >= today);
