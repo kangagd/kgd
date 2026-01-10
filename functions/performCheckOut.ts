@@ -207,12 +207,20 @@ The summary should be a single paragraph, professional, and capture the key work
              // We don't throw here to ensure we return the summary if created
         }
 
+        // Auto-deduct job line items from technician's vehicle stock
+        try {
+            await base44.asServiceRole.functions.invoke('autoDeductJobUsage', { job_id: jobId });
+        } catch (deductErr) {
+            console.error("Stock auto-deduction failed:", deductErr);
+            // Don't block checkout if deduction fails - log and continue
+        }
+
         // Sync to Project
         if (job.project_id) {
             try {
                 // Update project activity
                 await updateProjectActivity(base44, job.project_id, 'Visit Completed');
-                
+
                 // Use service role to invoke functions to ensure permissions
                 await base44.asServiceRole.functions.invoke('syncJobToProject', { job_id: jobId });
 
