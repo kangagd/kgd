@@ -103,14 +103,22 @@ Deno.serve(async (req) => {
       raw_payload: invoice
     });
 
-    // Update project activity
+    // Link invoice to project and update activity
     try {
+      const xeroInvoices = project.xero_invoices || [];
+      if (!xeroInvoices.includes(xeroInvoice.id)) {
+        xeroInvoices.push(xeroInvoice.id);
+      }
+      
       await base44.asServiceRole.entities.Project.update(project.id, {
+        xero_invoices: xeroInvoices,
+        primary_xero_invoice_id: xeroInvoice.id,
+        xero_payment_url: invoice.OnlineInvoiceUrl || null,
         last_activity_at: new Date().toISOString(),
         last_activity_type: 'Invoice Created'
       });
     } catch (e) {
-      console.error('Failed to update project activity:', e);
+      console.error('Failed to update project with invoice:', e);
     }
 
     return Response.json({ 
