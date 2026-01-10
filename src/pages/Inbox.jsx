@@ -225,9 +225,17 @@ export default function Inbox() {
                        can_create_job_from_email: true
                      }}
                      onClose={() => setSelectedThreadId(null)}
-                     onLinkProject={() => {}}
+                     onLinkProject={() => setShowLinkModal(true)}
                      onLinkJob={() => {}}
-                     onUnlinkProject={() => {}}
+                     onUnlinkProject={async () => {
+                       try {
+                         await base44.entities.EmailThread.update(selectedThread.id, { project_id: null });
+                         await refetchThreads();
+                         toast.success('Thread unlinked from project');
+                       } catch (error) {
+                         toast.error('Failed to unlink thread');
+                       }
+                     }}
                      onUnlinkJob={() => {}}
                      onDelete={async (threadId) => {
                        try {
