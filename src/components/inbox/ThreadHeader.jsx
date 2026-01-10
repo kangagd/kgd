@@ -61,8 +61,8 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-[#FAE008]/20 flex items-center justify-center border border-[#FAE008]/30">
                 <span className="text-[11px] font-semibold text-[#111827]">
-                  {getInitials(thread.assigned_to_name || thread.assigned_to)}
-                </span>
+                   {getInitials(thread.assigned_to_name)}
+                 </span>
               </div>
               <select
                 value={thread.assigned_to || ''}
@@ -73,7 +73,7 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
                 <option value="">Unassign</option>
                 {users.map(user => (
                   <option key={user.id || user.email} value={user.email}>
-                    {user.full_name}
+                    {user.display_name}
                   </option>
                 ))}
               </select>
@@ -88,7 +88,7 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
               <option value="">Assign to someone...</option>
               {users.map(user => (
                 <option key={user.id || user.email} value={user.email}>
-                  {user.full_name}
+                  {user.display_name}
                 </option>
               ))}
             </select>
