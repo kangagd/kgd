@@ -109,9 +109,16 @@ export default function WeekView({ currentDate, jobs, onJobReschedule, onJobClic
                               <div className="text-sm font-semibold text-slate-900 line-clamp-1 mb-1">
                                 #{job.job_number} {job.customer_name}
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-slate-500 mb-2">
-                                <Clock className="w-3 h-3" />
-                                {job.scheduled_time || 'No time set'}
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1 text-xs text-slate-500 mb-2">
+                                  <Clock className="w-3 h-3" />
+                                  {job.scheduled_time || 'No time set'}
+                                </div>
+                                {job.expected_duration && (
+                                  <div className="text-xs text-slate-400 ml-2">
+                                    {job.expected_duration}h
+                                  </div>
+                                )}
                               </div>
                               {job.job_type_name && (
                                 <Badge variant="outline" className="text-xs">
