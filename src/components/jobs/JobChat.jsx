@@ -28,11 +28,16 @@ export default function JobChat({ jobId }) {
     loadUser();
   }, []);
 
+  const [isFocused, setIsFocused] = useState(false);
+
   const { data: messages = [] } = useQuery({
-    queryKey: ['jobMessages', jobId],
+    queryKey: ['chat', 'job', jobId],
     queryFn: async () => {
       try {
-        const response = await base44.functions.invoke('getJobMessages', { jobId });
+        const response = await base44.functions.invoke('getChat', { 
+          type: 'job',
+          entityId: jobId 
+        });
         return response.data?.messages || [];
       } catch (error) {
         console.error('Error fetching job messages:', error);
@@ -40,33 +45,30 @@ export default function JobChat({ jobId }) {
         return [];
       }
     },
-    refetchInterval: 5000,
+    refetchInterval: isFocused ? 5000 : 15000,
     enabled: !!jobId
   });
 
-  const { data: job } = useQuery({
-    queryKey: ['job', jobId],
-    queryFn: () => base44.entities.Job.get(jobId),
-    enabled: !!jobId
-  });
-
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ['users', 'mentions'],
+  const { data: mentionResults = [] } = useQuery({
+    queryKey: ['mentionable-users', mentionSearch],
     queryFn: async () => {
+      if (!mentionSearch || mentionSearch.length < 2) return [];
       try {
-        const response = await base44.functions.invoke('getUsersForMentions', {});
-        return response.data?.users || [];
+        const response = await base44.functions.invoke('searchMentionableUsers', { 
+          q: mentionSearch 
+        });
+        return response.data?.results || [];
       } catch (error) {
-        console.error('Error fetching users:', error);
-        toast.error('Could not load user list for mentions');
+        console.error('Error searching users:', error);
         return [];
       }
-    }
+    },
+    enabled: !!mentionSearch && mentionSearch.length >= 2
   });
 
   const sendMessageMutation = useMutation({
     mutationFn: async (messageText) => {
-      const response = await base44.functions.invoke('sendMessage', {
+      const response = await base44.functions.invoke('sendChatMessage', {
         type: 'job',
         entityId: jobId,
         message: messageText
@@ -79,7 +81,7 @@ export default function JobChat({ jobId }) {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobMessages', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'job', jobId] });
       setMessage("");
     },
     onError: (error) => {
@@ -119,19 +121,16 @@ export default function JobChat({ jobId }) {
     }
   };
 
-  const insertMention = (userName) => {
+  const insertMention = (userEmail) => {
     const beforeMention = message.substring(0, mentionPosition);
     const afterMention = message.substring(mentionPosition + mentionSearch.length + 1);
-    const newMessage = `${beforeMention}@${userName} ${afterMention}`;
+    const newMessage = `${beforeMention}@${userEmail} ${afterMention}`;
     setMessage(newMessage);
     setShowMentionMenu(false);
     inputRef.current?.focus();
   };
 
-  const filteredUsers = allUsers.filter(u => 
-    u.full_name?.toLowerCase().includes(mentionSearch.toLowerCase()) &&
-    u.email !== user?.email
-  ).slice(0, 5);
+  const filteredUsers = mentionResults.filter(u => u.email !== user?.email).slice(0, 5);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -168,19 +167,15 @@ export default function JobChat({ jobId }) {
                     {msg.sender_name}
                   </p>
                   <p className="text-sm whitespace-pre-wrap">
-                    {(msg.message || '').split(/(@[\w\s]+?)(?=\s|$)/).map((part, i) => {
-                      if (part.startsWith('@')) {
-                        const mentionedName = part.substring(1).trim();
-                        const mentionedUser = allUsers.find(u => 
-                          u.full_name?.toLowerCase() === mentionedName.toLowerCase()
-                        );
-                        const isCurrentUser = mentionedUser?.email === user?.email;
+                    {(msg.message || '').split(/(@[\w.\-+]+@[\w.\-]+)/).map((part, i) => {
+                      if (part.startsWith('@') && part.includes('@')) {
+                        const isCurrentUser = part.substring(1) === user?.email;
                         return (
                           <span 
                             key={i} 
                             className={`font-semibold ${isCurrentUser ? 'bg-blue-200 text-blue-900 px-1 rounded' : 'text-blue-600'}`}
                           >
-                            @{mentionedName}
+                            {part}
                           </span>
                         );
                       }
@@ -205,14 +200,14 @@ export default function JobChat({ jobId }) {
                 <button
                   key={u.id}
                   type="button"
-                  onClick={() => insertMention(u.full_name)}
+                  onClick={() => insertMention(u.email)}
                   className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2 transition-colors"
                 >
                   <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-xs font-semibold">
-                    {u.full_name?.charAt(0)?.toUpperCase()}
+                    {u.display_name?.charAt(0)?.toUpperCase()}
                   </div>
                   <div>
-                    <div className="text-sm font-medium">{u.full_name}</div>
+                    <div className="text-sm font-medium">{u.display_name}</div>
                     <div className="text-xs text-gray-500">{u.email}</div>
                   </div>
                 </button>
@@ -224,6 +219,8 @@ export default function JobChat({ jobId }) {
               ref={inputRef}
               value={message}
               onChange={handleInputChange}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               placeholder="Type a message... (use @ to mention)"
               className="flex-1"
             />
