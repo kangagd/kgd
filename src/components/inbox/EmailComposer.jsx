@@ -367,7 +367,9 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       }
       onClose();
     } catch (error) {
-      toast.error(`Failed to send email: ${error.message}`);
+      const errMsg = error?.response?.data?.error || error.message;
+      toast.error(`Failed to send email: ${errMsg}`);
+      console.error('Send error:', error);
     } finally {
       setIsSending(false);
     }
