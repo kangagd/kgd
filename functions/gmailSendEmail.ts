@@ -121,8 +121,8 @@ Deno.serve(async (req) => {
           const blob = new Blob([bytes], { type: att.mimeType });
           const file = new File([blob], att.filename, { type: att.mimeType });
           
-          // Upload file and get URL - use regular base44, not asServiceRole
-          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+          // Upload file and get URL - use asServiceRole
+          const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
           uploadedAttachments.push({
             filename: att.filename,
             url: file_url,
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
     
     if (gmail_thread_id) {
       // Find existing thread by Gmail thread ID
-      const existingThreads = await base44.entities.EmailThread.filter({
+      const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
         gmail_thread_id: gmail_thread_id
       });
       
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
         
         // Update project linkage if provided
         if (project_id) {
-          const projectData = await base44.entities.Project.get(project_id);
+          const projectData = await base44.asServiceRole.entities.Project.get(project_id);
           updates.project_id = project_id;
           updates.project_number = projectData?.project_number || null;
           updates.project_title = projectData?.title || null;
@@ -166,14 +166,14 @@ Deno.serve(async (req) => {
           updates.customer_name = projectData?.customer_name || null;
         }
         
-        await base44.entities.EmailThread.update(emailThreadId, updates);
+        await base44.asServiceRole.entities.EmailThread.update(emailThreadId, updates);
       }
     }
     
     // Create new thread if not found
     if (!emailThreadId) {
       const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
-      const newThread = await base44.entities.EmailThread.create({
+      const newThread = await base44.asServiceRole.entities.EmailThread.create({
         subject: subject,
         gmail_thread_id: result.threadId,
         from_address: impersonateEmail,
@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
     // Store sent message with audit fields
     const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
     
-    await base44.entities.EmailMessage.create({
+    await base44.asServiceRole.entities.EmailMessage.create({
       thread_id: emailThreadId,
       gmail_message_id: result.id,
       message_id: rfcMessageId,
@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
     stage = 'update_thread_status';
     // Mark thread as closed after sending reply
     if (emailThreadId) {
-      await base44.entities.EmailThread.update(emailThreadId, { status: 'Closed' });
+      await base44.asServiceRole.entities.EmailThread.update(emailThreadId, { status: 'Closed' });
     }
     
     stage = 'update_project_activity';
