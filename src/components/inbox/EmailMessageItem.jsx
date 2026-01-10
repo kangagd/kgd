@@ -215,13 +215,9 @@ export default function EmailMessageItem({ message, isLast, totalMessages, getSe
             >
               {message.body_html && message.body_html.includes('<') ? (
                 <div dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html, inlineImages) }} />
-              ) : message.body_html ? (
-                <div className="whitespace-pre-wrap">
-                  {sanitizeInboundText(convertHtmlToFormattedText(message.body_html))}
-                </div>
               ) : message.body_text ? (
                 <div className="whitespace-pre-wrap">
-                  {sanitizeInboundText(convertHtmlToFormattedText(message.body_text))}
+                  {sanitizeInboundText(message.body_text)}
                 </div>
               ) : (
                 <div className="text-[#6B7280]">(No content)</div>

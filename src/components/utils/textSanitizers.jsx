@@ -10,7 +10,12 @@ export const sanitizeInboundText = (text) => {
     .replace(/Â¢/g, "'")    // Â¢ → apostrophe
     .replace(/Â¯/g, ' ')    // Â¯ → space
     .replace(/Â  /g, ' ')   // Â followed by spaces → single space
-    .replace(/Â/g, '')      // Remove remaining  â characters
+    .replace(/Â/g, '')      // Remove remaining Â characters
+    .replace(/â/g, "'")     // â (broken smart quote) → apostrophe
+    .replace(/â€/g, '')     // â€ (broken encoding prefix) → remove
+    .replace(/â€™/g, "'")   // â€™ (broken smart quote) → apostrophe
+    .replace(/â€œ/g, '"')   // â€œ (broken left quote) → quote
+    .replace(/â€/g, '"')    // â€ (broken right quote) → quote
     // Replace HTML non-breaking space entity
     .replace(/&nbsp;/g, ' ')
     // Replace narrow no-break space (common encoding issue)
