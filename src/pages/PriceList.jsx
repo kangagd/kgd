@@ -19,6 +19,7 @@ import { createPageUrl } from "@/utils";
 
 
 export default function PriceList() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [showStockOnly, setShowStockOnly] = useState(false);
