@@ -292,10 +292,18 @@ export default function PriceList() {
               // Get all quantities for this item from all locations
               const stockByLocation = inventoryQuantities
                 .filter(q => q.price_list_item_id === item.id)
-                .map(q => ({
-                  ...q,
-                  location_name: q.location_name || 'Unknown'
-                }));
+                .map(q => {
+                  // Fallback to location object if location_name is missing
+                  let locationName = q.location_name || 'Unknown';
+                  if (!q.location_name && q.location_id) {
+                    const location = inventoryLocations.find(l => l.id === q.location_id);
+                    locationName = location?.name || 'Unknown';
+                  }
+                  return {
+                    ...q,
+                    location_name: locationName
+                  };
+                });
 
               return (
                 <PriceListCard
