@@ -244,8 +244,8 @@ Deno.serve(async (req) => {
       const activityType = gmail_thread_id ? 'Email Reply Sent' : 'Email Sent';
       await updateProjectActivity(base44, project_id, activityType);
       
-      // Update project last contact timestamps
-      base44.functions.invoke('updateProjectLastContactFromThread', {
+      // Update project last contact timestamps - use asServiceRole
+      base44.asServiceRole.functions.invoke('updateProjectLastContactFromThread', {
         email_thread_id: emailThreadId
       }).catch(err => console.error('Update project contact failed:', err));
     }
