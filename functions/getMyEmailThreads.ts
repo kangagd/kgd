@@ -9,20 +9,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Allow admins and managers to fetch all email threads
-    const isAdmin = user.role === 'admin';
-    const isManager = user.extended_role === 'manager';
+    // Check permissions
+    const permissions = await base44.entities.EmailPermission.filter({ 
+      user_email: user.email 
+    });
 
-    if (!isAdmin && !isManager) {
-      return Response.json({ error: 'Forbidden: Only admins and managers can view inbox' }, { status: 403 });
+    const hasAccess = permissions.length > 0 && permissions[0].can_view;
+    const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
+
+    if (!hasAccess && !isAdminOrManager) {
+      return Response.json({ threads: [] });
     }
 
-    // Use service role to bypass EmailThread entity RLS
-    const threads = await base44.asServiceRole.entities.EmailThread.list('-last_message_date');
+    // Get all threads (shared inbox - same for everyone)
+    const threads = await base44.entities.EmailThread.filter({
+      is_deleted: { $ne: true }
+    });
 
     return Response.json({ threads });
   } catch (error) {
-    console.error('Error fetching email threads:', error);
+    console.error('Get threads error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
