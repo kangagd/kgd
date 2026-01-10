@@ -12,6 +12,7 @@ import ReactQuill from "react-quill";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { renderTemplate, buildTemplateContext } from "@/components/utils/templateHelpers";
 import { sanitizeForCompose } from "@/components/utils/emailSanitization";
+import SmartComposeHelper, { SmartComposeSuggestionUI } from "./SmartComposeHelper";
 
 export default function EmailComposer({ mode = "compose", thread, message, onClose, onSent, onDraftSaved, existingDraft = null, projectId = null, jobId = null, defaultTo = null }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -172,6 +173,9 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
   const textareaRef = useRef(null);
   const toInputRef = useRef(null);
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const smartCompose = SmartComposeHelper({ currentText: body, onAcceptSuggestion: (suggestion) => {
+    setBody(body + suggestion);
+  } });
 
   const { data: customers = [] } = useQuery({
     queryKey: ['customersForEmail'],
@@ -571,7 +575,10 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
           <ReactQuill
             theme="snow"
             value={body}
-            onChange={setBody}
+            onChange={(text) => {
+              setBody(text);
+              smartCompose.handleTextChange(text.replace(/<[^>]*>/g, ''));
+            }}
             placeholder="Write your message here..."
             className="bg-white rounded-lg [&_.ql-container]:min-h-[200px] [&_.ql-editor]:min-h-[200px]"
             modules={{
@@ -585,6 +592,13 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
                 ['clean']
               ]
             }}
+          />
+          <SmartComposeSuggestionUI 
+            suggestion={smartCompose.suggestion}
+            loading={smartCompose.loading}
+            visible={smartCompose.visible}
+            onAccept={smartCompose.onAcceptSuggestion}
+            onReject={smartCompose.onRejectSuggestion}
           />
         </div>
 
