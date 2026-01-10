@@ -254,7 +254,9 @@ Deno.serve(async (req) => {
           last_message_date: lastMsgDate,
           last_message_snippet: snippet,
           message_count: threadDetail.messages.length,
-          is_read: !threadDetail.messages.some(m => m.labels?.includes('UNREAD'))
+          is_read: !threadDetail.messages.some(m => m.labels?.includes('UNREAD')),
+          status: 'Open',
+          last_activity_at: lastMsgDate
         };
 
         if (existing.length > 0) {
