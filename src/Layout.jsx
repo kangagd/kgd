@@ -69,30 +69,30 @@ const navigationSections = [
   {
     title: "Customer Management",
     items: [
-      { title: "Contracts", url: createPageUrl("Contracts"), icon: FileText },
-      { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
-      { title: "Organisations", url: createPageUrl("Organisations"), icon: Building2 },
+      { title: "Contracts", url: createPageUrl("Contracts"), iconName: "FileText" },
+      { title: "Customers", url: createPageUrl("Customers"), iconName: "UserCircle" },
+      { title: "Organisations", url: createPageUrl("Organisations"), iconName: "Building2" },
     ]
   },
   {
     title: "Technicians",
     items: [
-      { title: "Fleet", url: createPageUrl("Fleet"), icon: Car },
-      { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), icon: Wrench },
-      { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), icon: Package },
-      { title: "Supply & Logistics", url: createPageUrl("SupplyLogistics"), icon: Truck },
-      { title: "Samples", url: createPageUrl("SamplesLibrary"), icon: TestTube2 },
-      { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
-      { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+      { title: "Fleet", url: createPageUrl("Fleet"), iconName: "Car" },
+      { title: "Tools Admin", url: createPageUrl("ToolsAdmin"), iconName: "Wrench" },
+      { title: "Hardware Library", url: createPageUrl("PartsHardwareAdmin"), iconName: "Package" },
+      { title: "Supply & Logistics", url: createPageUrl("SupplyLogistics"), iconName: "Truck" },
+      { title: "Samples", url: createPageUrl("SamplesLibrary"), iconName: "TestTube2" },
+      { title: "Suppliers", url: createPageUrl("Suppliers"), iconName: "Package" },
+      { title: "Price List", url: createPageUrl("PriceList"), iconName: "DollarSign" },
     ]
   },
   {
     title: "Admin",
     items: [
-      { title: "Team", url: createPageUrl("Team"), icon: Users },
-      { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
-      { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
-      { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
+      { title: "Team", url: createPageUrl("Team"), iconName: "Users" },
+      { title: "Role Settings", url: createPageUrl("RoleSettings"), iconName: "Shield" },
+      { title: "Photos", url: createPageUrl("Photos"), iconName: "ImageIcon" },
+      { title: "Reports", url: createPageUrl("Reports"), iconName: "TrendingUp" },
     ]
   }
 ];
