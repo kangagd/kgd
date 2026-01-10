@@ -83,8 +83,12 @@ Deno.serve(async (req) => {
     
     stage = 'validate_fields';
     if (!to || !subject || !body_html) {
-      console.error('Missing required fields:', { to: !!to, subject: !!subject, body_html: !!body_html });
-      return Response.json({ error: 'Missing required fields: to, subject, body_html', stage }, { status: 400 });
+      const missing = [];
+      if (!to) missing.push('to');
+      if (!subject) missing.push('subject');
+      if (!body_html) missing.push('body_html');
+      console.error('Missing required fields:', { to: !!to, subject: !!subject, body_html: !!body_html, missing });
+      return Response.json({ error: `Missing required fields: ${missing.join(', ')}`, stage }, { status: 400 });
     }
     
     // Enforce reply safety check

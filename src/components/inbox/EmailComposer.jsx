@@ -370,6 +370,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       const errMsg = error?.response?.data?.error || error.message;
       toast.error(`Failed to send email: ${errMsg}`);
       console.error('Send error:', error);
+      console.error('Payload was:', { to, subject, body_html: body ? 'present' : 'MISSING', body_length: body?.length });
     } finally {
       setIsSending(false);
     }
