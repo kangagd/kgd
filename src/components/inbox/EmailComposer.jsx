@@ -344,16 +344,18 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       };
       
       // Pass Gmail thread ID and RFC headers for replies
-      if (mode === "reply" && thread?.gmail_thread_id && message?.message_id) {
+      if (mode === "reply" && thread?.gmail_thread_id && message?.gmail_message_id) {
         payload.gmail_thread_id = thread.gmail_thread_id;
-        payload.in_reply_to = message.message_id;
-        
-        // Build references chain from existing references
-        const existingReferences = message.in_reply_to 
-          ? (message.references ? `${message.references} ${message.in_reply_to}` : message.in_reply_to)
-          : (message.references || '');
-        
-        payload.references = existingReferences;
+        payload.reply_to_gmail_message_id = message.gmail_message_id;
+
+        // Build references chain: existing refs + in-reply-to
+        let refs = message.references || '';
+        if (message.in_reply_to) {
+          refs = refs ? `${refs} ${message.in_reply_to}` : message.in_reply_to;
+        }
+        if (refs) {
+          payload.references = refs;
+        }
       }
       
       const response = await base44.functions.invoke('gmailSendEmail', payload);
