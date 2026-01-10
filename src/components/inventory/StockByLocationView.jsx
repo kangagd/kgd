@@ -43,7 +43,7 @@ export default function StockByLocationView({ quantities, locations, onMoveStock
                   <div className="flex items-center gap-2 flex-1">
                     <Icon className="w-4 h-4 text-[#6B7280]" />
                     <span className="text-[13px] text-[#111827]">
-                      {qty.location_name || location.name}
+                      {displayName}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
