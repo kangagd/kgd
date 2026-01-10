@@ -124,6 +124,22 @@ export default function Inbox() {
     }
   };
 
+  // Link thread to project
+  const linkThreadMutation = useMutation({
+    mutationFn: async (projectId) => {
+      if (!selectedThread) return;
+      await base44.entities.EmailThread.update(selectedThread.id, { project_id: projectId });
+    },
+    onSuccess: () => {
+      refetchThreads();
+      setShowLinkModal(false);
+      toast.success('Thread linked to project');
+    },
+    onError: () => {
+      toast.error('Failed to link thread');
+    }
+  });
+
   if (!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
