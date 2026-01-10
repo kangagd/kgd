@@ -205,10 +205,13 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     const template = templates.find(t => t.id === templateId);
     if (!template) return;
 
+    // Find customer by email, or use from linked project/job
+    const matchedCustomer = to ? customers.find(c => c.email?.toLowerCase() === to.toLowerCase()) : null;
+
     const context = buildTemplateContext({
       project: linkedProject,
       job: linkedJob,
-      customer: customers.find(c => c.email === to)
+      customer: matchedCustomer
     });
 
     const rendered = renderTemplate(template, context);
