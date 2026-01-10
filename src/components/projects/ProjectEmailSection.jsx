@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, LinkIcon, Plus, RefreshCw, ExternalLink, Reply, Forward, FileEdit, Trash2, Lock, Sparkles } from "lucide-react";
+import { Mail, LinkIcon, ExternalLink, Reply, FileEdit, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
