@@ -1,86 +1,68 @@
+/**
+ * gmailGetThread - Fetch full Gmail thread and upsert messages
+ * 
+ * Retrieves all messages in a Gmail thread and creates/updates EmailMessage records.
+ * Properly extracts and stores RFC headers for threading (Message-ID, In-Reply-To, References).
+ */
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { gmailFetch } from './shared/gmailClient.js';
+import { gmailFetch } from './shared/gmailClientV2.js';
 
 /**
- * Parse RFC email headers from Gmail message
+ * Sanitize HTML body for storage
+ * Remove script tags, event handlers, but preserve safe formatting
  */
-function parseHeaders(headers) {
-  const result = {};
-  const headerMap = {
-    'Message-ID': 'message_id',
-    'In-Reply-To': 'in_reply_to',
-    'References': 'references',
-    'From': 'from',
-    'To': 'to',
-    'Cc': 'cc',
-    'Subject': 'subject',
-    'Date': 'date'
-  };
-
-  headers.forEach(header => {
-    const mappedName = headerMap[header.name];
-    if (mappedName) {
-      result[mappedName] = header.value;
-    }
-  });
-
-  return result;
+function sanitizeBodyHtml(html) {
+  if (!html) return '';
+  
+  // Remove script tags and content
+  let sanitized = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Remove event handlers
+  sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+  sanitized = sanitized.replace(/on\w+\s*=\s*[^\s>]*/gi, '');
+  
+  return sanitized.trim();
 }
 
 /**
- * Parse email body from Gmail message parts
+ * Extract text from Gmail MIME message
  */
-function parseBody(payload) {
-  let bodyHtml = '';
-  let bodyText = '';
-
-  function extractBody(part) {
-    if (part.mimeType === 'text/html' && part.body?.data) {
-      bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-    } else if (part.mimeType === 'text/plain' && part.body?.data) {
-      bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-    }
-
-    if (part.parts) {
-      part.parts.forEach(extractBody);
+function getMimeText(payload, mimeType) {
+  if (payload.mimeType === mimeType && payload.body?.data) {
+    try {
+      const decoded = atob(payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+      return new TextDecoder().decode(new Uint8Array(decoded.split('').map(c => c.charCodeAt(0))));
+    } catch (err) {
+      console.error('[gmailGetThread] Error decoding MIME text:', err);
+      return '';
     }
   }
 
-  extractBody(payload);
+  if (payload.parts) {
+    for (const part of payload.parts) {
+      const result = getMimeText(part, mimeType);
+      if (result) return result;
+    }
+  }
 
-  return { bodyHtml, bodyText };
+  return '';
 }
 
 /**
- * Parse attachments from Gmail message
+ * Extract message ID from email address format
+ * e.g., "Name <email@domain.com>" -> "email@domain.com"
  */
-function parseAttachments(payload, gmailMessageId) {
-  const attachments = [];
-
-  function extractAttachments(part) {
-    if (part.filename && part.body?.attachmentId) {
-      attachments.push({
-        filename: part.filename,
-        mime_type: part.mimeType,
-        size: part.body.size,
-        attachment_id: part.body.attachmentId,
-        gmail_message_id: gmailMessageId,
-        is_inline: part.headers?.some(h => h.name === 'Content-Disposition' && h.value.includes('inline'))
-      });
-    }
-
-    if (part.parts) {
-      part.parts.forEach(extractAttachments);
-    }
-  }
-
-  extractAttachments(payload);
-
-  return attachments;
+function extractEmailAddress(addressStr) {
+  if (!addressStr) return '';
+  const match = addressStr.match(/<([^>]+)>/);
+  return match ? match[1] : addressStr.trim();
 }
 
 Deno.serve(async (req) => {
+  let stage = 'init';
   try {
+    stage = 'auth';
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
@@ -88,13 +70,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { gmail_thread_id } = await req.json();
+    const bodyText = await req.text();
+    const requestBody = bodyText ? JSON.parse(bodyText) : {};
+    const { gmail_thread_id, thread_id } = requestBody;
 
     if (!gmail_thread_id) {
       return Response.json({ error: 'Missing gmail_thread_id' }, { status: 400 });
     }
 
-    // Fetch thread from Gmail
+    stage = 'gmail_get_thread';
+    console.log('[gmailGetThread] Fetching thread:', gmail_thread_id);
+
     const threadData = await gmailFetch(
       `/gmail/v1/users/me/threads/${gmail_thread_id}`,
       'GET',
@@ -102,97 +88,124 @@ Deno.serve(async (req) => {
       { format: 'full' }
     );
 
-    // Check if thread exists in Base44
-    let existingThread = await base44.asServiceRole.entities.EmailThread.filter({
-      gmail_thread_id: gmail_thread_id
-    });
-
-    let threadId;
-
-    if (existingThread.length > 0) {
-      // Update existing thread
-      threadId = existingThread[0].id;
-      const lastMessage = threadData.messages[threadData.messages.length - 1];
-      const headers = parseHeaders(lastMessage.payload.headers);
-      const { bodyHtml, bodyText } = parseBody(lastMessage.payload);
-
-      await base44.asServiceRole.entities.EmailThread.update(threadId, {
-        subject: headers.subject,
-        last_message_date: new Date(parseInt(lastMessage.internalDate)).toISOString(),
-        last_message_snippet: lastMessage.snippet,
-        message_count: threadData.messages.length,
-        from_address: headers.from?.match(/<(.+)>/)?.[1] || headers.from,
-        to_addresses: headers.to?.split(',').map(e => e.trim().match(/<(.+)>/)?.[1] || e.trim()) || []
-      });
-    } else {
-      // Create new thread
-      const firstMessage = threadData.messages[0];
-      const headers = parseHeaders(firstMessage.payload.headers);
-
-      const newThread = await base44.asServiceRole.entities.EmailThread.create({
-        gmail_thread_id: gmail_thread_id,
-        subject: headers.subject,
-        last_message_date: new Date(parseInt(firstMessage.internalDate)).toISOString(),
-        last_message_snippet: firstMessage.snippet,
-        message_count: threadData.messages.length,
-        from_address: headers.from?.match(/<(.+)>/)?.[1] || headers.from,
-        to_addresses: headers.to?.split(',').map(e => e.trim().match(/<(.+)>/)?.[1] || e.trim()) || [],
-        status: 'Open',
-        priority: 'Normal',
-        is_read: false
-      });
-
-      threadId = newThread.id;
+    if (!threadData.messages || threadData.messages.length === 0) {
+      return Response.json({ error: 'Thread has no messages' }, { status: 404 });
     }
 
-    // Upsert messages
+    stage = 'parse_messages';
     const messages = [];
-    for (const gmailMessage of threadData.messages) {
-      const headers = parseHeaders(gmailMessage.payload.headers);
-      const { bodyHtml, bodyText } = parseBody(gmailMessage.payload);
-      const attachments = parseAttachments(gmailMessage.payload, gmailMessage.id);
 
-      // Check if message already exists
-      const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
-        gmail_message_id: gmailMessage.id
-      });
+    for (const gmailMsg of threadData.messages) {
+      try {
+        const headers = {};
+        if (gmailMsg.payload?.headers) {
+          gmailMsg.payload.headers.forEach(h => {
+            headers[h.name.toLowerCase()] = h.value;
+          });
+        }
 
-      let messageData = {
-        thread_id: threadId,
-        gmail_message_id: gmailMessage.id,
-        message_id: headers.message_id,
-        in_reply_to: headers.in_reply_to || null,
-        references: headers.references || null,
-        from_address: headers.from?.match(/<(.+)>/)?.[1] || headers.from,
-        from_name: headers.from?.match(/(.+)<.+>/)?.[1]?.trim() || headers.from,
-        to_addresses: headers.to?.split(',').map(e => e.trim().match(/<(.+)>/)?.[1] || e.trim()) || [],
-        cc_addresses: headers.cc?.split(',').map(e => e.trim().match(/<(.+)>/)?.[1] || e.trim()) || [],
-        subject: headers.subject,
-        body_html: bodyHtml,
-        body_text: bodyText,
-        attachments: attachments,
-        sent_at: new Date(parseInt(gmailMessage.internalDate)).toISOString(),
-        is_outbound: false
-      };
+        // Extract RFC headers for threading
+        const messageId = headers['message-id'] || `<${gmailMsg.id}@gmail.com>`;
+        const inReplyTo = headers['in-reply-to'] || null;
+        const references = headers['references'] || null;
 
-      if (existingMessages.length > 0) {
-        await base44.asServiceRole.entities.EmailMessage.update(existingMessages[0].id, messageData);
-        messages.push({ ...existingMessages[0], ...messageData });
-      } else {
-        const newMessage = await base44.asServiceRole.entities.EmailMessage.create(messageData);
-        messages.push(newMessage);
+        // Parse recipients
+        const toAddresses = headers['to'] ? headers['to'].split(',').map(e => extractEmailAddress(e.trim())) : [];
+        const ccAddresses = headers['cc'] ? headers['cc'].split(',').map(e => extractEmailAddress(e.trim())) : [];
+        const bccAddresses = headers['bcc'] ? headers['bcc'].split(',').map(e => extractEmailAddress(e.trim())) : [];
+
+        // Get body
+        const bodyHtml = sanitizeBodyHtml(getMimeText(gmailMsg.payload, 'text/html'));
+        const bodyText = getMimeText(gmailMsg.payload, 'text/plain');
+
+        // Parse attachments
+        const attachments = [];
+        if (gmailMsg.payload?.parts) {
+          for (const part of gmailMsg.payload.parts) {
+            if (part.filename && part.body?.attachmentId) {
+              attachments.push({
+                filename: part.filename,
+                attachment_id: part.body.attachmentId,
+                gmail_message_id: gmailMsg.id,
+                mime_type: part.mimeType,
+                content_id: part.headers?.find(h => h.name === 'Content-ID')?.value || null,
+                is_inline: part.headers?.some(h => h.name === 'Content-Disposition' && h.value.includes('inline')) || false
+              });
+            }
+          }
+        }
+
+        const msgDate = gmailMsg.internalDate ? new Date(parseInt(gmailMsg.internalDate)).toISOString() : new Date().toISOString();
+
+        messages.push({
+          gmail_message_id: gmailMsg.id,
+          gmail_thread_id: gmail_thread_id,
+          thread_id: thread_id || null,
+          from_address: extractEmailAddress(headers['from'] || ''),
+          from_name: headers['from'] || '',
+          to_addresses: toAddresses,
+          cc_addresses: ccAddresses,
+          bcc_addresses: bccAddresses,
+          subject: headers['subject'] || '',
+          body_html: bodyHtml,
+          body_text: bodyText,
+          sent_at: msgDate,
+          is_outbound: false, // Assume inbound unless we know otherwise
+          message_id: messageId,
+          in_reply_to: inReplyTo,
+          references: references,
+          attachments: attachments.length > 0 ? attachments : []
+        });
+      } catch (err) {
+        console.error(`[gmailGetThread] Error parsing message ${gmailMsg.id}:`, err);
       }
     }
 
-    // Return normalized thread data
-    const thread = await base44.asServiceRole.entities.EmailThread.get(threadId);
+    stage = 'upsert_messages';
+
+    // Only upsert if thread_id is provided (caller wants to persist)
+    const upsertedMessages = [];
+    if (thread_id) {
+      for (const msg of messages) {
+        try {
+          msg.thread_id = thread_id;
+          
+          // Check if message exists
+          const existing = await base44.asServiceRole.entities.EmailMessage.filter({
+            gmail_message_id: msg.gmail_message_id
+          });
+
+          if (existing.length > 0) {
+            await base44.asServiceRole.entities.EmailMessage.update(existing[0].id, msg);
+            upsertedMessages.push({
+              id: existing[0].id,
+              action: 'updated'
+            });
+          } else {
+            const newMsg = await base44.asServiceRole.entities.EmailMessage.create(msg);
+            upsertedMessages.push({
+              id: newMsg.id,
+              action: 'created'
+            });
+          }
+        } catch (err) {
+          console.error(`[gmailGetThread] Error upserting message:`, err);
+        }
+      }
+    }
 
     return Response.json({
-      thread,
-      messages
+      success: true,
+      threadId: gmail_thread_id,
+      messageCount: messages.length,
+      messages: messages, // Return parsed messages even if not persisted
+      upsertedCount: upsertedMessages.length
     });
   } catch (error) {
-    console.error('Error getting Gmail thread:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error(`[gmailGetThread] Error at stage '${stage}':`, error);
+    return Response.json(
+      { error: error.message, stage },
+      { status: 500 }
+    );
   }
 });

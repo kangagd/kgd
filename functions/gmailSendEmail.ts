@@ -1,291 +1,267 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { updateProjectActivity } from './updateProjectActivity.js';
-import { gmailDwdFetch } from './shared/gmailDwdClient.js';
+/**
+ * gmailSendEmail - Send email from shared inbox
+ * 
+ * Modes:
+ *   - new: Send new email
+ *   - reply: Reply to message in thread (with In-Reply-To + References)
+ *   - forward: Forward message (optional: can be in-thread or new thread)
+ * 
+ * All emails sent from admin@kangaroogd.com.au with audit trail.
+ * Stores sent messages and updates thread metadata.
+ */
 
-function createMimeMessage(to, subject, body, cc, bcc, inReplyTo, references, attachments) {
-  const boundary = `boundary_${Date.now()}`;
-  let message = [
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { gmailFetch } from './shared/gmailClientV2.js';
+
+/**
+ * Build RFC 2822 MIME message
+ */
+function buildMimeMessage(to, subject, bodyHtml, cc, bcc, inReplyTo, references, attachments) {
+  const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  let headers = [
     `To: ${to}`,
     `Subject: ${subject}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: multipart/mixed; boundary="${boundary}"`
   ];
+
+  if (cc) headers.push(`Cc: ${cc}`);
+  if (bcc) headers.push(`Bcc: ${bcc}`);
   
-  if (cc) message.push(`Cc: ${cc}`);
-  if (bcc) message.push(`Bcc: ${bcc}`);
-  
-  // Fix MIME headers for proper Gmail threading
+  // RFC threading headers
   if (inReplyTo) {
-    message.push(`In-Reply-To: ${inReplyTo}`);
-    message.push(`References: ${references ? `${references} ${inReplyTo}` : inReplyTo}`);
+    headers.push(`In-Reply-To: ${inReplyTo}`);
   }
-  
-  message.push(`MIME-Version: 1.0`);
-  message.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
-  message.push('');
-  message.push(`--${boundary}`);
-  message.push('Content-Type: text/html; charset=UTF-8');
-  message.push('');
-  message.push(body);
-  
+  if (references) {
+    headers.push(`References: ${references}`);
+  }
+
+  let body = headers.join('\r\n') + '\r\n\r\n';
+
+  // HTML part
+  body += `--${boundary}\r\n`;
+  body += `Content-Type: text/html; charset="UTF-8"\r\n`;
+  body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
+  body += bodyHtml + '\r\n';
+
+  // Attachments (if any)
   if (attachments && attachments.length > 0) {
-    for (const attachment of attachments) {
-      message.push(`--${boundary}`);
-      message.push(`Content-Type: ${attachment.mimeType || 'application/octet-stream'}; name="${attachment.filename}"`);
-      message.push('Content-Transfer-Encoding: base64');
-      message.push(`Content-Disposition: attachment; filename="${attachment.filename}"`);
-      message.push('');
-      message.push(attachment.data);
+    for (const att of attachments) {
+      body += `--${boundary}\r\n`;
+      body += `Content-Type: ${att.mimeType || 'application/octet-stream'}; name="${att.filename}"\r\n`;
+      body += `Content-Transfer-Encoding: base64\r\n`;
+      body += `Content-Disposition: attachment; filename="${att.filename}"\r\n\r\n`;
+      body += att.data + '\r\n';
     }
   }
-  
-  message.push(`--${boundary}--`);
-  
-  return btoa(unescape(encodeURIComponent(message.join('\r\n'))))
+
+  body += `--${boundary}--`;
+
+  // Encode to base64url for Gmail API
+  const encoded = btoa(unescape(encodeURIComponent(body)))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
-    .replace(/=+$/, '');
+    .replace(/=/g, '');
+
+  return encoded;
 }
 
 Deno.serve(async (req) => {
   let stage = 'init';
   try {
-    stage = 'parse_request';
-    let requestBody;
-    try {
-      const bodyText = await req.text();
-      console.log('[DEBUG] Raw body:', bodyText.substring(0, 300));
-      const parsed = JSON.parse(bodyText);
-      console.log('[DEBUG] Parsed keys:', Object.keys(parsed));
-      console.log('[DEBUG] parsed.data type:', typeof parsed.data);
-      
-      // Base44 SDK wraps payload in a 'data' field
-      requestBody = parsed.data ? (typeof parsed.data === 'string' ? JSON.parse(parsed.data) : parsed.data) : parsed;
-      console.log('[DEBUG] Final requestBody keys:', Object.keys(requestBody));
-    } catch (jsonError) {
-      console.error('JSON parse error:', jsonError);
-      return Response.json({ error: 'Invalid JSON payload', stage }, { status: 400 });
-    }
-
-    const { 
-      to, cc, bcc, subject, body_html, 
-      gmail_thread_id, 
-      in_reply_to, references, 
-      project_id, job_id,
-      attachments
-    } = requestBody;
-    
-    console.log('[DEBUG] Extracted:', { 
-      to: to ? `present (${to})` : 'MISSING', 
-      subject: subject ? `present (${subject})` : 'MISSING',
-      body_html: body_html ? `present (${body_html.length} chars)` : 'MISSING'
-    });
-    
     stage = 'auth';
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
     if (!user) {
-      return Response.json({ error: 'Unauthorized', stage }, { status: 401 });
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admin and manager can send emails (technicians require explicit permission)
+    // Only admin and manager can send
     const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
     if (!isAdminOrManager) {
-      return Response.json({ error: 'Forbidden: Only admin and managers can send emails', stage }, { status: 403 });
+      return Response.json({ error: 'Forbidden: Only admin/manager can send emails' }, { status: 403 });
     }
-    
-    console.log('Request payload received:', { 
-      to: to ? `present (${to})` : 'MISSING', 
-      subject: subject ? `present (${subject})` : 'MISSING',
-      body_html: body_html ? `present (${body_html.length} chars)` : 'MISSING',
-      body_html_type: typeof body_html,
-      body_html_value_preview: body_html ? body_html.substring(0, 100) : 'N/A'
-    });
-    
+
+    stage = 'parse_request';
+    const bodyText = await req.text();
+    const requestBody = bodyText ? JSON.parse(bodyText) : {};
+
+    const {
+      mode = 'new', // new | reply | forward
+      to,
+      subject,
+      body_html,
+      cc = null,
+      bcc = null,
+      thread_id, // Base44 thread ID
+      gmail_thread_id, // Gmail thread ID (required for reply)
+      reply_to_gmail_message_id, // For reply: which message we're replying to
+      project_id = null,
+      job_id = null,
+      attachments = []
+    } = requestBody;
+
     stage = 'validate_fields';
+
+    // Required fields
     if (!to || !subject || !body_html) {
       const missing = [];
       if (!to) missing.push('to');
       if (!subject) missing.push('subject');
       if (!body_html) missing.push('body_html');
-      console.error('Missing required fields:', { to: !!to, subject: !!subject, body_html: !!body_html, missing });
-      return Response.json({ error: `Missing required fields: ${missing.join(', ')}`, stage }, { status: 400 });
-    }
-    
-    // Enforce reply safety check
-    if (gmail_thread_id && !in_reply_to) {
       return Response.json(
-        { error: 'Reply requires RFC Message-ID (in_reply_to)', stage },
+        { error: `Missing required fields: ${missing.join(', ')}` },
         { status: 400 }
       );
     }
-    
-    stage = 'create_mime';
-    const encodedMessage = createMimeMessage(to, subject, body_html, cc, bcc, in_reply_to, references, attachments);
-    
-    const sendBody = { raw: encodedMessage };
-    if (gmail_thread_id) {
-      sendBody.threadId = gmail_thread_id;
+
+    // Reply requires thread context
+    if (mode === 'reply' && (!gmail_thread_id || !reply_to_gmail_message_id)) {
+      return Response.json(
+        { error: 'Reply mode requires gmail_thread_id and reply_to_gmail_message_id' },
+        { status: 400 }
+      );
     }
-    
-    stage = 'gmail_send';
-    const result = await gmailDwdFetch('/gmail/v1/users/me/messages/send', 'POST', sendBody);
-    
-    stage = 'upload_attachments';
-    // Upload attachments and get URLs for storage
-    const uploadedAttachments = [];
-    if (attachments && attachments.length > 0) {
-      for (const att of attachments) {
-        try {
-          // Convert base64 back to file blob for upload
-          const binaryString = atob(att.data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          const blob = new Blob([bytes], { type: att.mimeType });
-          const file = new File([blob], att.filename, { type: att.mimeType });
-          
-          // Upload file and get URL - use asServiceRole
-          const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-          uploadedAttachments.push({
-            filename: att.filename,
-            url: file_url,
-            size: att.size,
-            mime_type: att.mimeType
+
+    stage = 'fetch_reply_context';
+    let inReplyTo = null;
+    let references = null;
+
+    if (mode === 'reply') {
+      // Fetch the message we're replying to for RFC headers
+      try {
+        const replyMsg = await gmailFetch(
+          `/gmail/v1/users/me/messages/${reply_to_gmail_message_id}`,
+          'GET',
+          null,
+          { format: 'metadata' }
+        );
+
+        const headers = {};
+        if (replyMsg.payload?.headers) {
+          replyMsg.payload.headers.forEach(h => {
+            headers[h.name.toLowerCase()] = h.value;
           });
-        } catch (err) {
-          console.error(`Failed to upload attachment ${att.filename}:`, err);
         }
-      }
-    }
-    
-    stage = 'find_or_create_thread';
-    // Find or create EmailThread
-    let emailThreadId = null;
-    
-    if (gmail_thread_id) {
-      // Find existing thread by Gmail thread ID
-      const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
-        gmail_thread_id: gmail_thread_id
-      });
-      
-      if (existingThreads.length > 0) {
-        emailThreadId = existingThreads[0].id;
-        
-        // Update thread metadata
-        const updates = {
-          last_message_date: new Date().toISOString(),
-          last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
-          message_count: (existingThreads[0].message_count || 0) + 1,
-          is_read: true
-        };
-        
-        // Update project linkage if provided
-        if (project_id) {
-          const projectData = await base44.asServiceRole.entities.Project.get(project_id);
-          updates.project_id = project_id;
-          updates.project_number = projectData?.project_number || null;
-          updates.project_title = projectData?.title || null;
-          updates.customer_id = projectData?.customer_id || null;
-          updates.customer_name = projectData?.customer_name || null;
+
+        inReplyTo = headers['message-id'] || null;
+        // Build References chain: existing refs + in-reply-to
+        if (inReplyTo) {
+          if (headers['references']) {
+            references = `${headers['references']} ${inReplyTo}`;
+          } else {
+            references = inReplyTo;
+          }
         }
-        
-        await base44.asServiceRole.entities.EmailThread.update(emailThreadId, updates);
-      }
-    }
-    
-    // Create new thread if not found
-    if (!emailThreadId) {
-      const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
-      const newThread = await base44.asServiceRole.entities.EmailThread.create({
-        subject: subject,
-        gmail_thread_id: result.threadId,
-        from_address: impersonateEmail,
-        to_addresses: to.split(',').map(e => e.trim()),
-        last_message_date: new Date().toISOString(),
-        last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
-        status: 'Closed',
-        priority: 'Normal',
-        is_read: true,
-        message_count: 1,
-        project_id: project_id || null,
-        linked_job_id: job_id || null
-      });
-      emailThreadId = newThread.id;
-    }
-    
-    stage = 'fetch_message_id';
-    // Fetch the sent message to get its proper Message-ID header
-    const sentMessageData = await gmailDwdFetch(
-      `/gmail/v1/users/me/messages/${result.id}`,
-      'GET',
-      null,
-      { format: 'metadata', metadataHeaders: 'Message-ID' }
-    );
-    
-    let rfcMessageId = result.id;
-    if (sentMessageData?.payload?.headers) {
-      const messageIdHeader = sentMessageData.payload.headers.find(h => h.name === 'Message-ID');
-      if (messageIdHeader?.value) {
-        rfcMessageId = messageIdHeader.value;
+      } catch (err) {
+        console.error('[gmailSendEmail] Error fetching reply context:', err);
       }
     }
 
+    stage = 'build_mime';
+    const rawMessage = buildMimeMessage(to, subject, body_html, cc, bcc, inReplyTo, references, attachments);
+
+    stage = 'gmail_send';
+    const sendPayload = {
+      raw: rawMessage
+    };
+
+    // For reply, include threadId to keep it in the same thread
+    if (mode === 'reply' && gmail_thread_id) {
+      sendPayload.threadId = gmail_thread_id;
+    }
+
+    const sendResult = await gmailFetch('/gmail/v1/users/me/messages/send', 'POST', sendPayload);
+
+    stage = 'fetch_sent_metadata';
+    // Fetch sent message to capture proper Message-ID header
+    const sentMsg = await gmailFetch(
+      `/gmail/v1/users/me/messages/${sendResult.id}`,
+      'GET',
+      null,
+      { format: 'metadata' }
+    );
+
+    let messageId = `<${sendResult.id}@gmail.com>`;
+    if (sentMsg.payload?.headers) {
+      const msgIdHeader = sentMsg.payload.headers.find(h => h.name.toLowerCase() === 'message-id');
+      if (msgIdHeader?.value) {
+        messageId = msgIdHeader.value;
+      }
+    }
+
+    stage = 'upsert_thread';
+    // Find or create thread in Base44
+    let threadId = thread_id;
+
+    if (!threadId) {
+      // For new emails, create new thread
+      const newThread = await base44.asServiceRole.entities.EmailThread.create({
+        subject,
+        gmail_thread_id: sendResult.threadId,
+        from_address: Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au',
+        to_addresses: to.split(',').map(e => e.trim()),
+        last_message_date: new Date().toISOString(),
+        last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
+        message_count: 1,
+        is_read: true,
+        project_id: project_id || null,
+        job_id: job_id || null
+      });
+      threadId = newThread.id;
+    } else {
+      // Update existing thread
+      const threadUpdates = {
+        last_message_date: new Date().toISOString(),
+        last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
+        message_count: (await base44.asServiceRole.entities.EmailMessage.filter({ thread_id })).length + 1,
+        is_read: true
+      };
+      
+      // Update project/job links if provided
+      if (project_id) threadUpdates.project_id = project_id;
+      if (job_id) threadUpdates.job_id = job_id;
+
+      await base44.asServiceRole.entities.EmailThread.update(threadId, threadUpdates);
+    }
+
     stage = 'store_message';
-    // Store sent message with audit fields
     const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
-    
+
+    // Store sent message with audit trail
     await base44.asServiceRole.entities.EmailMessage.create({
-      thread_id: emailThreadId,
-      gmail_message_id: result.id,
-      message_id: rfcMessageId,
+      thread_id: threadId,
+      gmail_message_id: sendResult.id,
+      gmail_thread_id: sendResult.threadId,
       from_address: impersonateEmail,
-      from_name: user.display_name || user.full_name,
+      from_name: user.display_name || user.full_name || impersonateEmail,
       to_addresses: to.split(',').map(e => e.trim()),
       cc_addresses: cc ? cc.split(',').map(e => e.trim()) : [],
       bcc_addresses: bcc ? bcc.split(',').map(e => e.trim()) : [],
-      subject: subject,
-      body_html: body_html,
+      subject,
+      body_html,
       is_outbound: true,
       sent_at: new Date().toISOString(),
-      in_reply_to: in_reply_to || null,
-      references: references || null,
-      attachments: uploadedAttachments.length > 0 ? uploadedAttachments : [],
-      // Audit fields
-      sent_by_user_id: user.id,
-      sent_by_user_email: user.email
+      message_id: messageId,
+      in_reply_to: inReplyTo,
+      references: references,
+      performed_by_user_id: user.id,
+      performed_by_user_email: user.email,
+      performed_at: new Date().toISOString()
     });
-    
-    stage = 'update_thread_status';
-    // Mark thread as closed after sending reply
-    if (emailThreadId) {
-      await base44.asServiceRole.entities.EmailThread.update(emailThreadId, { status: 'Closed' });
-    }
-    
-    stage = 'update_project_activity';
-    // Update project activity if linked
-    if (project_id) {
-      const activityType = gmail_thread_id ? 'Email Reply Sent' : 'Email Sent';
-      await updateProjectActivity(base44, project_id, activityType);
-      
-      // Update project last contact timestamps - use asServiceRole
-      base44.asServiceRole.functions.invoke('updateProjectLastContactFromThread', {
-        email_thread_id: emailThreadId
-      }).catch(err => console.error('Update project contact failed:', err));
-    }
-    
-    return Response.json({ 
-      success: true, 
-      messageId: result.id, 
-      threadId: emailThreadId,
-      gmail_thread_id: result.threadId
+
+    return Response.json({
+      success: true,
+      messageId: sendResult.id,
+      threadId: sendResult.threadId,
+      baseThreadId: threadId
     });
   } catch (error) {
-    console.error(`Error at stage '${stage}':`, error);
-    return Response.json({ 
-      error: error.message, 
-      stage,
-      details: error.toString() 
-    }, { status: 500 });
+    console.error(`[gmailSendEmail] Error at stage '${stage}':`, error);
+    return Response.json(
+      { error: error.message, stage },
+      { status: 500 }
+    );
   }
 });
