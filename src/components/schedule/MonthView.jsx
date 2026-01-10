@@ -123,12 +123,19 @@ export default function MonthView({ currentDate, jobs, onJobReschedule, onJobCli
                                 ...provided.draggableProps.style,
                               }}
                             >
-                              <div className="font-medium text-slate-900 truncate">
-                                #{job.job_number}
-                              </div>
-                              <div className="text-slate-600 truncate">
-                                {job.customer_name}
-                              </div>
+                              <div className="flex items-start justify-between gap-1">
+                                 <div className="font-medium text-slate-900 truncate flex-1">
+                                   #{job.job_number}
+                                 </div>
+                                 {job.scheduled_time && (
+                                   <div className="text-xs text-slate-400 whitespace-nowrap ml-1">
+                                     {job.scheduled_time}
+                                   </div>
+                                 )}
+                               </div>
+                               <div className="text-slate-600 truncate text-xs">
+                                 {job.customer_name}
+                               </div>
                             </div>
                           )}
                         </Draggable>
