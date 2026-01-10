@@ -20,7 +20,6 @@ import EmailDetailView from "../components/inbox/EmailDetailView";
 import LinkThreadModal from "../components/inbox/LinkThreadModal";
 import CreateProjectFromEmailModal from "../components/inbox/CreateProjectFromEmailModal";
 import CreateJobFromEmailModal from "../components/inbox/CreateJobFromEmailModal";
-import GmailConnect from "../components/inbox/GmailConnect";
 import AdvancedSearch from "../components/inbox/AdvancedSearch";
 import EmailComposer from "../components/inbox/EmailComposer";
 import GmailHistorySearch from "../components/inbox/GmailHistorySearch";
@@ -560,11 +559,7 @@ export default function Inbox() {
       >
         <div className="p-4 md:p-5 border-b border-[#E5E7EB] bg-white">
           <div className="flex items-center justify-between py-3 lg:py-4 gap-3">
-            <GmailConnect 
-              user={user}
-              isGmailConnected={isGmailConnected}
-              onSyncComplete={() => queryClient.invalidateQueries({ queryKey: ['emailThreads'] })} 
-            />
+            <h2 className="text-[18px] font-semibold text-[#111827]">Inbox</h2>
             <div className="flex gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
