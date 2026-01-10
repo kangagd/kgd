@@ -201,13 +201,23 @@ export default function PriceList() {
             <p className="text-sm text-[#4B5563] mt-1">Manage inventory and pricing</p>
           </div>
           {canEditPriceList && (
-            <Button
-              onClick={() => setShowForm(true)}
-              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition w-full md:w-auto h-10 px-4 text-sm rounded-xl"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Item
-            </Button>
+            <div className="flex gap-2 w-full md:w-auto flex-col sm:flex-row">
+              <Button
+                onClick={() => navigate(createPageUrl("WarehouseInventory"))}
+                variant="outline"
+                className="h-10 px-4 text-sm rounded-xl"
+              >
+                <Warehouse className="w-4 h-4 mr-2" />
+                Manage Locations
+              </Button>
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold shadow-sm hover:shadow-md transition h-10 px-4 text-sm rounded-xl"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Item
+              </Button>
+            </div>
           )}
         </div>
 
