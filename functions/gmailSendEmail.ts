@@ -362,11 +362,14 @@ Deno.serve(async (req) => {
       threadId = newThread.id;
     } else {
       // Update existing thread
+      const now = new Date().toISOString();
       const threadUpdates = {
-        last_message_date: new Date().toISOString(),
+        last_message_date: now,
         last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
         message_count: (await base44.asServiceRole.entities.EmailMessage.filter({ thread_id })).length + 1,
-        is_read: true
+        is_read: true,
+        status: mode === 'reply' ? 'Waiting on Customer' : undefined,
+        last_activity_at: now
       };
       
       // Update project/job links if provided
