@@ -774,12 +774,29 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
               </div>
             )}
 
-            <RichTextField
-              label="Description"
-              value={formData.description}
-              onChange={(value) => setFormData({ ...formData, description: value })}
-              placeholder="Describe the project scope and requirements…"
-            />
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <label className="text-[14px] font-medium leading-[1.4] text-[#111827]">Description</label>
+                {isAIFilled('description') && (
+                  <span className="text-xs bg-[#FAE008] text-[#111827] px-2 py-0.5 rounded font-medium flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    AI filled
+                  </span>
+                )}
+              </div>
+              <div className={`border-2 rounded-lg overflow-hidden ${
+                isAIFilled('description') 
+                  ? 'border-[#FAE008] bg-[#FFFEF5]' 
+                  : 'border-slate-300'
+              }`}>
+                <RichTextField
+                  value={formData.description}
+                  onChange={(value) => setFormData({ ...formData, description: value })}
+                  placeholder="Describe the project scope and requirements…"
+                  showLabel={false}
+                />
+              </div>
+            </div>
 
             <RichTextField
               label="Notes"
