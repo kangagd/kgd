@@ -98,22 +98,22 @@ const navigationSections = [
 ];
 
 const technicianNavigationItems = [
-  { title: "My Vehicle", url: createPageUrl("MyVehicle"), icon: Car },
-  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
-  { title: "Logistics", url: createPageUrl("Logistics"), icon: Truck },
-  { title: "Suppliers", url: createPageUrl("Suppliers"), icon: Package },
-  { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
-  { title: "Price List", url: createPageUrl("PriceList"), icon: DollarSign },
+  { title: "My Vehicle", url: createPageUrl("MyVehicle"), iconName: "Car" },
+  { title: "Schedule", url: createPageUrl("Schedule"), iconName: "Calendar" },
+  { title: "Jobs", url: createPageUrl("Jobs"), iconName: "Briefcase" },
+  { title: "Tasks", url: createPageUrl("Tasks"), iconName: "CheckSquare" },
+  { title: "Logistics", url: createPageUrl("Logistics"), iconName: "Truck" },
+  { title: "Suppliers", url: createPageUrl("Suppliers"), iconName: "Package" },
+  { title: "Photos", url: createPageUrl("Photos"), iconName: "ImageIcon" },
+  { title: "Price List", url: createPageUrl("PriceList"), iconName: "DollarSign" },
 ];
 
 const viewerNavigationItems = [
-  { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
-  { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
-  { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
-  { title: "Customers", url: createPageUrl("Customers"), icon: UserCircle },
+  { title: "Dashboard", url: createPageUrl("Dashboard"), iconName: "LayoutDashboard" },
+  { title: "Schedule", url: createPageUrl("Schedule"), iconName: "Calendar" },
+  { title: "Projects", url: createPageUrl("Projects"), iconName: "FolderKanban" },
+  { title: "Jobs", url: createPageUrl("Jobs"), iconName: "Briefcase" },
+  { title: "Customers", url: createPageUrl("Customers"), iconName: "UserCircle" },
 ];
 
 // Get effective role for user
