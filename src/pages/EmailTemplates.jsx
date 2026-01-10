@@ -109,13 +109,13 @@ export default function EmailTemplates() {
   });
 
   const intentColors = {
-    "Quote Request": "bg-purple-100 text-purple-800",
+    "Quote": "bg-purple-100 text-purple-800",
     "Follow-up": "bg-blue-100 text-blue-800",
     "Appointment Confirmation": "bg-green-100 text-green-800",
     "Job Completion": "bg-emerald-100 text-emerald-800",
-    "Invoice Reminder": "bg-amber-100 text-amber-800",
-    "Thank You": "bg-pink-100 text-pink-800",
-    "Service Inquiry": "bg-indigo-100 text-indigo-800",
+    "Invoice": "bg-amber-100 text-amber-800",
+    "Supplier Request": "bg-pink-100 text-pink-800",
+    "Supplier Order": "bg-indigo-100 text-indigo-800",
     "General Response": "bg-slate-100 text-slate-800",
     "Other": "bg-gray-100 text-gray-800"
   };
