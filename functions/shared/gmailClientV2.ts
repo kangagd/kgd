@@ -15,10 +15,19 @@ const GMAIL_SCOPES = [
 ];
 
 /**
+ * Base64url encode
+ */
+function base64urlEncode(data) {
+  const base64 = btoa(data);
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+/**
  * Convert PEM-formatted private key to ArrayBuffer for Web Crypto
  */
 function pemToArrayBuffer(pem) {
-  const binaryString = atob(pem.replace(/-----BEGIN PRIVATE KEY-----/g, '').replace(/-----END PRIVATE KEY-----/g, '').replace(/\s/g, ''));
+  const cleanPem = pem.replace(/-----BEGIN PRIVATE KEY-----/g, '').replace(/-----END PRIVATE KEY-----/g, '').replace(/\s/g, '');
+  const binaryString = atob(cleanPem);
   const bytes = new Uint8Array(binaryString.length);
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i);
@@ -47,11 +56,11 @@ async function createJwt(serviceAccount, impersonateEmail) {
     exp: exp
   };
 
-  const headerEncoded = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  const payloadEncoded = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const headerEncoded = base64urlEncode(JSON.stringify(header));
+  const payloadEncoded = base64urlEncode(JSON.stringify(payload));
   const signatureInput = `${headerEncoded}.${payloadEncoded}`;
 
-  // Sign with private key
+  // Sign with private key using Web Crypto
   const privateKeyBuffer = pemToArrayBuffer(serviceAccount.private_key);
   const key = await crypto.subtle.importKey(
     'pkcs8',
@@ -62,8 +71,9 @@ async function createJwt(serviceAccount, impersonateEmail) {
   );
 
   const signatureBuffer = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(signatureInput));
-  const signatureArray = Array.from(new Uint8Array(signatureBuffer));
-  const signatureEncoded = btoa(String.fromCharCode.apply(null, signatureArray)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  const signatureArray = new Uint8Array(signatureBuffer);
+  const signatureBinary = String.fromCharCode(...signatureArray);
+  const signatureEncoded = base64urlEncode(signatureBinary);
 
   return `${signatureInput}.${signatureEncoded}`;
 }
