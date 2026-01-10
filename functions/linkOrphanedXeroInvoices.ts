@@ -1,4 +1,4 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // Admin-only function to link orphaned XeroInvoices to their projects
 Deno.serve(async (req) => {
