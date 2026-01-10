@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ArrowRightLeft, TrendingDown, TrendingUp, Wrench } from 'lucide-react';
@@ -86,7 +86,6 @@ export default function StockMovementHistory() {
                       {movement.item_name}
                     </p>
 
-                    {/* Movement details */}
                     <div className="text-[12px] text-[#6B7280] mt-1 space-y-0.5">
                       {movement.movement_type === 'transfer' && (
                         <p>
@@ -113,14 +112,12 @@ export default function StockMovementHistory() {
                       )}
                     </div>
 
-                    {/* User and timestamp */}
                     <div className="text-[11px] text-[#9CA3AF] mt-2 space-y-0.5">
                       <p>By: {movement.moved_by_name || movement.moved_by}</p>
                       <p>{format(new Date(movement.created_date), 'MMM d, yyyy HH:mm')}</p>
                     </div>
                   </div>
 
-                  {/* Quantity and badge */}
                   <div className="flex-shrink-0 text-right">
                     <p className="text-[16px] font-bold text-[#111827]">
                       {movement.quantity}
