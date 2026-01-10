@@ -407,15 +407,16 @@ export default function EmailDetailView({
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Email Actions - Reply, Forward, Delete */}
                   {userPermissions?.can_reply && (
-                    <>
+                    <div className="flex items-center gap-1 pr-3 border-r border-[#E5E7EB]">
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={handleReply}
                         title="Reply"
-                        className="h-9 w-9"
+                        className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
                       >
                         <Reply className="w-4 h-4" />
                       </Button>
@@ -424,30 +425,10 @@ export default function EmailDetailView({
                         size="icon"
                         onClick={handleForward}
                         title="Forward"
-                        className="h-9 w-9"
+                        className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
                       >
                         <Forward className="w-4 h-4" />
                       </Button>
-
-                      {/* Assign User Avatar */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setShowAssignModal(true)}
-                        title={thread.assigned_to ? `Assigned to ${thread.assigned_to_name}` : "Assign to team member"}
-                        className="h-9 w-9"
-                      >
-                        {thread.assigned_to ? (
-                          <div className="w-6 h-6 bg-[#FAE008] rounded-full flex items-center justify-center">
-                            <span className="text-[10px] font-semibold text-[#111827]">
-                              {thread.assigned_to_name?.charAt(0)?.toUpperCase() || 'U'}
-                            </span>
-                          </div>
-                        ) : (
-                          <UserPlus className="w-4 h-4" />
-                        )}
-                      </Button>
-
                       <Button
                         variant="ghost"
                         size="icon"
@@ -461,39 +442,52 @@ export default function EmailDetailView({
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
-                    </>
+                    </div>
                   )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-9 w-9">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {userPermissions?.can_create_project_from_email && (
-                        <DropdownMenuItem onClick={() => navigate(createPageUrl("Projects") + `?action=create&fromEmail=${thread.id}`)}>
-                          Create Project
-                        </DropdownMenuItem>
-                      )}
-                      {userPermissions?.can_create_job_from_email && (
-                        <DropdownMenuItem onClick={() => navigate(createPageUrl("Jobs") + `?action=create&fromEmail=${thread.id}`)}>
-                          Create Job
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuSeparator />
-                      {userPermissions?.can_link_to_project && (
-                        <DropdownMenuItem onClick={onLinkProject}>
-                          Link to Project
-                        </DropdownMenuItem>
-                      )}
 
-                      {thread.project_id && userPermissions?.can_link_to_project && (
-                      <DropdownMenuItem onClick={onUnlinkProject}>
-                        Unlink Project
-                      </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* Work Actions - Link, Assign, AI */}
+                  <div className="flex items-center gap-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-amber-50 hover:text-amber-600" title="Work actions">
+                          <Zap className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {userPermissions?.can_link_to_project && (
+                          <DropdownMenuItem onClick={onLinkProject}>
+                            <LinkIcon className="w-4 h-4 mr-2" />
+                            Link to Project
+                          </DropdownMenuItem>
+                        )}
+                        {thread.project_id && userPermissions?.can_link_to_project && (
+                          <DropdownMenuItem onClick={onUnlinkProject}>
+                            <X className="w-4 h-4 mr-2" />
+                            Unlink Project
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        {userPermissions?.can_create_project_from_email && (
+                          <DropdownMenuItem onClick={() => setShowCreateProjectModal(true)}>
+                            <LinkIcon className="w-4 h-4 mr-2" />
+                            Create Project
+                          </DropdownMenuItem>
+                        )}
+                        {userPermissions?.can_create_job_from_email && (
+                          <DropdownMenuItem onClick={() => setShowCreateJobModal(true)}>
+                            <LinkIcon className="w-4 h-4 mr-2" />
+                            Create Job
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setShowAssignModal(true)}>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          {thread.assigned_to ? `Reassign (${thread.assigned_to_name})` : 'Assign Owner'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
                   <Button
                     variant="ghost"
                     size="icon"
