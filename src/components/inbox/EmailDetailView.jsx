@@ -583,34 +583,34 @@ export default function EmailDetailView({
               </div>
             )}
 
-            {/* Attachments Section */}
-            {allAttachments.length > 0 && (
-              <div className="px-6 pt-4 pb-4 border-b border-[#F3F4F6]">
-                <button
-                  onClick={() => setAttachmentsExpanded(!attachmentsExpanded)}
-                  className="flex items-center gap-2 mb-4 hover:opacity-70 transition-opacity w-full"
-                >
-                  <Paperclip className="w-4 h-4 text-[#6B7280]" />
-                  <h3 className="text-[14px] font-semibold text-[#111827]">
-                    Attachments ({allAttachments.length})
-                  </h3>
-                  <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ${attachmentsExpanded ? 'rotate-180' : ''}`} />
-                </button>
-                {attachmentsExpanded && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {allAttachments.map((attachment, idx) => (
-                      <AttachmentCard
-                        key={idx}
-                        attachment={attachment}
-                        linkedProjectId={thread.project_id}
-                        threadSubject={thread.subject}
-                        gmailMessageId={attachment.gmail_message_id}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Attachments Section - Collapsed by default */}
+             {allAttachments.length > 0 && (
+               <>
+                 <button
+                   onClick={() => setAttachmentsExpanded(!attachmentsExpanded)}
+                   className="flex items-center gap-2 px-6 py-4 border-b border-[#E5E7EB] hover:bg-[#F9FAFB] transition-colors w-full text-[14px] font-medium text-[#111827]"
+                 >
+                   <Paperclip className="w-4 h-4 text-[#6B7280]" />
+                   Attachments ({allAttachments.length})
+                   <ChevronDown className={`w-4 h-4 text-[#6B7280] transition-transform ml-auto ${attachmentsExpanded ? 'rotate-180' : ''}`} />
+                 </button>
+                 {attachmentsExpanded && (
+                   <div className="px-6 py-4 border-b border-[#E5E7EB]">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       {allAttachments.map((attachment, idx) => (
+                         <AttachmentCard
+                           key={idx}
+                           attachment={attachment}
+                           linkedProjectId={thread.project_id}
+                           threadSubject={thread.subject}
+                           gmailMessageId={attachment.gmail_message_id}
+                         />
+                       ))}
+                     </div>
+                   </div>
+                 )}
+               </>
+             )}
 
             {/* Message List - Scrollable */}
             <div className="divide-y divide-[#E5E7EB]">
