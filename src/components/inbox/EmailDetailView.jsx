@@ -16,7 +16,10 @@ import {
   X,
   Trash2,
   UserPlus,
-  User
+  User,
+  Eye,
+  EyeOff,
+  Zap
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
