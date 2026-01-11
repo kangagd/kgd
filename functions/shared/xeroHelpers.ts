@@ -23,10 +23,15 @@ export async function refreshAndGetXeroConnection(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
   
   if (connections.length === 0) {
-    throw new Error('No Xero connection found. Please connect Xero first.');
+    throw new Error('XERO_NOT_CONNECTED');
   }
 
   const connection = connections[0];
+  
+  // Check if connection is marked as expired
+  if (connection.is_expired) {
+    throw new Error('XERO_AUTH_EXPIRED');
+  }
   const expiresAt = new Date(connection.expires_at);
   const now = new Date();
 
@@ -54,7 +59,14 @@ export async function refreshAndGetXeroConnection(base44) {
     if (!tokenResponse.ok) {
       const error = await tokenResponse.text();
       console.error('Xero token refresh failed:', error);
-      throw new Error('Token refresh failed. Please reconnect Xero.');
+      
+      // Mark connection as expired in database
+      await base44.asServiceRole.entities.XeroConnection.update(connection.id, {
+        is_expired: true,
+        last_error: `Token refresh failed at ${new Date().toISOString()}: ${error}`
+      });
+      
+      throw new Error('XERO_AUTH_EXPIRED');
     }
 
     const tokens = await tokenResponse.json();

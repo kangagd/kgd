@@ -48,6 +48,7 @@ import CommandPalette from "@/components/common/CommandPalette";
 import ActiveCheckInBanner from "@/components/common/ActiveCheckInBanner";
 import PullToRefresh from "@/components/common/PullToRefresh";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
+import XeroConnectionBanner from "@/components/common/XeroConnectionBanner";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
@@ -894,6 +895,7 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Consolidated Main Wrapper */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative w-full max-w-full">
+            <XeroConnectionBanner />
             <PullToRefresh onRefresh={handleRefresh}>
               <div className="relative">
                 {activeCheckIn && (

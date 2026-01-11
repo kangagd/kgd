@@ -71,7 +71,9 @@ Deno.serve(async (req) => {
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       expires_at: expiresAt,
-      created_by_user_id: state
+      created_by_user_id: state,
+      is_expired: false,
+      last_error: null
     };
 
     if (existingConnections.length > 0) {
