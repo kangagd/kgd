@@ -19,7 +19,8 @@ export const sanitizeInboundText = (text) => {
     .replace(/â€¦/g, '...')  // â€¦ → ellipsis
     .replace(/Â¢/g, "'")    // Â¢ → apostrophe
     .replace(/Â¯/g, ' ')    // Â¯ → space
-    .replace(/Â  /g, ' ')   // Â followed by spaces → single space
+    .replace(/Â /g, ' ')    // Â followed by space → single space
+    .replace(/Â /g, ' ')    // Â followed by nbsp → single space (multiple patterns)
     .replace(/Â/g, '')      // Remove remaining Â characters
     .replace(/â/g, '')      // Remove stray â characters
     // Replace HTML non-breaking space entity
