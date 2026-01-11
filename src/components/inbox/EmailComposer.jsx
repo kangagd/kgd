@@ -201,17 +201,33 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     enabled: !!jobId
   });
 
-  const handleApplyTemplate = (templateId) => {
+  const handleApplyTemplate = async (templateId) => {
     const template = templates.find(t => t.id === templateId);
     if (!template) return;
 
-    // Find customer by email, or use from linked project/job
-    const matchedCustomer = to ? customers.find(c => c.email?.toLowerCase() === to.toLowerCase()) : null;
+    // Build comprehensive context
+    let customer = null;
+    
+    // Try to match customer by email first
+    if (to) {
+      customer = customers.find(c => c.email?.toLowerCase() === to.toLowerCase());
+    }
+    
+    // If no match but we have customer_id from project/job, fetch the customer
+    if (!customer && (linkedProject?.customer_id || linkedJob?.customer_id)) {
+      try {
+        const customerId = linkedProject?.customer_id || linkedJob?.customer_id;
+        customer = await base44.entities.Customer.get(customerId);
+      } catch (error) {
+        console.log('Could not fetch customer:', error);
+      }
+    }
 
     const context = buildTemplateContext({
       project: linkedProject,
       job: linkedJob,
-      customer: matchedCustomer
+      customer: customer,
+      user: currentUser
     });
 
     const rendered = renderTemplate(template, context);

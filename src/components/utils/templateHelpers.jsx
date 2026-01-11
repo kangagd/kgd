@@ -37,7 +37,14 @@ export function renderTemplate(template, context = {}) {
  * @param {Object} options.invoice - Invoice/XeroInvoice entity
  * @returns {Object} Context for template rendering
  */
-export function buildTemplateContext({ customer, job, project, invoice } = {}) {
+export function buildTemplateContext({ customer, job, project, invoice, user } = {}) {
+  // Get technician name from job's assigned_to_name array or user
+  const technicianName = job?.assigned_to_name?.[0] || 
+                         (job?.assigned_to_name?.length > 0 ? job.assigned_to_name.join(', ') : '') ||
+                         user?.full_name || 
+                         user?.display_name || 
+                         '';
+
   return {
     customer_name: customer?.name || job?.customer_name || project?.customer_name || '',
     customer_email: customer?.email || job?.customer_email || project?.customer_email || '',
@@ -52,6 +59,7 @@ export function buildTemplateContext({ customer, job, project, invoice } = {}) {
     invoice_number: invoice?.xero_invoice_number || invoice?.invoice_number || '',
     invoice_amount: invoice?.total || invoice?.total_amount || '',
     invoice_link: invoice?.online_payment_url || '',
-    invoice_pdf: invoice?.pdf_url || ''
+    invoice_pdf: invoice?.pdf_url || '',
+    technician_name: technicianName
   };
 }
