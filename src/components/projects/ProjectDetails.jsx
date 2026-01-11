@@ -54,6 +54,7 @@ import ProjectEmailSection from "./ProjectEmailSection";
 import QuotesSection from "../quotes/QuotesSection";
 import InitialVisitSummary from "./InitialVisitSummary";
 import JobVisitSummary from "../jobs/JobVisitSummary";
+import ExpandableJobCard from "./ExpandableJobCard";
 import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
 import ProjectChatModal from "./ProjectChatModal";
@@ -1786,36 +1787,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 ) : (
                   <div className="space-y-2">
                     {jobs.map((job) => (
-                      <button
+                      <ExpandableJobCard
                         key={job.id}
-                        onClick={() => handleJobClick(job.id)}
-                        className="w-full bg-white border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] rounded-lg p-3 transition-all text-left"
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="font-medium text-[14px] text-[#111827]">
-                            {job.job_type_name || 'Job'} #{job.job_number}
-                          </div>
-                          <Badge className={jobStatusColors[job.status]}>
-                            {job.status}
-                          </Badge>
-                        </div>
-                        {job.scheduled_date && (
-                          <div className="text-[12px] text-[#6B7280]">
-                            {new Date(job.scheduled_date).toLocaleDateString('en-AU', { 
-                              day: 'numeric', 
-                              month: 'short', 
-                              year: 'numeric' 
-                            })}
-                            {job.scheduled_time && ` at ${job.scheduled_time}`}
-                          </div>
-                        )}
-                        {job.assigned_to_name && job.assigned_to_name.length > 0 && (
-                          <div className="text-[12px] text-[#6B7280] mt-1">
-                            <User className="w-3 h-3 inline mr-1" />
-                            {job.assigned_to_name.join(', ')}
-                          </div>
-                        )}
-                      </button>
+                        job={job}
+                        onOpenJob={handleJobClick}
+                      />
                     ))}
                   </div>
                 )}
