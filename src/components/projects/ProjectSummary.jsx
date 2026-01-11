@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, User, FileText, Image as ImageIcon, Edit, CheckCircle2 } from "lucide-react";
 import RichTextField from "../common/RichTextField";
+import ProjectVisitsTab from "./ProjectVisitsTab";
 
 const jobStatusColors = {
   "Open": "bg-slate-100 text-slate-800",
@@ -223,6 +224,18 @@ export default function ProjectSummary({ project, jobs, onUpdateNotes }) {
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Visit History - Full width */}
+      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+        <CardHeader className="bg-[#F8F9FA] px-4 py-3 border-b border-[#E5E7EB]">
+          <CardTitle className="text-[18px] font-semibold text-[#111827] leading-[1.2]">
+            Visit History
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
+          <ProjectVisitsTab projectId={project.id} isReadOnly={true} />
         </CardContent>
       </Card>
 
