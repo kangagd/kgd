@@ -35,6 +35,9 @@ async function safeEntitySearch(entityName, query, fallbackFields = []) {
         let res = await entity.filter({ search: query }, { limit: 20 });
         let records = normaliseRecords(res);
 
+        // Filter out soft-deleted items
+        records = records.filter(record => !record.deleted_at);
+
         // If nothing came back, still fall back to list+client-filter
         if (records.length > 0 || fallbackFields.length === 0) {
           return records;
