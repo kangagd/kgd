@@ -147,102 +147,108 @@ export default function ExpandableJobCard({ job, onOpenJob }) {
             {displayData.measurements && Object.keys(displayData.measurements).length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-semibold text-[#111827]">Measurements</div>
-                <div className="bg-[#F8F9FA] rounded-lg p-3 border border-[#E5E7EB]">
-                  <pre className="text-xs text-[#111827] whitespace-pre-wrap font-mono">
-                    {JSON.stringify(displayData.measurements, null, 2)}
-                  </pre>
-                </div>
-                <div className="space-y-3">
-                  {/* Display notes if present */}
-                  {displayData.measurements.notes && (
-                    <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
-                      <div className="text-xs font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Notes</div>
-                      <p className="text-sm text-[#111827]">{displayData.measurements.notes}</p>
-                    </div>
-                  )}
-                  
-                  {/* Display additional_info if present */}
-                  {displayData.measurements.additional_info && (
-                    <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
-                      <div className="text-xs font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Additional Information</div>
-                      <p className="text-sm text-[#111827]">{displayData.measurements.additional_info}</p>
-                    </div>
-                  )}
-
-                  {/* Display new doors */}
-                  {displayData.measurements.new_doors && displayData.measurements.new_doors.length > 0 && (
-                    <div className="space-y-2">
-                      {displayData.measurements.new_doors.map((door, idx) => (
-                        <div key={idx} className="space-y-2">
-                          {door.additional_info && (
-                            <div className="bg-[#FFFEF5] border border-[#FAE008] rounded-lg p-3">
-                              <div className="text-xs font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">
-                                Door {idx + 1} - Additional Information
-                              </div>
-                              <p className="text-sm text-[#111827]">{door.additional_info}</p>
-                            </div>
-                          )}
-                          {door.existing_door && door.existing_door.removal_required === "Y" && (
-                            <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg p-3">
-                              <div className="text-xs font-semibold text-[#DC2626] mb-2 uppercase tracking-wide">
-                                Door {idx + 1} - Existing Door (Removal Required)
-                              </div>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                {door.existing_door.height_left && (
-                                  <div>
-                                    <span className="text-[#6B7280]">Height L:</span>
-                                    <span className="ml-1 font-medium text-[#111827]">{door.existing_door.height_left}mm</span>
-                                  </div>
-                                )}
-                                {door.existing_door.height_right && (
-                                  <div>
-                                    <span className="text-[#6B7280]">Height R:</span>
-                                    <span className="ml-1 font-medium text-[#111827]">{door.existing_door.height_right}mm</span>
-                                  </div>
-                                )}
-                                {door.existing_door.width && (
-                                  <div>
-                                    <span className="text-[#6B7280]">Width:</span>
-                                    <span className="ml-1 font-medium text-[#111827]">{door.existing_door.width}mm</span>
-                                  </div>
-                                )}
-                                {door.existing_door.type && (
-                                  <div>
-                                    <span className="text-[#6B7280]">Type:</span>
-                                    <span className="ml-1 font-medium text-[#111827]">{door.existing_door.type}</span>
-                                  </div>
-                                )}
-                                {door.existing_door.finish && (
-                                  <div>
-                                    <span className="text-[#6B7280]">Finish:</span>
-                                    <span className="ml-1 font-medium text-[#111827]">{door.existing_door.finish}</span>
-                                  </div>
-                                )}
-                                {door.existing_door.colour && (
-                                  <div>
-                                    <span className="text-[#6B7280]">Colour:</span>
-                                    <span className="ml-1 font-medium text-[#111827]">{door.existing_door.colour}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Display legacy existing_door if present */}
-                  {displayData.measurements.existing_door && displayData.measurements.existing_door.removal_required === "Y" && !displayData.measurements.new_doors && (
-                    <div className="bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg p-3">
-                      <div className="text-xs font-semibold text-[#DC2626] mb-2 uppercase tracking-wide">
-                        Existing Door (Removal Required)
+                <div className="bg-white rounded-lg p-3 border border-[#E5E7EB] space-y-4">
+                  {/* New Door Measurements */}
+                  {displayData.measurements.new_door && Object.keys(displayData.measurements.new_door).some(k => displayData.measurements.new_door[k]) && (
+                    <div>
+                      <h5 className="text-[12px] font-semibold text-[#4B5563] mb-2">New Door</h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-[13px]">
+                        {displayData.measurements.new_door.height_left && (
+                          <div>
+                            <span className="text-[#6B7280]">Height L:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.height_left}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.height_mid && (
+                          <div>
+                            <span className="text-[#6B7280]">Height M:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.height_mid}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.height_right && (
+                          <div>
+                            <span className="text-[#6B7280]">Height R:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.height_right}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.width_top && (
+                          <div>
+                            <span className="text-[#6B7280]">Width T:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.width_top}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.width_mid && (
+                          <div>
+                            <span className="text-[#6B7280]">Width M:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.width_mid}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.width_bottom && (
+                          <div>
+                            <span className="text-[#6B7280]">Width B:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.width_bottom}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.headroom && (
+                          <div>
+                            <span className="text-[#6B7280]">Headroom:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.headroom}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.sideroom_left && (
+                          <div>
+                            <span className="text-[#6B7280]">Sideroom L:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.sideroom_left}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.sideroom_right && (
+                          <div>
+                            <span className="text-[#6B7280]">Sideroom R:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.sideroom_right}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.type && (
+                          <div>
+                            <span className="text-[#6B7280]">Type:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.type}</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.finish && (
+                          <div>
+                            <span className="text-[#6B7280]">Finish:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.finish}</span>
+                          </div>
+                        )}
+                        {displayData.measurements.new_door.colour && (
+                          <div>
+                            <span className="text-[#6B7280]">Colour:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.new_door.colour}</span>
+                          </div>
+                        )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
+                    </div>
+                  )}
+
+                  {/* Existing Door Measurements */}
+                  {displayData.measurements.existing_door && Object.keys(displayData.measurements.existing_door).some(k => k !== 'removal_required' && displayData.measurements.existing_door[k]) && (
+                    <div className="pt-3 border-t border-[#E5E7EB]">
+                      <h5 className="text-[12px] font-semibold text-[#4B5563] mb-2">
+                        Existing Door
+                        {displayData.measurements.existing_door.removal_required === "Y" && 
+                          <span className="ml-2 text-orange-600">(Removal Required)</span>
+                        }
+                      </h5>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-[13px]">
                         {displayData.measurements.existing_door.height_left && (
                           <div>
                             <span className="text-[#6B7280]">Height L:</span>
                             <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.height_left}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.existing_door.height_mid && (
+                          <div>
+                            <span className="text-[#6B7280]">Height M:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.height_mid}mm</span>
                           </div>
                         )}
                         {displayData.measurements.existing_door.height_right && (
@@ -251,10 +257,46 @@ export default function ExpandableJobCard({ job, onOpenJob }) {
                             <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.height_right}mm</span>
                           </div>
                         )}
+                        {displayData.measurements.existing_door.width_top && (
+                          <div>
+                            <span className="text-[#6B7280]">Width T:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.width_top}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.existing_door.width_mid && (
+                          <div>
+                            <span className="text-[#6B7280]">Width M:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.width_mid}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.existing_door.width_bottom && (
+                          <div>
+                            <span className="text-[#6B7280]">Width B:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.width_bottom}mm</span>
+                          </div>
+                        )}
                         {displayData.measurements.existing_door.width && (
                           <div>
                             <span className="text-[#6B7280]">Width:</span>
                             <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.width}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.existing_door.headroom && (
+                          <div>
+                            <span className="text-[#6B7280]">Headroom:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.headroom}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.existing_door.sideroom_left && (
+                          <div>
+                            <span className="text-[#6B7280]">Sideroom L:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.sideroom_left}mm</span>
+                          </div>
+                        )}
+                        {displayData.measurements.existing_door.sideroom_right && (
+                          <div>
+                            <span className="text-[#6B7280]">Sideroom R:</span>
+                            <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.existing_door.sideroom_right}mm</span>
                           </div>
                         )}
                         {displayData.measurements.existing_door.type && (
@@ -278,7 +320,67 @@ export default function ExpandableJobCard({ job, onOpenJob }) {
                       </div>
                     </div>
                   )}
+
+                  {/* Legacy flat measurements (backward compatibility) */}
+                  {!displayData.measurements.new_door && !displayData.measurements.existing_door && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-[13px]">
+                      {displayData.measurements.width && (
+                        <div>
+                          <span className="text-[#6B7280]">Width:</span>
+                          <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.width}</span>
+                        </div>
+                      )}
+                      {displayData.measurements.height && (
+                        <div>
+                          <span className="text-[#6B7280]">Height:</span>
+                          <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.height}</span>
+                        </div>
+                      )}
+                      {displayData.measurements.headroom && (
+                        <div>
+                          <span className="text-[#6B7280]">Headroom:</span>
+                          <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.headroom}</span>
+                        </div>
+                      )}
+                      {displayData.measurements.sideroom_left && (
+                        <div>
+                          <span className="text-[#6B7280]">Sideroom L:</span>
+                          <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.sideroom_left}</span>
+                        </div>
+                      )}
+                      {displayData.measurements.sideroom_right && (
+                        <div>
+                          <span className="text-[#6B7280]">Sideroom R:</span>
+                          <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.sideroom_right}</span>
+                        </div>
+                      )}
+                      {displayData.measurements.depth && (
+                        <div>
+                          <span className="text-[#6B7280]">Depth:</span>
+                          <span className="ml-1 font-medium text-[#111827]">{displayData.measurements.depth}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Additional Info */}
+                  {displayData.measurements.additional_info && (
+                    <div className="pt-3 border-t border-[#E5E7EB]">
+                      <span className="text-[#6B7280] text-[12px]">Additional Info:</span>
+                      <p className="text-[13px] text-[#111827] mt-0.5">{displayData.measurements.additional_info}</p>
+                    </div>
+                  )}
+                  {displayData.measurements.notes && (
+                    <div className="pt-3 border-t border-[#E5E7EB]">
+                      <span className="text-[#6B7280] text-[12px]">Notes:</span>
+                      <p className="text-[13px] text-[#111827] mt-0.5">{displayData.measurements.notes}</p>
+                    </div>
+                  )}
                 </div>
+              </div>
+            )}
+
+
               </div>
             )}
 
