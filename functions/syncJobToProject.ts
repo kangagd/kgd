@@ -53,15 +53,17 @@ Deno.serve(async (req) => {
     const mergedImages = [...new Set([...existingImages, ...jobImages])];
 
     // Build project update with all job data
+    // GUARDRAIL: Prioritize latestSummary fields (from checkout) over job fields
+    // because basic checkout stores detailed notes in JobSummary, not Job entity
     const projectUpdate = {
       image_urls: mergedImages,
       initial_visit_job_id: job.id,
-      initial_visit_overview: job.overview || latestSummary?.overview || null,
-      initial_visit_next_steps: job.next_steps || latestSummary?.next_steps || null,
-      initial_visit_customer_communication: job.communication_with_client || latestSummary?.communication_with_client || null,
-      initial_visit_measurements: job.measurements || latestSummary?.measurements || null,
+      initial_visit_overview: latestSummary?.overview || job.overview || null,
+      initial_visit_next_steps: latestSummary?.next_steps || job.next_steps || null,
+      initial_visit_customer_communication: latestSummary?.communication_with_client || job.communication_with_client || null,
+      initial_visit_measurements: latestSummary?.measurements || job.measurements || null,
       initial_visit_image_urls: jobImages,
-      initial_visit_outcome: job.outcome || latestSummary?.outcome || null,
+      initial_visit_outcome: latestSummary?.outcome || job.outcome || null,
       initial_visit_completed_at: latestSummary?.check_out_time || new Date().toISOString(),
       initial_visit_technician_name: latestSummary?.technician_name || null
     };
