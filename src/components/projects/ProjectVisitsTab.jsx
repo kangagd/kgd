@@ -219,18 +219,13 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
 
               {/* Overview */}
               {visit.overview && (
-                <Collapsible defaultOpen={false}>
-                  <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors group">
-                    <span>Overview</span>
-                    <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div 
-                      className="text-sm text-[#4B5563] leading-relaxed prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: visit.overview }}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-[#111827]">Overview</div>
+                  <div 
+                    className="text-sm text-[#4B5563] leading-relaxed prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: visit.overview }}
+                  />
+                </div>
               )}
 
               {/* Next Steps */}
@@ -246,28 +241,20 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
 
               {/* Communication */}
               {visit.communication_with_client && (
-                <Collapsible defaultOpen={false}>
-                  <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors group">
-                    <span>Client Communication</span>
-                    <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div 
-                      className="text-sm text-[#4B5563] leading-relaxed prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: visit.communication_with_client }}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-[#111827]">Client Communication</div>
+                  <div 
+                    className="text-sm text-[#4B5563] leading-relaxed prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: visit.communication_with_client }}
+                  />
+                </div>
               )}
 
               {/* Measurements Details */}
               {visit.measurements && (
-                <Collapsible defaultOpen={false}>
-                  <CollapsibleTrigger className="flex items-center gap-2 text-sm font-semibold text-[#111827] hover:text-[#FAE008] transition-colors group">
-                    <span>Measurements</span>
-                    <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-[#111827]">Measurements</div>
+                  <div className="space-y-3">
                     <div className="space-y-3">
                       {/* Display notes if present */}
                       {visit.measurements.notes && (
@@ -395,8 +382,8 @@ export default function ProjectVisitsTab({ projectId, isReadOnly }) {
                         </div>
                       )}
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                  </div>
+                </div>
               )}
 
               {/* Footer with indicators and button */}
