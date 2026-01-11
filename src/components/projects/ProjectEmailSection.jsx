@@ -132,6 +132,11 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     await refetchDrafts();
   };
 
+  const handleEditDraft = (draft) => {
+    setEditingDraft(draft);
+    setComposerMode('compose');
+  };
+
   const handleDraftSaved = () => {
     refetchDrafts();
   };
@@ -284,6 +289,33 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
               </div>
             );
           })}
+
+          {/* Draft Emails */}
+          {drafts.length > 0 && (
+            <div className="space-y-2 mb-4">
+              <div className="text-xs font-medium text-[#6B7280]">Drafts</div>
+              {drafts.map(draft => (
+                <div
+                  key={draft.id}
+                  onClick={() => handleEditDraft(draft)}
+                  className="p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-xs font-medium text-amber-800">Draft</span>
+                    <span className="text-xs text-amber-600">
+                      {new Date(draft.updated_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {draft.subject && (
+                    <div className="text-sm font-medium text-[#111827] mb-1">{draft.subject}</div>
+                  )}
+                  <div className="text-xs text-[#6B7280] line-clamp-2">
+                    {draft.body_text?.substring(0, 150) || 'No content'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Button to link more threads */}
           <Button

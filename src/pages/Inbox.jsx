@@ -55,6 +55,20 @@ export default function Inbox() {
     enabled: !!user
   });
 
+  // Fetch drafts for selected thread
+  const { data: threadDrafts = [], refetch: refetchDrafts } = useQuery({
+    queryKey: ['threadDrafts', selectedThreadId],
+    queryFn: async () => {
+      if (!selectedThreadId || !user) return [];
+      const drafts = await base44.entities.EmailDraft.filter({ 
+        thread_id: selectedThreadId,
+        created_by: user.email 
+      }, '-updated_date');
+      return drafts;
+    },
+    enabled: !!selectedThreadId && !!user
+  });
+
   // Apply filters and search
   const filteredThreads = useMemo(() => {
     let result = threads.filter(t => !t.is_deleted);
@@ -136,9 +150,16 @@ export default function Inbox() {
     setShowComposer(false);
     setComposerMessage(null);
     await refetchThreads();
+    await refetchDrafts();
     if (selectedThread) {
       queryClient.invalidateQueries({ queryKey: ['emailThread', selectedThread.id] });
     }
+  };
+
+  // Handle draft click
+  const handleEditDraft = (draft) => {
+    setComposerMessage({ draft });
+    setShowComposer(true);
   };
 
   // Link thread to project
@@ -266,23 +287,51 @@ export default function Inbox() {
                      }}
                      onThreadUpdate={refetchThreads}
                    />
+
+                   {/* Draft Emails */}
+                   {threadDrafts.length > 0 && (
+                     <div className="mt-4 space-y-2">
+                       <div className="text-xs font-medium text-[#6B7280] mb-2">Drafts</div>
+                       {threadDrafts.map(draft => (
+                         <div
+                           key={draft.id}
+                           onClick={() => handleEditDraft(draft)}
+                           className="p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors"
+                         >
+                           <div className="flex items-start justify-between gap-2 mb-1">
+                             <span className="text-xs font-medium text-amber-800">Draft</span>
+                             <span className="text-xs text-amber-600">
+                               {new Date(draft.updated_date).toLocaleDateString()}
+                             </span>
+                           </div>
+                           {draft.subject && (
+                             <div className="text-sm font-medium text-[#111827] mb-1">{draft.subject}</div>
+                           )}
+                           <div className="text-xs text-[#6B7280] line-clamp-2">
+                             {draft.body_text?.substring(0, 150) || 'No content'}
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   )}
                  </div>
 
                 {/* Composer Section */}
                 {showComposer && (
-                  <div className="border-t border-[#E5E7EB] p-4 bg-white flex-shrink-0">
-                    <SharedComposer
-                      mode="reply"
-                      thread={selectedThread}
-                      message={composerMessage?.message}
-                      currentUser={user}
-                      onClose={() => {
-                        setShowComposer(false);
-                        setComposerMessage(null);
-                      }}
-                      onSent={handleComposerSent}
-                    />
-                  </div>
+                 <div className="border-t border-[#E5E7EB] p-4 bg-white flex-shrink-0">
+                   <SharedComposer
+                     mode="reply"
+                     thread={selectedThread}
+                     message={composerMessage?.message}
+                     existingDraft={composerMessage?.draft}
+                     currentUser={user}
+                     onClose={() => {
+                       setShowComposer(false);
+                       setComposerMessage(null);
+                     }}
+                     onSent={handleComposerSent}
+                   />
+                 </div>
                 )}
               </div>
             </>
