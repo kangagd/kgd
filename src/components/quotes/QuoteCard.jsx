@@ -105,8 +105,7 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
       try {
         const freshUrl = await onRefreshLink(quote);
         if (freshUrl) {
-          setPandaDocUrl(freshUrl);
-          setShowPandaDocModal(true);
+          window.open(freshUrl, '_blank');
         } else {
           toast.error('Could not generate client link');
         }
@@ -116,8 +115,7 @@ export default function QuoteCard({ quote, onUpdate, onSelect, isAdmin = false, 
         setIsLoadingLink(false);
       }
     } else if (quote.pandadoc_public_url) {
-      setPandaDocUrl(quote.pandadoc_public_url);
-      setShowPandaDocModal(true);
+      window.open(quote.pandadoc_public_url, '_blank');
     }
   };
 
