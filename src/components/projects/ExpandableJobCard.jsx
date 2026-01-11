@@ -144,9 +144,14 @@ export default function ExpandableJobCard({ job, onOpenJob }) {
             )}
 
             {/* Measurements */}
-            {displayData.measurements && (
+            {displayData.measurements && Object.keys(displayData.measurements).length > 0 && (
               <div className="space-y-2">
                 <div className="text-sm font-semibold text-[#111827]">Measurements</div>
+                <div className="bg-[#F8F9FA] rounded-lg p-3 border border-[#E5E7EB]">
+                  <pre className="text-xs text-[#111827] whitespace-pre-wrap font-mono">
+                    {JSON.stringify(displayData.measurements, null, 2)}
+                  </pre>
+                </div>
                 <div className="space-y-3">
                   {/* Display notes if present */}
                   {displayData.measurements.notes && (
