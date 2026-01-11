@@ -26,7 +26,7 @@ import AvailabilityManager from "../components/schedule/AvailabilityManager";
 import DayView from "../components/calendar/DayView";
 import WeekView from "../components/calendar/WeekView";
 import MonthView from "../components/calendar/MonthView";
-import { LayoutList, Calendar as CalendarIcon2 } from "lucide-react";
+
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 import { jobKeys } from "../components/api/queryKeys";
 
@@ -38,7 +38,6 @@ export default function Schedule() {
   const [selectedJob, setSelectedJob] = useState(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [contractFilter, setContractFilter] = useState(false);
-  const [viewType, setViewType] = useState("resource"); // 'resource' or 'calendar'
   const { user, role, isTechnician, isAdminOrManager } = usePermissions();
   
   const [viewScope, setViewScope] = useState("all");
@@ -1356,27 +1355,6 @@ export default function Schedule() {
               </TabsList>
             </Tabs>
 
-            {/* View Type Toggle (Resource/Calendar) */}
-            <div className="flex items-center gap-1 bg-white rounded-lg border border-[#E5E7EB] p-1 w-full sm:w-auto">
-              <Button
-                variant={viewType === "resource" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewType("resource")}
-                className={`flex-1 sm:flex-initial ${viewType === "resource" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}`}
-              >
-                <LayoutList className="w-4 h-4 mr-2" />
-                Resource
-              </Button>
-              <Button
-                variant={viewType === "calendar" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setViewType("calendar")}
-                className={`flex-1 sm:flex-initial ${viewType === "calendar" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}`}
-              >
-                <CalendarIcon2 className="w-4 h-4 mr-2" />
-                Calendar
-              </Button>
-            </div>
           </div>
           {renderTodaysJobs()}
         </div>
@@ -1392,19 +1370,11 @@ export default function Schedule() {
             ))}
           </div>
         ) : (
-          viewType === 'resource' ? (
-            <DragDropContext onDragEnd={handleDragEnd}>
-              {view === "day" && renderDayView()}
-              {view === "week" && renderWeekView()}
-              {view === "month" && renderMonthView()}
-            </DragDropContext>
-          ) : (
-            <>
-              {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
-              {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
-              {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
-            </>
-          )
+          <>
+            {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
+            {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
+            {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
+          </>
         )}
 
         {/* Reschedule Confirmation Modal */}
