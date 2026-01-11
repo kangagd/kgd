@@ -51,11 +51,14 @@ async function safeEntitySearch(entityName, query, fallbackFields = []) {
       const res = await entity.list();
       const records = normaliseRecords(res);
 
+      // Filter out soft-deleted items
+      const activeRecords = records.filter(record => !record.deleted_at);
+
       if (!fallbackFields.length) {
-        return records;
+        return activeRecords;
       }
 
-      return records.filter((record) =>
+      return activeRecords.filter((record) =>
         fallbackFields.some((field) => {
           const value = record[field];
           if (!value) return false;
