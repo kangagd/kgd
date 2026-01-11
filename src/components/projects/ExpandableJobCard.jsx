@@ -380,10 +380,6 @@ export default function ExpandableJobCard({ job, onOpenJob }) {
               </div>
             )}
 
-
-              </div>
-            )}
-
             {/* Notes */}
             {displayData.notes && (
               <div className="space-y-2">
