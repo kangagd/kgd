@@ -185,7 +185,7 @@ export default function Inbox() {
     ...QUERY_CONFIG.reference,
   });
 
-  // Apply filters and search
+  // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
     let result = threads.filter(t => !t.is_deleted);
 
@@ -201,24 +201,51 @@ export default function Inbox() {
       );
     }
 
-    // Status and assignment filters
-    if (activeFilters['assigned-to-me']) {
-      result = result.filter(t => t.assigned_to === user?.email);
-    }
-    if (activeFilters['unassigned']) {
-      result = result.filter(t => !t.assigned_to);
-    }
-    if (activeFilters['needs-reply']) {
-      result = result.filter(t => !t.is_read);
-    }
-    if (activeFilters['linked-project']) {
-      result = result.filter(t => t.project_id);
-    }
-    if (activeFilters['closed']) {
-      result = result.filter(t => t.status === 'Closed');
+    // Apply filters: if no filters set, show 'all' (non-closed threads)
+    if (Object.keys(activeFilters).length === 0) {
+      // Default 'All' view: non-closed threads only
+      result = result.filter(t => t.userStatus !== 'closed');
+    } else if (activeFilters['needs-reply']) {
+      result = result.filter(t => t.inferredState === 'needs_reply' && t.userStatus !== 'closed');
+    } else if (activeFilters['waiting-on-customer']) {
+      result = result.filter(t => t.inferredState === 'waiting_on_customer' && t.userStatus !== 'closed');
+    } else if (activeFilters['closed']) {
+      result = result.filter(t => t.userStatus === 'closed');
+    } else if (activeFilters['pinned']) {
+      result = result.filter(t => t.pinnedAt && t.userStatus !== 'closed');
+    } else if (activeFilters['linked']) {
+      result = result.filter(t => t.project_id || t.job_id);
+    } else if (activeFilters['unlinked']) {
+      result = result.filter(t => !t.project_id && !t.job_id && t.userStatus !== 'closed');
     }
 
-    return result.sort((a, b) => new Date(b.last_message_date) - new Date(a.last_message_date));
+    // Sorting logic
+    const sortFunction = (a, b) => {
+      // 1. Pinned first (pinnedAt DESC)
+      const aPinned = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+      const bPinned = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+
+      // 2. If closed filter is active, only sort by lastMessageDate
+      if (activeFilters['closed']) {
+        return new Date(b.last_message_date) - new Date(a.last_message_date);
+      }
+
+      // 3. Sort by inferredState priority (non-closed threads)
+      const stateOrder = {
+        'needs_reply': 0,
+        'waiting_on_customer': 1,
+        'none': 2
+      };
+      const aStateOrder = stateOrder[a.inferredState] ?? 3;
+      const bStateOrder = stateOrder[b.inferredState] ?? 3;
+      if (aStateOrder !== bStateOrder) return aStateOrder - bStateOrder;
+
+      // 4. Then by lastMessageDate DESC
+      return new Date(b.last_message_date) - new Date(a.last_message_date);
+    };
+
+    return result.sort(sortFunction);
   }, [threads, searchTerm, activeFilters, user?.email]);
 
   const selectedThread = useMemo(() => {
