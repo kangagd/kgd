@@ -562,6 +562,12 @@ export default function Inbox() {
         />
       )}
 
+      {/* Gmail History Search Modal */}
+      <GmailHistorySearchModal
+        open={showHistorySearch}
+        onOpenChange={setShowHistorySearch}
+      />
+
     </div>
   );
 }
