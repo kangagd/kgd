@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
-export default function GmailHistorySearch({ open, onClose, projectId = null }) {
+export default function GmailHistorySearch({ open, onClose, projectId = null, onThreadSynced }) {
   const [email, setEmail] = useState("");
   const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
