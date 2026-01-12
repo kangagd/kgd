@@ -46,25 +46,44 @@ export default function AddVehicleStockModal({ open, onClose, vehicleId }) {
 
   const addMutation = useMutation({
     mutationFn: async () => {
+      // Get vehicle location first
+      const locations = await base44.entities.InventoryLocation.filter({
+        type: 'vehicle',
+        vehicle_id: vehicleId
+      });
+      const locationId = locations[0]?.id;
+
+      if (!locationId) throw new Error('Vehicle location not found');
+
       if (isCreatingNew) {
-        // Create new product and add to vehicle via moveInventory
+        // Create new PriceListItem first, then add to vehicle
+        const newItem = await base44.entities.PriceListItem.create({
+          item: newItemData.item,
+          category: newItemData.category,
+          price: newItemData.price || 0,
+          track_inventory: true,
+          in_inventory: true
+        });
+
         const response = await base44.functions.invoke('moveInventory', {
-          action: 'create_and_add_to_vehicle',
-          vehicleId,
-          productDetails: newItemData,
+          priceListItemId: newItem.id,
+          fromLocationId: null,
+          toLocationId: locationId,
           quantity: parseInt(quantity),
-          reason: "Stock addition"
+          movementType: 'stock_in',
+          notes: "New item added to vehicle"
         });
         if (response.data.error) throw new Error(response.data.error);
         return response.data;
       } else {
-        // Existing product - adjust vehicle quantity via moveInventory
+        // Existing product - add quantity to vehicle
         const response = await base44.functions.invoke('moveInventory', {
-          action: 'adjust_vehicle_quantity',
-          vehicleId,
-          productId: selectedProduct,
-          newQuantity: parseInt(quantity),
-          reason: "Stock addition"
+          priceListItemId: selectedProduct,
+          fromLocationId: null,
+          toLocationId: locationId,
+          quantity: parseInt(quantity),
+          movementType: 'stock_in',
+          notes: "Stock addition to vehicle"
         });
         if (response.data.error) throw new Error(response.data.error);
         return response.data;
