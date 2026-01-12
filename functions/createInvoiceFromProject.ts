@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       Status: "AUTHORISED"
     };
 
-    // Create invoice in Xero
+    // STEP 1: Create invoice in Xero FIRST (before any DB writes)
     const connection = await refreshAndGetXeroConnection(base44);
 
     const response = await fetch('https://api.xero.com/api.xro/2.0/Invoices', {
@@ -104,8 +104,9 @@ Deno.serve(async (req) => {
 
     const result = await response.json();
     const invoice = result.Invoices[0];
+    console.log(`[createInvoiceFromProject] Created invoice in Xero: ${invoice.InvoiceID}`);
 
-    // Create XeroInvoice record in database and link to project atomically
+    // STEP 2: Create XeroInvoice record in database (now safe—Xero API succeeded)
     const xeroInvoice = await base44.asServiceRole.entities.XeroInvoice.create({
       xero_invoice_id: invoice.InvoiceID,
       xero_invoice_number: invoice.InvoiceNumber,
@@ -126,20 +127,28 @@ Deno.serve(async (req) => {
       reference: `Project #${project.project_number} - ${project.title}`,
       raw_payload: invoice
     });
+    console.log(`[createInvoiceFromProject] Created XeroInvoice record: ${xeroInvoice.id}`);
 
-    // Link invoice to project and update activity—throw on failure to prevent orphaned invoices
-    const xeroInvoices = project.xero_invoices || [];
-    if (!xeroInvoices.includes(xeroInvoice.id)) {
-      xeroInvoices.push(xeroInvoice.id);
+    // STEP 3: Link invoice to project (non-critical; if fails, invoice exists in Xero)
+    try {
+      const xeroInvoices = project.xero_invoices || [];
+      if (!xeroInvoices.includes(xeroInvoice.id)) {
+        xeroInvoices.push(xeroInvoice.id);
+      }
+      
+      await base44.asServiceRole.entities.Project.update(project.id, {
+        xero_invoices: xeroInvoices,
+        primary_xero_invoice_id: xeroInvoice.id,
+        xero_payment_url: invoice.OnlineInvoiceUrl || null,
+        last_activity_at: new Date().toISOString(),
+        last_activity_type: 'Invoice Created'
+      });
+      console.log(`[createInvoiceFromProject] Linked invoice to project ${project_id}`);
+    } catch (projectError) {
+      // Non-critical failure: invoice exists in Xero and DB, just not linked to project yet
+      console.error(`[createInvoiceFromProject] Warning: Failed to link invoice to project (recoverable):`, projectError);
+      // Return success anyway—user can manually link via ProjectDetails
     }
-    
-    await base44.asServiceRole.entities.Project.update(project.id, {
-      xero_invoices: xeroInvoices,
-      primary_xero_invoice_id: xeroInvoice.id,
-      xero_payment_url: invoice.OnlineInvoiceUrl || null,
-      last_activity_at: new Date().toISOString(),
-      last_activity_type: 'Invoice Created'
-    });
 
     return Response.json({ 
       success: true, 
