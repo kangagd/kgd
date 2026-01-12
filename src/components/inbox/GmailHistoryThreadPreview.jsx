@@ -266,35 +266,98 @@ export default function GmailHistoryThreadPreview({
 
         {/* Actions */}
         <div className="space-y-2 pt-4 border-t">
-          <Button
-            onClick={handleImportWithLink}
-            disabled={isImporting}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {isImporting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Importing...
-              </>
-            ) : (
-              'Import + Link to Project/Job'
-            )}
-          </Button>
-          <Button
-            onClick={handleImportOnly}
-            disabled={isImporting}
-            variant="outline"
-            className="w-full"
-          >
-            {isImporting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Importing...
-              </>
-            ) : (
-              'Import Only'
-            )}
-          </Button>
+          {defaultLinkTarget ? (
+            <>
+              <Button
+                onClick={async () => {
+                  setIsImporting(true);
+                  try {
+                    const response = await base44.functions.invoke('importGmailThread', {
+                      gmailThreadId: normalized.gmailThreadId,
+                      linkTarget: {
+                        linkedEntityType: defaultLinkTarget.type,
+                        linkedEntityId: defaultLinkTarget.id,
+                        linkedEntityNumber: defaultLinkTarget.number,
+                        linkedEntityTitle: defaultLinkTarget.title
+                      }
+                    });
+
+                    if (response.data.success) {
+                      toast.success(`Thread imported and linked to ${defaultLinkTarget.type}`);
+                      setImportSuccess(true);
+                      queryClient.invalidateQueries({ queryKey: ['gmailHistoricalSearch'] });
+                      queryClient.invalidateQueries({ queryKey: ['inboxKeys', 'threads'] });
+                      setTimeout(() => onImported?.(), 1000);
+                    } else {
+                      toast.error(response.data.error);
+                    }
+                  } catch (error) {
+                    toast.error(error.message);
+                  } finally {
+                    setIsImporting(false);
+                  }
+                }}
+                disabled={isImporting}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  `Import + Link to ${defaultLinkTarget.type}`
+                )}
+              </Button>
+              <Button
+                onClick={handleImportOnly}
+                disabled={isImporting}
+                variant="outline"
+                className="w-full"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  'Import Only'
+                )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={handleImportWithLink}
+                disabled={isImporting}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  'Import + Link to Project/Job'
+                )}
+              </Button>
+              <Button
+                onClick={handleImportOnly}
+                disabled={isImporting}
+                variant="outline"
+                className="w-full"
+              >
+                {isImporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  'Import Only'
+                )}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
