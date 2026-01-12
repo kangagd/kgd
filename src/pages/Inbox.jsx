@@ -384,7 +384,6 @@ export default function Inbox() {
               }
             }}
             userEmail={user?.email}
-            onOpenHistorySearch={() => setShowHistorySearch(true)}
           />
 
           {/* Sync Status Indicator */}
