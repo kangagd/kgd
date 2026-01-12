@@ -47,27 +47,24 @@ export default function AddVehicleStockModal({ open, onClose, vehicleId }) {
   const addMutation = useMutation({
     mutationFn: async () => {
       if (isCreatingNew) {
-        // Create new product and add to vehicle
-        const response = await base44.functions.invoke('manageVehicleStock', {
-          action: 'create_product_and_add',
-          data: {
-            vehicle_id: vehicleId,
-            product_details: newItemData,
-            initial_quantity: parseInt(quantity)
-          }
+        // Create new product and add to vehicle via moveInventory
+        const response = await base44.functions.invoke('moveInventory', {
+          action: 'create_and_add_to_vehicle',
+          vehicleId,
+          productDetails: newItemData,
+          quantity: parseInt(quantity),
+          reason: "Stock addition"
         });
         if (response.data.error) throw new Error(response.data.error);
         return response.data;
       } else {
-        // Existing product
-        const response = await base44.functions.invoke('manageVehicleStock', {
-          action: 'adjust',
-          data: {
-            vehicle_id: vehicleId,
-            product_id: selectedProduct,
-            new_quantity: parseInt(quantity),
-            reason: "Stock addition"
-          }
+        // Existing product - adjust vehicle quantity via moveInventory
+        const response = await base44.functions.invoke('moveInventory', {
+          action: 'adjust_vehicle_quantity',
+          vehicleId,
+          productId: selectedProduct,
+          newQuantity: parseInt(quantity),
+          reason: "Stock addition"
         });
         if (response.data.error) throw new Error(response.data.error);
         return response.data;
@@ -75,7 +72,8 @@ export default function AddVehicleStockModal({ open, onClose, vehicleId }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicleStock', vehicleId] });
-      queryClient.invalidateQueries({ queryKey: ['priceListItems'] }); // Refresh product list
+      queryClient.invalidateQueries({ queryKey: ['inventoryQuantities'] });
+      queryClient.invalidateQueries({ queryKey: ['priceListItems'] });
       toast.success(isCreatingNew ? "New item created and added" : "Item added to vehicle");
       handleClose();
     },
