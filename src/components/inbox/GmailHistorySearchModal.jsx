@@ -66,6 +66,8 @@ export default function GmailHistorySearchModal({
       setPageToken(null);
       setAllResults([]);
       setHasMore(false);
+      setSearchError(null);
+      setErrorExpanded(false);
     }
   }, [open]);
 
