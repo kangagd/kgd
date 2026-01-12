@@ -147,6 +147,9 @@ const LinkProjectJobModal = ({ open, onOpenChange, gmailThreadId, onLinked }) =>
 
 export default function GmailHistoryThreadPreview({
   thread,
+  previewMessages = [],
+  loading = false,
+  error = null,
   onBack,
   defaultLinkTarget,
   onImported
@@ -167,6 +170,20 @@ export default function GmailHistoryThreadPreview({
 
   // Normalize thread to ensure consistent shape
   const normalized = normalizeGmailHistoryThread(thread);
+
+  // Sanitize HTML safely
+  const sanitizeHtml = useMemo(() => (html) => {
+    if (!html) return '';
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: [
+        'p', 'br', 'div', 'span', 'strong', 'b', 'em', 'i', 'u', 'a',
+        'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'blockquote', 'table', 'tr', 'td', 'th', 'thead', 'tbody', 'img'
+      ],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'target', 'rel', 'title', 'style'],
+      FORCE_BODY: true
+    });
+  }, []);
 
   const handleImportOnly = async () => {
     setIsImporting(true);
