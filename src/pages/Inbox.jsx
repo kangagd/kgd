@@ -100,7 +100,7 @@ export default function Inbox() {
     };
   }, [user, queryClient, lastThreadFetchTime]);
 
-  // Sync Gmail inbox
+  // Sync Gmail inbox + messages (orchestrated)
   const syncGmailInbox = async () => {
     if (isSyncing) return;
 
@@ -114,9 +114,19 @@ export default function Inbox() {
     try {
       setIsSyncing(true);
       setLastSyncRequestTime(now);
-      await base44.functions.invoke('gmailSyncInbox', { maxResults: 50 });
+      // Call orchestrated sync (threads + messages)
+      const result = await base44.functions.invoke('gmailSyncOrchestrated', {});
+      
+      if (result.summary) {
+        console.log(`[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`);
+      }
+      
       await refetchThreads();
       setLastSyncTime(new Date());
+      
+      if (result.errors && result.errors.length > 0) {
+        console.warn('Sync completed with errors:', result.errors);
+      }
     } catch (error) {
       console.error('Sync failed:', error);
       toast.error('Failed to sync emails');
