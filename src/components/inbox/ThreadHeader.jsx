@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { computeInferredStateWithAutoClear } from '@/components/inbox/inferredStateAutoClear';
 
 export default function ThreadHeader({ thread, users = [], onStatusChange, onAssignChange, loading = false }) {
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
