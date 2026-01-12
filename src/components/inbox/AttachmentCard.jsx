@@ -237,18 +237,13 @@ export default function AttachmentCard({
           const allUrls = [...existingImages, ...existingDocUrls];
           
           if (!allUrls.some(url => url && url.includes(attachment.filename))) {
-            if (isImage) {
-              const updatedImageUrls = [...existingImages, urlToSave];
-              await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
-            } else {
-              const updatedDocs = [...existingDocs, { url: urlToSave, name: attachment.filename }];
-              // Use backend function to avoid timestamp validation issues
-              await base44.functions.invoke('manageProject', {
-                action: 'update',
-                id: linkedProjectId,
-                data: { other_documents: updatedDocs }
-              });
-            }
+            await base44.functions.invoke('addAttachmentToEntity', {
+              entity_type: 'Project',
+              entity_id: linkedProjectId,
+              attachment_url: urlToSave,
+              attachment_name: attachment.filename,
+              is_image: isImageFile(attachment.mime_type, attachment.filename)
+            });
           }
           
           toast.success(`${isImage ? 'Image' : 'Document'} saved to project`);
