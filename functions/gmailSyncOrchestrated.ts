@@ -35,9 +35,12 @@ Deno.serve(async (req) => {
       console.log('[gmailSyncOrchestrated] Phase 1: Sync thread metadata');
       const threadSyncStart = Date.now();
       
-      const threadResult = await base44.functions.invoke('gmailSyncInbox', {
+      const threadResponse = await base44.functions.invoke('gmailSyncInbox', {
         maxResults: 50
       });
+      
+      const threadResult = threadResponse.data || threadResponse;
+      console.log('[gmailSyncOrchestrated] Phase 1 raw result:', threadResult);
       
       results.phases.push({
         name: 'gmailSyncInbox',
@@ -46,7 +49,7 @@ Deno.serve(async (req) => {
         status: 'success'
       });
       
-      console.log(`[gmailSyncOrchestrated] Phase 1 complete: ${threadResult.synced} threads synced in ${Date.now() - threadSyncStart}ms`);
+      console.log(`[gmailSyncOrchestrated] Phase 1 complete: ${threadResult.synced || 0} threads synced in ${Date.now() - threadSyncStart}ms`);
     } catch (error) {
       console.error('[gmailSyncOrchestrated] Phase 1 (thread sync) failed:', error.message);
       results.phases.push({
@@ -65,7 +68,10 @@ Deno.serve(async (req) => {
       console.log('[gmailSyncOrchestrated] Phase 2: Sync full messages');
       const msgSyncStart = Date.now();
       
-      const msgResult = await base44.functions.invoke('gmailSync', {});
+      const msgResponse = await base44.functions.invoke('gmailSync', {});
+      
+      const msgResult = msgResponse.data || msgResponse;
+      console.log('[gmailSyncOrchestrated] Phase 2 raw result:', msgResult);
       
       results.phases.push({
         name: 'gmailSync',
@@ -75,7 +81,7 @@ Deno.serve(async (req) => {
         status: 'success'
       });
       
-      console.log(`[gmailSyncOrchestrated] Phase 2 complete: ${msgResult.synced} messages synced in ${Date.now() - msgSyncStart}ms`);
+      console.log(`[gmailSyncOrchestrated] Phase 2 complete: ${msgResult.synced || 0} messages synced in ${Date.now() - msgSyncStart}ms`);
     } catch (error) {
       console.error('[gmailSyncOrchestrated] Phase 2 (message sync) failed:', error.message);
       results.phases.push({
