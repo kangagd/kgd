@@ -33,9 +33,14 @@ export default function StockUsageModal({ open, onClose, item, vehicleId }) {
 
   const consumeMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await base44.functions.invoke('manageVehicleStock', {
-        action: 'consume',
-        data: data
+      const response = await base44.functions.invoke('moveInventory', {
+        priceListItemId: item.product_id,
+        fromLocationId: item.location_id,
+        toLocationId: null,
+        quantity: data.quantity,
+        movementType: 'job_usage',
+        jobId: data.job_id,
+        notes: data.reason
       });
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
@@ -55,11 +60,9 @@ export default function StockUsageModal({ open, onClose, item, vehicleId }) {
     }
 
     consumeMutation.mutate({
-      vehicle_id: vehicleId,
-      product_id: item.product_id,
       quantity: parseInt(quantity),
-      job_id: jobId || null,
-      reason: jobId ? `Used on Job` : "Used"
+      job_id: jobId && jobId !== 'none' ? jobId : null,
+      reason: jobId && jobId !== 'none' ? `Used on Job` : "Used"
     });
   };
 
