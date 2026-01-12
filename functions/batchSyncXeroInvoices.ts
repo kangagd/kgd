@@ -83,8 +83,8 @@ Deno.serve(async (req) => {
 
     const connection = await refreshAndGetXeroConnection(base44);
 
-    // Get all XeroInvoice records that aren't VOIDED
-    const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list('-updated_date', 500);
+    // Get all XeroInvoice records that aren't VOIDED (limit to 50 per run)
+    const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list('-updated_date', 50);
     const activeInvoices = allInvoices.filter(inv => inv.status !== 'VOIDED');
 
     console.log(`[batchSyncXeroInvoices] Found ${activeInvoices.length} active invoices to sync`);
@@ -95,8 +95,8 @@ Deno.serve(async (req) => {
 
     for (const invoiceRecord of activeInvoices) {
       try {
-        // Rate limiting: 60 calls per minute = 1 per second
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Rate limiting: reduced delay to 100ms to avoid timeout
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Fetch latest invoice data from Xero
         const xeroResponse = await fetch(
