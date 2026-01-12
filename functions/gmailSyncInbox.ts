@@ -201,8 +201,14 @@ Deno.serve(async (req) => {
     stage = 'upsert_threads';
     const upsertedThreads = [];
 
-    for (const gmailThread of threads) {
+    for (let i = 0; i < threads.length; i++) {
+      const gmailThread = threads[i];
       try {
+        // Add delay to avoid rate limits (50ms per thread)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
         // Fetch minimal thread metadata (not full messages)
         const threadDetail = await gmailFetch(
           `/gmail/v1/users/me/threads/${gmailThread.id}`,
