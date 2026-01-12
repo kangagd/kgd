@@ -4,10 +4,10 @@
  */
 
 export const QUERY_CONFIG = {
-  // Critical data - always fresh, refetch on window focus
+  // Critical data - rely on staleTime, don't cascade on window focus
   critical: {
     staleTime: 30000, // 30 seconds - reduced refetches
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: (failureCount, error) => {
       // Retry 429 with exponential backoff
@@ -25,11 +25,11 @@ export const QUERY_CONFIG = {
     },
   },
 
-  // Real-time data - auto-refresh every minute
+  // Real-time data - rely on subscriptions + staleTime, not aggressive refetch
   realtime: {
     staleTime: 30000, // 30 seconds
-    refetchInterval: 60000, // Refetch every 60 seconds
-    refetchOnWindowFocus: true,
+    refetchInterval: false, // Disabled - use real-time subscriptions instead
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
     retry: (failureCount, error) => {
       if (error?.response?.status === 429) {

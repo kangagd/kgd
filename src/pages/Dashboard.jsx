@@ -21,6 +21,7 @@ import EntityModal from "../components/common/EntityModal";
 import JobModalView from "../components/jobs/JobModalView";
 import { toast } from "sonner";
 import { jobKeys } from "../components/api/queryKeys";
+import { QUERY_CONFIG } from "../components/api/queryConfig";
 
 
 
@@ -49,10 +50,7 @@ export default function Dashboard() {
   const { data: allJobs = [] } = useQuery({
     queryKey: jobKeys.all,
     queryFn: () => base44.entities.Job.list('-scheduled_date'),
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
   const jobs = allJobs.filter(j => !j.deleted_at);
@@ -60,19 +58,13 @@ export default function Dashboard() {
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns'],
     queryFn: () => base44.entities.CheckInOut.list('-created_date', 10),
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-updated_date', 5),
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
   const recentProjects = allProjects.filter(p => !p.deleted_at).slice(0, 5);
@@ -81,10 +73,7 @@ export default function Dashboard() {
     queryKey: ['myTasks', user?.email],
     queryFn: () => base44.entities.Task.filter({ assigned_to_email: user?.email }),
     enabled: !!user?.email,
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
   const myTasks = allTasks
@@ -110,7 +99,6 @@ export default function Dashboard() {
         client_confirmed: false,
         status: 'Scheduled'
       });
-      // Filter for jobs scheduled in the next 7 days, excluding logistics jobs
       return jobs.filter(job => {
         if (!job.scheduled_date || job.is_logistics_job) return false;
         const scheduledDate = new Date(job.scheduled_date);
@@ -118,10 +106,7 @@ export default function Dashboard() {
       });
     },
     enabled: isAdminOrManager,
-    staleTime: 120000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
   // Fetch unbooked third party trades
@@ -131,10 +116,7 @@ export default function Dashboard() {
       status: 'Required'
     }),
     enabled: isAdminOrManager,
-    staleTime: 120000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
   // Combine both into attention items
@@ -167,10 +149,7 @@ export default function Dashboard() {
     queryKey: ['purchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
     enabled: isAdminOrManager,
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
   const recentPurchaseOrders = allPurchaseOrders.filter(po => 
@@ -184,10 +163,7 @@ export default function Dashboard() {
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
     enabled: isAdminOrManager,
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 1,
+    ...QUERY_CONFIG.frequent,
   });
 
 
