@@ -2,93 +2,39 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
 import { gmailFetch } from './shared/gmailClient.js';
 
-const fixEncodingIssues = (text) => {
+/**
+ * Safe normalization - only apply after correct UTF-8 decoding
+ * Does NOT attempt to fix encoding; only normalizes valid UTF-8
+ */
+const normalizeText = (text) => {
   if (text == null) return text;
-  let fixed = String(text);
-
-  // 1) Common HTML entities
-  fixed = fixed
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&#8217;/g, "'")   // '
-    .replace(/&#8216;/g, "'")   // '
-    .replace(/&#8220;/g, '"')   // "
-    .replace(/&#8221;/g, '"')   // "
-    .replace(/&#8211;/g, "–")  // –
-    .replace(/&#8212;/g, "—"); // —
-
-  // 2) UTF-8 → Windows-1252 mojibake patterns
-  const mojibakeReplacements = [
-    // Smart quotes & dashes (â… sequences)
-    [/â/g, "'"],
-    [/â/g, "'"],
-    [/â/g, """],
-    [/â/g, """],
-    [/â/g, "–"],
-    [/â/g, "—"],
-    [/â¦/g, "…"],
-
-    // Variants already in the old helper
-    [/â€™/g, "'"],
-    [/â€˜/g, "'"],
-    [/â€œ/g, """],
-    [/â€/g, """],
-    [/â€¢/g, "•"],
-
-    // Spaces / NBSP / odd spacing
-    [/Â /g, " "],
-    [/Â/g, " "],
-    [/â€‰/g, " "],
-    [/â €/g, " "],
-
-    // Misc symbols
-    [/Â°/g, "°"],
-    [/â‚¬/g, "€"],
-    [/â ·/g, "·"],
-    [/â ·â(\d+)/g, " ·$1"],
-    [/Ã¢â‚¬â„¢/g, "'"],
-  ];
-
-  for (const [pattern, replacement] of mojibakeReplacements) {
-    fixed = fixed.replace(pattern, replacement);
+  let normalized = String(text);
+  
+  // Decode HTML entities (safe - preserves URLs, punctuation)
+  const entityMap = {
+    '&nbsp;': ' ',
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#39;': "'",
+    '&apos;': "'",
+  };
+  
+  for (const [entity, char] of Object.entries(entityMap)) {
+    normalized = normalized.replace(new RegExp(entity, 'g'), char);
   }
-
-  // 3) Accented characters (Ã… style patterns)
-  const accentReplacements = [
-    [/Ã /g, "à"],
-    [/Ã¡/g, "á"],
-    [/Ã¢/g, "â"],
-    [/Ã£/g, "ã"],
-    [/Ã¤/g, "ä"],
-    [/Ã¨/g, "è"],
-    [/Ã©/g, "é"],
-    [/Ãª/g, "ê"],
-    [/Ã«/g, "ë"],
-    [/Ã¬/g, "ì"],
-    [/Ã­/g, "í"],
-    [/Ã®/g, "î"],
-    [/Ã¯/g, "ï"],
-    [/Ã²/g, "ò"],
-    [/Ã³/g, "ó"],
-    [/Ã´/g, "ô"],
-    [/Ãµ/g, "õ"],
-    [/Ã¶/g, "ö"],
-    [/Ã¹/g, "ù"],
-    [/Ãº/g, "ú"],
-    [/Ã»/g, "û"],
-    [/Ã¼/g, "ü"],
-  ];
-
-  for (const [pattern, replacement] of accentReplacements) {
-    fixed = fixed.replace(pattern, replacement);
-  }
-
-  return fixed;
+  
+  // Remove zero-width characters
+  normalized = normalized.replace(/\u200B/g, '');
+  
+  // Replace non-breaking spaces with regular spaces
+  normalized = normalized.replace(/\u00A0/g, ' ');
+  
+  // Normalize line endings to \n
+  normalized = normalized.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  return normalized;
 };
 
 
@@ -435,16 +381,28 @@ Deno.serve(async (req) => {
         const attachments = [];
         const inlineImages = [];
 
+        const decodeUtf8 = (base64urlData) => {
+          try {
+            // Convert base64url to base64
+            const base64 = base64urlData.replace(/-/g, '+').replace(/_/g, '/');
+            // Decode base64 to UTF-8 string (single decode only)
+            const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            return new TextDecoder('utf-8').decode(bytes);
+          } catch (err) {
+            console.error('UTF-8 decode error:', err);
+            return '';
+          }
+        };
+
         const processParts = (parts) => {
           if (!parts || !Array.isArray(parts)) return;
           for (const part of parts) {
             try {
+              // Prefer HTML, fallback to plain text
               if (part.mimeType === 'text/html' && part.body?.data) {
-                const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-                if (decoded) bodyHtml = decoded;
-              } else if (part.mimeType === 'text/plain' && part.body?.data) {
-                const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-                if (decoded) bodyText = decoded;
+                bodyHtml = decodeUtf8(part.body.data);
+              } else if (part.mimeType === 'text/plain' && part.body?.data && !bodyHtml) {
+                bodyText = decodeUtf8(part.body.data);
               }
               
               if (part.filename && part.filename.length > 0) {
@@ -481,10 +439,10 @@ Deno.serve(async (req) => {
           }
         };
 
+        // Top-level body decode (fallback if no parts)
         try {
-          if (detail.payload.body?.data) {
-            const decoded = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            if (decoded) bodyText = decoded;
+          if (detail.payload.body?.data && !bodyHtml && !bodyText) {
+            bodyText = decodeUtf8(detail.payload.body.data);
           }
         } catch (err) {
           console.error('Error decoding body:', err);
@@ -518,9 +476,9 @@ Deno.serve(async (req) => {
           from_address: fromAddress,
           to_addresses: toAddresses.length > 0 ? toAddresses : [fromAddress],
           sent_at: new Date(date).toISOString(),
-          subject: fixEncodingIssues(subject || '(No Subject)'),
-          body_html: fixEncodingIssues(bodyHtml),
-          body_text: fixEncodingIssues(bodyText),
+          subject: normalizeText(subject || '(No Subject)'),
+          body_html: normalizeText(bodyHtml),
+          body_text: normalizeText(bodyText),
           message_id: effectiveMessageId,
           is_outbound: isOutbound,
           attachments: processedAttachments.length > 0 ? processedAttachments : undefined
