@@ -110,11 +110,15 @@ Deno.serve(async (req) => {
     let totalErrors = 0;
     const allErrorDetails = [];
 
+    // Limit to THREADS_PER_EXECUTION to avoid timeout
+    const threadsToProcess = threads.slice(0, THREADS_PER_EXECUTION);
+    const hasMore = threads.length > THREADS_PER_EXECUTION;
+
     // Process in batches
-    for (let i = 0; i < threads.length; i += BATCH_SIZE) {
-      const batch = threads.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < threadsToProcess.length; i += BATCH_SIZE) {
+      const batch = threadsToProcess.slice(i, i + BATCH_SIZE);
       const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(threads.length / BATCH_SIZE);
+      const totalBatches = Math.ceil(threadsToProcess.length / BATCH_SIZE);
 
       console.log(`Processing batch ${batchNum}/${totalBatches} (${batch.length} threads)`);
 
@@ -124,18 +128,21 @@ Deno.serve(async (req) => {
       allErrorDetails.push(...batchResult.errorDetails);
 
       // Delay between batches to avoid timeouts
-      if (i + BATCH_SIZE < threads.length) {
+      if (i + BATCH_SIZE < threadsToProcess.length) {
         await sleep(BATCH_DELAY_MS);
       }
     }
 
-    console.log(`Backfill complete: ${totalUpdated} updated, ${totalErrors} errors`);
+    console.log(`Backfill batch complete: ${totalUpdated} updated, ${totalErrors} errors`);
 
     return Response.json({
       success: true,
-      totalProcessed: threads.length,
+      processed: threadsToProcess.length,
+      total: threads.length,
+      hasMore,
       updated: totalUpdated,
       errors: totalErrors,
+      message: `Processed ${threadsToProcess.length}/${threads.length} threads. ${hasMore ? 'Run again to process remaining.' : 'All threads processed.'}`,
       errorDetails: totalErrors > 0 ? allErrorDetails.slice(0, 10) : []
     });
 
