@@ -112,7 +112,14 @@ Deno.serve(async (req) => {
       // Continue with minimal data if linking fails
     }
 
-    const thread = await base44.asServiceRole.entities.EmailThread.create(emailThreadData);
+    // Create new thread or update existing (if force re-sync)
+    let thread;
+    if (existing.length > 0 && force) {
+      await base44.asServiceRole.entities.EmailThread.update(existing[0].id, emailThreadData);
+      thread = existing[0];
+    } else {
+      thread = await base44.asServiceRole.entities.EmailThread.create(emailThreadData);
+    }
 
     // Create EmailMessage records
     for (const msg of messages) {
