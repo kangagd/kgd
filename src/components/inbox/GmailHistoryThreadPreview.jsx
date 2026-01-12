@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,6 +7,7 @@ import { ChevronLeft, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
+import { inboxKeys, projectKeys, jobKeys } from '@/components/api/queryKeys';
 
 const LinkProjectJobModal = ({ open, onOpenChange, gmailThreadId, onLinked }) => {
   const [searchTerm, setSearchTerm] = useState('');
