@@ -50,10 +50,12 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
       });
 
       if (response.data?.thread_id) {
+        const threadId = response.data.thread_id;
+        
         // If projectId is provided, link the thread to the project
         if (projectId) {
           try {
-            await base44.entities.EmailThread.update(response.data.thread_id, {
+            await base44.entities.EmailThread.update(threadId, {
               linked_project_id: projectId
             });
             toast.success("Email synced and linked to project");
@@ -68,9 +70,14 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
         // Update the result to show it's synced
         setResults(prev => prev.map(t => 
           t.gmail_thread_id === thread.gmail_thread_id 
-            ? { ...t, is_synced: true, synced_id: response.data.thread_id }
+            ? { ...t, is_synced: true, synced_id: threadId }
             : t
         ));
+        
+        // Automatically open the thread
+        if (onThreadSynced) {
+          onThreadSynced(threadId);
+        }
       }
     } catch (error) {
       toast.error("Sync failed: " + error.message);
