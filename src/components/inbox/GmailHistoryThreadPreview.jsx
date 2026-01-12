@@ -157,14 +157,14 @@ export default function GmailHistoryThreadPreview({
     setIsImporting(true);
     try {
       const response = await base44.functions.invoke('importGmailThread', {
-        gmailThreadId: thread.gmail_thread_id
+        gmailThreadId: thread.gmailThreadId
       });
 
       if (response.data.success) {
         toast.success('Thread imported successfully');
         setImportSuccess(true);
         queryClient.invalidateQueries({ queryKey: ['gmailHistoricalSearch'] });
-        queryClient.invalidateQueries({ queryKey: ['inboxKeys.threads'] });
+        queryClient.invalidateQueries({ queryKey: ['inboxKeys', 'threads'] });
         setTimeout(() => onImported?.(), 1000);
       } else {
         toast.error(response.data.error);
