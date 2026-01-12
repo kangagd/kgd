@@ -14,8 +14,7 @@ export default function InboxFilterBar({
   onSearchChange, 
   activeFilters, 
   onFilterChange,
-  userEmail,
-  onOpenHistorySearch
+  userEmail
 }) {
   const filters = [
     { id: 'needs-reply', label: 'Needs Reply', value: { inferredState: 'needs_reply' } },
