@@ -249,8 +249,12 @@ export default function AttachmentCard({
               await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
             } else {
               const updatedDocs = [...existingDocs, { url: urlToSave, name: attachment.filename }];
-              // Send ONLY the field we're updating to avoid timestamp validation issues
-              await base44.asServiceRole.entities.Project.update(linkedProjectId, { other_documents: updatedDocs });
+              // Use backend function to avoid timestamp validation issues
+              await base44.functions.invoke('manageProject', {
+                action: 'update',
+                id: linkedProjectId,
+                data: { other_documents: updatedDocs }
+              });
             }
           }
           
