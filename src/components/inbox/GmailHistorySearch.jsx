@@ -83,10 +83,10 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
           toast.success("Email synced successfully");
         }
         
-        // Update the result to show it's synced
+        // Update the result to show it's synced and linked (if projectId was provided)
         setResults(prev => prev.map(t => 
           t.gmail_thread_id === thread.gmail_thread_id 
-            ? { ...t, is_synced: true, synced_id: threadId }
+            ? { ...t, is_synced: true, synced_id: threadId, is_linked: !!projectId }
             : t
         ));
         
