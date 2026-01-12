@@ -17,6 +17,8 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
 
   const statusOptions = ['Open', 'Waiting on Customer', 'Internal', 'Closed'];
 
+  const displayState = computeInferredStateWithAutoClear(thread);
+
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
   };
