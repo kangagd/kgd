@@ -21,55 +21,22 @@ export default function StockAdjustmentModal({ open, onClose, item, vehicleId })
 
   React.useEffect(() => {
     if (open && item) {
-      setNewQuantity(item.quantity_on_hand || 0);
+      setNewQuantity(item.quantity_on_hand);
       setReason("");
     }
   }, [open, item]);
 
   const adjustMutation = useMutation({
     mutationFn: async (data) => {
-      const inventoryLoc = await base44.entities.InventoryLocation.filter({ 
-        type: 'vehicle',
-        vehicle_id: vehicleId 
+      const response = await base44.functions.invoke('manageVehicleStock', {
+        action: 'adjust',
+        data: data
       });
-      
-      if (inventoryLoc.length === 0) {
-        throw new Error("Vehicle location not found");
-      }
-
-      const quantities = await base44.entities.InventoryQuantity.filter({
-        location_id: inventoryLoc[0].id,
-        price_list_item_id: data.product_id
-      });
-
-      if (quantities.length === 0) {
-        throw new Error("Item not found in vehicle inventory");
-      }
-
-      const currentQty = quantities[0].quantity;
-      const newQty = data.new_quantity;
-      
-      await base44.entities.InventoryQuantity.update(quantities[0].id, {
-        quantity: newQty
-      });
-
-      await base44.entities.StockMovement.create({
-        price_list_item_id: data.product_id,
-        item_name: item.product_name,
-        to_location_id: inventoryLoc[0].id,
-        to_location_name: inventoryLoc[0].name,
-        quantity: Math.abs(newQty - currentQty),
-        movement_type: 'adjustment',
-        notes: data.reason,
-        moved_by: (await base44.auth.me()).email,
-        moved_by_name: (await base44.auth.me()).full_name
-      });
-
-      return { success: true };
+      if (response.data.error) throw new Error(response.data.error);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicleStock', vehicleId] });
-      queryClient.invalidateQueries({ queryKey: ['inventoryQuantities'] });
       toast.success("Stock adjusted successfully");
       onClose();
     },
@@ -100,7 +67,7 @@ export default function StockAdjustmentModal({ open, onClose, item, vehicleId })
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Current Quantity</Label>
-            <div className="font-medium text-lg">{item?.quantity_on_hand || 0}</div>
+            <div className="font-medium text-lg">{item?.quantity_on_hand}</div>
           </div>
 
           <div className="space-y-2">
