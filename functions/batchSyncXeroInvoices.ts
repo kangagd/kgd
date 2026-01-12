@@ -32,12 +32,13 @@ Deno.serve(async (req) => {
         // Rate limiting: reduced delay to 100ms to avoid timeout
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Fetch latest invoice data from Xero
-        const xeroResponse = await fetch(
+        // Fetch latest invoice data from Xero with retry logic
+        const xeroResponse = await xeroFetchWithRetry(
           `https://api.xero.com/api.xro/2.0/Invoices/${invoiceRecord.xero_invoice_id}`,
           {
             headers: getXeroHeaders(connection)
-          }
+          },
+          2 // 2 retries for individual invoices
         );
 
         if (!xeroResponse.ok) {
