@@ -46,23 +46,15 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
     setSyncingThreadId(thread.gmail_thread_id);
     try {
       const response = await base44.functions.invoke('syncSpecificGmailThread', {
-        gmail_thread_id: thread.gmail_thread_id
+        gmail_thread_id: thread.gmail_thread_id,
+        project_id: projectId
       });
 
       if (response.data?.thread_id) {
         const threadId = response.data.thread_id;
         
-        // If projectId is provided, link the thread to the project
         if (projectId) {
-          try {
-            await base44.entities.EmailThread.update(threadId, {
-              linked_project_id: projectId
-            });
-            toast.success("Email synced and linked to project");
-          } catch (linkError) {
-            console.error('Failed to link thread:', linkError);
-            toast.success("Email synced (but linking failed)");
-          }
+          toast.success("Email synced and linked to project");
         } else {
           toast.success("Email synced successfully");
         }
