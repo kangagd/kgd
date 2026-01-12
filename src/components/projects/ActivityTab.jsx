@@ -107,8 +107,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
     },
     enabled: linkedThreads.length > 0,
     staleTime: 30000,
-    refetchOnWindowFocus: true,
-    refetchInterval: 10000
+    refetchOnWindowFocus: true
   });
 
   // Fetch draft emails related to linked threads
