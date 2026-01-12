@@ -417,27 +417,31 @@ export default function VehicleDetail({ vehicle, onBack }) {
                           {format(new Date(move.created_date), 'MMM d, HH:mm')}
                         </td>
                         <td className="p-3 font-medium text-gray-900">
-                          {/* We might need to join product name if not denormalized, but schema says it is linked via ID */}
-                          {/* Schema for movement doesn't have denormalized name, so we might need to fetch it or assume it's linked to price list item */}
-                          {/* Actually schema has product_id reference. For display we might need to fetch product details or join. */}
-                          {/* For now, display ID or handle gracefully. Wait, VehicleStock has name. */}
-                          {stock.find(s => s.product_id === move.product_id)?.product_name || "Item"}
+                          {move.item_name || "Item"}
                         </td>
                         <td className="p-3">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            move.movement_type === 'ConsumeOnJob' ? 'bg-red-100 text-red-800' :
-                            move.movement_type === 'RestockFromWarehouse' ? 'bg-green-100 text-green-800' :
+                            move.movement_type === 'job_usage' ? 'bg-red-100 text-red-800' :
+                            move.movement_type === 'transfer' ? 'bg-blue-100 text-blue-800' :
+                            move.movement_type === 'stock_in' ? 'bg-green-100 text-green-800' :
+                            move.movement_type === 'adjustment' ? 'bg-amber-100 text-amber-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {move.movement_type.replace(/([A-Z])/g, ' $1').trim()}
+                            {move.movement_type.replace(/_/g, ' ')}
                           </span>
                         </td>
-                        <td className={`p-3 text-right font-mono font-medium ${move.quantity_change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {move.quantity_change > 0 ? '+' : ''}{move.quantity_change}
+                        <td className={`p-3 text-right font-mono font-medium ${
+                          (move.to_location_id && !move.from_location_id) || 
+                          (move.from_location_id && move.to_location_id && move.to_location_id === inventoryLoc[0]?.id)
+                            ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {((move.to_location_id && !move.from_location_id) || 
+                            (move.from_location_id && move.to_location_id && move.to_location_id === inventoryLoc[0]?.id))
+                            ? '+' : '-'}{move.quantity}
                         </td>
-                        <td className="p-3 text-gray-600">{move.performed_by_user_name}</td>
+                        <td className="p-3 text-gray-600">{move.moved_by_name}</td>
                         <td className="p-3 text-gray-500 text-xs truncate max-w-[150px]">
-                          {move.reason}
+                          {move.notes}
                         </td>
                       </tr>
                     ))}
