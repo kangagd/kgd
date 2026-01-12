@@ -89,32 +89,15 @@ Deno.serve(async (req) => {
     const messageIds = data.messages || [];
 
     if (messageIds.length === 0) {
-      return Response.json({ synced: 0, found: 0 });
+      return Response.json({ threads: [], found: 0 });
     }
 
-    // Process and sync messages with timeout protection
-    let syncedCount = 0;
-    const seenThreadIds = new Set();
-    const startTime = Date.now();
-    const MAX_PROCESSING_TIME = 25000; // 25 seconds to leave buffer for response
-
-    for (const msg of messageIds) {
-      // Check if we're approaching timeout
-      if (Date.now() - startTime > MAX_PROCESSING_TIME) {
-        console.log(`Timeout approaching, processed ${syncedCount} of ${messageIds.length} messages`);
-        break;
-      }
+    // Fetch thread details for display
+    const threadMap = new Map();
+    const MAX_THREADS = 20; // Limit for performance
+    
+    for (const msg of messageIds.slice(0, MAX_THREADS)) {
       try {
-        // Check if message already exists
-        const existingMsg = await base44.asServiceRole.entities.EmailMessage.filter({
-          gmail_message_id: msg.id
-        });
-        
-        if (existingMsg.length > 0) {
-          continue;
-        }
-
-        // Fetch message details
         const msgUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`;
         const msgResponse = await fetch(msgUrl, {
           headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -127,152 +110,32 @@ Deno.serve(async (req) => {
         
         const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
         const from = headers.find(h => h.name === 'From')?.value || '';
-        const to = headers.find(h => h.name === 'To')?.value || '';
         const date = headers.find(h => h.name === 'Date')?.value;
-        const messageId = headers.find(h => h.name === 'Message-ID')?.value || msg.id;
-        const inReplyTo = headers.find(h => h.name === 'In-Reply-To')?.value;
-
-        if (!date) continue;
-
         const gmailThreadId = detail.threadId;
-        
-        // Find or create thread
-        let threadId;
-        const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
-          gmail_thread_id: gmailThreadId
-        });
 
-        if (existingThreads.length > 0) {
-          threadId = existingThreads[0].id;
-          const messageDate = new Date(date).toISOString();
-          const updateData = {
-            last_message_snippet: detail.snippet
-          };
-          if (!existingThreads[0].last_message_date || new Date(messageDate) > new Date(existingThreads[0].last_message_date)) {
-            updateData.last_message_date = messageDate;
-          }
-          await base44.asServiceRole.entities.EmailThread.update(threadId, updateData);
-        } else {
-          const newThread = await base44.asServiceRole.entities.EmailThread.create({
-            subject,
-            gmail_thread_id: gmailThreadId,
-            from_address: parseEmailAddress(from),
-            to_addresses: to.split(',').map(e => parseEmailAddress(e.trim())),
-            last_message_date: new Date(date).toISOString(),
-            last_message_snippet: detail.snippet,
-            status: 'Open',
-            priority: 'Normal',
-            message_count: 1
+        if (!threadMap.has(gmailThreadId)) {
+          // Check if already synced
+          const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
+            gmail_thread_id: gmailThreadId
           });
-          threadId = newThread.id;
-          
-          // Auto-link to customer and project based on email addresses
-          try {
-            const fromEmail = parseEmailAddress(from).toLowerCase();
-            const allEmails = [fromEmail, ...to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase())];
-            
-            // Find matching customers
-            const customers = await base44.asServiceRole.entities.Customer.list();
-            const matchingCustomer = customers.find(c => 
-              c.email && allEmails.includes(c.email.toLowerCase())
-            );
-            
-            if (matchingCustomer) {
-              // Find most recent open project for this customer
-              const projects = await base44.asServiceRole.entities.Project.filter({
-                customer_id: matchingCustomer.id
-              });
-              
-              const openProjects = projects.filter(p => 
-                !['Completed', 'Lost', 'Cancelled'].includes(p.status)
-              ).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-              
-              const projectToLink = openProjects[0];
-              
-              if (projectToLink) {
-                await base44.asServiceRole.entities.EmailThread.update(threadId, {
-                  customer_id: matchingCustomer.id,
-                  customer_name: matchingCustomer.name,
-                  project_id: projectToLink.id,
-                  project_number: projectToLink.project_number,
-                  project_title: projectToLink.title,
-                  linked_to_project_at: new Date().toISOString(),
-                  linked_to_project_by: 'system'
-                });
-                console.log(`Auto-linked thread ${threadId} to project ${projectToLink.id}`);
-              } else {
-                await base44.asServiceRole.entities.EmailThread.update(threadId, {
-                  customer_id: matchingCustomer.id,
-                  customer_name: matchingCustomer.name
-                });
-                console.log(`Auto-linked thread ${threadId} to customer ${matchingCustomer.id}`);
-              }
-            }
-          } catch (linkError) {
-            console.error('Auto-link error:', linkError.message);
-          }
+
+          threadMap.set(gmailThreadId, {
+            gmail_thread_id: gmailThreadId,
+            subject,
+            from,
+            snippet: detail.snippet || '',
+            date,
+            is_synced: existingThreads.length > 0,
+            synced_id: existingThreads.length > 0 ? existingThreads[0].id : null
+          });
         }
-
-        // Extract body
-        let bodyHtml = '';
-        let bodyText = detail.snippet || '';
-
-        const processParts = (parts) => {
-          if (!parts || !Array.isArray(parts)) return;
-          for (const part of parts) {
-            if (part.mimeType === 'text/html' && part.body?.data) {
-              const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-              if (decoded) bodyHtml = decoded;
-            } else if (part.mimeType === 'text/plain' && part.body?.data) {
-              const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-              if (decoded) bodyText = decoded;
-            }
-            if (part.parts) processParts(part.parts);
-          }
-        };
-
-        if (detail.payload.body?.data) {
-          const decoded = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-          if (decoded) bodyText = decoded;
-        }
-        
-        if (detail.payload.parts) {
-          processParts(detail.payload.parts);
-        }
-
-        const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
-        const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
-        const userEmail = user.gmail_email || user.email;
-        const isOutbound = fromAddress.toLowerCase() === userEmail.toLowerCase() || detail.labelIds?.includes('SENT');
-
-        // Create message
-        await base44.asServiceRole.entities.EmailMessage.create({
-          thread_id: threadId,
-          gmail_message_id: msg.id,
-          from_address: fromAddress,
-          to_addresses: toAddresses.length > 0 ? toAddresses : [fromAddress],
-          sent_at: new Date(date).toISOString(),
-          subject,
-          body_html: bodyHtml,
-          body_text: bodyText,
-          message_id: messageId,
-          is_outbound: isOutbound,
-          in_reply_to: inReplyTo || null
-        });
-
-        syncedCount++;
-
-        // Update thread message count
-        const currentThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
-        await base44.asServiceRole.entities.EmailThread.update(threadId, {
-          message_count: (currentThread.message_count || 0) + 1
-        });
-      } catch (msgError) {
-        console.error(`Error processing message ${msg.id}:`, msgError);
+      } catch (err) {
+        console.error(`Error fetching message ${msg.id}:`, err);
       }
     }
 
-    return Response.json({ synced: syncedCount, found: messageIds.length });
+    const threads = Array.from(threadMap.values());
+    return Response.json({ threads, found: messageIds.length });
   } catch (error) {
     console.error('Search Gmail history error:', error);
     return Response.json({ error: error.message }, { status: 500 });
