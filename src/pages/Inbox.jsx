@@ -107,20 +107,24 @@ export default function Inbox() {
     }
   };
 
-  // Auto-sync on mount and when tab becomes visible (debounced)
+  // Auto-sync on mount and when tab becomes visible (with staleTime gating)
   useEffect(() => {
     if (!user) return;
 
     // Initial sync
     syncGmailInbox();
 
-    // Sync when tab becomes visible (debounce to prevent repeated calls)
+    // Sync when tab becomes visible (only if data is stale)
     let visibilityTimeout;
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         clearTimeout(visibilityTimeout);
         visibilityTimeout = setTimeout(() => {
-          syncGmailInbox();
+          // Only sync if last fetch is older than 30s
+          const now = Date.now();
+          if (now - lastThreadFetchTime >= 30000) {
+            syncGmailInbox();
+          }
         }, 500);
       }
     };
@@ -130,7 +134,7 @@ export default function Inbox() {
       clearTimeout(visibilityTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [user]);
+  }, [user, lastThreadFetchTime]);
 
   // Fetch team members for assignment
   const { data: teamUsers = [] } = useQuery({
