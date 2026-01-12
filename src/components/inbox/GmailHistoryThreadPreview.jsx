@@ -155,18 +155,30 @@ export default function GmailHistoryThreadPreview({
   const [importSuccess, setImportSuccess] = useState(false);
   const queryClient = useQueryClient();
 
+  // Show empty state if no thread selected
+  if (!thread) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-600">Select a thread to preview</p>
+      </div>
+    );
+  }
+
+  // Normalize thread to ensure consistent shape
+  const normalized = normalizeGmailHistoryThread(thread);
+
   const handleImportOnly = async () => {
     setIsImporting(true);
     try {
       const response = await base44.functions.invoke('importGmailThread', {
-        gmailThreadId: thread.gmailThreadId
+        gmailThreadId: normalized.gmailThreadId
       });
 
       if (response.data.success) {
         toast.success('Thread imported successfully');
         setImportSuccess(true);
+        queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
         queryClient.invalidateQueries({ queryKey: ['gmailHistoricalSearch'] });
-        queryClient.invalidateQueries({ queryKey: ['inboxKeys', 'threads'] });
         setTimeout(() => onImported?.(), 1000);
       } else {
         toast.error(response.data.error);
@@ -184,8 +196,8 @@ export default function GmailHistoryThreadPreview({
 
   const handleLinked = () => {
     setImportSuccess(true);
+    queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
     queryClient.invalidateQueries({ queryKey: ['gmailHistoricalSearch'] });
-    queryClient.invalidateQueries({ queryKey: ['inboxKeys', 'threads'] });
     setTimeout(() => onImported?.(), 1000);
   };
 
@@ -204,9 +216,6 @@ export default function GmailHistoryThreadPreview({
       </div>
     );
   }
-
-  // Normalize thread to ensure consistent shape
-  const normalized = normalizeGmailHistoryThread(thread);
 
   return (
     <>
