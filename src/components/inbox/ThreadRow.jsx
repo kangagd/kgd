@@ -125,12 +125,14 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
                </Button>
              )}
 
-             {/* Link Chip (separate from status/pin) */}
+             {/* Link Chip (icon only) */}
              {linkChip && (
-               <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 flex items-center gap-1">
+               <div 
+                 className="w-5 h-5 bg-green-100 border border-green-200 rounded flex items-center justify-center text-green-700"
+                 title={`${linkChip.type === 'project' ? 'Project' : 'Job'}: ${linkChip.title}`}
+               >
                  <LinkIcon className="w-3 h-3" />
-                 {linkChip.type === 'project' ? 'Project' : 'Job'}: {linkChip.title}
-               </Badge>
+               </div>
              )}
 
              {/* Fallback linking states from old system (can be removed after migration) */}
