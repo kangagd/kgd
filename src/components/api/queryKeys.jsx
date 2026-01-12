@@ -45,11 +45,30 @@ export const vehicleKeys = {
   samples: (vehicleId) => [...vehicleKeys.all, 'samples', vehicleId],
 };
 
-// Inbox Module
+// Inbox Module (realtime config only - CRITICAL for live updates)
 export const inboxKeys = {
   all: ['inbox'],
-  threads: () => [...inboxKeys.all, 'threads'],
+  threads: () => [...inboxKeys.all, 'threads'],     // Uses: realtime config
   thread: (threadId) => [...inboxKeys.threads(), threadId],
   messages: (threadId) => [...inboxKeys.all, 'messages', threadId],
   drafts: () => [...inboxKeys.all, 'drafts'],
 };
+
+/**
+ * Invalidation patterns documented here
+ * 
+ * JOB MUTATIONS:
+ * - Create: invalidateJobList() (list only, optimistic detail)
+ * - Update: jobKeys.detail(id) only (no list refresh)
+ * - Delete: invalidateJobList() (list only)
+ * 
+ * PROJECT MUTATIONS:
+ * - Create: invalidateJobList if related
+ * - Update detail: invalidateProjectDetail(projectId)
+ * - Update complex: invalidateProjectData(projectId)
+ * 
+ * INBOX MUTATIONS:
+ * - Link/Unlink thread: Invalidate inboxKeys.threads() + projectKeys.emails(projectId)
+ * - Send message: Invalidate inboxKeys.messages(threadId)
+ * - Status change: setQueryData optimistic + invalidate lists
+ */
