@@ -98,22 +98,29 @@ export default function Inbox() {
     }
   };
 
-  // Auto-sync on mount and when tab becomes visible
+  // Auto-sync on mount and when tab becomes visible (debounced)
   useEffect(() => {
     if (!user) return;
 
     // Initial sync
     syncGmailInbox();
 
-    // Sync when tab becomes visible
+    // Sync when tab becomes visible (debounce to prevent repeated calls)
+    let visibilityTimeout;
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        syncGmailInbox();
+        clearTimeout(visibilityTimeout);
+        visibilityTimeout = setTimeout(() => {
+          syncGmailInbox();
+        }, 500);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearTimeout(visibilityTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
 
   // Fetch team members for assignment
