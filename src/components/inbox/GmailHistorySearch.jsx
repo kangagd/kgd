@@ -162,12 +162,18 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-medium text-sm truncate">{thread.subject}</h3>
                       {thread.is_synced && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Synced
+                        </Badge>
+                      )}
+                      {thread.is_synced && thread.is_linked && (
+                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                          <LinkIcon className="w-3 h-3 mr-1" />
+                          Linked
                         </Badge>
                       )}
                     </div>
