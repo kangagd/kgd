@@ -167,33 +167,76 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const bodyText = await req.text();
-    const requestBody = bodyText ? JSON.parse(bodyText) : {};
-    const { query = '', pageToken = null, maxResults = 20, excludeImported = false } = requestBody;
-
-    if (!query || query.trim().length === 0) {
-      return Response.json({ error: 'Query is required' }, { status: 400 });
+    // Parse request body
+    let requestBody = {};
+    try {
+      const bodyText = await req.text();
+      requestBody = bodyText ? JSON.parse(bodyText) : {};
+    } catch (parseErr) {
+      console.error('[gmailHistoricalSearchThreads] JSON parse error:', parseErr);
+      return Response.json({
+        threads: [],
+        nextPageToken: null,
+        error: 'Invalid request body'
+      }, { status: 200 });
     }
 
-    console.log('[gmailHistoricalSearchThreads] Searching with query:', query);
+    // Extract and validate inputs
+    const { query = '', pageToken = null, maxResults = 20, filters = {} } = requestBody;
 
-    // Default to searching everywhere if no "in:" operator specified
+    // Validate query
+    if (!query || typeof query !== 'string' || query.trim().length === 0) {
+      console.log('[gmailHistoricalSearchThreads] Empty query, returning empty results');
+      return Response.json({
+        threads: [],
+        nextPageToken: null,
+        error: 'Missing query'
+      }, { status: 200 });
+    }
+
+    // Apply filters
+    const { notImported = false, hasAttachments = false, before = null, after = null } = filters;
+
+    // Build Gmail query
     let searchQuery = query;
     if (!query.includes('in:')) {
       searchQuery = `in:anywhere (${query})`;
     }
-
-    const queryParams = {
-      q: searchQuery,
-      maxResults: Math.min(maxResults, 100)
-    };
-    if (pageToken) {
-      queryParams.pageToken = pageToken;
+    if (after) {
+      searchQuery += ` after:${after}`;
+    }
+    if (before) {
+      searchQuery += ` before:${before}`;
+    }
+    if (hasAttachments) {
+      searchQuery += ` has:attachment`;
     }
 
-    const listResult = await gmailFetch('/gmail/v1/users/me/threads', 'GET', null, queryParams);
-    const threads = listResult.threads || [];
+    console.log('[gmailHistoricalSearchThreads] Query:', searchQuery, 'PageToken:', pageToken);
 
+    // Fetch threads from Gmail
+    let listResult;
+    try {
+      const queryParams = {
+        q: searchQuery,
+        maxResults: Math.min(maxResults || 20, 100)
+      };
+      if (pageToken) {
+        queryParams.pageToken = pageToken;
+      }
+
+      listResult = await gmailFetch('/gmail/v1/users/me/threads', 'GET', null, queryParams);
+    } catch (gmailErr) {
+      console.error('[gmailHistoricalSearchThreads] Gmail list error:', gmailErr);
+      return Response.json({
+        threads: [],
+        nextPageToken: null,
+        error: 'Gmail search failed',
+        errorDetail: String(gmailErr?.message || gmailErr)
+      }, { status: 200 });
+    }
+
+    const threads = listResult.threads || [];
     console.log(`[gmailHistoricalSearchThreads] Found ${threads.length} threads`);
 
     // Fetch metadata for each thread
@@ -235,8 +278,8 @@ Deno.serve(async (req) => {
 
         const lastMsgDate = lastMsg.internalDate ? new Date(parseInt(lastMsg.internalDate)).toISOString() : new Date().toISOString();
 
-        // Check for attachments in metadata (payload parts will have filename if present)
-        let hasAttachments = false;
+        // Check for attachments
+        let threadHasAttachments = false;
         const checkAttachments = (parts) => {
           if (!parts || !Array.isArray(parts)) return false;
           for (const part of parts) {
@@ -250,7 +293,7 @@ Deno.serve(async (req) => {
           return false;
         };
         if (lastMsg.payload?.parts) {
-          hasAttachments = checkAttachments(lastMsg.payload.parts);
+          threadHasAttachments = checkAttachments(lastMsg.payload.parts);
         }
 
         results.push({
@@ -263,30 +306,16 @@ Deno.serve(async (req) => {
             to: toAddresses
           },
           messageCount: threadDetail.messages.length,
-          hasAttachments
+          hasAttachments: threadHasAttachments
         });
       } catch (err) {
         console.error(`[gmailHistoricalSearchThreads] Error processing thread ${gmailThread.id}:`, err);
       }
     }
 
-    // Filter out already imported threads if requested
-    if (excludeImported && results.length > 0) {
-      const threadIds = results.map(r => r.gmail_thread_id);
-      try {
-        const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({});
-        const existingIds = new Set(existingThreads.map(t => t.gmail_thread_id).filter(Boolean));
-        
-        results.filter(r => !existingIds.has(r.gmail_thread_id));
-      } catch (filterErr) {
-        console.error('[gmailHistoricalSearchThreads] Error filtering imported:', filterErr);
-      }
-    }
-
     // Enrich with import status
     if (results.length > 0) {
       try {
-        const threadIds = results.map(r => r.gmail_thread_id);
         const allImportedThreads = await base44.asServiceRole.entities.EmailThread.filter({});
         const importedMap = new Map();
         allImportedThreads.forEach(t => {
@@ -311,15 +340,16 @@ Deno.serve(async (req) => {
     }
 
     return Response.json({
-      success: true,
-      results,
+      threads: results,
       nextPageToken: listResult.nextPageToken || null
-    });
+    }, { status: 200 });
   } catch (error) {
-    console.error('[gmailHistoricalSearchThreads] Error:', error);
-    return Response.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    console.error('[gmailHistoricalSearchThreads] Unhandled error:', error);
+    return Response.json({
+      threads: [],
+      nextPageToken: null,
+      error: 'Gmail search failed',
+      errorDetail: String(error?.message || error)
+    }, { status: 200 });
   }
 });
