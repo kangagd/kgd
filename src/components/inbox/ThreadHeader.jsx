@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, User, Clock, Check, Mail } from 'lucide-react';
+import { ChevronDown, User, Clock, Check, Mail, X } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import {
   Select,
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { computeInferredStateWithAutoClear } from '@/components/inbox/inferredStateAutoClear';
+import { closeThread, reopenThread } from '@/components/inbox/threadCloseActions';
 
 export default function ThreadHeader({ thread, users = [], onStatusChange, onAssignChange, loading = false }) {
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
