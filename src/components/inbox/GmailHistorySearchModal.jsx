@@ -244,7 +244,26 @@ export default function GmailHistorySearchModal({
               Enter at least 3 characters or use Gmail operators: from:, to:, subject:, before:, after:, has:, in:
             </p>
           )}
-        </div>
+
+          {/* Error Block */}
+          {searchError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <button
+                onClick={() => setErrorExpanded(!errorExpanded)}
+                className="flex items-center gap-2 w-full text-left hover:opacity-75 transition-opacity"
+              >
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <span className="font-medium text-red-900 flex-1">{searchError.message}</span>
+                <ChevronDown className={`w-4 h-4 text-red-600 flex-shrink-0 transition-transform ${errorExpanded ? 'rotate-180' : ''}`} />
+              </button>
+              {errorExpanded && (
+                <div className="mt-2 p-2 bg-red-100 rounded text-xs text-red-800 font-mono overflow-auto max-h-24 border border-red-200">
+                  {searchError.detail}
+                </div>
+              )}
+            </div>
+          )}
+          </div>
 
         {/* Content: Results + Preview */}
         <div className="flex-1 min-h-0 flex gap-0 overflow-hidden">
