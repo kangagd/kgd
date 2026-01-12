@@ -26,49 +26,9 @@ Deno.serve(async (req) => {
         }
 
         if (action === 'consume') {
-            // Mark used on job
-            const { vehicle_id, product_id, quantity, job_id, reason } = data;
-            
-            if (!quantity || quantity <= 0) throw new Error("Quantity must be positive");
-
-            // Get current stock
-            const stockList = await base44.entities.VehicleStock.filter({ vehicle_id, product_id });
-            const currentStock = stockList[0];
-            
-            if (!currentStock) throw new Error("Product not found in vehicle");
-
-            const newQty = (currentStock.quantity_on_hand || 0) - quantity;
-
-            // ARCHIVED: VehicleStockMovement writes disabled - using StockMovement only
-            // Legacy movement tracking disabled
-
-            // Update stock (dual-write to both systems)
-            await syncVehicleStockQuantity(base44, vehicle_id, product_id, newQty, currentStock.product_name);
-
-            // Record movement in both systems
-            const vehicle = await base44.entities.Vehicle.get(vehicle_id);
-            const locations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
-              vehicle_id, 
-              type: 'vehicle' 
-            });
-            const locationId = locations.length > 0 ? locations[0].id : null;
-
-            await syncMovementRecord(base44, {
-              vehicleId: vehicle_id,
-              productId: product_id,
-              jobId: job_id,
-              projectId: null,
-              movementType: 'job_usage',
-              quantityChange: -quantity,
-              reason: reason || 'Used on job',
-              userId: user.id,
-              userName: user.full_name || user.email,
-              fromLocationId: locationId,
-              toLocationId: null,
-              itemName: currentStock.product_name
-            });
-
-            return Response.json({ success: true, new_quantity: newQty });
+            // Mark used on job - now uses moveInventory instead of manageVehicleStock
+            // This action is deprecated - use moveInventory function directly
+            return Response.json({ error: 'Use moveInventory function instead' }, { status: 400 });
         }
 
         if (action === 'adjust') {
