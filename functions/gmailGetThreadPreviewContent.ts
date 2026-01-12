@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
         `/gmail/v1/users/me/threads/${gmailThreadId}`,
         'GET',
         null,
-        { format: 'metadata', metadataHeaders: ['From', 'To', 'Cc', 'Subject', 'Date'] }
+        { format: 'minimal' }
       );
     } catch (err) {
       console.error(`[gmailGetThreadPreviewContent] Error fetching thread:`, err);
