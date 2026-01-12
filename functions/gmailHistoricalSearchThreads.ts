@@ -259,23 +259,26 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const lastMsg = threadDetail.messages[threadDetail.messages.length - 1];
-        const lastHeaders = {};
-        if (lastMsg.payload?.headers) {
-          lastMsg.payload.headers.forEach(h => {
-            lastHeaders[h.name.toLowerCase()] = h.value;
+        // Get headers from FIRST message (where subject originates)
+        const firstMsg = threadDetail.messages[0];
+        const headerMap = {};
+        if (firstMsg.payload?.headers) {
+          firstMsg.payload.headers.forEach(h => {
+            headerMap[h.name.toLowerCase()] = h.value;
           });
         }
 
-        const subject = lastHeaders['subject'] || '(no subject)';
-        const fromAddress = lastHeaders['from'] || '';
-        const toAddresses = lastHeaders['to'] ? lastHeaders['to'].split(',').map(e => e.trim()) : [];
+        const subject = headerMap['subject'] || '(no subject)';
+        const fromAddress = headerMap['from'] || '';
+        const toAddresses = headerMap['to'] ? headerMap['to'].split(',').map(e => e.trim()) : [];
 
         let snippet = threadDetail.snippet || '';
         if (snippet.length > 200) {
           snippet = snippet.substring(0, 200) + '...';
         }
 
+        // Use LAST message date for thread activity
+        const lastMsg = threadDetail.messages[threadDetail.messages.length - 1];
         const lastMsgDate = lastMsg.internalDate ? new Date(parseInt(lastMsg.internalDate)).toISOString() : new Date().toISOString();
 
         // Check for attachments
