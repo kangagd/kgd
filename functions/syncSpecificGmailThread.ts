@@ -21,14 +21,9 @@ Deno.serve(async (req) => {
       return Response.json({ thread_id: existing[0].id, already_synced: true });
     }
 
-    // If force re-sync, delete old messages first
+    // If force re-sync, delete entire thread (cascades to messages)
     if (existing.length > 0 && force) {
-      const oldMessages = await base44.asServiceRole.entities.EmailMessage.filter({ 
-        thread_id: existing[0].id 
-      });
-      for (const msg of oldMessages) {
-        await base44.asServiceRole.entities.EmailMessage.delete(msg.id);
-      }
+      await base44.asServiceRole.entities.EmailThread.delete(existing[0].id);
     }
 
     // Fetch thread from Gmail
