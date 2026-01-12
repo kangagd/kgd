@@ -18,11 +18,12 @@ export default function InboxFilterBar({
   onOpenHistorySearch
 }) {
   const filters = [
-    { id: 'assigned-to-me', label: 'Assigned to me', value: { assignedTo: userEmail } },
-    { id: 'unassigned', label: 'Unassigned', value: { assignedTo: null } },
-    { id: 'needs-reply', label: 'Needs reply', value: { needsReply: true } },
-    { id: 'linked-project', label: 'Linked to project', value: { hasProject: true } },
-    { id: 'closed', label: 'Closed', value: { status: 'Closed' } }
+    { id: 'needs-reply', label: 'Needs Reply', value: { inferredState: 'needs_reply' } },
+    { id: 'waiting-on-customer', label: 'Waiting on Customer', value: { inferredState: 'waiting_on_customer' } },
+    { id: 'pinned', label: 'Pinned', value: { pinned: true } },
+    { id: 'linked', label: 'Linked', value: { linked: true } },
+    { id: 'unlinked', label: 'Unlinked', value: { linked: false } },
+    { id: 'closed', label: 'Closed', value: { status: 'closed' } }
   ];
 
   const isFilterActive = (filterId) => {
