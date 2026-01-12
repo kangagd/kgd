@@ -62,13 +62,13 @@ Deno.serve(async (req) => {
       is_read: false
     };
 
-    // Auto-link to customer and project (same logic as gmailSync)
+    // Auto-link to customer and project
     try {
       const allEmails = [fromAddress, ...toAddresses].map(e => e.toLowerCase());
       const customers = await base44.asServiceRole.entities.Customer.filter({});
       const matchingCustomer = customers.find(c => 
         c.email && allEmails.includes(c.email.toLowerCase())
-      );
+      ) || null;
       
       if (matchingCustomer) {
         emailThreadData.customer_id = matchingCustomer.id;
