@@ -316,6 +316,9 @@ export default function GmailHistorySearchModal({
             {selectedThread ? (
               <GmailHistoryThreadPreview
                 thread={selectedThread}
+                previewMessages={previewData?.messages || []}
+                loading={isPreviewLoading}
+                error={previewData?.error || previewError?.message}
                 onBack={() => {
                   setSelectedThreadId(null);
                   setSelectedThread(null);
