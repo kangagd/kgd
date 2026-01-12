@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { QUERY_CONFIG } from "@/components/api/queryConfig";
 import { Mail, AlertTriangle, Loader } from "lucide-react";
 import { toast } from "sonner";
 import ThreadRow from "@/components/inbox/ThreadRow";
@@ -48,7 +49,6 @@ export default function Inbox() {
     }
   }, []);
 
-  // Fetch all email threads with viewers
   const { data: threads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
     queryKey: ['emailThreads'],
     queryFn: async () => {
@@ -62,12 +62,9 @@ export default function Inbox() {
       }));
     },
     enabled: !!user,
-    staleTime: 30000, // Keep data fresh for 30s to prevent excessive refetches
+    ...QUERY_CONFIG.reference,
     onSuccess: (newThreads) => {
-      // B6: Fix thread selection desync after refetch
       if (selectedThreadId && !newThreads.find(t => t.id === selectedThreadId)) {
-        // Selected thread no longer in list; reset intelligently
-        // Prefer: next available thread > first thread > null
         const currentIndex = threads.findIndex(t => t.id === selectedThreadId);
         const nextThread = newThreads[Math.min(currentIndex, newThreads.length - 1)];
         setSelectedThreadId(nextThread?.id || null);
@@ -156,14 +153,13 @@ export default function Inbox() {
     };
   }, [user, lastThreadFetchTime]);
 
-  // Fetch team members for assignment
   const { data: teamUsers = [] } = useQuery({
     queryKey: ['teamUsers'],
     queryFn: () => base44.entities.User.list(),
-    enabled: !!user
+    enabled: !!user,
+    ...QUERY_CONFIG.reference,
   });
 
-  // Fetch drafts for selected thread
   const { data: threadDrafts = [], refetch: refetchDrafts } = useQuery({
     queryKey: ['threadDrafts', selectedThreadId],
     queryFn: async () => {
@@ -174,7 +170,8 @@ export default function Inbox() {
       }, '-updated_date');
       return drafts;
     },
-    enabled: !!selectedThreadId && !!user
+    enabled: !!selectedThreadId && !!user,
+    ...QUERY_CONFIG.reference,
   });
 
   // Apply filters and search

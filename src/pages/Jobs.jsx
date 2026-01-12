@@ -26,6 +26,7 @@ import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 import BackButton from "../components/common/BackButton";
 import { notifySuccess, notifyError } from "@/components/utils/notify";
 import { jobKeys } from "@/components/api/queryKeys";
+import { QUERY_CONFIG } from "@/components/api/queryConfig";
 
 export default function Jobs() {
   const navigate = useNavigate();
@@ -110,27 +111,23 @@ export default function Jobs() {
     queryKey: [...jobKeys.allJobs(), jobsCursor],
     queryFn: async () => {
       try {
-        // Use backend function for first page, then fall back to direct fetch
         if (!jobsCursor) {
           const response = await base44.functions.invoke('getMyJobs');
           const allJobs = response.data || [];
           const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
           
-          // Sort by updated_date descending
           activeJobs.sort((a, b) => {
             const dateA = a.updated_date || a.created_date || '';
             const dateB = b.updated_date || b.created_date || '';
             return dateB.localeCompare(dateA);
           });
           
-          // Take first 50 and check if more
           const limited = activeJobs.slice(0, 50);
           return {
             data: limited,
             nextCursor: activeJobs.length > 50 ? 'page-2' : null
           };
         } else {
-          // For subsequent pages, fetch directly
           const response = await base44.functions.invoke('getMyJobs');
           const allJobs = response.data || [];
           const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
@@ -141,7 +138,6 @@ export default function Jobs() {
             return dateB.localeCompare(dateA);
           });
           
-          // Calculate offset from cursor
           const pageNum = parseInt(jobsCursor.split('-')[1]) || 2;
           const offset = (pageNum - 1) * 50;
           const limited = activeJobs.slice(offset, offset + 50);
@@ -155,10 +151,7 @@ export default function Jobs() {
         return { data: [], nextCursor: null };
       }
     },
-    refetchInterval: false,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-    staleTime: 30000
+    ...QUERY_CONFIG.reference,
   });
 
   // Accumulate jobs data
@@ -189,17 +182,20 @@ export default function Jobs() {
     queryKey: jobKeys.detail(jobIdFromUrl),
     queryFn: () => base44.entities.Job.get(jobIdFromUrl),
     enabled: !!jobIdFromUrl,
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
-    enabled: !!(user?.role === 'admin' || user?.role === 'manager')
+    enabled: !!(user?.role === 'admin' || user?.role === 'manager'),
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.filter({ is_active: true })
+    queryFn: () => base44.entities.JobType.filter({ is_active: true }),
+    ...QUERY_CONFIG.reference,
   });
 
   const createJobMutation = useMutation({
