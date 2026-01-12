@@ -443,6 +443,8 @@ export default function Inbox() {
                 users={teamUsers}
                 onStatusChange={handleStatusChange}
                 onAssignChange={handleAssignChange}
+                currentUser={user}
+                onThreadUpdate={() => refetchThreads()}
               />
 
               {/* Messages & Composer */}
