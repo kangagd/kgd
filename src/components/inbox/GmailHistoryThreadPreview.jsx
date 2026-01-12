@@ -307,6 +307,63 @@ export default function GmailHistoryThreadPreview({
           </div>
         )}
 
+        {/* Messages */}
+        {previewMessages && previewMessages.length > 0 && (
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="font-semibold text-sm">Messages</h3>
+            {previewMessages.map((msg, idx) => (
+              <div key={msg.gmailMessageId || idx} className="bg-gray-50 rounded-lg overflow-hidden">
+                {/* Message Header */}
+                <div className="border-b border-gray-200 p-3 bg-white">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-sm truncate">{msg.from}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {msg.dateIso ? format(parseISO(msg.dateIso), 'PPpp') : 'No date'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Message Body */}
+                <div className="p-3">
+                  {msg.bodyHtml ? (
+                    <div
+                      className="text-sm text-gray-800 prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(msg.bodyHtml) }}
+                    />
+                  ) : msg.bodyText ? (
+                    <pre className="text-sm text-gray-800 whitespace-pre-wrap break-words font-sans">
+                      {msg.bodyText}
+                    </pre>
+                  ) : (
+                    <p className="text-sm text-gray-500">(No body content)</p>
+                  )}
+
+                  {/* Attachments */}
+                  {msg.attachments && msg.attachments.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                        <Paperclip className="w-3 h-3" />
+                        Attachments ({msg.attachments.length})
+                      </p>
+                      <ul className="space-y-1">
+                        {msg.attachments.map((att, attIdx) => (
+                          <li key={attIdx} className="text-xs text-gray-600 flex items-center gap-1">
+                            <span className="text-gray-400">•</span>
+                            <span className="truncate">{att.filename}</span>
+                            {att.size > 0 && <span className="text-gray-500 ml-auto flex-shrink-0">({Math.round(att.size / 1024)} KB)</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Import Status */}
         {normalized.importedState !== 'not_imported' && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex gap-2">
