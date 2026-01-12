@@ -69,7 +69,15 @@ export default function GmailHistorySearchModal({
 
   // Perform search
   const { isLoading: isSearching } = useQuery({
-    queryKey: ['gmailHistoricalSearch', debouncedQuery, pageToken, filterNotImported, filterHasAttachments],
+    queryKey: [
+      'gmailHistorySearch',
+      {
+        query: debouncedQuery,
+        pageToken,
+        notImported: filterNotImported,
+        hasAttachments: filterHasAttachments
+      }
+    ],
     queryFn: async () => {
       if (!isValidSearchQuery(debouncedQuery)) {
         return { threads: [], nextPageToken: null };
@@ -80,8 +88,12 @@ export default function GmailHistorySearchModal({
           query: debouncedQuery,
           pageToken,
           maxResults: 25,
-          filterNotImported,
-          filterHasAttachments
+          filters: {
+            notImported: filterNotImported,
+            hasAttachments: filterHasAttachments,
+            before: null,
+            after: null
+          }
         });
 
         if (!response.data.threads) {
