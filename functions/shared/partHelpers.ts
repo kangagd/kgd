@@ -58,6 +58,7 @@ export function determinePartStatus(toLocation) {
 }
 
 // Link Parts to Purchase Order
+// GUARDRAIL: If part already has a primary PO, add to array but don't overwrite primary
 export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
     const today = new Date().toISOString().split('T')[0];
     const partIds = lineItems.map(item => item.part_id).filter(Boolean);
@@ -71,14 +72,31 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
             const part = await base44.asServiceRole.entities.Part.get(partId);
             if (!part) continue;
 
-            // Skip if part already linked to a different PO
-            if (part.purchase_order_id && part.purchase_order_id !== purchaseOrderId) {
-                continue;
-            }
-
             const updateData = {
-                purchase_order_id: purchaseOrderId
+                last_synced_from_po_at: new Date().toISOString(),
+                synced_by: 'system:linkPartsToPO'
             };
+
+            // Build purchase_order_ids array
+            const existingPoIds = part.purchase_order_ids || [];
+            if (part.purchase_order_id && !existingPoIds.includes(part.purchase_order_id)) {
+                existingPoIds.push(part.purchase_order_id);
+            }
+            
+            // Add new PO if not already in array
+            if (!existingPoIds.includes(purchaseOrderId)) {
+                existingPoIds.push(purchaseOrderId);
+            }
+            
+            updateData.purchase_order_ids = existingPoIds;
+
+            // Set primary_purchase_order_id only if part doesn't already have one
+            if (!part.primary_purchase_order_id) {
+                updateData.primary_purchase_order_id = purchaseOrderId;
+            } else if (part.primary_purchase_order_id !== purchaseOrderId) {
+                // Part already has a different primary PO - log warning but don't overwrite
+                console.warn(`[linkPartsToPO] Part ${partId} already has primary PO ${part.primary_purchase_order_id}, adding ${purchaseOrderId} to array only`);
+            }
 
             // Update status if currently pending
             if (part.status === PART_STATUS.PENDING || part.status === "Pending") {
@@ -93,7 +111,13 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
                 updateData.location = PART_LOCATION.SUPPLIER;
             }
 
+            // For backward compat, keep purchase_order_id in sync with primary
+            if (updateData.primary_purchase_order_id) {
+                updateData.purchase_order_id = updateData.primary_purchase_order_id;
+            }
+
             await base44.asServiceRole.entities.Part.update(partId, updateData);
+            console.log(`[linkPartsToPO] Linked part ${partId} to PO ${purchaseOrderId} (primary=${updateData.primary_purchase_order_id})`);
         } catch (error) {
             console.error(`Error linking part ${partId} to PO ${purchaseOrderId}:`, error);
         }
