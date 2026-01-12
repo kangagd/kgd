@@ -388,20 +388,29 @@ export default function Inbox() {
             userEmail={user?.email}
           />
 
-          {/* Sync Status Indicator */}
-          <div className="px-3 py-2 border-b border-[#E5E7EB] flex items-center justify-between text-xs text-[#6B7280]">
-            <span>
-              {isSyncing ? (
-                <span className="flex items-center gap-1.5">
-                  <Loader className="w-3 h-3 animate-spin" />
-                  Syncing...
-                </span>
-              ) : lastSyncTime ? (
-                `Last synced: ${new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-              ) : (
-                'Not synced yet'
-              )}
-            </span>
+          {/* Sync Status Indicator & History Search */}
+          <div className="px-3 py-2 border-b border-[#E5E7EB] space-y-2">
+            <div className="flex items-center justify-between text-xs text-[#6B7280]">
+              <span>
+                {isSyncing ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loader className="w-3 h-3 animate-spin" />
+                    Syncing...
+                  </span>
+                ) : lastSyncTime ? (
+                  `Last synced: ${new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                ) : (
+                  'Not synced yet'
+                )}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowHistorySearch(true)}
+              className="w-full px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <History className="w-3 h-3" />
+              Search Gmail History
+            </button>
           </div>
 
           {/* Thread List */}
