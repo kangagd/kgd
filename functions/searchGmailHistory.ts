@@ -42,36 +42,24 @@ Deno.serve(async (req) => {
       return Response.json({ threads: [], found: 0 });
     }
 
-    // Fetch thread details for display
+    // Fetch thread details for display using shared service account
     const threadMap = new Map();
-    const MAX_THREADS = 5; // Reduced significantly for rate limiting
-    const INITIAL_DELAY_MS = 1000; // Start with 1 second delay
+    const MAX_THREADS = 10; // Service account can handle more since it's shared quota
+    const DELAY_MS = 200; // Lighter delay since we're not rate-limited per user
 
     for (let i = 0; i < Math.min(MAX_THREADS, messageIds.length); i++) {
       const msg = messageIds[i];
 
-      // Exponential backoff delay
+      // Rate limiting delay between requests
       if (i > 0) {
-        const delay = INITIAL_DELAY_MS * Math.pow(1.5, i - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
       }
 
       try {
-        const msgUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&headers=Subject,From,Date`;
-        const msgResponse = await fetch(msgUrl, {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
+        const detail = await gmailFetch(`/gmail/v1/users/me/messages/${msg.id}`, 'GET', null, {
+          format: 'metadata',
+          headers: 'Subject,From,Date'
         });
-
-        if (!msgResponse.ok) {
-          if (msgResponse.status === 429) {
-            console.warn('Rate limited - backing off');
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            break;
-          }
-          continue;
-        }
-
-        const detail = await msgResponse.json();
         const headers = detail.payload?.headers || [];
         
         const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
