@@ -183,7 +183,7 @@ export default function MyVehicle() {
     const map = {};
     for (const iq of vehicleInventory) {
       if (!iq.price_list_item_id) continue;
-      map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+      map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity || 0);
     }
     return map;
   }, [vehicleInventory]);
