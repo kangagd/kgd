@@ -28,9 +28,13 @@ export default function StockAdjustmentModal({ open, onClose, item, vehicleId })
 
   const adjustMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await base44.functions.invoke('manageVehicleStock', {
-        action: 'adjust',
-        data: data
+      const response = await base44.functions.invoke('moveInventory', {
+        priceListItemId: item.product_id,
+        fromLocationId: item.location_id,
+        toLocationId: item.location_id,
+        quantity: Math.abs(data.difference),
+        movementType: 'adjustment',
+        notes: data.reason
       });
       if (response.data.error) throw new Error(response.data.error);
       return response.data;
@@ -49,10 +53,17 @@ export default function StockAdjustmentModal({ open, onClose, item, vehicleId })
       return;
     }
 
+    const currentQty = parseInt(item.quantity_on_hand);
+    const newQty = parseInt(newQuantity);
+    const difference = newQty - currentQty;
+
+    if (difference === 0) {
+      toast.error("Quantity hasn't changed");
+      return;
+    }
+
     adjustMutation.mutate({
-      vehicle_id: vehicleId,
-      product_id: item.product_id,
-      new_quantity: parseInt(newQuantity),
+      difference,
       reason: reason || "Manual adjustment"
     });
   };
