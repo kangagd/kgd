@@ -164,7 +164,8 @@ export default function EmailDetailView({
         new Date(a.sent_at) - new Date(b.sent_at)
       );
     },
-    refetchInterval: 30000
+    refetchInterval: false, // Disabled auto-refetch - only refetch on manual calls
+    staleTime: Infinity // Never consider data stale unless manually invalidated
   });
 
   // Verify linked project exists (use project_id field)
