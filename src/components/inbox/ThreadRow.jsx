@@ -24,24 +24,39 @@ export default function ThreadRow({ thread, isSelected, onClick }) {
       }`}
     >
       <div className="space-y-2">
-        {/* Subject & Status */}
+        {/* Subject & Chips (Status, Pin, Link) */}
          <div className="flex items-start justify-between gap-2 mb-2">
            <h3 className="text-[14px] font-semibold text-[#111827] flex-1 truncate">
              {thread.subject}
            </h3>
            <div className="flex items-center gap-1 flex-wrap flex-shrink-0 justify-end">
-             <Badge 
-               variant="outline" 
-               className={`text-[11px] border ${statusColors[thread.status] || 'bg-gray-50'}`}
-             >
-               {thread.status}
-             </Badge>
-             {linkingState.isLinked && (
-               <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 flex items-center gap-1">
-                 <LinkIcon className="w-3 h-3" />
-                 Linked
+             {/* Status Chip (single, priority-based) */}
+             {statusChip && (
+               <Badge 
+                 variant="outline" 
+                 className={`text-[11px] border ${statusChip.color}`}
+               >
+                 {statusChip.label}
                </Badge>
              )}
+
+             {/* Pin Indicator (separate from status) */}
+             {isPinned && (
+               <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 border border-blue-200 text-blue-700 text-[11px]">
+                 <Pin className="w-3 h-3" />
+                 <span>Pinned</span>
+               </div>
+             )}
+
+             {/* Link Chip (separate from status/pin) */}
+             {linkChip && (
+               <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 flex items-center gap-1">
+                 <LinkIcon className="w-3 h-3" />
+                 {linkChip.type === 'project' ? 'Project' : 'Job'}: {linkChip.title}
+               </Badge>
+             )}
+
+             {/* Fallback linking states from old system (can be removed after migration) */}
              {linkingState.isSuggested && (
                <Badge className="text-[10px] h-5 bg-yellow-100 text-yellow-700 border-yellow-200 flex items-center gap-1">
                  <Sparkles className="w-3 h-3" />
