@@ -369,7 +369,11 @@ export default function Inbox() {
         open={showHistorySearch}
         onClose={() => {
           setShowHistorySearch(false);
+        }}
+        onThreadSynced={(threadId) => {
           refetchThreads();
+          setSelectedThreadId(threadId);
+          setShowHistorySearch(false);
         }}
       />
     </div>
