@@ -32,60 +32,9 @@ Deno.serve(async (req) => {
         }
 
         if (action === 'adjust') {
-            // Manual adjustment
-            const { vehicle_id, product_id, new_quantity, reason } = data;
-            
-            const stockList = await base44.entities.VehicleStock.filter({ vehicle_id, product_id });
-            let currentStock = stockList[0];
-            let oldQty = 0;
-
-            if (!currentStock) {
-                // Create if doesn't exist? Or error? 
-                // Better to create if we are adjusting stock that wasn't tracked
-                const product = await base44.entities.PriceListItem.get(product_id);
-                currentStock = await base44.entities.VehicleStock.create({
-                    vehicle_id,
-                    product_id,
-                    product_name: product.item,
-                    sku: product.sku, // assuming PriceListItem has sku or similar
-                    category: product.category,
-                    quantity_on_hand: 0
-                });
-            } else {
-                oldQty = currentStock.quantity_on_hand || 0;
-            }
-
-            const diff = new_quantity - oldQty;
-            if (diff === 0) return Response.json({ success: true, new_quantity: new_quantity });
-
-            // ARCHIVED: VehicleStockMovement writes disabled - using StockMovement only
-
-            // Update stock (dual-write to both systems)
-            await syncVehicleStockQuantity(base44, vehicle_id, product_id, new_quantity, currentStock.product_name);
-
-            // Record movement in both systems
-            const locations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
-              vehicle_id, 
-              type: 'vehicle' 
-            });
-            const locationId = locations.length > 0 ? locations[0].id : null;
-
-            await syncMovementRecord(base44, {
-              vehicleId: vehicle_id,
-              productId: product_id,
-              jobId: null,
-              projectId: null,
-              movementType: 'adjustment',
-              quantityChange: diff,
-              reason: reason || 'Manual adjustment',
-              userId: user.id,
-              userName: user.full_name || user.email,
-              fromLocationId: locationId,
-              toLocationId: locationId,
-              itemName: currentStock.product_name
-            });
-
-            return Response.json({ success: true, new_quantity });
+            // Manual adjustment - now uses moveInventory instead of manageVehicleStock
+            // This action is deprecated - use moveInventory function directly
+            return Response.json({ error: 'Use moveInventory function instead' }, { status: 400 });
         }
 
         if (action === 'restock') {
