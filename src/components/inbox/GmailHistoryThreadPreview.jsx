@@ -146,8 +146,7 @@ const LinkProjectJobModal = ({ open, onOpenChange, gmailThreadId, onLinked }) =>
 export default function GmailHistoryThreadPreview({
   thread,
   onBack,
-  projectId,
-  jobId,
+  defaultLinkTarget,
   onImported
 }) {
   const [isImporting, setIsImporting] = useState(false);
