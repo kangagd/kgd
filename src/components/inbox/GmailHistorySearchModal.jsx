@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Search, Loader2, X } from 'lucide-react';
+import { Search, Loader2, X, AlertCircle, ChevronDown } from 'lucide-react';
 import GmailHistorySearchResults from './GmailHistorySearchResults';
 import GmailHistoryThreadPreview from './GmailHistoryThreadPreview';
 import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
