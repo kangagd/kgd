@@ -38,6 +38,7 @@ import EntityLink from "../components/common/EntityLink";
 import BackButton from "../components/common/BackButton";
 import { useNavigate } from "react-router-dom";
 import { QUERY_CONFIG } from "../components/api/queryConfig";
+import { projectKeys, jobKeys } from "../components/api/queryKeys";
 
 export default function Projects() {
   const location = useLocation();
@@ -99,11 +100,9 @@ export default function Projects() {
   console.log(`[Projects Page] Displaying ${projects.length} projects after filtering out deleted/lost`);
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
-    queryKey: ['allJobs'],
+    queryKey: jobKeys.all,
     queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
-    staleTime: 60000, // 1 minute
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
     onError: (error) => {
       if (error?.response?.status === 429) {
         toast.error('Rate limit hit – slowing down');
@@ -114,9 +113,7 @@ export default function Projects() {
   const { data: allParts = [] } = useQuery({
     queryKey: ['allParts'],
     queryFn: () => base44.entities.Part.list(),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
     onError: (error) => {
       if (error?.response?.status === 429) {
         toast.error('Rate limit hit – slowing down');
@@ -139,49 +136,37 @@ export default function Projects() {
   const { data: allTradeRequirements = [] } = useQuery({
     queryKey: ['allTradeRequirements'],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['allPurchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list(),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: allAttentionItems = [] } = useQuery({
     queryKey: ['allAttentionItems'],
     queryFn: () => base44.entities.AttentionItem.list(),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: allEmailThreads = [] } = useQuery({
     queryKey: ['allEmailThreads'],
     queryFn: () => base44.entities.EmailThread.list(),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: allQuotes = [] } = useQuery({
     queryKey: ['allQuotes'],
     queryFn: () => base44.entities.Quote.list(),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: allXeroInvoices = [] } = useQuery({
     queryKey: ['allXeroInvoices'],
     queryFn: () => base44.entities.XeroInvoice.list(),
-    staleTime: 60000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    ...QUERY_CONFIG.reference,
   });
 
   const inventoryByItem = useMemo(() => {
@@ -241,10 +226,9 @@ export default function Projects() {
       return res.data.project;
     },
     onSuccess: (newProject) => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
       setEditingProject(null);
       setShowForm(false);
-      // Navigate to the new project page
       navigate(`${createPageUrl("Projects")}?projectId=${newProject.id}`);
     }
   });
@@ -256,7 +240,7 @@ export default function Projects() {
       return res.data.project;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
       setShowForm(false);
       setEditingProject(null);
       setSelectedProject(null);
@@ -268,9 +252,9 @@ export default function Projects() {
       return await base44.functions.invoke('manageProject', { action: 'delete', id: projectId });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      queryClient.invalidateQueries({ queryKey: jobKeys.all });
+      queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
       setSelectedProject(null);
       setEditingProject(null);
       setModalProject(null);
@@ -996,7 +980,7 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
           open={showImportModal}
           onClose={() => setShowImportModal(false)}
           onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: projectKeys.all });
           }}
         />
       </div>
