@@ -23,7 +23,6 @@ export default function Inbox() {
   const [showComposer, setShowComposer] = useState(false);
   const [composerMessage, setComposerMessage] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const [showHistorySearch, setShowHistorySearch] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
