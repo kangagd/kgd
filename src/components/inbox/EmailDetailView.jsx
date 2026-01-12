@@ -106,24 +106,13 @@ export default function EmailDetailView({
   }, [thread?.id]);
 
   const { data: messages = [], refetch } = useQuery({
-    queryKey: ['emailMessages', thread.id, thread.gmail_thread_id],
+    queryKey: ['emailMessages', thread.id],
     queryFn: async () => {
-      // Fetch by both Base44 thread ID and gmail_thread_id, then dedupe
-      const [byBase44Id, byGmailId] = await Promise.all([
-        base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at'),
-        thread.gmail_thread_id 
-          ? base44.entities.EmailMessage.filter({ thread_id: thread.gmail_thread_id }, 'sent_at')
-          : Promise.resolve([])
-      ]);
-      
-      // Dedupe by message id
-      const msgMap = new Map();
-      [...byBase44Id, ...byGmailId].forEach(m => msgMap.set(m.id, m));
-      return Array.from(msgMap.values()).sort((a, b) => 
-        new Date(a.sent_at) - new Date(b.sent_at)
-      );
-    },
-    refetchInterval: 30000
+      // Only fetch by Base44 thread ID (canonical source of truth)
+      const msgs = await base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at');
+      return msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+    }
+    // Remove refetchInterval - rely on real-time subscription instead
   });
 
   // Verify linked project exists (use project_id field)
