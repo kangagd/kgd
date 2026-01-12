@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { base44 } from '@/api/base44Client';
-import { ChevronLeft, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Loader2, AlertCircle, CheckCircle, Paperclip } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
 import { inboxKeys, projectKeys, jobKeys } from '@/components/api/queryKeys';
+import DOMPurify from 'dompurify';
 
 const LinkProjectJobModal = ({ open, onOpenChange, gmailThreadId, onLinked }) => {
   const [searchTerm, setSearchTerm] = useState('');
