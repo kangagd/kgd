@@ -99,14 +99,15 @@ Deno.serve(async (req) => {
           creditNotesTotal = xeroInvoice.CreditNotes.reduce((sum, cn) => sum + (cn.Total || 0), 0);
         }
 
-        // Fetch online payment URL
+        // Fetch online payment URL with retry
         let onlinePaymentUrl = null;
         try {
-          const onlineInvoiceResponse = await fetch(
+          const onlineInvoiceResponse = await xeroFetchWithRetry(
             `https://api.xero.com/api.xro/2.0/Invoices/${xeroInvoice.InvoiceID}/OnlineInvoice`,
             {
               headers: getXeroHeaders(connection)
-            }
+            },
+            1 // Only 1 retry for optional data
           );
 
           if (onlineInvoiceResponse.ok) {
