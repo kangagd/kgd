@@ -133,20 +133,13 @@ export default function AttachmentCard({
           // Categorize and save
           const isImage = isImageFile(attachment.mime_type, attachment.filename);
 
-          if (isImage) {
-            await base44.entities.Project.update(linkedProjectId, {
-              image_urls: [...freshImages, urlToSave]
-            });
-          } else {
-            // Use backend function to avoid timestamp validation issues
-            await base44.functions.invoke('manageProject', {
-              action: 'update',
-              id: linkedProjectId,
-              data: {
-                other_documents: [...freshDocs, { url: urlToSave, name: attachment.filename }]
-              }
-            });
-          }
+          await base44.functions.invoke('addAttachmentToEntity', {
+            entity_type: 'Project',
+            entity_id: linkedProjectId,
+            attachment_url: urlToSave,
+            attachment_name: attachment.filename,
+            is_image: isImage
+          });
           
           setSaved(true);
           if (linkedProjectId) {
