@@ -15,19 +15,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const users = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
-    if (users.length === 0) {
-      return Response.json({ error: 'User record not found' }, { status: 404 });
-    }
-    
-    const user = users[0];
-
-    if (!user.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected' }, { status: 400 });
-    }
-    
-    const accessToken = await refreshTokenIfNeeded(user, base44);
-
     const { query, sender, recipient, dateFrom, dateTo, maxResults = 50 } = await req.json();
 
     if (!query && !sender && !recipient) {
@@ -43,18 +30,12 @@ Deno.serve(async (req) => {
     if (dateTo) queryParts.push(`before:${dateTo.replace(/-/g, '/')}`);
     
     const gmailQuery = queryParts.join(' ');
-    const searchUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(gmailQuery)}&maxResults=${maxResults}`;
-    
-    const response = await fetch(searchUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
+
+    // Use shared service account for search
+    const data = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
+      q: gmailQuery,
+      maxResults
     });
-
-    if (!response.ok) {
-      const error = await response.text();
-      return Response.json({ error: `Gmail API error: ${error}` }, { status: response.status });
-    }
-
-    const data = await response.json();
     const messageIds = data.messages || [];
 
     if (messageIds.length === 0) {
