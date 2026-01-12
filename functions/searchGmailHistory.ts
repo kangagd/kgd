@@ -94,17 +94,18 @@ Deno.serve(async (req) => {
 
     // Fetch thread details for display
     const threadMap = new Map();
-    const MAX_THREADS = 10; // Reduced for rate limiting
-    const DELAY_MS = 300; // Rate limiting delay between requests
-    
+    const MAX_THREADS = 5; // Reduced significantly for rate limiting
+    const INITIAL_DELAY_MS = 1000; // Start with 1 second delay
+
     for (let i = 0; i < Math.min(MAX_THREADS, messageIds.length); i++) {
       const msg = messageIds[i];
-      
-      // Rate limiting delay
+
+      // Exponential backoff delay
       if (i > 0) {
-        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+        const delay = INITIAL_DELAY_MS * Math.pow(1.5, i - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-      
+
       try {
         const msgUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&headers=Subject,From,Date`;
         const msgResponse = await fetch(msgUrl, {
@@ -113,7 +114,8 @@ Deno.serve(async (req) => {
 
         if (!msgResponse.ok) {
           if (msgResponse.status === 429) {
-            console.warn('Rate limited by Gmail API, stopping early');
+            console.warn('Rate limited - backing off');
+            await new Promise(resolve => setTimeout(resolve, 2000));
             break;
           }
           continue;
