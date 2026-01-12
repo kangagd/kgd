@@ -66,7 +66,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
     enabled: !!project.id,
     staleTime: 30000,
     refetchOnMount: true,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: false
   });
 
   // Fetch email threads linked to this project
@@ -90,7 +90,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
     enabled: !!project.id,
     staleTime: 30000,
     refetchOnMount: true,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: false
   });
 
   // Fetch email messages for linked threads
@@ -107,7 +107,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
     },
     enabled: linkedThreads.length > 0,
     staleTime: 30000,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: false
   });
 
   // Fetch draft emails related to linked threads
@@ -153,7 +153,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
     },
     enabled: linkedThreads.length > 0,
     staleTime: 30000,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: false
   });
 
   // Link email thread mutation

@@ -96,7 +96,7 @@ export default function EmailDetailView({
   const { data: viewers = [] } = useQuery({
     queryKey: ['thread-viewers', thread.id],
     queryFn: () => base44.entities.EmailThreadViewer.filter({ thread_id: thread.id }),
-    refetchInterval: 10000, // Refresh every 10 seconds
+    staleTime: 30000, // Keep viewers data fresh for 30s
     enabled: !!user
   });
 
