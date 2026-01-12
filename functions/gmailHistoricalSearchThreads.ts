@@ -313,29 +313,52 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Enrich with import status
+    // Enrich with import and linking status
     if (results.length > 0) {
       try {
-        const allImportedThreads = await base44.asServiceRole.entities.EmailThread.filter({});
+        const gmailThreadIds = results.map(r => r.gmail_thread_id);
+        
+        // Query EmailThread for matching threads
+        const emailThreads = await base44.asServiceRole.entities.EmailThread.filter({
+          gmail_thread_id: { $in: gmailThreadIds }
+        });
+        
         const importedMap = new Map();
-        allImportedThreads.forEach(t => {
+        emailThreads.forEach(t => {
           if (t.gmail_thread_id) {
-            importedMap.set(t.gmail_thread_id, t);
+            importedMap.set(t.gmail_thread_id, {
+              linkedEntityType: t.linkedEntityType || 'none',
+              linkedEntityTitle: t.linkedEntityTitle || null
+            });
           }
         });
 
+        // Add import state and linking info to each result
         results.forEach(r => {
-          const imported = importedMap.get(r.gmail_thread_id);
-          if (imported) {
-            r.imported = true;
-            r.linkedEntityType = imported.linkedEntityType || null;
-            r.linkedEntityTitle = imported.linkedEntityTitle || null;
+          const emailThread = importedMap.get(r.gmail_thread_id);
+          
+          if (!emailThread) {
+            r.importedState = 'not_imported';
+            r.linkedEntityType = 'none';
+            r.linkedEntityTitle = null;
+          } else if (emailThread.linkedEntityType === 'none' || !emailThread.linkedEntityType) {
+            r.importedState = 'imported_unlinked';
+            r.linkedEntityType = 'none';
+            r.linkedEntityTitle = null;
           } else {
-            r.imported = false;
+            r.importedState = 'imported_linked';
+            r.linkedEntityType = emailThread.linkedEntityType;
+            r.linkedEntityTitle = emailThread.linkedEntityTitle;
           }
         });
       } catch (enrichErr) {
         console.error('[gmailHistoricalSearchThreads] Error enriching results:', enrichErr);
+        // Gracefully degrade: mark all as not_imported if enrichment fails
+        results.forEach(r => {
+          r.importedState = 'not_imported';
+          r.linkedEntityType = 'none';
+          r.linkedEntityTitle = null;
+        });
       }
     }
 
