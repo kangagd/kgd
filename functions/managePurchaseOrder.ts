@@ -531,6 +531,49 @@ Deno.serve(async (req) => {
                 updateData.expected_date = expected_date ?? eta ?? null;
             }
 
+            // STEP 1: Check if we need to create a logistics job BEFORE updating status
+            // This ensures job creation succeeds before we commit the status change
+            let logisticsJob = null;
+            
+            const shouldHaveLogisticsJob =
+                !existing.linked_logistics_job_id && // only if no job linked yet
+                (
+                    // DELIVERY: create job when IN_LOADING_BAY
+                    (existing.delivery_method === PO_DELIVERY_METHOD.DELIVERY &&
+                     newStatus === PO_STATUS.IN_LOADING_BAY) ||
+
+                    // PICKUP: create job when AT_SUPPLIER (ready for pickup at supplier location)
+                    (existing.delivery_method === PO_DELIVERY_METHOD.PICKUP &&
+                     newStatus === PO_STATUS.AT_SUPPLIER)
+                );
+
+            if (shouldHaveLogisticsJob) {
+                try {
+                    // Invoke the createLogisticsJobForPO function FIRST (validate it succeeds)
+                    const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
+                        purchase_order_id: existing.id,
+                        scheduled_date: existing.expected_date || new Date().toISOString().split("T")[0],
+                    });
+
+                    if (!jobResponse?.data?.success || !jobResponse.data?.job) {
+                        // Job creation failed - return error early WITHOUT updating PO status
+                        console.error("Auto logistics job creation failed for PO", existing.id, jobResponse?.data?.error);
+                        return Response.json({ 
+                            error: `Failed to create logistics job: ${jobResponse?.data?.error || 'Unknown error'}` 
+                        }, { status: 500 });
+                    }
+                    logisticsJob = jobResponse.data.job;
+                    console.log(`[managePurchaseOrder] action=updateStatus Created logistics job ${logisticsJob.id} before status update`);
+                } catch (error) {
+                    // Job creation failed - return error early WITHOUT updating PO status
+                    console.error("Error auto-creating logistics job for PO", existing.id, error);
+                    return Response.json({ 
+                        error: `Failed to create logistics job: ${error.message}` 
+                    }, { status: 500 });
+                }
+            }
+
+            // STEP 2: Now update PO status (job creation succeeded)
             console.log('[managePurchaseOrder] action=updateStatus Preserving identity:', {
                 poId: id,
                 po_reference: updateData.po_reference,
@@ -546,7 +589,7 @@ Deno.serve(async (req) => {
                 name: updatedPO.name
             });
 
-            // Update project activity if PO is linked to a project
+            // STEP 3: Update project activity if PO is linked to a project
             if (updatedPO.project_id) {
                 const activityType = newStatus === PO_STATUS.IN_LOADING_BAY ? 'PO Delivered' :
                                    newStatus === PO_STATUS.IN_STORAGE ? 'PO in Storage' :
@@ -555,50 +598,17 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, updatedPO.project_id, activityType);
             }
 
-            // Sync linked Parts status/location and references
+            // STEP 4: Sync linked Parts status/location and references
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);
             await syncPartReferencesWithPO(base44, updatedPO);
 
-            // Auto-create Logistics Job if conditions are met
-            let logisticsJob = null;
-
-            const shouldHaveLogisticsJob =
-                !updatedPO.linked_logistics_job_id && // only if no job linked yet
-                (
-                    // DELIVERY: create job when IN_LOADING_BAY
-                    (updatedPO.delivery_method === PO_DELIVERY_METHOD.DELIVERY &&
-                     newStatus === PO_STATUS.IN_LOADING_BAY) ||
-
-                    // PICKUP: create job when AT_SUPPLIER (ready for pickup at supplier location)
-                    (updatedPO.delivery_method === PO_DELIVERY_METHOD.PICKUP &&
-                     newStatus === PO_STATUS.AT_SUPPLIER)
-                );
-
-            if (shouldHaveLogisticsJob) {
-                try {
-                    // Invoke the updated createLogisticsJobForPO function
-                    // which now uses standardized JobTypes and logistics_purpose
-                    const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
-                        purchase_order_id: updatedPO.id,
-                        scheduled_date: updatedPO.expected_date || new Date().toISOString().split("T")[0],
-                    });
-
-                    if (jobResponse?.data?.success && jobResponse.data?.job) {
-                        logisticsJob = jobResponse.data.job;
-
-                        // Update PO with logistics job link if not already set
-                        if (!updatedPO.linked_logistics_job_id) {
-                            await base44.asServiceRole.entities.PurchaseOrder.update(updatedPO.id, {
-                                linked_logistics_job_id: logisticsJob.id,
-                            });
-                            updatedPO.linked_logistics_job_id = logisticsJob.id;
-                        }
-                    } else {
-                        console.error("Auto logistics job creation failed for PO", updatedPO.id, jobResponse?.data?.error);
-                    }
-                } catch (error) {
-                    console.error("Error auto-creating logistics job for PO", updatedPO.id, error);
-                }
+            // STEP 5: Link created job to PO if one was created
+            if (logisticsJob && !updatedPO.linked_logistics_job_id) {
+                await base44.asServiceRole.entities.PurchaseOrder.update(updatedPO.id, {
+                    linked_logistics_job_id: logisticsJob.id,
+                });
+                updatedPO.linked_logistics_job_id = logisticsJob.id;
+                console.log(`[managePurchaseOrder] action=updateStatus Linked logistics job ${logisticsJob.id} to PO`);
             }
 
             return Response.json({ 
