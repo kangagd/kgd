@@ -95,8 +95,22 @@ async function getAccessToken() {
 
 async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = null) {
   let retries = 0;
-  const maxRetries = 3;
-  const backoffMs = 1000;
+  const maxRetries = 4;
+  const baseBackoffMs = 1000;
+
+  const shouldRetry = (status) => {
+    // Transient errors only: 429, 5xx, network errors
+    if (status === 429 || (status >= 500 && status < 600)) return true;
+    // Don't retry deterministic errors (4xx except 429)
+    return false;
+  };
+
+  const getBackoffDelay = (attemptIndex) => {
+    // Exponential backoff with jitter: 1s, 2s, 4s, 8s (±500ms)
+    const baseDelay = Math.min(baseBackoffMs * Math.pow(2, attemptIndex), 8000);
+    const jitter = Math.random() * 1000 - 500; // ±500ms
+    return Math.max(baseDelay + jitter, 100);
+  };
 
   while (retries < maxRetries) {
     try {
@@ -128,29 +142,28 @@ async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = n
 
       const response = await fetch(url, options);
 
-      if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
-        retries++;
-        if (retries >= maxRetries) {
-          throw new Error(`Max retries exceeded. Last status: ${response.status}`);
-        }
-        const waitMs = backoffMs * Math.pow(2, retries - 1);
-        console.log(`[gmailFetch] Retrying in ${waitMs}ms...`);
-        await new Promise(resolve => setTimeout(resolve, waitMs));
-        continue;
-      }
-
       if (!response.ok) {
+        // Check if we should retry this error
+        if (shouldRetry(response.status) && retries < maxRetries - 1) {
+          retries++;
+          const delay = getBackoffDelay(retries - 1);
+          console.log(`[gmailFetch] Transient error ${response.status}, retry ${retries}/${maxRetries} in ${Math.round(delay)}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        // Don't retry: deterministic error or max retries reached
         const errorText = await response.text();
         throw new Error(`Gmail API error (${response.status}): ${errorText}`);
       }
 
       return await response.json();
     } catch (error) {
+      // Network error - retry with backoff
       if (retries < maxRetries - 1) {
         retries++;
-        const waitMs = backoffMs * Math.pow(2, retries - 1);
-        console.log(`[gmailFetch] Retry ${retries}/${maxRetries}...`);
-        await new Promise(resolve => setTimeout(resolve, waitMs));
+        const delay = getBackoffDelay(retries - 1);
+        console.log(`[gmailFetch] Network error, retry ${retries}/${maxRetries} in ${Math.round(delay)}ms: ${error.message}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         throw error;
       }

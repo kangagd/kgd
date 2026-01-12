@@ -248,31 +248,38 @@ Deno.serve(async (req) => {
         
         // If no exact match via headers, try to find related threads by subject + email participants
         // This handles edge cases where threading headers are missing
+        // OPTIMIZATION: Skip fallback if participants don't match any known customers (save O(n) scan)
         if (existingThreads.length === 0) {
           const normalizedSubject = subject.replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
-          const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+          const fromAddr = parseEmailAddress(from).toLowerCase();
+          const toAddrs = to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase());
           
-          existingThreads = allThreads.filter(t => {
-            const threadSubject = (t.subject || '').replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
-            if (threadSubject !== normalizedSubject) return false;
-            
-            // Check if participants match (from/to overlap)
-            const fromAddr = parseEmailAddress(from).toLowerCase();
-            const toAddrs = to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase());
-            const threadFromAddr = (t.from_address || '').toLowerCase();
-            const threadToAddrs = (t.to_addresses || []).map(a => a.toLowerCase());
-            
-            const allCurrent = [fromAddr, ...toAddrs];
-            const allThread = [threadFromAddr, ...threadToAddrs];
-            
-            // Check if there's overlap in participants
-            return allCurrent.some(addr => allThread.includes(addr));
-          });
+          // Only do expensive thread scan if subject has actual words (not generic)
+          const hasRelevantSubject = normalizedSubject.length > 3 && !/^(no subject|fwd|re)$/i.test(normalizedSubject);
           
-          // Use the most recently updated matching thread
-          if (existingThreads.length > 0) {
-            existingThreads.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
-            existingThreads = [existingThreads[0]];
+          if (hasRelevantSubject) {
+            const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+            
+            existingThreads = allThreads.filter(t => {
+              const threadSubject = (t.subject || '').replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
+              if (threadSubject !== normalizedSubject) return false;
+              
+              // Check if participants match (from/to overlap)
+              const threadFromAddr = (t.from_address || '').toLowerCase();
+              const threadToAddrs = (t.to_addresses || []).map(a => a.toLowerCase());
+              
+              const allCurrent = [fromAddr, ...toAddrs];
+              const allThread = [threadFromAddr, ...threadToAddrs];
+              
+              // Check if there's overlap in participants
+              return allCurrent.some(addr => allThread.includes(addr));
+            });
+            
+            // Use the most recently updated matching thread
+            if (existingThreads.length > 0) {
+              existingThreads.sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+              existingThreads = [existingThreads[0]];
+            }
           }
         }
 
