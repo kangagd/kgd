@@ -183,7 +183,7 @@ export default function GmailHistoryThreadPreview({
   const handleLinked = () => {
     setImportSuccess(true);
     queryClient.invalidateQueries({ queryKey: ['gmailHistoricalSearch'] });
-    queryClient.invalidateQueries({ queryKey: ['inboxKeys.threads'] });
+    queryClient.invalidateQueries({ queryKey: ['inboxKeys', 'threads'] });
     setTimeout(() => onImported?.(), 1000);
   };
 
