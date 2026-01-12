@@ -64,24 +64,31 @@ export default function Inbox() {
     staleTime: 30000 // Keep data fresh for 30s to prevent excessive refetches
   });
 
-  // Real-time subscription for EmailThread updates (debounced)
+  // Real-time subscription for EmailThread updates (debounced with staleTime gating)
   useEffect(() => {
     if (!user) return;
 
     let debounceTimer;
     const unsubscribe = base44.entities.EmailThread.subscribe((event) => {
-      // Debounce refetch to 2 seconds to batch multiple updates
+      // Only invalidate if data is older than 30s (staleTime)
+      const now = Date.now();
+      if (now - lastThreadFetchTime < 30000) {
+        // Data is fresh, skip refetch
+        return;
+      }
+
+      // Debounce refetch to 500ms to batch multiple updates
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-      }, 2000);
+      }, 500);
     });
 
     return () => {
       clearTimeout(debounceTimer);
       unsubscribe();
     };
-  }, [user, queryClient]);
+  }, [user, queryClient, lastThreadFetchTime]);
 
   // Sync Gmail inbox
   const syncGmailInbox = async () => {
