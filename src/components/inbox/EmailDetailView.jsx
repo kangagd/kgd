@@ -105,13 +105,15 @@ export default function EmailDetailView({
     setAiThread(thread);
   }, [thread?.id]);
 
-  const { data: messages = [], refetch } = useQuery({
+  const { data: messages = [], refetch, isLoading } = useQuery({
     queryKey: ['emailMessages', thread.id],
     queryFn: async () => {
       // Only fetch by Base44 thread ID (canonical source of truth)
       const msgs = await base44.entities.EmailMessage.filter({ thread_id: thread.id }, 'sent_at');
       return msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
-    }
+    },
+    staleTime: 30000, // 30 seconds
+    cacheTime: 60000 // 60 seconds - SAFEGUARD: Keep cached messages to prevent "No messages" flicker
     // Remove refetchInterval - rely on real-time subscription instead
   });
 
@@ -527,7 +529,11 @@ export default function EmailDetailView({
 
             {/* Message List - Scrollable */}
             <div className="divide-y divide-[#E5E7EB]">
-              {messages.length > 0 ? (
+              {isLoading ? (
+                <div className="text-[14px] text-[#6B7280] text-center py-8">
+                  Loading messages...
+                </div>
+              ) : messages.length > 0 ? (
                 messages.map((msg, idx) => (
                   <EmailMessageItem
                     key={msg.id}
@@ -538,9 +544,33 @@ export default function EmailDetailView({
                   />
                 ))
               ) : (
-                <div className="text-[14px] text-[#6B7280] text-center py-8">
-                  No messages in this thread
-                </div>
+                // SAFEGUARD: Only show "No messages" if not loading AND thread has gmail_thread_id
+                thread.gmail_thread_id ? (
+                  <div className="text-[14px] text-[#6B7280] text-center py-8 space-y-3">
+                    <div>No messages fetched yet.</div>
+                    <Button
+                      onClick={() => {
+                        base44.functions.invoke('fetchThreadMessages', {
+                          thread_id: thread.id,
+                          gmail_thread_id: thread.gmail_thread_id
+                        }).then(() => {
+                          refetch();
+                          toast.success('Messages fetched');
+                        }).catch(err => {
+                          toast.error('Failed to fetch messages: ' + err.message);
+                        });
+                      }}
+                      className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] mx-auto"
+                      size="sm"
+                    >
+                      Fetch Messages
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-[14px] text-[#6B7280] text-center py-8">
+                    Unable to load messages - thread not synced with Gmail.
+                  </div>
+                )
               )}
             </div>
           </div>
