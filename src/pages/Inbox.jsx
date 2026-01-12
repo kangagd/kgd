@@ -35,6 +35,15 @@ export default function Inbox() {
     loadUser();
   }, []);
 
+  // Handle threadId from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const threadId = params.get('threadId');
+    if (threadId && threadId !== selectedThreadId) {
+      setSelectedThreadId(threadId);
+    }
+  }, []);
+
   // Fetch all email threads with viewers
   const { data: threads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
     queryKey: ['emailThreads'],
