@@ -48,17 +48,15 @@ export default function InboxFilterBar({
             className="pl-9"
           />
         </div>
-        {onOpenHistorySearch && (
-          <Button
-            onClick={onOpenHistorySearch}
-            variant="outline"
-            size="icon"
-            title="Search Gmail history"
-            className="flex-shrink-0"
-          >
-            <History className="w-4 h-4" />
-          </Button>
-        )}
+        <Button
+          onClick={onOpenHistorySearch}
+          variant="outline"
+          size="icon"
+          title="Search Gmail history"
+          className="flex-shrink-0"
+        >
+          <History className="w-4 h-4" />
+        </Button>
       </div>
 
       {/* Filter Pills */}
