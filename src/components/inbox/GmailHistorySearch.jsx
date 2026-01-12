@@ -177,15 +177,35 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     {thread.is_synced ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewThread(thread)}
-                        className="h-8"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                        View
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewThread(thread)}
+                          className="h-8"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSyncThread(thread, true)}
+                          disabled={syncingThreadId === thread.gmail_thread_id}
+                          className="h-8"
+                          title="Re-sync this thread with latest content"
+                        >
+                          {syncingThreadId === thread.gmail_thread_id ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                            </>
+                          ) : (
+                            <>
+                              <LinkIcon className="w-3.5 h-3.5" />
+                            </>
+                          )}
+                        </Button>
+                      </>
                     ) : (
                       <Button
                         size="sm"
