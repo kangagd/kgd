@@ -25,7 +25,7 @@ export default function GmailHistorySearch({ open, onClose, projectId = null }) 
     setIsSearching(true);
     try {
       const response = await base44.functions.invoke('searchGmailHistory', { 
-        email: email.trim(),
+        sender: email.trim(),
         maxResults: 50
       });
 
