@@ -9,15 +9,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Service role can list all technicians regardless of user role
-    const technicians = await base44.asServiceRole.entities.User.filter({ is_field_technician: true });
+    // Allow all authenticated users to view technicians list
 
-    return Response.json({
-      success: true,
-      technicians: technicians
+    // Use service role to bypass User entity RLS
+    const technicians = await base44.asServiceRole.entities.User.filter({ 
+      is_field_technician: true 
     });
+
+    return Response.json({ technicians });
   } catch (error) {
-    console.error('Get technicians error:', error);
+    console.error('Error fetching technicians:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
