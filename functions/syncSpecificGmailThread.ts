@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     // Auto-link to customer and project (same logic as gmailSync)
     try {
       const allEmails = [fromAddress, ...toAddresses].map(e => e.toLowerCase());
-      const customers = await base44.asServiceRole.entities.Customer.list();
+      const customers = await base44.asServiceRole.entities.Customer.filter({});
       const matchingCustomer = customers.find(c => 
         c.email && allEmails.includes(c.email.toLowerCase())
       );
