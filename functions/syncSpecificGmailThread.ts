@@ -34,8 +34,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: `Gmail API error: ${error}` }, { status: response.status });
     }
 
-    const threadData = await response.json();
-    const messages = threadData.messages || [];
+    const gmailThreadData = await response.json();
+    const messages = gmailThreadData.messages || [];
 
     if (messages.length === 0) {
       return Response.json({ error: 'No messages found in thread' }, { status: 404 });
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     }).filter(Boolean);
 
     // Create EmailThread with initial data
-    const threadData = {
+    const emailThreadData = {
       subject,
       gmail_thread_id,
       last_message_snippet: firstMsg.snippet || '',
