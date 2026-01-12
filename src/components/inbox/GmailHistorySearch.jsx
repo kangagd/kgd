@@ -30,8 +30,32 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
       });
 
       if (response.data?.threads) {
-        setResults(response.data.threads);
-        if (response.data.threads.length === 0) {
+        // Enrich results with sync/link status by checking actual EmailThread records
+        const enrichedThreads = await Promise.all(
+          response.data.threads.map(async (gmailThread) => {
+            try {
+              // Check if EmailThread exists for this gmail_thread_id
+              const existing = await base44.entities.EmailThread.filter({
+                gmail_thread_id: gmailThread.gmail_thread_id
+              });
+
+              const emailThread = existing.length > 0 ? existing[0] : null;
+              
+              return {
+                ...gmailThread,
+                is_synced: !!emailThread,
+                synced_id: emailThread?.id,
+                is_linked: !!emailThread?.project_id // Only linked if project_id is non-null
+              };
+            } catch (err) {
+              console.error('Failed to check thread status:', err);
+              return { ...gmailThread, is_synced: false, is_linked: false };
+            }
+          })
+        );
+
+        setResults(enrichedThreads);
+        if (enrichedThreads.length === 0) {
           toast.info("No emails found for this address");
         }
       }
