@@ -9,8 +9,31 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
+    const { search_email } = await req.json();
+    
     // Get all email threads
     const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+
+    // If search_email provided, find threads from that sender
+    if (search_email) {
+      const normalized = search_email.toLowerCase().trim();
+      const matches = allThreads.filter(t => {
+        if (!t.from_address) return false;
+        const match = t.from_address.match(/<(.+?)>/);
+        const extracted = match ? match[1] : t.from_address;
+        return extracted.toLowerCase().trim() === normalized;
+      });
+      
+      return Response.json({
+        search_email,
+        found_count: matches.length,
+        matches: matches.map(t => ({
+          id: t.id,
+          subject: t.subject,
+          from_address: t.from_address
+        }))
+      });
+    }
 
     // Show first 20 threads with their from_address values
     const preview = allThreads.slice(0, 20).map(t => ({
