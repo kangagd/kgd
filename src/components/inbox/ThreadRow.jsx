@@ -1,7 +1,8 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Mail, AlertCircle, LinkIcon, Sparkles } from "lucide-react";
+import { Mail, AlertCircle, LinkIcon, Sparkles, Pin } from "lucide-react";
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
+import { getThreadStatusChip, isThreadPinned, getThreadLinkChip } from "@/components/inbox/threadStatusChip";
 
 export default function ThreadRow({ thread, isSelected, onClick }) {
   const linkingState = getThreadLinkingState(thread);
