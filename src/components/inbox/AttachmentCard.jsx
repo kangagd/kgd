@@ -244,7 +244,8 @@ export default function AttachmentCard({
               await base44.entities.Project.update(linkedProjectId, { image_urls: updatedImageUrls });
             } else {
               const updatedDocs = [...existingDocs, { url: urlToSave, name: attachment.filename }];
-              await base44.entities.Project.update(linkedProjectId, { other_documents: updatedDocs });
+              // Send ONLY the field we're updating to avoid timestamp validation issues
+              await base44.asServiceRole.entities.Project.update(linkedProjectId, { other_documents: updatedDocs });
             }
           }
           
