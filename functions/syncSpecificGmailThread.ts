@@ -156,6 +156,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ thread_id: thread.id, synced: true });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+   console.error('Sync error:', error);
+   return Response.json({ error: error.message }, { status: 500 });
   }
 });
