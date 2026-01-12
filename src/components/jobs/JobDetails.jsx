@@ -392,7 +392,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         );
       }
     },
-    enabled: !!(job.purchase_order_id || job.vehicle_id || job.third_party_trade_id || job.is_logistics_job === true),
+    enabled: isLogisticsJob,
     staleTime: 30000, // 30 seconds
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -408,7 +408,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       const allSamples = await base44.entities.Sample.list();
       return allSamples.filter(s => job.sample_ids.includes(s.id));
     },
-    enabled: isLogisticsJob && !!(job.sample_ids && job.sample_ids.length > 0),
+    enabled: isLogisticsJob,
     staleTime: 30000, // 30 seconds
     refetchOnWindowFocus: false,
     refetchOnMount: false,
