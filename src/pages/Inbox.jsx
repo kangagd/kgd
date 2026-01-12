@@ -74,21 +74,24 @@ export default function Inbox() {
   }, [user, queryClient]);
 
   // Sync Gmail inbox
-  const syncGmailInbox = async () => {
-    if (isSyncing) return;
-    
-    try {
-      setIsSyncing(true);
-      await base44.functions.invoke('gmailSyncInbox', { maxResults: 50 });
-      await refetchThreads();
-      setLastSyncTime(new Date());
-    } catch (error) {
-      console.error('Sync failed:', error);
-      toast.error('Failed to sync emails');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+   const syncGmailInbox = async () => {
+     if (isSyncing) return;
+
+     try {
+       setIsSyncing(true);
+       // First sync inbox threads metadata
+       await base44.functions.invoke('gmailSyncInbox', { maxResults: 50 });
+       // Then fetch full message bodies
+       await base44.functions.invoke('gmailSync', {});
+       await refetchThreads();
+       setLastSyncTime(new Date());
+     } catch (error) {
+       console.error('Sync failed:', error);
+       toast.error('Failed to sync emails');
+     } finally {
+       setIsSyncing(false);
+     }
+   };
 
   // Auto-sync on mount and when tab becomes visible
   useEffect(() => {
