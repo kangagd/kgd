@@ -329,10 +329,39 @@ export default function GmailHistoryThreadPreview({
         )}
 
         {/* Messages */}
-        {previewMessages && previewMessages.length > 0 && (
+        {displayMessages && displayMessages.length > 0 && (
           <div className="space-y-4 pt-4 border-t">
-            <h3 className="font-semibold text-sm">Messages</h3>
-            {previewMessages.map((msg, idx) => (
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Messages ({displayMessages.length})</h3>
+              {previewMessages.length > 0 && previewMessages.length < displayMessages.length && (
+                <span className="text-xs text-gray-500">Full thread loaded</span>
+              )}
+              {previewMessages.length > 0 && previewMessages.length === displayMessages.length && !loadingFull && (
+                <Button
+                  onClick={() => setLoadingFull(true)}
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoadingFull}
+                  className="text-xs h-7"
+                >
+                  {isLoadingFull ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Load full thread'
+                  )}
+                </Button>
+              )}
+            </div>
+            {isLoadingFull && (
+              <div className="flex items-center gap-2 text-xs text-gray-600">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Loading full thread content...
+              </div>
+            )}
+            {displayMessages.map((msg, idx) => (
               <div key={msg.gmailMessageId || idx} className="bg-gray-50 rounded-lg overflow-hidden">
                 {/* Message Header */}
                 <div className="border-b border-gray-200 p-3 bg-white">
