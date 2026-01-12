@@ -170,34 +170,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const users = await base44.asServiceRole.entities.User.filter({ email: currentUser.email });
-    if (users.length === 0) {
-      return Response.json({ error: 'User record not found' }, { status: 404 });
-    }
-    const user = users[0];
-
-    if (!user.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected' }, { status: 400 });
-    }
-
-    const accessToken = await refreshTokenIfNeeded(user, base44);
-
     // Build query: "from:(email1 OR email2) OR to:(email1 OR email2)"
     const emailQuery = emails.map(e => `"${e}"`).join(' OR ');
     const q = `from:(${emailQuery}) OR to:(${emailQuery})`;
 
-    // List messages
-    const listResponse = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(q)}&maxResults=50`,
-      { headers: { 'Authorization': `Bearer ${accessToken}` } }
-    );
+    // List messages using service account
+    const listData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
+      q,
+      maxResults: 50
+    });
 
-    if (!listResponse.ok) {
-       const error = await listResponse.text();
-       throw new Error(`Gmail search failed: ${error}`);
-    }
-
-    const listData = await listResponse.json();
     const messages = listData.messages || [];
 
     if (messages.length === 0) {
@@ -207,23 +189,22 @@ Deno.serve(async (req) => {
     // Fetch metadata for each message
     const results = await Promise.all(messages.map(async (msg) => {
         try {
-            const detailRes = await fetch(
-                `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Date&metadataHeaders=Message-ID`,
-                { headers: { 'Authorization': `Bearer ${accessToken}` } }
+            const detail = await gmailFetch(
+                `/gmail/v1/users/me/messages/${msg.id}`,
+                'GET',
+                null,
+                { format: 'metadata', metadataHeaders: ['Subject', 'From', 'To', 'Date', 'Message-ID'] }
             );
-            if (!detailRes.ok) return null;
-            const detail = await detailRes.json();
             
-            const headers = detail.payload.headers || [];
+            const headers = detail.payload?.headers || [];
             const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
             const from = headers.find(h => h.name === 'From')?.value || '';
             const to = headers.find(h => h.name === 'To')?.value || '';
             const date = headers.find(h => h.name === 'Date')?.value;
             
             const fromAddress = parseEmailAddress(from);
-            const userEmail = user.gmail_email || user.email;
-            // Simple outbound check
-            const isOutbound = fromAddress.toLowerCase() === userEmail.toLowerCase();
+            const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
+            const isOutbound = fromAddress.toLowerCase() === impersonateEmail.toLowerCase() || detail.labelIds?.includes('SENT');
             const sentAt = date ? new Date(date).toISOString() : new Date().toISOString();
 
             // Upsert to ProjectEmail if projectId is provided
@@ -266,8 +247,8 @@ Deno.serve(async (req) => {
                 from_name: from.replace(/<.*>/, '').trim(),
                 to_addresses: to ? to.split(',').map(e => parseEmailAddress(e.trim())) : [],
                 isHistorical: true,
-                body_text: detail.snippet, // Fallback
-                attachments: [] // Populated on full fetch
+                body_text: detail.snippet,
+                attachments: []
             };
         } catch (e) {
             console.error(`Failed to fetch details for ${msg.id}`, e);
@@ -278,6 +259,7 @@ Deno.serve(async (req) => {
     return Response.json({ messages: results.filter(Boolean) });
 
   } catch (error) {
+    console.error('Historical search error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
