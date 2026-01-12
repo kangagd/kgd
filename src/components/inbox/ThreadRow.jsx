@@ -34,6 +34,23 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
     }
   };
 
+  const handleCloseToggle = async (e) => {
+    e.stopPropagation();
+    if (!currentUser) return;
+
+    setIsClosingLoading(true);
+    try {
+      if (isClosed) {
+        await reopenThread(thread.id, currentUser.id);
+      } else {
+        await closeThread(thread.id, currentUser.id);
+      }
+      onThreadUpdate?.();
+    } finally {
+      setIsClosingLoading(false);
+    }
+  };
+
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
   };
