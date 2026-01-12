@@ -59,6 +59,18 @@ export default function Inbox() {
     enabled: !!user
   });
 
+  // Real-time subscription for EmailThread updates
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = base44.entities.EmailThread.subscribe((event) => {
+      // Refetch threads on any create, update, or delete
+      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+    });
+
+    return () => unsubscribe();
+  }, [user, queryClient]);
+
   // Fetch team members for assignment
   const { data: teamUsers = [] } = useQuery({
     queryKey: ['teamUsers'],
