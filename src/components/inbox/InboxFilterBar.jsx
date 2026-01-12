@@ -43,23 +43,14 @@ export default function InboxFilterBar({
       {/* Search */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-          <Input
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search threads..."
-            className="pl-9"
-          />
-        </div>
-        <Button
-          onClick={onOpenHistorySearch}
-          variant="outline"
-          size="icon"
-          title="Search Gmail history"
-          className="flex-shrink-0"
-        >
-          <History className="w-4 h-4" />
-        </Button>
+           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+           <Input
+             value={searchTerm}
+             onChange={(e) => onSearchChange(e.target.value)}
+             placeholder="Search threads..."
+             className="pl-9"
+           />
+         </div>
       </div>
 
       {/* Filter Pills */}
