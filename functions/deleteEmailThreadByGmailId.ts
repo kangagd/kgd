@@ -22,13 +22,16 @@ Deno.serve(async (req) => {
         gmail_thread_id
       });
     } else if (sender_email) {
-      threads = await base44.asServiceRole.entities.EmailThread.filter({
-        from_address: sender_email
-      });
+      // Search case-insensitive by fetching all and filtering client-side
+      const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+      const normalizedEmail = sender_email.toLowerCase().trim();
+      threads = allThreads.filter(t => 
+        t.from_address && t.from_address.toLowerCase().trim() === normalizedEmail
+      );
     }
 
     if (threads.length === 0) {
-      return Response.json({ error: 'No threads found' }, { status: 404 });
+      return Response.json({ error: 'No threads found', searched_email: sender_email }, { status: 404 });
     }
 
     // Hard delete all matching threads
