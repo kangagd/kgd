@@ -1,10 +1,11 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff } from "lucide-react";
+import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
 import { getThreadStatusChip, isThreadPinned, getThreadLinkChip } from "@/components/inbox/threadStatusChip";
 import { pinThread, unpinThread } from "@/components/inbox/threadPinActions";
+import { closeThread, reopenThread } from "@/components/inbox/threadCloseActions";
 import { useState } from "react";
 
 export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate }) {
