@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 async function refreshTokenIfNeeded(user, base44) {
   const expiry = new Date(user.gmail_token_expiry);
