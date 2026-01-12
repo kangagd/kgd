@@ -1,15 +1,20 @@
 /**
  * Shared utility for computing EmailThread inferred state
- * Used consistently across Inbox list, thread detail, and project panels
+ * Single-source-of-truth for status chip logic across all surfaces
+ * 
+ * CHIP PRIORITY (top → bottom):
+ * 1. Closed
+ * 2. Needs reply
+ * 3. Waiting on customer
+ * 4. Open
+ * 5. No chip (Untriaged)
  */
 
-export function getInferredState(thread) {
-  // If user explicitly closed, that takes precedence
-  if (thread.userStatus === 'closed') {
-    return 'closed';
-  }
-
-  // Compute inferred state based on message direction and timestamps
+/**
+ * Compute inferred state based on message direction and timestamps
+ * Used internally for getStatusChip()
+ */
+function getInferredState(thread) {
   const lastExternal = thread.lastExternalMessageAt ? new Date(thread.lastExternalMessageAt) : null;
   const lastInternal = thread.lastInternalMessageAt ? new Date(thread.lastInternalMessageAt) : null;
 
@@ -20,7 +25,6 @@ export function getInferredState(thread) {
 
   // Last message from external party → needs reply
   if (thread.lastMessageDirection === 'external') {
-    // Either no internal message yet, or external is newer
     if (!lastInternal || lastExternal > lastInternal) {
       return 'needs_reply';
     }
@@ -37,49 +41,77 @@ export function getInferredState(thread) {
 }
 
 /**
- * Get display status for UI (includes userStatus)
- * Priority: closed > inferred state > default
+ * SINGLE STATUS CHIP SYSTEM
+ * Returns the ONE primary status chip to display, following priority order
+ * Returns null if no status chip should be shown
  */
-export function getDisplayStatus(thread) {
+export function getStatusChip(thread) {
+  // Priority 1: Closed (always overrides everything)
   if (thread.userStatus === 'closed') {
-    return 'Closed';
+    return {
+      label: 'Closed',
+      key: 'closed',
+      color: 'gray'
+    };
   }
 
+  // Priority 2: Needs reply
   const inferred = getInferredState(thread);
   if (inferred === 'needs_reply') {
-    return 'Needs reply';
+    return {
+      label: 'Needs reply',
+      key: 'needs_reply',
+      color: 'red'
+    };
   }
+
+  // Priority 3: Waiting on customer
   if (inferred === 'waiting_on_customer') {
-    return 'Waiting on customer';
+    return {
+      label: 'Waiting on customer',
+      key: 'waiting_on_customer',
+      color: 'amber'
+    };
   }
 
-  // If linked but no inferred state, show Open; otherwise Untriaged
+  // Priority 4: Open (only if linked)
   if (thread.linkedEntityType && thread.linkedEntityType !== 'none') {
-    return 'Open';
+    return {
+      label: 'Open',
+      key: 'open',
+      color: 'blue'
+    };
   }
 
-  return 'Untriaged';
+  // Priority 5: No chip (Untriaged)
+  return null;
 }
 
 /**
- * Check if thread is linked to a project or job
+ * LINK CHIP (separate from status chip)
+ * Returns link metadata if thread is linked, null otherwise
  */
-export function isLinked(thread) {
-  return thread.linkedEntityType && thread.linkedEntityType !== 'none';
-}
+export function getLinkChip(thread) {
+  if (!thread.linkedEntityType || thread.linkedEntityType === 'none') {
+    return null;
+  }
 
-/**
- * Get link info for display
- */
-export function getLinkInfo(thread) {
-  if (!isLinked(thread)) return null;
+  const label = thread.linkedEntityType === 'project'
+    ? `Project: #${thread.linkedEntityNumber} ${thread.linkedEntityTitle}`
+    : `Job: #${thread.linkedEntityNumber} ${thread.linkedEntityTitle}`;
 
   return {
-    type: thread.linkedEntityType, // 'project' or 'job'
+    type: thread.linkedEntityType,
     id: thread.linkedEntityId,
-    number: thread.linkedEntityNumber,
-    title: thread.linkedEntityTitle,
+    label,
     isAuto: thread.linkSource === 'auto',
     isManual: thread.linkSource === 'manual'
   };
+}
+
+/**
+ * Check if thread is linked (for filters)
+ */
+export function isLinked(thread) {
+  return thread.linkedEntityType && thread.linkedEntityType !== 'none';
 }
