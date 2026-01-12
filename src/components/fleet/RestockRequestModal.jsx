@@ -61,8 +61,8 @@ export default function RestockRequestModal({ open, onClose, vehicle, stock }) {
         product_id: i.item.product_id,
         product_name: i.item.product_name,
         quantity: parseInt(i.quantity),
-        current_quantity: i.item.quantity_on_hand,
-        min_quantity: i.item.minimum_target_quantity
+        current_quantity: i.item.quantity_on_hand || 0,
+        min_quantity: i.item.minimum_target_quantity || 0
       }));
 
     if (items.length === 0 && !notes) {
