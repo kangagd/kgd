@@ -27,6 +27,7 @@ export default function Inbox() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
   const [lastSyncRequestTime, setLastSyncRequestTime] = useState(0); // B8: Rate limit sync calls
+  const [showHistorySearch, setShowHistorySearch] = useState(false);
 
   // Load current user
   useEffect(() => {
