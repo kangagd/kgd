@@ -23,6 +23,7 @@ export default function Inbox() {
   const [showHistorySearch, setShowHistorySearch] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
 
   // Load current user
   useEffect(() => {
