@@ -129,16 +129,17 @@ export default function AttachmentCard({
             setSaved(true);
             return;
           }
-          
+
           // Categorize and save
           const isImage = isImageFile(attachment.mime_type, attachment.filename);
-          
+
           if (isImage) {
             await base44.entities.Project.update(linkedProjectId, {
               image_urls: [...freshImages, urlToSave]
             });
           } else {
-            await base44.entities.Project.update(linkedProjectId, {
+            // Use service role to avoid timestamp validation issues with other_documents
+            await base44.asServiceRole.entities.Project.update(linkedProjectId, {
               other_documents: [...freshDocs, { url: urlToSave, name: attachment.filename }]
             });
           }
