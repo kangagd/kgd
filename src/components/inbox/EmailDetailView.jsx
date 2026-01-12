@@ -76,47 +76,7 @@ export default function EmailDetailView({
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  // Track presence - update viewer record
-  const updatePresenceMutation = useMutation({
-    mutationFn: async () => {
-      if (!user) return;
-      
-      // Find existing viewer record
-      const existing = await base44.entities.EmailThreadViewer.filter({
-        thread_id: thread.id,
-        user_email: user.email
-      });
-
-      if (existing.length > 0) {
-        // Update existing
-        await base44.entities.EmailThreadViewer.update(existing[0].id, {
-          last_seen: new Date().toISOString()
-        });
-      } else {
-        // Create new
-        await base44.entities.EmailThreadViewer.create({
-          thread_id: thread.id,
-          user_email: user.email,
-          user_name: user.full_name || user.display_name,
-          last_seen: new Date().toISOString()
-        });
-      }
-    }
-  });
-
-  // Update presence on mount and every 30 seconds
-  useEffect(() => {
-    if (!user || !thread.id) return;
-
-    updatePresenceMutation.mutate();
-    const interval = setInterval(() => {
-      updatePresenceMutation.mutate();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [user?.email, thread.id]);
-
-  // Cleanup viewer on unmount
+  // Cleanup viewer on unmount (viewer tracking handled by parent Inbox component)
   useEffect(() => {
     return () => {
       if (!user || !thread.id) return;
