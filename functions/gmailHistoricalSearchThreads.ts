@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
     }
 
     const threads = listResult.threads || [];
-    console.log(`[gmailHistoricalSearchThreads] Found ${threads.length} threads, nextPageToken: ${listResult.nextPageToken || 'none'}`);
+    console.log(`[gmailHistoricalSearchThreads] Found ${threads.length} threads`);
 
     // Fetch metadata for each thread
     const results = [];
