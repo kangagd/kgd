@@ -11,32 +11,24 @@ Deno.serve(async (req) => {
 
     console.log('Starting audit...');
 
-    // Count EmailThread records - use filter to avoid timeout
-    const allThreads = await base44.asServiceRole.entities.EmailThread.filter({});
-    console.log('Fetched threads:', allThreads.length);
-    const threadCount = allThreads.length;
+    // Count EmailThread records with pagination (limit to avoid timeout)
+    try {
+      const threadResult = await base44.asServiceRole.entities.EmailThread.filter({}, undefined, 1000);
+      console.log('Thread count:', threadResult?.length || 0);
+      
+      const messageResult = await base44.asServiceRole.entities.EmailMessage.filter({}, undefined, 1000);
+      console.log('Message count:', messageResult?.length || 0);
 
-    // Count EmailMessage records
-    const allMessages = await base44.asServiceRole.entities.EmailMessage.filter({});
-    console.log('Fetched messages:', allMessages.length);
-    const messageCount = allMessages.length;
-
-    // Show sample of threads
-    const sampleThreads = allThreads.slice(0, 5).map(t => ({
-      id: t.id,
-      subject: t.subject,
-      gmail_thread_id: t.gmail_thread_id,
-      from_address: t.from_address,
-      created_date: t.created_date
-    }));
-
-    return Response.json({
-      status: 'audit_complete',
-      emailThread_count: threadCount,
-      emailMessage_count: messageCount,
-      sample_threads: sampleThreads,
-      message: `Ready to delete ${threadCount} EmailThreads and ${messageCount} EmailMessages. Confirm before proceeding.`
-    });
+      return Response.json({
+        status: 'audit_complete',
+        emailThread_count: threadResult?.length || 0,
+        emailMessage_count: messageResult?.length || 0,
+        message: `Found ${threadResult?.length || 0} EmailThreads and ${messageResult?.length || 0} EmailMessages. Ready to delete.`
+      });
+    } catch (err) {
+      console.error('Audit error:', err.message);
+      throw err;
+    }
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
