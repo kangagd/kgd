@@ -7,11 +7,29 @@ import { getThreadStatusChip, isThreadPinned, getThreadLinkChip } from "@/compon
 import { pinThread, unpinThread } from "@/components/inbox/threadPinActions";
 import { useState } from "react";
 
-export default function ThreadRow({ thread, isSelected, onClick }) {
+export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate }) {
+  const [isPinningLoading, setIsPinningLoading] = useState(false);
   const linkingState = getThreadLinkingState(thread);
   const statusChip = getThreadStatusChip(thread);
   const isPinned = isThreadPinned(thread);
   const linkChip = getThreadLinkChip(thread);
+
+  const handlePinToggle = async (e) => {
+    e.stopPropagation();
+    if (!currentUser) return;
+
+    setIsPinningLoading(true);
+    try {
+      if (isPinned) {
+        await unpinThread(thread.id, currentUser.id);
+      } else {
+        await pinThread(thread.id, currentUser.id);
+      }
+      onThreadUpdate?.();
+    } finally {
+      setIsPinningLoading(false);
+    }
+  };
 
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
