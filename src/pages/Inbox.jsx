@@ -9,6 +9,7 @@ import InboxFilterBar from "@/components/inbox/InboxFilterBar";
 import SharedComposer from "@/components/inbox/SharedComposer";
 import EmailDetailView from "@/components/inbox/EmailDetailView";
 import LinkThreadModal from "@/components/inbox/LinkThreadModal";
+import GmailHistorySearch from "@/components/inbox/GmailHistorySearch";
 
 export default function Inbox() {
   const queryClient = useQueryClient();
@@ -19,6 +20,7 @@ export default function Inbox() {
   const [showComposer, setShowComposer] = useState(false);
   const [composerMessage, setComposerMessage] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showHistorySearch, setShowHistorySearch] = useState(false);
 
   // Load current user
   useEffect(() => {
@@ -213,6 +215,7 @@ export default function Inbox() {
               }
             }}
             userEmail={user?.email}
+            onOpenHistorySearch={() => setShowHistorySearch(true)}
           />
 
           {/* Thread List */}
@@ -359,6 +362,15 @@ export default function Inbox() {
           onLinkJob={() => {}}
         />
       )}
+
+      {/* Gmail History Search */}
+      <GmailHistorySearch
+        open={showHistorySearch}
+        onClose={() => {
+          setShowHistorySearch(false);
+          refetchThreads();
+        }}
+      />
     </div>
   );
 }
