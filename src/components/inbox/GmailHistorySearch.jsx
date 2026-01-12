@@ -83,9 +83,11 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
         }
       }
     } catch (error) {
-      toast.error("Sync failed: " + error.message);
+       console.error("Sync failed:", error);
+       toast.error("Sync failed: " + error.message);
     } finally {
-      setSyncingThreadId(null);
+       console.log('Sync finished');
+       setSyncingThreadId(null);
     }
   };
 
