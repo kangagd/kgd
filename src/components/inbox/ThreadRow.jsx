@@ -61,12 +61,29 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
                </Badge>
              )}
 
-             {/* Pin Indicator (separate from status) */}
-             {isPinned && (
-               <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 border border-blue-200 text-blue-700 text-[11px]">
-                 <Pin className="w-3 h-3" />
-                 <span>Pinned</span>
-               </div>
+             {/* Pin Indicator + Toggle Button (separate from status) */}
+             {currentUser && (
+               <Button
+                 size="sm"
+                 variant="ghost"
+                 onClick={handlePinToggle}
+                 disabled={isPinningLoading}
+                 className={`h-6 px-2 text-[11px] flex items-center gap-1 ${
+                   isPinned 
+                     ? 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100' 
+                     : 'text-[#6B7280] hover:bg-[#F3F4F6]'
+                 }`}
+                 title={isPinned ? 'Unpin thread' : 'Pin thread'}
+               >
+                 {isPinned ? (
+                   <>
+                     <Pin className="w-3 h-3" />
+                     <span>Pinned</span>
+                   </>
+                 ) : (
+                   <PinOff className="w-3 h-3" />
+                 )}
+               </Button>
              )}
 
              {/* Link Chip (separate from status/pin) */}
