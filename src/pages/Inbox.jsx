@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { QUERY_CONFIG } from "@/components/api/queryConfig";
 import { inboxKeys } from "@/components/api/queryKeys";
-import { Mail, AlertTriangle, Loader } from "lucide-react";
+import { Mail, AlertTriangle, Loader, History } from "lucide-react";
 import { toast } from "sonner";
 import ThreadRow from "@/components/inbox/ThreadRow";
 import ThreadHeader from "@/components/inbox/ThreadHeader";
@@ -11,6 +11,7 @@ import InboxFilterBar from "@/components/inbox/InboxFilterBar";
 import SharedComposer from "@/components/inbox/SharedComposer";
 import EmailDetailView from "@/components/inbox/EmailDetailView";
 import LinkThreadModal from "@/components/inbox/LinkThreadModal";
+import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal";
 import { computeInferredStateWithAutoClear } from "@/components/inbox/inferredStateAutoClear";
 
 export default function Inbox() {
