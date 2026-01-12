@@ -551,18 +551,6 @@ export default function Inbox() {
         />
       )}
 
-      {/* Gmail History Search */}
-      <GmailHistorySearch
-        open={showHistorySearch}
-        onClose={() => {
-          setShowHistorySearch(false);
-        }}
-        onThreadSynced={(threadId) => {
-          refetchThreads();
-          setSelectedThreadId(threadId);
-          setShowHistorySearch(false);
-        }}
-      />
     </div>
   );
 }
