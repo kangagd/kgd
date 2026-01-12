@@ -205,15 +205,18 @@ export default function GmailHistoryThreadPreview({
     );
   }
 
+  // Normalize thread to ensure consistent shape
+  const normalized = normalizeGmailHistoryThread(thread);
+
   return (
     <>
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b">
           <div className="flex-1">
-            <h2 className="text-lg font-semibold truncate">{thread.subject}</h2>
+            <h2 className="text-lg font-semibold truncate">{normalized.subject}</h2>
             <p className="text-sm text-gray-600 mt-1">
-              {thread.messageCount} message{thread.messageCount !== 1 ? 's' : ''}
+              {normalized.messageCount ? `${normalized.messageCount} message${normalized.messageCount !== 1 ? 's' : ''}` : 'Thread'}
             </p>
           </div>
           <button
@@ -226,34 +229,37 @@ export default function GmailHistoryThreadPreview({
 
         {/* Thread Info */}
         <div className="space-y-3 text-sm">
-          <div>
-            <span className="text-gray-600">From:</span>
-            <span className="ml-2 font-medium">{thread.participants.from}</span>
-          </div>
-          {thread.participants.to?.length > 0 && (
+          {normalized.participantsText && (
             <div>
-              <span className="text-gray-600">To:</span>
-              <span className="ml-2 font-medium">{thread.participants.to.join(', ')}</span>
+              <span className="text-gray-600">Participants:</span>
+              <span className="ml-2 font-medium">{normalized.participantsText}</span>
             </div>
           )}
-          <div>
-            <span className="text-gray-600">Date:</span>
-            <span className="ml-2">{format(parseISO(thread.lastMessageAt), 'PPpp')}</span>
-          </div>
+          {normalized.lastMessageAt && (
+            <div>
+              <span className="text-gray-600">Date:</span>
+              <span className="ml-2">{format(parseISO(normalized.lastMessageAt), 'PPpp')}</span>
+            </div>
+          )}
+          {normalized.hasAttachments && (
+            <div className="text-green-700 text-xs font-medium">📎 Has attachments</div>
+          )}
         </div>
 
         {/* Snippet */}
-        <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 line-clamp-3">
-          {thread.snippet}
-        </div>
+        {normalized.snippet && (
+          <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 line-clamp-3">
+            {normalized.snippet}
+          </div>
+        )}
 
         {/* Import Status */}
-        {thread.imported && (
+        {normalized.importedState !== 'not_imported' && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
             <div className="text-sm text-yellow-800">
-              {thread.linkedEntityTitle
-                ? `Already imported and linked to ${thread.linkedEntityTitle}`
+              {normalized.importedState === 'imported_linked'
+                ? `Already imported and linked to ${normalized.linkedEntityTitle}`
                 : 'Already imported but not linked to any project/job'}
             </div>
           </div>
