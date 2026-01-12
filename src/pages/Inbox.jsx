@@ -566,6 +566,7 @@ export default function Inbox() {
       <GmailHistorySearchModal
         open={showHistorySearch}
         onOpenChange={setShowHistorySearch}
+        mode="inbox"
       />
 
     </div>
