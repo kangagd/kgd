@@ -9,16 +9,26 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Gmail not connected' }, { status: 400 });
     }
 
-    const { gmail_thread_id } = await req.json();
+    const { gmail_thread_id, force = false } = await req.json();
 
     if (!gmail_thread_id) {
       return Response.json({ error: 'Thread ID required' }, { status: 400 });
     }
 
-    // Check if already synced
+    // Check if already synced (skip if force=true)
     const existing = await base44.entities.EmailThread.filter({ gmail_thread_id });
-    if (existing.length > 0) {
+    if (existing.length > 0 && !force) {
       return Response.json({ thread_id: existing[0].id, already_synced: true });
+    }
+
+    // If force re-sync, delete old messages first
+    if (existing.length > 0 && force) {
+      const oldMessages = await base44.asServiceRole.entities.EmailMessage.filter({ 
+        thread_id: existing[0].id 
+      });
+      for (const msg of oldMessages) {
+        await base44.asServiceRole.entities.EmailMessage.delete(msg.id);
+      }
     }
 
     // Fetch thread from Gmail
