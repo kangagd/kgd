@@ -30,8 +30,22 @@ Deno.serve(async (req) => {
         matches: matches.map(t => ({
           id: t.id,
           subject: t.subject,
-          from_address: t.from_address
+          from_address: t.from_address,
+          gmail_thread_id: t.gmail_thread_id
         }))
+      });
+    }
+
+    // Check a specific gmail_thread_id if provided
+    const { check_gmail_id } = await req.json();
+    if (check_gmail_id) {
+      const result = await base44.asServiceRole.entities.EmailThread.filter({
+        gmail_thread_id: check_gmail_id
+      });
+      return Response.json({
+        check_gmail_id,
+        found_count: result.length,
+        threads: result
       });
     }
 
