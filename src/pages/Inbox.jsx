@@ -197,16 +197,33 @@ export default function Inbox() {
     }
   };
 
-  // Track thread view
+  // Track thread view (debounced - only update once per 10 seconds)
   useEffect(() => {
-    if (selectedThread && user) {
-      base44.entities.EmailThreadViewer.create({
+    if (!selectedThread || !user) return;
+
+    const timeout = setTimeout(() => {
+      // Update existing viewer or create new one
+      base44.entities.EmailThreadViewer.filter({
         thread_id: selectedThread.id,
-        user_email: user.email,
-        user_name: user.full_name,
-        last_seen: new Date().toISOString()
-      }).catch(err => console.error('Failed to track viewer:', err));
-    }
+        user_email: user.email
+      }).then(existing => {
+        if (existing.length > 0) {
+          // Just update last_seen without triggering full refetch
+          base44.asServiceRole.entities.EmailThreadViewer.update(existing[0].id, {
+            last_seen: new Date().toISOString()
+          }).catch(() => {});
+        } else {
+          base44.entities.EmailThreadViewer.create({
+            thread_id: selectedThread.id,
+            user_email: user.email,
+            user_name: user.full_name,
+            last_seen: new Date().toISOString()
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }, 10000); // Debounce 10 seconds
+
+    return () => clearTimeout(timeout);
   }, [selectedThread?.id, user?.email]);
 
   // Handle email sent
