@@ -413,6 +413,8 @@ export default function Inbox() {
                   thread={thread}
                   isSelected={selectedThreadId === thread.id}
                   onClick={() => setSelectedThreadId(thread.id)}
+                  currentUser={user}
+                  onThreadUpdate={() => refetchThreads()}
                 />
               ))
             )}
