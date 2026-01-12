@@ -1,36 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
-async function refreshTokenIfNeeded(user, base44) {
-  const expiry = new Date(user.gmail_token_expiry);
-  const now = new Date();
-  
-  if (expiry - now < 5 * 60 * 1000) {
-    const clientId = Deno.env.get('GMAIL_CLIENT_ID');
-    const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
-    
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        refresh_token: user.gmail_refresh_token,
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'refresh_token'
-      })
-    });
-    
-    const tokens = await tokenResponse.json();
-    
-    await base44.asServiceRole.entities.User.update(user.id, {
-      gmail_access_token: tokens.access_token,
-      gmail_token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-    });
-    
-    return tokens.access_token;
-  }
-  
-  return user.gmail_access_token;
-}
+import { gmailFetch } from './shared/gmailClient.js';
 
 function parseEmailAddress(addressString) {
   const match = addressString.match(/<(.+)>/);
