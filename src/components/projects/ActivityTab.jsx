@@ -153,8 +153,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
     },
     enabled: linkedThreads.length > 0,
     staleTime: 30000,
-    refetchOnWindowFocus: true,
-    refetchInterval: 5000
+    refetchOnWindowFocus: true
   });
 
   // Link email thread mutation
