@@ -128,10 +128,25 @@ Deno.serve(async (req) => {
         const gmailThreadId = detail.threadId;
 
         if (!threadMap.has(gmailThreadId)) {
-          // Check if already synced
+          // Check if already synced AND has messages (not a ghost thread)
           const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
             gmail_thread_id: gmailThreadId
           });
+
+          let isSynced = false;
+          let syncedId = null;
+
+          if (existingThreads.length > 0) {
+            const thread = existingThreads[0];
+            // Only mark as synced if the thread has messages
+            const messages = await base44.asServiceRole.entities.EmailMessage.filter({
+              thread_id: thread.id
+            });
+            if (messages.length > 0) {
+              isSynced = true;
+              syncedId = thread.id;
+            }
+          }
 
           threadMap.set(gmailThreadId, {
             gmail_thread_id: gmailThreadId,
@@ -139,8 +154,8 @@ Deno.serve(async (req) => {
             from,
             snippet: detail.snippet || '',
             date,
-            is_synced: existingThreads.length > 0,
-            synced_id: existingThreads.length > 0 ? existingThreads[0].id : null
+            is_synced: isSynced,
+            synced_id: syncedId
           });
         }
       } catch (err) {
