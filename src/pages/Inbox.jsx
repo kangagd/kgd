@@ -207,9 +207,15 @@ export default function Inbox() {
       // Default 'All' view: non-closed threads only
       result = result.filter(t => t.userStatus !== 'closed');
     } else if (activeFilters['needs-reply']) {
-      result = result.filter(t => t.inferredState === 'needs_reply' && t.userStatus !== 'closed');
+      result = result.filter(t => {
+        const displayState = computeInferredStateWithAutoClear(t);
+        return displayState === 'needs_reply' && t.userStatus !== 'closed';
+      });
     } else if (activeFilters['waiting-on-customer']) {
-      result = result.filter(t => t.inferredState === 'waiting_on_customer' && t.userStatus !== 'closed');
+      result = result.filter(t => {
+        const displayState = computeInferredStateWithAutoClear(t);
+        return displayState === 'waiting_on_customer' && t.userStatus !== 'closed';
+      });
     } else if (activeFilters['closed']) {
       result = result.filter(t => t.userStatus === 'closed');
     } else if (activeFilters['pinned']) {
@@ -232,14 +238,19 @@ export default function Inbox() {
         return new Date(b.last_message_date) - new Date(a.last_message_date);
       }
 
-      // 3. Sort by inferredState priority (non-closed threads)
-      const stateOrder = {
-        'needs_reply': 0,
-        'waiting_on_customer': 1,
-        'none': 2
+      // 3. Sort by inferred state priority (apply auto-clear dynamically)
+      const getStateOrder = (thread) => {
+        const displayState = computeInferredStateWithAutoClear(thread);
+        const stateOrder = {
+          'needs_reply': 0,
+          'waiting_on_customer': 1,
+          'none': 2
+        };
+        return stateOrder[displayState] ?? 3;
       };
-      const aStateOrder = stateOrder[a.inferredState] ?? 3;
-      const bStateOrder = stateOrder[b.inferredState] ?? 3;
+
+      const aStateOrder = getStateOrder(a);
+      const bStateOrder = getStateOrder(b);
       if (aStateOrder !== bStateOrder) return aStateOrder - bStateOrder;
 
       // 4. Then by lastMessageDate DESC
