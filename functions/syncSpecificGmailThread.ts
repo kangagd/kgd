@@ -96,67 +96,50 @@ Deno.serve(async (req) => {
       // Continue with minimal data if linking fails
     }
 
-    // Create EmailMessage records first
-    const createdMessages = [];
-    for (const msg of messages) {
-      try {
-        const msgHeaders = msg.payload?.headers || [];
-        const msgFrom = msgHeaders.find(h => h.name.toLowerCase() === 'from')?.value || '';
-        const msgFromMatch = msgFrom.match(/<(.+?)>/);
-        const msgFromAddress = msgFromMatch ? msgFromMatch[1] : msgFrom;
-        const msgTo = msgHeaders.find(h => h.name.toLowerCase() === 'to')?.value || '';
-        const msgToAddresses = msgTo.split(',').map(addr => {
-          const match = addr.trim().match(/<(.+?)>/);
-          return match ? match[1] : addr.trim();
-        }).filter(Boolean);
-
-        const sentDate = new Date(parseInt(msg.internalDate)).toISOString();
-
-        // Extract body
-        let bodyText = '';
-        let bodyHtml = '';
-        
-        if (msg.payload?.body?.data) {
-          bodyText = atob(msg.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-        } else if (msg.payload?.parts) {
-          for (const part of msg.payload.parts) {
-            if (part.mimeType === 'text/plain' && part.body?.data) {
-              bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            } else if (part.mimeType === 'text/html' && part.body?.data) {
-              bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
-            }
-          }
-        }
-
-        createdMessages.push({
-          gmail_message_id: msg.id,
-          from_address: msgFromAddress,
-          from_name: msgFrom.replace(/<.+?>/, '').trim() || msgFromAddress,
-          to_addresses: msgToAddresses,
-          sent_at: sentDate,
-          subject,
-          body_text: bodyText,
-          body_html: bodyHtml,
-          is_outbound: msgFromAddress.toLowerCase() === (user.gmail_email || user.email).toLowerCase()
-        });
-      } catch (msgError) {
-        console.error(`Error processing message ${msg.id}:`, msgError.message);
-      }
-    }
-
-    // Only create thread if we have at least one message
-    if (createdMessages.length === 0) {
-      return Response.json({ error: 'Failed to process any messages from thread' }, { status: 400 });
-    }
-
-    // Create thread only after confirming messages can be processed
+    // Create fresh thread
     const thread = await base44.asServiceRole.entities.EmailThread.create(emailThreadData);
 
-    // Now insert the pre-processed messages
-    for (const msgData of createdMessages) {
+    // Create EmailMessage records
+    for (const msg of messages) {
+      const msgHeaders = msg.payload?.headers || [];
+      const msgFrom = msgHeaders.find(h => h.name.toLowerCase() === 'from')?.value || '';
+      const msgFromMatch = msgFrom.match(/<(.+?)>/);
+      const msgFromAddress = msgFromMatch ? msgFromMatch[1] : msgFrom;
+      const msgTo = msgHeaders.find(h => h.name.toLowerCase() === 'to')?.value || '';
+      const msgToAddresses = msgTo.split(',').map(addr => {
+        const match = addr.trim().match(/<(.+?)>/);
+        return match ? match[1] : addr.trim();
+      }).filter(Boolean);
+
+      const sentDate = new Date(parseInt(msg.internalDate)).toISOString();
+
+      // Extract body
+      let bodyText = '';
+      let bodyHtml = '';
+      
+      if (msg.payload?.body?.data) {
+        bodyText = atob(msg.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+      } else if (msg.payload?.parts) {
+        for (const part of msg.payload.parts) {
+          if (part.mimeType === 'text/plain' && part.body?.data) {
+            bodyText = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+          } else if (part.mimeType === 'text/html' && part.body?.data) {
+            bodyHtml = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+          }
+        }
+      }
+
       await base44.asServiceRole.entities.EmailMessage.create({
         thread_id: thread.id,
-        ...msgData
+        gmail_message_id: msg.id,
+        from_address: msgFromAddress,
+        from_name: msgFrom.replace(/<.+?>/, '').trim() || msgFromAddress,
+        to_addresses: msgToAddresses,
+        sent_at: sentDate,
+        subject,
+        body_text: bodyText,
+        body_html: bodyHtml,
+        is_outbound: msgFromAddress.toLowerCase() === (user.gmail_email || user.email).toLowerCase()
       });
     }
 
