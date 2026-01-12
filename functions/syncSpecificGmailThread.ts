@@ -294,12 +294,16 @@ Deno.serve(async (req) => {
     if (existing.length > 0) {
       threadId = existing[0].id;
       await base44.asServiceRole.entities.EmailThread.update(threadId, threadData);
-      console.log(`[syncSpecificGmailThread] Updated thread ${gmail_thread_id}`);
+      console.log(`[syncSpecificGmailThread] Updated thread ${gmail_thread_id} with data:`, threadData);
     } else {
       const newThread = await base44.asServiceRole.entities.EmailThread.create(threadData);
       threadId = newThread.id;
-      console.log(`[syncSpecificGmailThread] Created thread ${gmail_thread_id}`);
+      console.log(`[syncSpecificGmailThread] Created thread ${gmail_thread_id} with data:`, threadData);
     }
+    
+    // Verify the linking was successful
+    const verifyThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
+    console.log(`[syncSpecificGmailThread] Verification - thread project_id:`, verifyThread.project_id);
 
     stage = 'upsert_messages';
 
