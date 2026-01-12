@@ -77,8 +77,8 @@ Deno.serve(async (req) => {
       );
       
       if (matchingCustomer) {
-        threadData.customer_id = matchingCustomer.id;
-        threadData.customer_name = matchingCustomer.name;
+        emailThreadData.customer_id = matchingCustomer.id;
+        emailThreadData.customer_name = matchingCustomer.name;
         
         // Find most recent open project for this customer
         const projects = await base44.asServiceRole.entities.Project.filter({
@@ -90,11 +90,11 @@ Deno.serve(async (req) => {
         ).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
         
         if (openProjects.length > 0) {
-          threadData.project_id = openProjects[0].id;
-          threadData.project_number = openProjects[0].project_number;
-          threadData.project_title = openProjects[0].title;
-          threadData.linked_to_project_at = new Date().toISOString();
-          threadData.linked_to_project_by = 'system';
+          emailThreadData.project_id = openProjects[0].id;
+          emailThreadData.project_number = openProjects[0].project_number;
+          emailThreadData.project_title = openProjects[0].title;
+          emailThreadData.linked_to_project_at = new Date().toISOString();
+          emailThreadData.linked_to_project_by = 'system';
         }
       }
     } catch (linkError) {
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       // Continue with minimal data if linking fails
     }
 
-    const thread = await base44.asServiceRole.entities.EmailThread.create(threadData);
+    const thread = await base44.asServiceRole.entities.EmailThread.create(emailThreadData);
 
     // Create EmailMessage records
     for (const msg of messages) {
