@@ -42,14 +42,16 @@ const LinkProjectJobModal = ({ open, onOpenChange, gmailThreadId, onLinked }) =>
   const handleSelectEntity = async (entity) => {
     setIsImporting(true);
     try {
+      const linkTarget = {
+        linkedEntityType: entityType,
+        linkedEntityId: entity.id,
+        linkedEntityNumber: entityType === 'project' ? entity.project_number : entity.job_number,
+        linkedEntityTitle: entityType === 'project' ? entity.title : `#${entity.job_number}`
+      };
+
       const response = await base44.functions.invoke('importGmailThread', {
         gmailThreadId,
-        linkTarget: {
-          linkedEntityType: entityType,
-          linkedEntityId: entity.id,
-          linkedEntityNumber: entityType === 'project' ? entity.project_number : entity.job_number,
-          linkedEntityTitle: entityType === 'project' ? entity.title : `#${entity.job_number}`
-        }
+        linkTarget
       });
 
       if (response.data.success) {
