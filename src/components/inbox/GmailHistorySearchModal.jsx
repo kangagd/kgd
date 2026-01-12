@@ -159,6 +159,21 @@ export default function GmailHistorySearchModal({
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
+  // Fetch preview content when a thread is selected
+  const { data: previewData, isLoading: isPreviewLoading, error: previewError } = useQuery({
+    queryKey: ['gmailHistoryPreview', selectedThread?.gmailThreadId, previewLimit],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('gmailGetThreadPreviewContent', {
+        gmailThreadId: selectedThread.gmailThreadId,
+        limit: previewLimit
+      });
+      return response.data;
+    },
+    enabled: !!selectedThread?.gmailThreadId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  });
+
   const handleSelectThread = useCallback((thread) => {
     setSelectedThreadId(thread.gmailThreadId);
     setSelectedThread(thread);
