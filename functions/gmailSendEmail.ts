@@ -188,11 +188,13 @@ function buildMimeMessage(to, subject, bodyHtml, cc, bcc, inReplyTo, references,
 
   let body = headers.join('\r\n') + '\r\n\r\n';
 
-  // HTML part
+  // HTML part - explicitly UTF-8, use base64 for reliability
   body += `--${boundary}\r\n`;
   body += `Content-Type: text/html; charset="UTF-8"\r\n`;
-  body += `Content-Transfer-Encoding: quoted-printable\r\n\r\n`;
-  body += bodyHtml + '\r\n';
+  body += `Content-Transfer-Encoding: base64\r\n\r\n`;
+  // Encode body as base64 to preserve UTF-8 characters
+  const bodyBase64 = btoa(unescape(encodeURIComponent(bodyHtml)));
+  body += bodyBase64 + '\r\n';
 
   // Attachments (if any)
   if (attachments && attachments.length > 0) {
