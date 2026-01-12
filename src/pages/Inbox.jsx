@@ -61,7 +61,18 @@ export default function Inbox() {
       }));
     },
     enabled: !!user,
-    staleTime: 30000 // Keep data fresh for 30s to prevent excessive refetches
+    staleTime: 30000, // Keep data fresh for 30s to prevent excessive refetches
+    onSuccess: (newThreads) => {
+      // B6: Fix thread selection desync after refetch
+      if (selectedThreadId && !newThreads.find(t => t.id === selectedThreadId)) {
+        // Selected thread no longer in list; reset intelligently
+        // Prefer: next available thread > first thread > null
+        const currentIndex = threads.findIndex(t => t.id === selectedThreadId);
+        const nextThread = newThreads[Math.min(currentIndex, newThreads.length - 1)];
+        setSelectedThreadId(nextThread?.id || null);
+        console.log(`[B6] Thread selection reset: ${selectedThreadId} not found, selected ${nextThread?.id || 'null'}`);
+      }
+    }
   });
 
   // Real-time subscription for EmailThread updates (debounced with staleTime gating)

@@ -30,7 +30,7 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
       });
 
       if (response.data?.threads) {
-        // Enrich results with sync/link status by checking actual EmailThread records
+        // B4: Enrich results with separate sync/link status
         const enrichedThreads = await Promise.all(
           response.data.threads.map(async (gmailThread) => {
             try {
@@ -43,9 +43,11 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
               
               return {
                 ...gmailThread,
+                // B4: "Synced" = EmailThread exists
                 is_synced: !!emailThread,
                 synced_id: emailThread?.id,
-                is_linked: !!emailThread?.project_id // Only linked if project_id is non-null
+                // B4: "Linked" = project_id is set (non-null, non-empty)
+                is_linked: !!emailThread?.project_id
               };
             } catch (err) {
               console.error('Failed to check thread status:', err);
@@ -83,7 +85,7 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
           toast.success("Email synced successfully");
         }
         
-        // Update the result to show it's synced and linked (if projectId was provided)
+        // B4: Update the result to show it's synced; linked only if projectId was provided
         setResults(prev => prev.map(t => 
           t.gmail_thread_id === thread.gmail_thread_id 
             ? { ...t, is_synced: true, synced_id: threadId, is_linked: !!projectId }

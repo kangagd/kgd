@@ -1,5 +1,56 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// B7: Access control helper - determine if user can save attachment to entity
+async (base44, user, entity_type, entity_id) => {
+  // Admin/Manager: always allow
+  if (user.role === 'admin' || user.extended_role === 'manager') {
+    return { allowed: true };
+  }
+
+  // Technician: operational scope only
+  if (user.role === 'user' && (user.extended_role === 'technician' || user.is_field_technician)) {
+    try {
+      if (entity_type === 'Job') {
+        // Job: user must be assigned
+        const job = await base44.entities.Job.get(entity_id);
+        const assigned = job.assigned_to || [];
+        if (assigned.includes(user.email)) {
+          return { allowed: true };
+        }
+        return { allowed: false, reason: 'You are not assigned to this job' };
+      }
+
+      if (entity_type === 'Project') {
+        // Project: user must be assigned OR have assigned job for project
+        const project = await base44.entities.Project.get(entity_id);
+        const assigned = project.assigned_technicians || [];
+        if (assigned.includes(user.email)) {
+          return { allowed: true };
+        }
+
+        // Check if user has any non-deleted job for this project
+        const jobs = await base44.entities.Job.filter({ project_id: entity_id });
+        const userJobs = jobs.filter(
+          j => !j.deleted_at && (j.assigned_to || []).includes(user.email)
+        );
+        if (userJobs.length > 0) {
+          return { allowed: true };
+        }
+
+        return { allowed: false, reason: 'You are not assigned to this project or any of its jobs' };
+      }
+
+      return { allowed: false, reason: 'Invalid entity type' };
+    } catch (err) {
+      console.error('Access check error:', err);
+      return { allowed: false, reason: 'Unable to verify access' };
+    }
+  }
+
+  // Viewer or unknown role: deny
+  return { allowed: false, reason: 'Insufficient permissions' };
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -14,6 +65,60 @@ Deno.serve(async (req) => {
     if (!entity_type || !entity_id || !attachment_url) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // B7: Check access before proceeding
+    const checkAccess = async (base44, user, entity_type, entity_id) => {
+      if (user.role === 'admin' || user.extended_role === 'manager') {
+        return { allowed: true };
+      }
+
+      if (user.role === 'user' && (user.extended_role === 'technician' || user.is_field_technician)) {
+        try {
+          if (entity_type === 'Job') {
+            const job = await base44.entities.Job.get(entity_id);
+            const assigned = job.assigned_to || [];
+            if (assigned.includes(user.email)) {
+              return { allowed: true };
+            }
+            return { allowed: false, reason: 'You are not assigned to this job' };
+          }
+
+          if (entity_type === 'Project') {
+            const project = await base44.entities.Project.get(entity_id);
+            const assigned = project.assigned_technicians || [];
+            if (assigned.includes(user.email)) {
+              return { allowed: true };
+            }
+
+            const jobs = await base44.entities.Job.filter({ project_id: entity_id });
+            const userJobs = jobs.filter(
+              j => !j.deleted_at && (j.assigned_to || []).includes(user.email)
+            );
+            if (userJobs.length > 0) {
+              return { allowed: true };
+            }
+
+            return { allowed: false, reason: 'You are not assigned to this project or any of its jobs' };
+          }
+
+          return { allowed: false, reason: 'Invalid entity type' };
+        } catch (err) {
+          console.error('Access check error:', err);
+          return { allowed: false, reason: 'Unable to verify access' };
+        }
+      }
+
+      return { allowed: false, reason: 'Insufficient permissions' };
+    };
+
+    const access = await checkAccess(base44, user, entity_type, entity_id);
+    if (!access.allowed) {
+      console.log(`[B7] Attachment save denied: user=${user.email}, entity=${entity_type}/${entity_id}, reason=${access.reason}`);
+      return Response.json({ error: access.reason }, { status: 403 });
+    }
+
+    // Audit log
+    console.log(`[B7] Attachment save allowed: user=${user.email}, entity=${entity_type}/${entity_id}, is_image=${is_image}`);
 
     // Fetch the entity
     let entity;
