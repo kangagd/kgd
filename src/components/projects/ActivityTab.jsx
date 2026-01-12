@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, Fragment } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { QUERY_CONFIG } from "@/components/api/queryConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,7 +55,6 @@ export default function ActivityTab({ project, onComposeEmail }) {
         message_type: 'manual_activity'
       }, '-created_date');
       
-      // Guardrail: warn if any non-communication messages slip through
       messages.forEach(msg => {
         if (msg.message_type !== 'manual_activity') {
           console.warn('[ActivityTab] Non-communication message detected:', msg.id, msg.message_type);
@@ -64,9 +64,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return messages;
     },
     enabled: !!project.id,
-    staleTime: 30000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false
+    ...QUERY_CONFIG.reference,
   });
 
   // Fetch email threads linked to this project
@@ -78,7 +76,6 @@ export default function ActivityTab({ project, onComposeEmail }) {
         project_id: project.id 
       }, '-last_message_date');
       
-      // Defensive logging: verify all threads have project_id
       threads.forEach(thread => {
         if (!thread.project_id) {
           console.warn('[ActivityTab] Email thread rendered without project_id link:', thread.id);
@@ -88,9 +85,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return threads;
     },
     enabled: !!project.id,
-    staleTime: 30000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false
+    ...QUERY_CONFIG.reference,
   });
 
   // Fetch email messages for linked threads
@@ -106,8 +101,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return allMessages.flat();
     },
     enabled: linkedThreads.length > 0,
-    staleTime: 30000,
-    refetchOnWindowFocus: false
+    ...QUERY_CONFIG.reference,
   });
 
   // Fetch draft emails related to linked threads
@@ -115,7 +109,6 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const { data: draftEmails = [] } = useQuery({
     queryKey: ['projectEmailDrafts', linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
-      // No linked threads = no drafts shown
       if (linkedThreads.length === 0) return [];
 
       const user = await base44.auth.me();
@@ -125,22 +118,12 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
       const threadIds = new Set(linkedThreads.map(t => t.id));
 
-      // STRICT FILTER: Draft must have thread_id AND that thread must be linked
       const linkedDrafts = allDrafts.filter(draft => {
-        // No thread_id = not shown
-        if (!draft.thread_id) {
-          return false;
-        }
-
-        // Thread not linked to project = not shown
-        if (!threadIds.has(draft.thread_id)) {
-          return false;
-        }
-
+        if (!draft.thread_id) return false;
+        if (!threadIds.has(draft.thread_id)) return false;
         return true;
       });
 
-      // Defensive logging for any drafts without proper links
       allDrafts.forEach(draft => {
         if (!draft.thread_id) {
           console.log('[ActivityTab] Skipping draft without thread_id:', draft.id);
@@ -152,8 +135,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       return linkedDrafts;
     },
     enabled: linkedThreads.length > 0,
-    staleTime: 30000,
-    refetchOnWindowFocus: false
+    ...QUERY_CONFIG.reference,
   });
 
   // Link email thread mutation
@@ -562,13 +544,13 @@ function EmailThreadViewerModal({
     setShowAllMessages(false);
   }, [threadId]);
   
-  // B) Dedicated query for the selected thread (more reliable than linkedThreads)
   const { data: threadById, isLoading: threadLoading } = useQuery({
     queryKey: ['emailThreadById', threadId],
     queryFn: async () => {
       return await base44.entities.EmailThread.get(threadId);
     },
-    enabled: !!threadId
+    enabled: !!threadId,
+    ...QUERY_CONFIG.reference,
   });
 
   // A) Fix message ordering: ascending (oldest → newest)

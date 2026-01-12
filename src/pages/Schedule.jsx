@@ -29,6 +29,7 @@ import MonthView from "../components/calendar/MonthView";
 
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
 import { jobKeys } from "../components/api/queryKeys";
+import { QUERY_CONFIG } from "../components/api/queryConfig";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -158,22 +159,26 @@ export default function Schedule() {
     queryFn: async () => {
       const response = await base44.functions.invoke('getTechnicians');
       return response.data?.technicians || [];
-    }
+    },
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
-    queryFn: () => base44.entities.JobType.list()
+    queryFn: () => base44.entities.JobType.list(),
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: leaves = [] } = useQuery({
     queryKey: ['technicianLeaves'],
-    queryFn: () => base44.entities.TechnicianLeave.list('-start_time')
+    queryFn: () => base44.entities.TechnicianLeave.list('-start_time'),
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: closedDays = [] } = useQuery({
     queryKey: ['businessClosedDays'],
-    queryFn: () => base44.entities.BusinessClosedDay.list('-start_time')
+    queryFn: () => base44.entities.BusinessClosedDay.list('-start_time'),
+    ...QUERY_CONFIG.reference,
   });
 
   // Create a map of job type id to color
