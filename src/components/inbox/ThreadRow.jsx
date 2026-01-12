@@ -1,7 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { LinkIcon } from "lucide-react";
-import { getStatusChip, getLinkChip, isLinked } from "@/components/utils/emailThreadStateHelpers";
+import { getStatusChip, getLinkChip } from "@/components/utils/emailThreadStateHelpers";
 
 export default function ThreadRow({ thread, isSelected, onClick }) {
   const statusChip = getStatusChip(thread);
