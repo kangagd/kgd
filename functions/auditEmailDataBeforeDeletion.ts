@@ -9,12 +9,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
 
-    // Count EmailThread records
-    const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+    console.log('Starting audit...');
+
+    // Count EmailThread records - use filter to avoid timeout
+    const allThreads = await base44.asServiceRole.entities.EmailThread.filter({});
+    console.log('Fetched threads:', allThreads.length);
     const threadCount = allThreads.length;
 
     // Count EmailMessage records
-    const allMessages = await base44.asServiceRole.entities.EmailMessage.list();
+    const allMessages = await base44.asServiceRole.entities.EmailMessage.filter({});
+    console.log('Fetched messages:', allMessages.length);
     const messageCount = allMessages.length;
 
     // Show sample of threads
