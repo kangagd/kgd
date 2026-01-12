@@ -138,9 +138,13 @@ export default function AttachmentCard({
               image_urls: [...freshImages, urlToSave]
             });
           } else {
-            // Use service role to avoid timestamp validation issues with other_documents
-            await base44.asServiceRole.entities.Project.update(linkedProjectId, {
-              other_documents: [...freshDocs, { url: urlToSave, name: attachment.filename }]
+            // Use backend function to avoid timestamp validation issues
+            await base44.functions.invoke('manageProject', {
+              action: 'update',
+              id: linkedProjectId,
+              data: {
+                other_documents: [...freshDocs, { url: urlToSave, name: attachment.filename }]
+              }
             });
           }
           
