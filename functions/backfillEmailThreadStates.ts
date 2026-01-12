@@ -5,9 +5,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Recalculates lastMessageDirection, lastExternalMessageAt, lastInternalMessageAt
  * from EmailMessage records for the new status chip logic
  */
-const BATCH_SIZE = 10; // Reduced from 50 to avoid rate limits
-const BATCH_DELAY_MS = 2000; // Increased from 500ms to 2s between batches
-const MESSAGE_FETCH_DELAY_MS = 100; // Delay between each message fetch
+const BATCH_SIZE = 5; // Smaller batches to avoid timeouts
+const BATCH_DELAY_MS = 3000; // 3s delay between batches
+const MESSAGE_FETCH_DELAY_MS = 200; // Delay between message fetches
+const THREADS_PER_EXECUTION = 50; // Limit threads per execution to avoid timeout
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
