@@ -38,56 +38,9 @@ Deno.serve(async (req) => {
         }
 
         if (action === 'restock') {
-            // Admin restocking vehicle (from warehouse)
-            const { vehicle_id, product_id, quantity, reason } = data;
-            
-            if (!quantity || quantity <= 0) throw new Error("Quantity must be positive");
-
-            const stockList = await base44.entities.VehicleStock.filter({ vehicle_id, product_id });
-            let currentStock = stockList[0];
-
-            if (!currentStock) {
-                 const product = await base44.entities.PriceListItem.get(product_id);
-                 currentStock = await base44.entities.VehicleStock.create({
-                    vehicle_id,
-                    product_id,
-                    product_name: product.item,
-                    sku: product.sku,
-                    category: product.category,
-                    quantity_on_hand: 0
-                });
-            }
-
-            const newQty = (currentStock.quantity_on_hand || 0) + quantity;
-
-            // ARCHIVED: VehicleStockMovement writes disabled - using StockMovement only
-
-            // Update stock (dual-write to both systems)
-            await syncVehicleStockQuantity(base44, vehicle_id, product_id, newQty, currentStock.product_name);
-
-            // Record movement in both systems
-            const locations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
-              vehicle_id, 
-              type: 'vehicle' 
-            });
-            const locationId = locations.length > 0 ? locations[0].id : null;
-
-            await syncMovementRecord(base44, {
-              vehicleId: vehicle_id,
-              productId: product_id,
-              jobId: null,
-              projectId: null,
-              movementType: 'stock_in',
-              quantityChange: quantity,
-              reason: reason || 'Restock',
-              userId: user.id,
-              userName: user.full_name || user.email,
-              fromLocationId: null,
-              toLocationId: locationId,
-              itemName: currentStock.product_name
-            });
-
-            return Response.json({ success: true, new_quantity: newQty });
+            // Admin restocking vehicle - now uses moveInventory instead of manageVehicleStock
+            // This action is deprecated - use moveInventory function directly
+            return Response.json({ error: 'Use moveInventory function instead' }, { status: 400 });
         }
 
         if (action === 'create_product_and_add') {
