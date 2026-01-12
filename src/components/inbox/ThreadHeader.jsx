@@ -62,19 +62,38 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
 
       {/* Status & Owner Controls */}
       <div className="flex items-center gap-3 flex-wrap">
-        {/* Status Dropdown */}
-        <Select value={thread.status || 'Open'} onValueChange={onStatusChange} disabled={loading}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map(status => (
-              <SelectItem key={status} value={status}>
-                {status}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Close/Reopen Button */}
+        {currentUser && (
+          <Button
+            onClick={handleCloseToggle}
+            disabled={isClosingLoading}
+            className={`flex items-center gap-2 ${
+              isClosed 
+                ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200' 
+                : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
+            }`}
+            variant="outline"
+          >
+            <X className="w-4 h-4" />
+            {isClosed ? 'Reopen' : 'Mark closed'}
+          </Button>
+        )}
+
+        {/* Status Dropdown (only if not closed) */}
+        {!isClosed && (
+          <Select value={thread.status || 'Open'} onValueChange={onStatusChange} disabled={loading}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map(status => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Owner Assignment */}
         <div className="flex items-center gap-2">
