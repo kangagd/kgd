@@ -20,7 +20,10 @@ export default function RestockRequestModal({ open, onClose, vehicle, stock }) {
   const [notes, setNotes] = useState("");
   const queryClient = useQueryClient();
 
-  const lowStockItems = stock.filter(i => i.quantity_on_hand < (i.minimum_target_quantity || 0) && i.quantity_on_hand > 0);
+  // Filter items below minimum target (includes 0 quantity items that should be restocked)
+  const lowStockItems = stock.filter(i => 
+    (i.quantity_on_hand || 0) < (i.minimum_target_quantity || 0)
+  );
 
   // Initialize selected items with low stock recommendations
   React.useEffect(() => {
