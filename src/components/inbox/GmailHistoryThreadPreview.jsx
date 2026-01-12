@@ -295,8 +295,13 @@ export default function GmailHistoryThreadPreview({
                     if (response.data.success) {
                       toast.success(`Thread imported and linked to ${defaultLinkTarget.type}`);
                       setImportSuccess(true);
+                      queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
                       queryClient.invalidateQueries({ queryKey: ['gmailHistoricalSearch'] });
-                      queryClient.invalidateQueries({ queryKey: ['inboxKeys', 'threads'] });
+                      if (defaultLinkTarget.type === 'project') {
+                        queryClient.invalidateQueries({ queryKey: projectKeys.messages(defaultLinkTarget.id) });
+                      } else if (defaultLinkTarget.type === 'job') {
+                        queryClient.invalidateQueries({ queryKey: jobKeys.messages(defaultLinkTarget.id) });
+                      }
                       setTimeout(() => onImported?.(), 1000);
                     } else {
                       toast.error(response.data.error);
