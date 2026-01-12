@@ -43,11 +43,14 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
   };
 
   const handleSyncThread = async (thread) => {
+    console.log('Starting sync for thread:', thread.gmail_thread_id, thread.subject);
     setSyncingThreadId(thread.gmail_thread_id);
     try {
+      console.log('Invoking syncSpecificGmailThread...');
       const response = await base44.functions.invoke('syncSpecificGmailThread', {
         gmail_thread_id: thread.gmail_thread_id
       });
+      console.log('syncSpecificGmailThread response:', response);
 
       if (response.data?.thread_id) {
         const threadId = response.data.thread_id;
