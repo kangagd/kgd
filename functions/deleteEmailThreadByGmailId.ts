@@ -22,12 +22,19 @@ Deno.serve(async (req) => {
         gmail_thread_id
       });
     } else if (sender_email) {
-      // Search case-insensitive by fetching all and filtering client-side
+      // Search case-insensitive by extracting email from from_address
       const allThreads = await base44.asServiceRole.entities.EmailThread.list();
       const normalizedEmail = sender_email.toLowerCase().trim();
-      threads = allThreads.filter(t => 
-        t.from_address && t.from_address.toLowerCase().trim() === normalizedEmail
-      );
+      
+      threads = allThreads.filter(t => {
+        if (!t.from_address) return false;
+        
+        // Extract email from "Name <email@example.com>" or just "email@example.com"
+        const match = t.from_address.match(/<(.+?)>/);
+        const extractedEmail = match ? match[1] : t.from_address;
+        
+        return extractedEmail.toLowerCase().trim() === normalizedEmail;
+      });
     }
 
     if (threads.length === 0) {
