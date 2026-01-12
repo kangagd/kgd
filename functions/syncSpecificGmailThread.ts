@@ -1,12 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { gmailFetch } from './shared/gmailClient.js';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user?.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected' }, { status: 400 });
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { gmail_thread_id, force = false } = await req.json();
@@ -26,20 +27,8 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.EmailThread.delete(existing[0].id);
     }
 
-    // Fetch thread from Gmail
-    const threadUrl = `https://gmail.googleapis.com/gmail/v1/users/me/threads/${gmail_thread_id}`;
-    const response = await fetch(threadUrl, {
-      headers: {
-        'Authorization': `Bearer ${user.gmail_access_token}`
-      }
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      return Response.json({ error: `Gmail API error: ${error}` }, { status: response.status });
-    }
-
-    const gmailThreadData = await response.json();
+    // Fetch thread from Gmail using shared service account
+    const gmailThreadData = await gmailFetch(`/gmail/v1/users/me/threads/${gmail_thread_id}`, 'GET');
     const messages = gmailThreadData.messages || [];
 
     if (messages.length === 0) {
