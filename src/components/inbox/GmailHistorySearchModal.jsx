@@ -54,6 +54,8 @@ export default function GmailHistorySearchModal({
   const [hasMore, setHasMore] = useState(false);
   const [filterNotImported, setFilterNotImported] = useState(true);
   const [filterHasAttachments, setFilterHasAttachments] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const [errorExpanded, setErrorExpanded] = useState(false);
 
   // Reset when modal closes
   useEffect(() => {
