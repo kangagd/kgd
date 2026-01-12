@@ -5,8 +5,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Recalculates lastMessageDirection, lastExternalMessageAt, lastInternalMessageAt
  * from EmailMessage records for the new status chip logic
  */
-const BATCH_SIZE = 50;
-const BATCH_DELAY_MS = 500; // Delay between batches
+const BATCH_SIZE = 10; // Reduced from 50 to avoid rate limits
+const BATCH_DELAY_MS = 2000; // Increased from 500ms to 2s between batches
+const MESSAGE_FETCH_DELAY_MS = 100; // Delay between each message fetch
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -20,6 +21,9 @@ async function processThreadBatch(base44, threads) {
 
   for (const thread of threads) {
     try {
+      // Add delay before each message fetch to avoid rate limits
+      await sleep(MESSAGE_FETCH_DELAY_MS);
+      
       // Fetch messages for this thread
       const messages = await base44.asServiceRole.entities.EmailMessage.filter({
         thread_id: thread.id
