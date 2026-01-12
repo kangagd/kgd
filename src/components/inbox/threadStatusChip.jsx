@@ -4,9 +4,11 @@
  * Evaluates in order, stops at first match:
  * 1. If userStatus == 'closed' → 'Closed'
  * 2. Else if inferredState == 'needs_reply' → 'Needs reply'
- * 3. Else if inferredState == 'waiting_on_customer' → 'Waiting on customer'
+ * 3. Else if inferredState == 'waiting_on_customer' (after auto-clear) → 'Waiting on customer'
  * 4. Else → null (no chip)
  */
+
+import { computeInferredStateWithAutoClear } from '@/components/inbox/inferredStateAutoClear';
 
 export function getThreadStatusChip(thread) {
   // Priority 1: Manual closed status
@@ -17,16 +19,19 @@ export function getThreadStatusChip(thread) {
     };
   }
 
+  // Apply auto-clear logic to get display state
+  const displayState = computeInferredStateWithAutoClear(thread);
+
   // Priority 2: Needs reply (external message unanswered)
-  if (thread.inferredState === 'needs_reply') {
+  if (displayState === 'needs_reply') {
     return {
       label: 'Needs reply',
       color: 'bg-red-50 text-red-700 border-red-200'
     };
   }
 
-  // Priority 3: Waiting on customer (internal message, not expired)
-  if (thread.inferredState === 'waiting_on_customer') {
+  // Priority 3: Waiting on customer (internal message, not expired by auto-clear)
+  if (displayState === 'waiting_on_customer') {
     return {
       label: 'Waiting on customer',
       color: 'bg-amber-50 text-amber-700 border-amber-200'
