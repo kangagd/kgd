@@ -13,12 +13,30 @@ import {
 import { computeInferredStateWithAutoClear } from '@/components/inbox/inferredStateAutoClear';
 import { closeThread, reopenThread } from '@/components/inbox/threadCloseActions';
 
-export default function ThreadHeader({ thread, users = [], onStatusChange, onAssignChange, loading = false }) {
+export default function ThreadHeader({ thread, users = [], onStatusChange, onAssignChange, loading = false, currentUser, onThreadUpdate }) {
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
+  const [isClosingLoading, setIsClosingLoading] = useState(false);
 
   const statusOptions = ['Open', 'Waiting on Customer', 'Internal', 'Closed'];
 
   const displayState = computeInferredStateWithAutoClear(thread);
+  const isClosed = thread.userStatus === 'closed';
+
+  const handleCloseToggle = async () => {
+    if (!currentUser) return;
+    
+    setIsClosingLoading(true);
+    try {
+      if (isClosed) {
+        await reopenThread(thread.id, currentUser.id);
+      } else {
+        await closeThread(thread.id, currentUser.id);
+      }
+      onThreadUpdate?.();
+    } finally {
+      setIsClosingLoading(false);
+    }
+  };
 
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
