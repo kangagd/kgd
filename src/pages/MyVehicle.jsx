@@ -121,7 +121,7 @@ export default function MyVehicle() {
   });
 
   const { data: stock = [], isLoading: isStockLoading } = useQuery({
-    queryKey: ['vehicleStock', vehicle?.id, priceItems],
+    queryKey: ['vehicleStock', vehicle?.id],
     queryFn: async () => {
       if (!vehicle?.id) return [];
       const inventoryLoc = await base44.entities.InventoryLocation.filter({ 
@@ -135,20 +135,17 @@ export default function MyVehicle() {
       });
       
       // Transform InventoryQuantity to VehicleStock shape for compatibility
-      return quantities.map(q => {
-        const priceItem = itemMap[q.price_list_item_id];
-        return {
-          id: q.id,
-          product_id: q.price_list_item_id,
-          product_name: q.item_name,
-          quantity_on_hand: q.quantity,
-          minimum_target_quantity: priceItem?.car_quantity || 0,
-          category: 'Stock',
-          location_label: inventoryLoc[0].name
-        };
-      });
+      return quantities.map(q => ({
+        id: q.id,
+        product_id: q.price_list_item_id,
+        product_name: q.item_name,
+        quantity_on_hand: q.quantity,
+        minimum_target_quantity: 5, // Default for display
+        category: 'Stock',
+        location_label: inventoryLoc[0].name
+      }));
     },
-    enabled: !!vehicle && priceItems.length > 0
+    enabled: !!vehicle
   });
 
   const { data: assignedParts = [] } = useQuery({
