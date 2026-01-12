@@ -10,9 +10,11 @@ import { useState } from "react";
 
 export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate }) {
   const [isPinningLoading, setIsPinningLoading] = useState(false);
+  const [isClosingLoading, setIsClosingLoading] = useState(false);
   const linkingState = getThreadLinkingState(thread);
   const statusChip = getThreadStatusChip(thread);
   const isPinned = isThreadPinned(thread);
+  const isClosed = thread.userStatus === 'closed';
   const linkChip = getThreadLinkChip(thread);
 
   const handlePinToggle = async (e) => {
