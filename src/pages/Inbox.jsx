@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { QUERY_CONFIG } from "@/components/api/queryConfig";
+import { inboxKeys } from "@/components/api/queryKeys";
 import { Mail, AlertTriangle, Loader } from "lucide-react";
 import { toast } from "sonner";
 import ThreadRow from "@/components/inbox/ThreadRow";
@@ -50,7 +51,7 @@ export default function Inbox() {
   }, []);
 
   const { data: threads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
-    queryKey: ['emailThreads'],
+    queryKey: inboxKeys.threads(),
     queryFn: async () => {
       setLastThreadFetchTime(Date.now());
       const allThreads = await base44.entities.EmailThread.list('-last_message_date', 100);
@@ -89,7 +90,7 @@ export default function Inbox() {
       // Debounce refetch to 500ms to batch multiple updates
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+        queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
       }, 500);
     });
 
@@ -161,7 +162,7 @@ export default function Inbox() {
   });
 
   const { data: threadDrafts = [], refetch: refetchDrafts } = useQuery({
-    queryKey: ['threadDrafts', selectedThreadId],
+    queryKey: inboxKeys.drafts(),
     queryFn: async () => {
       if (!selectedThreadId || !user) return [];
       const drafts = await base44.entities.EmailDraft.filter({ 
@@ -396,8 +397,8 @@ export default function Inbox() {
               {/* Messages & Composer */}
               <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
                 <div className="flex-1 overflow-y-auto p-4">
-                   <EmailDetailView
-                     thread={selectedThread}
+                 <EmailDetailView
+                   thread={selectedThread}
                      userPermissions={{
                        can_reply: true,
                        can_change_status: true,
@@ -428,7 +429,7 @@ export default function Inbox() {
                          toast.error('Failed to delete thread');
                        }
                      }}
-                     onThreadUpdate={refetchThreads}
+                     onThreadUpdate={() => queryClient.invalidateQueries({ queryKey: inboxKeys.threads() })}
                    />
 
                    {/* Draft Emails */}

@@ -81,13 +81,13 @@ export default function Projects() {
   const canCreateProjects = isAdminOrManager;
 
   const { data: allProjects = [], isLoading } = useQuery({
-    queryKey: ['projects'],
+    queryKey: projectKeys.all,
     queryFn: async () => {
       const response = await base44.functions.invoke('getMyProjects');
       console.log(`[Projects Page] Received ${response.data?.projects?.length || 0} projects from backend`);
       return response.data?.projects || [];
     },
-    ...QUERY_CONFIG.realtime,
+    ...QUERY_CONFIG.reference,
     onError: (error) => {
       if (error?.response?.status === 429) {
         toast.error('Rate limit hit – slowing down');
