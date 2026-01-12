@@ -75,9 +75,12 @@ export default function Inbox() {
 
     // Text search
     if (searchTerm) {
+      const search = searchTerm.toLowerCase();
       result = result.filter(t =>
-        t.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        t.subject.toLowerCase().includes(search) ||
+        t.customer_name?.toLowerCase().includes(search) ||
+        t.from_address?.toLowerCase().includes(search) ||
+        t.to_addresses?.some(addr => addr.toLowerCase().includes(search))
       );
     }
 
