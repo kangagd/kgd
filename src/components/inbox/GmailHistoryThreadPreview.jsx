@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { ChevronLeft, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
 
 const LinkProjectJobModal = ({ open, onOpenChange, gmailThreadId, onLinked }) => {
   const [searchTerm, setSearchTerm] = useState('');
