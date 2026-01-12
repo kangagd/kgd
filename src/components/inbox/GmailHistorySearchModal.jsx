@@ -1,217 +1,256 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Search, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { Search, Loader2, X } from 'lucide-react';
 import GmailHistorySearchResults from './GmailHistorySearchResults';
 import GmailHistoryThreadPreview from './GmailHistoryThreadPreview';
+import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
+import { QUERY_CONFIG } from '@/components/api/queryConfig';
+import { inboxKeys, projectKeys, jobKeys } from '@/components/api/queryKeys';
 
-const useDebounce = (value, delay) => {
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
-  React.useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
+// Debounce hook
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
     return () => clearTimeout(handler);
   }, [value, delay]);
+
   return debouncedValue;
-};
+}
+
+// Check if search query is valid
+function isValidSearchQuery(query) {
+  const trimmed = query.trim();
+  if (trimmed.length >= 3) return true;
+  // Check for Gmail operators
+  const hasOperators = /from:|to:|before:|after:|subject:|has:|in:/.test(trimmed);
+  return hasOperators;
+}
 
 export default function GmailHistorySearchModal({
   open,
   onOpenChange,
-  prefilledQuery = '',
-  projectId = null,
-  jobId = null
+  onSelectThread,
+  defaultQuery = '',
+  defaultLinkTarget = null,
+  mode = 'inbox'
 }) {
-  const [query, setQuery] = useState(prefilledQuery);
-  const [excludeImported, setExcludeImported] = useState(true);
-  const [hasAttachments, setHasAttachments] = useState(false);
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState(defaultQuery);
+  const [debouncedQuery] = [useDebounce(searchQuery, 500)];
+  const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [selectedThread, setSelectedThread] = useState(null);
   const [pageToken, setPageToken] = useState(null);
-  const debouncedQuery = useDebounce(query, 500);
+  const [allResults, setAllResults] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [filterNotImported, setFilterNotImported] = useState(true);
+  const [filterHasAttachments, setFilterHasAttachments] = useState(false);
 
-  // Only search if query is long enough or contains operator
-  const shouldSearch = useMemo(() => {
-    const q = debouncedQuery.trim();
-    if (q.length < 3) return false;
-    const hasOperator = /\b(from:|to:|subject:|has:|before:|after:|newer_than:|older_than:)/i.test(q);
-    return q.length >= 3 || hasOperator;
-  }, [debouncedQuery]);
+  // Reset when modal closes
+  useEffect(() => {
+    if (!open) {
+      setSearchQuery(defaultQuery);
+      setSelectedThreadId(null);
+      setSelectedThread(null);
+      setPageToken(null);
+      setAllResults([]);
+      setHasMore(false);
+    }
+  }, [open]);
 
-  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useQuery({
-    queryKey: ['gmailHistoricalSearch', debouncedQuery, excludeImported, hasAttachments],
-    queryFn: async ({ pageParam = null }) => {
-      if (!shouldSearch) return null;
-
-      const response = await base44.functions.invoke('gmailHistoricalSearchThreads', {
-        query: debouncedQuery,
-        pageToken: pageParam,
-        maxResults: 20,
-        excludeImported
-      });
-
-      if (!response.data.success) {
-        throw new Error(response.data.error);
+  // Perform search
+  const { isLoading: isSearching } = useQuery({
+    queryKey: ['gmailHistoricalSearch', debouncedQuery, pageToken, filterNotImported, filterHasAttachments],
+    queryFn: async () => {
+      if (!isValidSearchQuery(debouncedQuery)) {
+        return { threads: [], nextPageToken: null };
       }
 
-      // Filter by attachments if needed
-      let results = response.data.results || [];
-      if (hasAttachments) {
-        results = results.filter(r => r.hasAttachments);
-      }
+      try {
+        const response = await base44.functions.invoke('gmailHistoricalSearchThreads', {
+          query: debouncedQuery,
+          pageToken,
+          maxResults: 25,
+          filterNotImported,
+          filterHasAttachments
+        });
 
-      return {
-        results,
-        nextPageToken: response.data.nextPageToken
-      };
+        if (!response.data.threads) {
+          toast.error('Failed to search threads');
+          return { threads: [], nextPageToken: null };
+        }
+
+        const normalized = response.data.threads.map(normalizeGmailHistoryThread);
+
+        // If first page, replace results; otherwise append
+        if (!pageToken) {
+          setAllResults(normalized);
+        } else {
+          setAllResults(prev => [...prev, ...normalized]);
+        }
+
+        setHasMore(!!response.data.nextPageToken);
+        setPageToken(response.data.nextPageToken || null);
+
+        return { threads: normalized, nextPageToken: response.data.nextPageToken };
+      } catch (error) {
+        console.error('Search error:', error);
+        toast.error('Search failed');
+        return { threads: [], nextPageToken: null };
+      }
     },
-    enabled: shouldSearch && open,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    initialPageParam: null
+    enabled: open && isValidSearchQuery(debouncedQuery),
+    ...QUERY_CONFIG.reference,
+    staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
-  const handleLoadMore = () => {
-    if (data?.nextPageToken && !isFetchingNextPage) {
-      fetchNextPage({ pageParam: data.nextPageToken });
+  const handleSelectThread = useCallback((thread) => {
+    setSelectedThreadId(thread.gmailThreadId);
+    setSelectedThread(thread);
+    onSelectThread?.(thread);
+  }, [onSelectThread]);
+
+  const handleImportSuccess = useCallback(() => {
+    // Invalidate relevant caches
+    queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
+
+    if (defaultLinkTarget?.id) {
+      if (defaultLinkTarget.type === 'project') {
+        queryClient.invalidateQueries({ queryKey: projectKeys.messages(defaultLinkTarget.id) });
+      } else if (defaultLinkTarget.type === 'job') {
+        queryClient.invalidateQueries({ queryKey: jobKeys.messages(defaultLinkTarget.id) });
+      }
     }
-  };
 
-  const allResults = useMemo(() => {
-    if (!data?.results) return [];
-    return data.results;
-  }, [data]);
-
-  const resetSearch = () => {
-    setQuery('');
-    setSelectedThread(null);
-    setPageToken(null);
-  };
-
-  if (selectedThread) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <GmailHistoryThreadPreview
-            thread={selectedThread}
-            onBack={() => setSelectedThread(null)}
-            projectId={projectId}
-            jobId={jobId}
-            onImported={() => {
-              setSelectedThread(null);
-              resetSearch();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-    );
-  }
+    // Optionally close modal
+    setTimeout(() => {
+      onOpenChange(false);
+    }, 1500);
+  }, [queryClient, defaultLinkTarget, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Search Gmail History</DialogTitle>
+      <DialogContent className="max-w-4xl h-[600px] p-0 gap-0 flex flex-col">
+        {/* Header */}
+        <DialogHeader className="border-b border-gray-200 p-4 flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-lg font-semibold">Search Gmail History</DialogTitle>
+              <p className="text-xs text-gray-500 mt-1">
+                Find and import archived emails not in your initial sync
+              </p>
+            </div>
+            <button
+              onClick={() => onOpenChange(false)}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4">
-          {/* Search Input */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Search Query</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g., from:customer@example.com before:2024-01-01"
-                className="pl-10"
-              />
-            </div>
-            <p className="text-xs text-gray-500">
-              Supports: from:, to:, subject:, has:attachment, before:, after:, newer_than:, older_than:
-            </p>
+        {/* Search Controls */}
+        <div className="border-b border-gray-200 p-4 space-y-3 flex-shrink-0">
+          {/* Query Input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by subject, from, to, etc. (supports Gmail operators)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
 
           {/* Filters */}
-          <div className="space-y-2 pb-4 border-b">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="excludeImported"
-                checked={excludeImported}
-                onCheckedChange={setExcludeImported}
+          <div className="flex items-center gap-4 text-sm">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filterNotImported}
+                onChange={(e) => setFilterNotImported(e.target.checked)}
+                className="w-4 h-4 rounded cursor-pointer"
               />
-              <label htmlFor="excludeImported" className="text-sm cursor-pointer">
-                Hide already imported threads
-              </label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="hasAttachments"
-                checked={hasAttachments}
-                onCheckedChange={setHasAttachments}
+              <span>Not imported</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filterHasAttachments}
+                onChange={(e) => setFilterHasAttachments(e.target.checked)}
+                className="w-4 h-4 rounded cursor-pointer"
               />
-              <label htmlFor="hasAttachments" className="text-sm cursor-pointer">
-                Only show threads with attachments
-              </label>
-            </div>
+              <span>Has attachments</span>
+            </label>
           </div>
 
-          {/* Results */}
-          {!shouldSearch && (
-            <div className="text-center py-8 text-gray-500">
-              Enter a search query (min. 3 characters or use operators) to search Gmail history
-            </div>
+          {/* Help text */}
+          {!isValidSearchQuery(debouncedQuery) && (
+            <p className="text-xs text-gray-500">
+              Enter at least 3 characters or use Gmail operators: from:, to:, subject:, before:, after:, has:, in:
+            </p>
           )}
+        </div>
 
-          {shouldSearch && isLoading && (
-            <div className="flex items-center justify-center py-8 gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Searching Gmail...</span>
-            </div>
-          )}
-
-          {shouldSearch && error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-red-700">{error.message}</div>
-            </div>
-          )}
-
-          {shouldSearch && data?.results && allResults.length > 0 && (
+        {/* Content: Results + Preview */}
+        <div className="flex-1 min-h-0 flex gap-0 overflow-hidden">
+          {/* Results List */}
+          <div className="w-80 flex-shrink-0 border-r border-gray-200 overflow-hidden flex flex-col">
             <GmailHistorySearchResults
-              results={allResults}
-              onSelectThread={setSelectedThread}
+              threads={allResults}
+              selectedThreadId={selectedThreadId}
+              onSelectThread={handleSelectThread}
+              isLoading={isSearching}
             />
-          )}
 
-          {shouldSearch && data?.results && allResults.length === 0 && !isLoading && (
-            <div className="text-center py-8 text-gray-500">
-              No threads found matching your search
-            </div>
-          )}
+            {/* Load More Button */}
+            {hasMore && !isSearching && (
+              <div className="border-t border-gray-200 p-3 flex-shrink-0">
+                <Button
+                  onClick={() => {
+                    // Trigger next page fetch by invoking query manually
+                    const nextPageToken = allResults[allResults.length - 1]?.nextPageToken;
+                    setPageToken(nextPageToken || null);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                >
+                  Load more results
+                </Button>
+              </div>
+            )}
+          </div>
 
-          {/* Load More */}
-          {hasNextPage && (
-            <div className="flex justify-center pt-4">
-              <Button
-                onClick={handleLoadMore}
-                disabled={isFetchingNextPage}
-                variant="outline"
-              >
-                {isFetchingNextPage ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  'Load More Results'
-                )}
-              </Button>
-            </div>
-          )}
+          {/* Preview Panel */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {selectedThread ? (
+              <GmailHistoryThreadPreview
+                thread={selectedThread}
+                onBack={() => {
+                  setSelectedThreadId(null);
+                  setSelectedThread(null);
+                }}
+                defaultLinkTarget={defaultLinkTarget}
+                onImported={handleImportSuccess}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-center">
+                <div>
+                  <p className="text-sm text-gray-600">Select a thread to preview</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
