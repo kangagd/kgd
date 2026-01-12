@@ -11,7 +11,6 @@ import InboxFilterBar from "@/components/inbox/InboxFilterBar";
 import SharedComposer from "@/components/inbox/SharedComposer";
 import EmailDetailView from "@/components/inbox/EmailDetailView";
 import LinkThreadModal from "@/components/inbox/LinkThreadModal";
-import GmailHistorySearch from "@/components/inbox/GmailHistorySearch";
 import { computeInferredStateWithAutoClear } from "@/components/inbox/inferredStateAutoClear";
 
 export default function Inbox() {
