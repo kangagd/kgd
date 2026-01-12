@@ -106,6 +106,25 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
                </Button>
              )}
 
+             {/* Close/Reopen Button */}
+             {currentUser && (
+               <Button
+                 size="sm"
+                 variant="ghost"
+                 onClick={handleCloseToggle}
+                 disabled={isClosingLoading}
+                 className={`h-6 px-2 text-[11px] flex items-center gap-1 ${
+                   isClosed 
+                     ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200' 
+                     : 'text-[#6B7280] hover:bg-[#F3F4F6]'
+                 }`}
+                 title={isClosed ? 'Reopen thread' : 'Mark as closed'}
+               >
+                 <X className="w-3 h-3" />
+                 {isClosed ? <span>Closed</span> : null}
+               </Button>
+             )}
+
              {/* Link Chip (separate from status/pin) */}
              {linkChip && (
                <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 flex items-center gap-1">
