@@ -105,9 +105,17 @@ export default function Inbox() {
   // Sync Gmail inbox
   const syncGmailInbox = async () => {
     if (isSyncing) return;
+
+    // B8: Rate limit sync — enforce 60s minimum gap
+    const now = Date.now();
+    if (now - lastSyncRequestTime < 60000) {
+      console.log(`[B8] Sync blocked: last sync ${Math.round((now - lastSyncRequestTime) / 1000)}s ago`);
+      return;
+    }
     
     try {
       setIsSyncing(true);
+      setLastSyncRequestTime(now);
       await base44.functions.invoke('gmailSyncInbox', { maxResults: 50 });
       await refetchThreads();
       setLastSyncTime(new Date());
