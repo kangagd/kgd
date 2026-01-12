@@ -28,10 +28,19 @@ export default function StockAdjustmentModal({ open, onClose, item, vehicleId })
 
   const adjustMutation = useMutation({
     mutationFn: async (data) => {
+      // Get vehicle location first
+      const locations = await base44.entities.InventoryLocation.filter({
+        type: 'vehicle',
+        vehicle_id: vehicleId
+      });
+      const locationId = locations[0]?.id;
+
+      if (!locationId) throw new Error('Vehicle location not found');
+
       const response = await base44.functions.invoke('moveInventory', {
         priceListItemId: item.product_id,
-        fromLocationId: item.location_id,
-        toLocationId: item.location_id,
+        fromLocationId: locationId,
+        toLocationId: locationId,
         quantity: Math.abs(data.difference),
         movementType: 'adjustment',
         notes: data.reason
