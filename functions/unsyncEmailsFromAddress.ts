@@ -23,10 +23,11 @@ Deno.serve(async (req) => {
 
     console.log(`[unsyncEmailsFromAddress] Starting unsync for ${email_address}`);
 
-    // Find all threads from this address
-    const threads = await base44.asServiceRole.entities.EmailThread.filter({
-      from_address: email_address
-    });
+    // Get all threads and filter with flexible matching (in case from_address includes name)
+    const allThreads = await base44.asServiceRole.entities.EmailThread.list(null, 1000);
+    const threads = allThreads.filter(t => 
+      t.from_address && t.from_address.toLowerCase().includes(email_address.toLowerCase())
+    );
 
     console.log(`[unsyncEmailsFromAddress] Found ${threads.length} threads from ${email_address}`);
 
