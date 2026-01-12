@@ -9,7 +9,6 @@ import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import Jobs from './pages/Jobs';
 import Logistics from './pages/Logistics';
-import MyVehicle from './pages/MyVehicle';
 import Notifications from './pages/Notifications';
 import Organisations from './pages/Organisations';
 import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
@@ -28,6 +27,7 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
+import MyVehicle from './pages/MyVehicle';
 import __Layout from './Layout.jsx';
 
 
@@ -43,7 +43,6 @@ export const PAGES = {
     "Inbox": Inbox,
     "Jobs": Jobs,
     "Logistics": Logistics,
-    "MyVehicle": MyVehicle,
     "Notifications": Notifications,
     "Organisations": Organisations,
     "PartsHardwareAdmin": PartsHardwareAdmin,
@@ -62,6 +61,7 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
+    "MyVehicle": MyVehicle,
 }
 
 export const pagesConfig = {

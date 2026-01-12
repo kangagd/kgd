@@ -42,16 +42,12 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
     }
   };
 
-  const handleSyncThread = async (thread, force = false) => {
-    console.log('Starting sync for thread:', thread.gmail_thread_id, thread.subject, force ? '(force)' : '');
+  const handleSyncThread = async (thread) => {
     setSyncingThreadId(thread.gmail_thread_id);
     try {
-      console.log('Invoking syncSpecificGmailThread...');
       const response = await base44.functions.invoke('syncSpecificGmailThread', {
-        gmail_thread_id: thread.gmail_thread_id,
-        force
+        gmail_thread_id: thread.gmail_thread_id
       });
-      console.log('syncSpecificGmailThread response:', response);
 
       if (response.data?.thread_id) {
         const threadId = response.data.thread_id;
@@ -84,11 +80,9 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
         }
       }
     } catch (error) {
-       console.error("Sync failed:", error);
-       toast.error("Sync failed: " + error.message);
+      toast.error("Sync failed: " + error.message);
     } finally {
-       console.log('Sync finished');
-       setSyncingThreadId(null);
+      setSyncingThreadId(null);
     }
   };
 
@@ -177,35 +171,15 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     {thread.is_synced ? (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewThread(thread)}
-                          className="h-8"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                          View
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSyncThread(thread, true)}
-                          disabled={syncingThreadId === thread.gmail_thread_id}
-                          className="h-8"
-                          title="Re-sync this thread with latest content"
-                        >
-                          {syncingThreadId === thread.gmail_thread_id ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
-                            </>
-                          ) : (
-                            <>
-                              <LinkIcon className="w-3.5 h-3.5" />
-                            </>
-                          )}
-                        </Button>
-                      </>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewThread(thread)}
+                        className="h-8"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                        View
+                      </Button>
                     ) : (
                       <Button
                         size="sm"

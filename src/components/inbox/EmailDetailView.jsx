@@ -136,9 +136,8 @@ export default function EmailDetailView({
   const { data: viewers = [] } = useQuery({
     queryKey: ['thread-viewers', thread.id],
     queryFn: () => base44.entities.EmailThreadViewer.filter({ thread_id: thread.id }),
-    refetchInterval: 60000, // Refresh every 60 seconds to reduce DB load
-    enabled: !!user,
-    staleTime: 30000 // Cache for 30 seconds
+    refetchInterval: 10000, // Refresh every 10 seconds
+    enabled: !!user
   });
 
   // Update aiThread when thread prop changes
@@ -164,8 +163,7 @@ export default function EmailDetailView({
         new Date(a.sent_at) - new Date(b.sent_at)
       );
     },
-    refetchInterval: false, // Disabled auto-refetch - only refetch on manual calls
-    staleTime: Infinity // Never consider data stale unless manually invalidated
+    refetchInterval: 30000
   });
 
   // Verify linked project exists (use project_id field)
