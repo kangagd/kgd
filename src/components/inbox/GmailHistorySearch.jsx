@@ -81,8 +81,12 @@ export default function GmailHistorySearch({ open, onClose, projectId = null, on
 
   const handleViewThread = (thread) => {
     if (thread.synced_id) {
-      navigate(`?threadId=${thread.synced_id}`);
-      onClose();
+      if (onThreadSynced) {
+        onThreadSynced(thread.synced_id);
+      } else {
+        navigate(`?threadId=${thread.synced_id}`);
+        onClose();
+      }
     }
   };
 
