@@ -5,24 +5,30 @@ import { mapPoStatusToPartStatus, linkPartsToPO } from './shared/partHelpers.js'
 import { normaliseLegacyPoStatus, resolvePoRef, firstNonEmpty } from './shared/poHelpers.js';
 
 // Helper: Sync Parts with PurchaseOrder status
+// CRITICAL: Only syncs parts where primary_purchase_order_id matches (prevents circular references)
 async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId = null) {
     try {
         // Normalize the status first
         const normalizedStatus = normaliseLegacyPoStatus(purchaseOrder.status);
         
-        // Fetch Parts linked to this PO
-        const parts = await base44.asServiceRole.entities.Part.filter({
-            purchase_order_id: purchaseOrder.id
-        });
+        // Fetch Parts where this PO is the PRIMARY (authoritative) PO
+        // This prevents overwrites when a part is linked to multiple POs
+        const parts = await base44.asServiceRole.entities.Part.list(null, 500);
+        const relevantParts = parts.filter(p => p.primary_purchase_order_id === purchaseOrder.id);
 
-        if (parts.length === 0) return;
+        if (relevantParts.length === 0) {
+            console.log(`[syncParts] No parts with primary_purchase_order_id=${purchaseOrder.id}`);
+            return;
+        }
 
         // Determine target part status from PO status
         const targetPartStatus = mapPoStatusToPartStatus(normalizedStatus);
 
-        for (const part of parts) {
+        for (const part of relevantParts) {
             const updateData = {
-                status: targetPartStatus
+                status: targetPartStatus,
+                last_synced_from_po_at: new Date().toISOString(),
+                synced_by: 'system:managePurchaseOrder'
             };
 
             // Clear ordering metadata if reverting to pending (draft)
@@ -71,6 +77,7 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
             }
 
             await base44.asServiceRole.entities.Part.update(part.id, updateData);
+            console.log(`[syncParts] Synced part ${part.id} from primary PO ${purchaseOrder.id} to status ${targetPartStatus}`);
         }
     } catch (error) {
         console.error(`Error syncing parts with PO ${purchaseOrder.id} status:`, error);
