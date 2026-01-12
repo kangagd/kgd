@@ -201,23 +201,13 @@ export default function AttachmentCard({
           const allUrls = [...existingImages, ...existingDocUrls];
           
           if (!allUrls.some(url => url && url.includes(attachment.filename))) {
-            if (isImage) {
-              const updatedImageUrls = [...existingImages, urlToSave];
-              // Use manageJob backend function for robust permission handling
-              await base44.functions.invoke('manageJob', { 
-                action: 'update', 
-                id: linkedJobId, 
-                data: { image_urls: updatedImageUrls } 
-              });
-            } else {
-              const updatedDocs = [...existingDocs, { url: urlToSave, name: attachment.filename }];
-              // Use manageJob backend function for robust permission handling
-              await base44.functions.invoke('manageJob', { 
-                action: 'update', 
-                id: linkedJobId, 
-                data: { other_documents: updatedDocs } 
-              });
-            }
+            await base44.functions.invoke('addAttachmentToEntity', {
+              entity_type: 'Job',
+              entity_id: linkedJobId,
+              attachment_url: urlToSave,
+              attachment_name: attachment.filename,
+              is_image: isImageFile(attachment.mime_type, attachment.filename)
+            });
           }
           
           toast.success(`${isImage ? 'Image' : 'Document'} saved to job`);
