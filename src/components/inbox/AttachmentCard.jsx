@@ -213,7 +213,7 @@ export default function AttachmentCard({
                 data: { image_urls: updatedImageUrls } 
               });
             } else {
-              const updatedDocs = [...existingDocs, urlToSave];
+              const updatedDocs = [...existingDocs, { url: urlToSave, name: attachment.filename }];
               // Use manageJob backend function for robust permission handling
               await base44.functions.invoke('manageJob', { 
                 action: 'update', 
