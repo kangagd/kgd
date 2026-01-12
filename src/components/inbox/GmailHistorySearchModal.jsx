@@ -100,10 +100,26 @@ export default function GmailHistorySearchModal({
           }
         });
 
-        if (!response.data.threads) {
-          toast.error('Failed to search threads');
+        // Check for server-side error
+        if (response.data.error) {
+          const errorDetail = response.data.errorDetail || response.data.error;
+          setSearchError({
+            message: 'Search failed',
+            detail: errorDetail
+          });
           return { threads: [], nextPageToken: null };
         }
+
+        if (!response.data.threads) {
+          setSearchError({
+            message: 'Search failed',
+            detail: 'No threads returned'
+          });
+          return { threads: [], nextPageToken: null };
+        }
+
+        // Clear error on successful search
+        setSearchError(null);
 
         const normalized = response.data.threads.map(normalizeGmailHistoryThread);
 
@@ -120,7 +136,20 @@ export default function GmailHistorySearchModal({
         return { threads: normalized, nextPageToken: response.data.nextPageToken };
       } catch (error) {
         console.error('Search error:', error);
-        toast.error('Search failed');
+        
+        // Build error message from Axios/network error
+        let errorDetail = 'Unknown error';
+        if (error.response) {
+          errorDetail = `HTTP ${error.response.status}: ${error.response.data?.error || error.response.statusText || 'Request failed'}`;
+        } else if (error.message) {
+          errorDetail = error.message;
+        }
+        
+        setSearchError({
+          message: 'Search failed',
+          detail: errorDetail
+        });
+        
         return { threads: [], nextPageToken: null };
       }
     },
