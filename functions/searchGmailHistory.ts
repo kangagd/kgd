@@ -94,16 +94,30 @@ Deno.serve(async (req) => {
 
     // Fetch thread details for display
     const threadMap = new Map();
-    const MAX_THREADS = 20; // Limit for performance
+    const MAX_THREADS = 10; // Reduced for rate limiting
+    const DELAY_MS = 300; // Rate limiting delay between requests
     
-    for (const msg of messageIds.slice(0, MAX_THREADS)) {
+    for (let i = 0; i < Math.min(MAX_THREADS, messageIds.length); i++) {
+      const msg = messageIds[i];
+      
+      // Rate limiting delay
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+      }
+      
       try {
-        const msgUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`;
+        const msgUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&headers=Subject,From,Date`;
         const msgResponse = await fetch(msgUrl, {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         });
 
-        if (!msgResponse.ok) continue;
+        if (!msgResponse.ok) {
+          if (msgResponse.status === 429) {
+            console.warn('Rate limited by Gmail API, stopping early');
+            break;
+          }
+          continue;
+        }
 
         const detail = await msgResponse.json();
         const headers = detail.payload?.headers || [];
