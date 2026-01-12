@@ -21,6 +21,8 @@ export default function Inbox() {
   const [composerMessage, setComposerMessage] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showHistorySearch, setShowHistorySearch] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Load current user
   useEffect(() => {
@@ -70,6 +72,41 @@ export default function Inbox() {
 
     return () => unsubscribe();
   }, [user, queryClient]);
+
+  // Sync Gmail inbox
+  const syncGmailInbox = async () => {
+    if (isSyncing) return;
+    
+    try {
+      setIsSyncing(true);
+      await base44.functions.invoke('gmailSyncInbox', { maxResults: 50 });
+      await refetchThreads();
+      setLastSyncTime(new Date());
+    } catch (error) {
+      console.error('Sync failed:', error);
+      toast.error('Failed to sync emails');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Auto-sync on mount and when tab becomes visible
+  useEffect(() => {
+    if (!user) return;
+
+    // Initial sync
+    syncGmailInbox();
+
+    // Sync when tab becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        syncGmailInbox();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
 
   // Fetch team members for assignment
   const { data: teamUsers = [] } = useQuery({
@@ -239,6 +276,22 @@ export default function Inbox() {
             userEmail={user?.email}
             onOpenHistorySearch={() => setShowHistorySearch(true)}
           />
+
+          {/* Sync Status Indicator */}
+          <div className="px-3 py-2 border-b border-[#E5E7EB] flex items-center justify-between text-xs text-[#6B7280]">
+            <span>
+              {isSyncing ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader className="w-3 h-3 animate-spin" />
+                  Syncing...
+                </span>
+              ) : lastSyncTime ? (
+                `Last synced: ${new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+              ) : (
+                'Not synced yet'
+              )}
+            </span>
+          </div>
 
           {/* Thread List */}
           <div className="flex-1 overflow-y-auto min-h-0">
