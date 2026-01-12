@@ -26,12 +26,15 @@ export default function InboxFilterBar({
     { id: 'closed', label: 'Closed', value: { status: 'closed' } }
   ];
 
-  const isFilterActive = (filterId) => {
-    return Object.values(activeFilters).some(f => f);
-  };
-
   const handleToggleFilter = (filterId, filterValue) => {
-    onFilterChange(filterId, filterValue);
+    // Toggle: if clicking an active filter, deactivate it; otherwise activate it
+    if (activeFilters[filterId]) {
+      onFilterChange(filterId, false);
+    } else {
+      // Clear other filters when selecting a new one (single-select)
+      onFilterChange('clear', {});
+      onFilterChange(filterId, true);
+    }
   };
 
   const hasActiveFilters = Object.values(activeFilters).some(f => f);
