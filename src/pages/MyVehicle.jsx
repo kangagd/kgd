@@ -134,16 +134,26 @@ export default function MyVehicle() {
         location_id: inventoryLoc[0].id
       });
       
+      // Get PriceListItems to fetch car_quantity
+      const priceListItems = await base44.entities.PriceListItem.list('item');
+      const itemMap = priceListItems.reduce((acc, item) => {
+        acc[item.id] = item;
+        return acc;
+      }, {});
+      
       // Transform InventoryQuantity to VehicleStock shape for compatibility
-      return quantities.map(q => ({
-        id: q.id,
-        product_id: q.price_list_item_id,
-        product_name: q.item_name,
-        quantity_on_hand: q.quantity,
-        minimum_target_quantity: 5, // Default for display
-        category: 'Stock',
-        location_label: inventoryLoc[0].name
-      }));
+      return quantities.map(q => {
+        const item = itemMap[q.price_list_item_id];
+        return {
+          id: q.id,
+          product_id: q.price_list_item_id,
+          product_name: q.item_name,
+          quantity_on_hand: q.quantity,
+          minimum_target_quantity: item?.car_quantity || 0,
+          category: item?.category || 'Stock',
+          location_label: inventoryLoc[0].name
+        };
+      });
     },
     enabled: !!vehicle
   });
