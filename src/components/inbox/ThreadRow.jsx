@@ -6,13 +6,9 @@ import { getThreadStatusChip, isThreadPinned, getThreadLinkChip } from "@/compon
 
 export default function ThreadRow({ thread, isSelected, onClick }) {
   const linkingState = getThreadLinkingState(thread);
-
-  const statusColors = {
-    'Open': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Waiting on Customer': 'bg-amber-50 text-amber-700 border-amber-200',
-    'Internal': 'bg-purple-50 text-purple-700 border-purple-200',
-    'Closed': 'bg-gray-50 text-gray-700 border-gray-200'
-  };
+  const statusChip = getThreadStatusChip(thread);
+  const isPinned = isThreadPinned(thread);
+  const linkChip = getThreadLinkChip(thread);
 
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
