@@ -51,6 +51,7 @@ export default function Inbox() {
   const { data: threads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
     queryKey: ['emailThreads'],
     queryFn: async () => {
+      setLastThreadFetchTime(Date.now());
       const allThreads = await base44.entities.EmailThread.list('-last_message_date', 100);
       const viewers = await base44.entities.EmailThreadViewer.list();
       
@@ -60,7 +61,7 @@ export default function Inbox() {
       }));
     },
     enabled: !!user,
-    staleTime: 10000 // Reduce refetch cascade - threads fresh for 10s
+    staleTime: 30000 // Keep data fresh for 30s to prevent excessive refetches
   });
 
   // Real-time subscription for EmailThread updates (debounced)
