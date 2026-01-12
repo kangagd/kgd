@@ -103,3 +103,105 @@ export function getXeroHeaders(connection) {
     'Content-Type': 'application/json'
   };
 }
+
+/**
+ * Make a Xero API request with automatic retry logic
+ * 
+ * @param {string} url - Xero API endpoint URL
+ * @param {Object} options - Fetch options
+ * @param {number} maxRetries - Maximum retry attempts (default: 3)
+ * @returns {Promise<Response>} Fetch response
+ */
+export async function xeroFetchWithRetry(url, options = {}, maxRetries = 3) {
+  let lastError;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // Success cases
+      if (response.ok) {
+        return response;
+      }
+      
+      // Rate limit - wait and retry
+      if (response.status === 429) {
+        const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
+        console.log(`Rate limited, waiting ${retryAfter}s before retry ${attempt + 1}/${maxRetries}`);
+        
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+          continue;
+        }
+      }
+      
+      // Server errors - retry with exponential backoff
+      if (response.status >= 500) {
+        const backoffMs = Math.min(1000 * Math.pow(2, attempt), 30000);
+        console.log(`Server error ${response.status}, retrying in ${backoffMs}ms (${attempt + 1}/${maxRetries})`);
+        
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          continue;
+        }
+      }
+      
+      // Client errors - don't retry (400, 401, 403, 404, etc.)
+      return response;
+      
+    } catch (error) {
+      lastError = error;
+      console.error(`Network error on attempt ${attempt + 1}/${maxRetries}:`, error.message);
+      
+      if (attempt < maxRetries) {
+        const backoffMs = Math.min(1000 * Math.pow(2, attempt), 30000);
+        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        continue;
+      }
+    }
+  }
+  
+  throw lastError || new Error('Max retries exceeded');
+}
+
+/**
+ * Check if Xero connection is healthy and refresh if needed
+ * 
+ * @param {Object} base44 - Base44 SDK client
+ * @returns {Promise<Object>} Connection object or throws error
+ */
+export async function ensureXeroConnectionHealthy(base44) {
+  try {
+    const connection = await refreshAndGetXeroConnection(base44);
+    
+    // Test connection with a lightweight API call
+    const testResponse = await xeroFetchWithRetry(
+      'https://api.xero.com/connections',
+      {
+        headers: {
+          'Authorization': `Bearer ${connection.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      },
+      1 // Only 1 retry for health check
+    );
+    
+    if (!testResponse.ok) {
+      console.error('Xero connection health check failed:', testResponse.status);
+      
+      // Mark as expired if auth fails
+      if (testResponse.status === 401 || testResponse.status === 403) {
+        await base44.asServiceRole.entities.XeroConnection.update(connection.id, {
+          is_expired: true,
+          last_error: `Health check failed: ${testResponse.status} at ${new Date().toISOString()}`
+        });
+        throw new Error('XERO_AUTH_EXPIRED');
+      }
+    }
+    
+    return connection;
+  } catch (error) {
+    console.error('Xero connection health check error:', error);
+    throw error;
+  }
+}
