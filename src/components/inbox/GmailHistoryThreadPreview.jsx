@@ -303,7 +303,7 @@ export default function GmailHistoryThreadPreview({
       <LinkProjectJobModal
         open={linkModalOpen}
         onOpenChange={setLinkModalOpen}
-        gmailThreadId={thread.gmail_thread_id}
+        gmailThreadId={normalized.gmailThreadId}
         onLinked={handleLinked}
       />
     </>
