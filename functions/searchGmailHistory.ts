@@ -137,11 +137,23 @@ Deno.serve(async (req) => {
     
     const user = users[0];
 
-    if (!user.gmail_access_token) {
-      return Response.json({ error: 'Gmail not connected' }, { status: 400 });
+    // Try user token first, fallback to service account
+    let accessToken;
+    let usingServiceAccount = false;
+
+    if (user.gmail_access_token) {
+      try {
+        accessToken = await refreshTokenIfNeeded(user, base44);
+      } catch (tokenError) {
+        console.log('[searchGmailHistory] User token failed, falling back to service account');
+        accessToken = await getServiceAccountAccessToken();
+        usingServiceAccount = true;
+      }
+    } else {
+      console.log('[searchGmailHistory] User has no token, using service account');
+      accessToken = await getServiceAccountAccessToken();
+      usingServiceAccount = true;
     }
-    
-    const accessToken = await refreshTokenIfNeeded(user, base44);
 
     const { query, sender, recipient, dateFrom, dateTo, maxResults = 50 } = await req.json();
 
