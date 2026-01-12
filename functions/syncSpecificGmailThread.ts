@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
       return match ? match[1] : addr.trim();
     }).filter(Boolean);
 
-    // Create EmailThread
-    const thread = await base44.asServiceRole.entities.EmailThread.create({
+    // Create EmailThread with initial data
+    const threadData = {
       subject,
       gmail_thread_id,
       last_message_snippet: firstMsg.snippet || '',
@@ -66,7 +66,43 @@ Deno.serve(async (req) => {
       priority: 'Normal',
       message_count: messages.length,
       is_read: false
-    });
+    };
+
+    // Auto-link to customer and project (same logic as gmailSync)
+    try {
+      const allEmails = [fromAddress, ...toAddresses].map(e => e.toLowerCase());
+      const customers = await base44.asServiceRole.entities.Customer.list();
+      const matchingCustomer = customers.find(c => 
+        c.email && allEmails.includes(c.email.toLowerCase())
+      );
+      
+      if (matchingCustomer) {
+        threadData.customer_id = matchingCustomer.id;
+        threadData.customer_name = matchingCustomer.name;
+        
+        // Find most recent open project for this customer
+        const projects = await base44.asServiceRole.entities.Project.filter({
+          customer_id: matchingCustomer.id
+        });
+        
+        const openProjects = projects.filter(p => 
+          !['Completed', 'Lost', 'Cancelled'].includes(p.status)
+        ).sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+        
+        if (openProjects.length > 0) {
+          threadData.project_id = openProjects[0].id;
+          threadData.project_number = openProjects[0].project_number;
+          threadData.project_title = openProjects[0].title;
+          threadData.linked_to_project_at = new Date().toISOString();
+          threadData.linked_to_project_by = 'system';
+        }
+      }
+    } catch (linkError) {
+      console.error('Auto-link error:', linkError.message);
+      // Continue with minimal data if linking fails
+    }
+
+    const thread = await base44.asServiceRole.entities.EmailThread.create(threadData);
 
     // Create EmailMessage records
     for (const msg of messages) {
