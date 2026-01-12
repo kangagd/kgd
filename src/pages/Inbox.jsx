@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Mail, AlertTriangle, Loader } from "lucide-react";
 import { toast } from "sonner";
-import { QUERY_CONFIG } from "@/components/api/queryConfig";
 import ThreadRow from "@/components/inbox/ThreadRow";
 import ThreadHeader from "@/components/inbox/ThreadHeader";
 import InboxFilterBar from "@/components/inbox/InboxFilterBar";
@@ -63,9 +62,12 @@ export default function Inbox() {
       }));
     },
     enabled: !!user,
-    ...QUERY_CONFIG.frequent,
+    staleTime: 30000, // Keep data fresh for 30s to prevent excessive refetches
     onSuccess: (newThreads) => {
+      // B6: Fix thread selection desync after refetch
       if (selectedThreadId && !newThreads.find(t => t.id === selectedThreadId)) {
+        // Selected thread no longer in list; reset intelligently
+        // Prefer: next available thread > first thread > null
         const currentIndex = threads.findIndex(t => t.id === selectedThreadId);
         const nextThread = newThreads[Math.min(currentIndex, newThreads.length - 1)];
         setSelectedThreadId(nextThread?.id || null);
