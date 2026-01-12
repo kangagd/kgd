@@ -58,19 +58,27 @@ export default function Inbox() {
         viewers: viewers.filter(v => v.thread_id === thread.id)
       }));
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 10000 // Reduce refetch cascade - threads fresh for 10s
   });
 
-  // Real-time subscription for EmailThread updates
+  // Real-time subscription for EmailThread updates (debounced)
   useEffect(() => {
     if (!user) return;
 
+    let debounceTimer;
     const unsubscribe = base44.entities.EmailThread.subscribe((event) => {
-      // Refetch threads on any create, update, or delete
-      queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      // Debounce refetch to 2 seconds to batch multiple updates
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
+      }, 2000);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(debounceTimer);
+      unsubscribe();
+    };
   }, [user, queryClient]);
 
   // Sync Gmail inbox
