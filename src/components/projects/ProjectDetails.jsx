@@ -278,7 +278,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
-    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getTechnicians', {});
+      return response.data.technicians || [];
+    },
     ...QUERY_CONFIG.reference
   });
 
