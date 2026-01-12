@@ -157,7 +157,28 @@ export default function GmailHistoryThreadPreview({
   const [isImporting, setIsImporting] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [loadingFull, setLoadingFull] = useState(false);
   const queryClient = useQueryClient();
+
+  // Fetch full thread content on demand
+  const { data: fullThreadData, isLoading: isLoadingFull } = useQuery({
+    queryKey: ['gmailHistoryPreview', thread?.gmailThreadId || thread?.gmail_thread_id, 'full'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('gmailGetThreadPreviewContent', {
+        gmailThreadId: thread?.gmailThreadId || thread?.gmail_thread_id,
+        limit: 50 // Get up to 50 messages
+      });
+      return response.data;
+    },
+    enabled: loadingFull && !!(thread?.gmailThreadId || thread?.gmail_thread_id),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  });
+
+  // Use full messages if loaded, otherwise use preview
+  const displayMessages = fullThreadData?.messages && fullThreadData.messages.length > 0
+    ? fullThreadData.messages
+    : previewMessages;
 
   // Show empty state if no thread selected
   if (!thread) {
