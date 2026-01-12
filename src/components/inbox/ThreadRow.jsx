@@ -1,19 +1,17 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Mail, AlertCircle, LinkIcon, Sparkles } from "lucide-react";
-import { getDisplayStatus, isLinked, getLinkInfo } from "@/components/utils/emailThreadStateHelpers";
+import { LinkIcon } from "lucide-react";
+import { getStatusChip, getLinkChip, isLinked } from "@/components/utils/emailThreadStateHelpers";
 
 export default function ThreadRow({ thread, isSelected, onClick }) {
-  const displayStatus = getDisplayStatus(thread);
-  const linked = isLinked(thread);
-  const linkInfo = getLinkInfo(thread);
+  const statusChip = getStatusChip(thread);
+  const linkChip = getLinkChip(thread);
 
-  const statusColors = {
-    'Closed': 'bg-gray-50 text-gray-700 border-gray-200',
-    'Needs reply': 'bg-red-50 text-red-700 border-red-200',
-    'Waiting on customer': 'bg-amber-50 text-amber-700 border-amber-200',
-    'Open': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Untriaged': 'bg-slate-50 text-slate-700 border-slate-200'
+  const chipColorMap = {
+    'gray': 'bg-gray-50 text-gray-700 border-gray-200',
+    'red': 'bg-red-50 text-red-700 border-red-200',
+    'amber': 'bg-amber-50 text-amber-700 border-amber-200',
+    'blue': 'bg-blue-50 text-blue-700 border-blue-200'
   };
 
   const getInitials = (name) => {
@@ -30,36 +28,30 @@ export default function ThreadRow({ thread, isSelected, onClick }) {
       }`}
     >
       <div className="space-y-2">
-        {/* Subject & Status */}
+        {/* Subject & Chips */}
          <div className="flex items-start justify-between gap-2 mb-2">
             <h3 className="text-[14px] font-semibold text-[#111827] flex-1 truncate">
               {thread.subject}
             </h3>
-            <div className="flex items-center gap-1 flex-wrap flex-shrink-0 justify-end">
-              <Badge 
-                variant="outline" 
-                className={`text-[11px] border ${statusColors[displayStatus] || 'bg-gray-50'}`}
-              >
-                {displayStatus}
-              </Badge>
-              {linked && (
-                <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 flex items-center gap-1">
+            <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0 justify-end">
+              {/* Primary Status Chip (single only) */}
+              {statusChip && (
+                <Badge 
+                  variant="outline" 
+                  className={`text-[11px] border ${chipColorMap[statusChip.color]}`}
+                >
+                  {statusChip.label}
+                </Badge>
+              )}
+              {/* Link Chip (secondary, always shown if linked) */}
+              {linkChip && (
+                <Badge className="text-[10px] h-5 bg-green-100 text-green-700 border-green-200 border flex items-center gap-1">
                   <LinkIcon className="w-3 h-3" />
-                  {linkInfo.isAuto ? 'Auto-linked' : 'Linked'}
+                  {linkChip.isAuto ? '🔗' : '📌'}
                 </Badge>
               )}
             </div>
           </div>
-
-         {/* Entity Link - if linked */}
-          {linked && linkInfo && (
-            <div className="flex items-center gap-1 text-[12px] mb-2 flex-wrap">
-              <LinkIcon className="w-3 h-3 text-[#6B7280] flex-shrink-0" />
-              <span className="text-[#111827] font-medium truncate max-w-[220px]">
-                #{linkInfo.number} {linkInfo.title}
-              </span>
-            </div>
-          )}
 
          {/* Customer info */}
           <div className="flex items-center gap-2 text-[12px] text-[#6B7280]">
