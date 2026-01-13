@@ -56,6 +56,20 @@ export default function EmailComposerDrawer({
     enabled: !!existingDraftId && open,
   });
 
+  // Check for existing unsent draft for this thread (prevents duplication)
+  const { data: existingThreadDraft } = useQuery({
+    queryKey: ["threadDraft", threadId, mode],
+    queryFn: async () => {
+      if (!threadId || mode === "new") return null;
+      const drafts = await base44.entities.DraftEmail.filter({
+        threadId: threadId,
+        status: { $in: ["draft", "failed"] }
+      }, "-lastSavedAt");
+      return drafts.length > 0 ? drafts[0] : null;
+    },
+    enabled: !!threadId && mode !== "new" && open,
+  });
+
   // Load thread messages for reply mode
   const { data: threadMessages = [] } = useQuery({
     queryKey: ["threadMessages", threadId],
