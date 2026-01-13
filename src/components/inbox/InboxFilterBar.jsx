@@ -17,8 +17,6 @@ export default function InboxFilterBar({
   userEmail
 }) {
   const filters = [
-    { id: 'needs-reply', label: 'Needs Reply', value: { inferredState: 'needs_reply' } },
-    { id: 'waiting-on-customer', label: 'Waiting on Customer', value: { inferredState: 'waiting_on_customer' } },
     { id: 'pinned', label: 'Pinned', value: { pinned: true } },
     { id: 'linked', label: 'Linked', value: { linked: true } },
     { id: 'unlinked', label: 'Unlinked', value: { linked: false } },
