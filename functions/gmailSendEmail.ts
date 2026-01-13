@@ -191,6 +191,7 @@ Deno.serve(async (req) => {
 
     if (gmailDraftId) {
       // Send existing draft
+      console.log(`[gmailSendEmail] Sending draft ${gmailDraftId} for user ${user.email}`);
       result = await retryWithBackoff(async () => {
         const response = await fetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/drafts/${gmailDraftId}/send`,
@@ -204,8 +205,9 @@ Deno.serve(async (req) => {
         );
 
         if (!response.ok) {
-          const error = await response.text();
-          throw new Error(`Gmail API error (${response.status}): ${error}`);
+          const errorText = await response.text();
+          console.error(`[gmailSendEmail] Draft send failed (${response.status}):`, errorText);
+          throw new Error(`Gmail API error (${response.status}): ${errorText}`);
         }
 
         return await response.json();
