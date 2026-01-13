@@ -86,6 +86,7 @@ export default function EmailDetailView({
   const [composerDraftId, setComposerDraftId] = useState(null);
   const [aiThread, setAiThread] = useState(thread);
   const [user, setUser] = useState(null);
+  const [deletingDraftId, setDeletingDraftId] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
