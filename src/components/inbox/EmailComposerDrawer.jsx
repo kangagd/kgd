@@ -88,7 +88,9 @@ export default function EmailComposerDrawer({
   useEffect(() => {
     if (!open) return;
 
+    // Priority 1: Use explicitly provided draft
     if (existingDraft) {
+      setDraftId(existingDraft.id);
       setTo(existingDraft.to || []);
       setCc(existingDraft.cc || []);
       setBcc(existingDraft.bcc || []);
@@ -97,7 +99,21 @@ export default function EmailComposerDrawer({
       setShowCc(existingDraft.cc?.length > 0);
       setShowBcc(existingDraft.bcc?.length > 0);
       setLastSavedAt(existingDraft.lastSavedAt);
-    } else if (threadMessages.length > 0 && mode !== "new") {
+    }
+    // Priority 2: Use existing thread draft if available (prevents duplication)
+    else if (existingThreadDraft) {
+      setDraftId(existingThreadDraft.id);
+      setTo(existingThreadDraft.to || []);
+      setCc(existingThreadDraft.cc || []);
+      setBcc(existingThreadDraft.bcc || []);
+      setSubject(existingThreadDraft.subject || "");
+      setBodyHtml(existingThreadDraft.bodyHtml || "");
+      setShowCc(existingThreadDraft.cc?.length > 0);
+      setShowBcc(existingThreadDraft.bcc?.length > 0);
+      setLastSavedAt(existingThreadDraft.lastSavedAt);
+    }
+    // Priority 3: Create new draft template from thread messages
+    else if (threadMessages.length > 0 && mode !== "new") {
       const latestMessage = threadMessages[0];
       
       // Set recipients based on mode
