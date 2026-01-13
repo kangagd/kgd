@@ -222,6 +222,7 @@ export default function EmailComposerDrawer({
     mutationFn: async () => {
       if (!user) throw new Error("User not authenticated");
       if (to.length === 0) throw new Error("Please add at least one recipient");
+      if (!bodyHtml || bodyHtml.trim().replace(/<[^>]*>/g, "").length === 0) throw new Error("Please add message content");
 
       // Save draft locally first if not already saved
       if (!draftId) {
