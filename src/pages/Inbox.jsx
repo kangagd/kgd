@@ -365,8 +365,8 @@ export default function Inbox() {
         {/* Left Pane: Thread List */}
         <div className="w-[340px] flex-shrink-0 flex flex-col border-r border-[#E5E7EB] overflow-hidden">
           
-          {/* View Tabs */}
-          <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2">
+          {/* View Tabs & Compose Button */}
+          <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2 items-center">
             <button
               onClick={() => setActiveView("inbox")}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -386,6 +386,18 @@ export default function Inbox() {
               }`}
             >
               Drafts
+            </button>
+            <button
+              onClick={() => {
+                setComposerMode("new");
+                setComposerThreadId(null);
+                setComposerDraftId(null);
+                setComposerOpen(true);
+              }}
+              className="ml-auto px-3 py-1.5 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+            >
+              <Mail className="w-4 h-4" />
+              Compose
             </button>
           </div>
 
