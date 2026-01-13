@@ -17,6 +17,7 @@ export default function InboxFilterBar({
   userEmail
 }) {
   const filters = [
+    { id: 'assigned-to-me', label: 'Assigned to Me', value: { assignedToMe: true } },
     { id: 'pinned', label: 'Pinned', value: { pinned: true } },
     { id: 'linked', label: 'Linked', value: { linked: true } },
     { id: 'unlinked', label: 'Unlinked', value: { linked: false } },
