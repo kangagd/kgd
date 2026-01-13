@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { QUERY_CONFIG } from "@/components/api/queryConfig";
 import { inboxKeys } from "@/components/api/queryKeys";
-import { Mail, AlertTriangle, Loader, History } from "lucide-react";
+import { Mail, AlertTriangle, Loader, History, CheckSquare, X as XIcon, Link as LinkIcon, MailOpen, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import ThreadRow from "@/components/inbox/ThreadRow";
 import ThreadHeader from "@/components/inbox/ThreadHeader";
@@ -35,6 +35,8 @@ export default function Inbox() {
   const [composerDraftId, setComposerDraftId] = useState(null);
   const [composerThreadId, setComposerThreadId] = useState(null);
   const [composerMode, setComposerMode] = useState("new");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedThreadIds, setSelectedThreadIds] = useState(new Set());
 
   // Load current user
   useEffect(() => {
@@ -333,6 +335,129 @@ export default function Inbox() {
     setShowComposer(true);
   };
 
+  // Bulk actions
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedThreadIds(new Set());
+  };
+
+  const handleBulkSelect = (threadId, checked) => {
+    setSelectedThreadIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(threadId);
+      } else {
+        newSet.delete(threadId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllThreads = () => {
+    setSelectedThreadIds(new Set(filteredThreads.map(t => t.id)));
+  };
+
+  const deselectAllThreads = () => {
+    setSelectedThreadIds(new Set());
+  };
+
+  const bulkMarkAsRead = async () => {
+    try {
+      const now = new Date().toISOString();
+      await Promise.all(
+        Array.from(selectedThreadIds).map(id =>
+          base44.entities.EmailThread.update(id, {
+            isUnread: false,
+            lastReadAt: now,
+            unreadUpdatedAt: now
+          })
+        )
+      );
+      await refetchThreads();
+      setSelectedThreadIds(new Set());
+      toast.success(`Marked ${selectedThreadIds.size} threads as read`);
+    } catch (error) {
+      toast.error('Failed to mark threads as read');
+    }
+  };
+
+  const bulkMarkAsUnread = async () => {
+    try {
+      const now = new Date().toISOString();
+      await Promise.all(
+        Array.from(selectedThreadIds).map(id =>
+          base44.entities.EmailThread.update(id, {
+            isUnread: true,
+            unreadUpdatedAt: now
+          })
+        )
+      );
+      await refetchThreads();
+      setSelectedThreadIds(new Set());
+      toast.success(`Marked ${selectedThreadIds.size} threads as unread`);
+    } catch (error) {
+      toast.error('Failed to mark threads as unread');
+    }
+  };
+
+  const bulkClose = async () => {
+    try {
+      await Promise.all(
+        Array.from(selectedThreadIds).map(id =>
+          base44.entities.EmailThread.update(id, { userStatus: 'closed' })
+        )
+      );
+      await refetchThreads();
+      setSelectedThreadIds(new Set());
+      toast.success(`Closed ${selectedThreadIds.size} threads`);
+    } catch (error) {
+      toast.error('Failed to close threads');
+    }
+  };
+
+  const bulkAssignToMe = async () => {
+    try {
+      const now = new Date().toISOString();
+      await Promise.all(
+        Array.from(selectedThreadIds).map(id =>
+          base44.entities.EmailThread.update(id, {
+            assigned_to: user.email,
+            assigned_to_name: user.display_name || user.full_name,
+            assigned_by: user.email,
+            assigned_by_name: user.display_name || user.full_name,
+            assigned_at: now
+          })
+        )
+      );
+      await refetchThreads();
+      setSelectedThreadIds(new Set());
+      toast.success(`Assigned ${selectedThreadIds.size} threads to you`);
+    } catch (error) {
+      toast.error('Failed to assign threads');
+    }
+  };
+
+  const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
+
+  const bulkLinkMutation = useMutation({
+    mutationFn: async (projectId) => {
+      await Promise.all(
+        Array.from(selectedThreadIds).map(id =>
+          base44.entities.EmailThread.update(id, { project_id: projectId })
+        )
+      );
+    },
+    onSuccess: () => {
+      refetchThreads();
+      setShowBulkLinkModal(false);
+      setSelectedThreadIds(new Set());
+      toast.success(`Linked ${selectedThreadIds.size} threads to project`);
+    },
+    onError: () => {
+      toast.error('Failed to link threads');
+    }
+  });
+
   // Link thread to project
   const linkThreadMutation = useMutation({
     mutationFn: async (projectId) => {
@@ -365,6 +490,62 @@ export default function Inbox() {
         {/* Left Pane: Thread List */}
         <div className="w-[340px] flex-shrink-0 flex flex-col border-r border-[#E5E7EB] overflow-hidden">
           
+          {/* Bulk Actions Toolbar */}
+          {selectionMode && selectedThreadIds.size > 0 && (
+            <div className="px-3 py-2 bg-blue-50 border-b border-blue-200 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium text-blue-700">
+                {selectedThreadIds.size} selected
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={bulkMarkAsRead}
+                  className="h-7 px-2 text-xs hover:bg-blue-100"
+                  title="Mark as read"
+                >
+                  <MailOpen className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={bulkMarkAsUnread}
+                  className="h-7 px-2 text-xs hover:bg-blue-100"
+                  title="Mark as unread"
+                >
+                  <Mail className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={bulkAssignToMe}
+                  className="h-7 px-2 text-xs hover:bg-blue-100"
+                  title="Assign to me"
+                >
+                  <UserPlus className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={bulkClose}
+                  className="h-7 px-2 text-xs hover:bg-blue-100"
+                  title="Close"
+                >
+                  <XIcon className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowBulkLinkModal(true)}
+                  className="h-7 px-2 text-xs hover:bg-blue-100"
+                  title="Link to project"
+                >
+                  <LinkIcon className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* View Tabs & Compose Button */}
           <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2 items-center">
             <button
@@ -399,10 +580,45 @@ export default function Inbox() {
               <Mail className="w-4 h-4" />
               Compose
             </button>
+            {activeView === "inbox" && (
+              <button
+                onClick={toggleSelectionMode}
+                className={`p-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  selectionMode
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-[#6B7280] hover:bg-[#F3F4F6]"
+                }`}
+                title={selectionMode ? "Exit selection mode" : "Select threads"}
+              >
+                <CheckSquare className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
+          {/* Selection Mode Toolbar */}
+          {selectionMode && activeView === "inbox" && (
+            <div className="px-3 py-2 border-b border-[#E5E7EB] flex items-center justify-between gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={selectAllThreads}
+                className="text-xs"
+              >
+                Select All
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={deselectAllThreads}
+                className="text-xs"
+              >
+                Deselect All
+              </Button>
+            </div>
+          )}
+
           {/* Filter Bar */}
-          {activeView === "inbox" && (
+          {activeView === "inbox" && !selectionMode && (
             <InboxFilterBar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -476,9 +692,12 @@ export default function Inbox() {
                   key={thread.id}
                   thread={thread}
                   isSelected={selectedThreadId === thread.id}
-                  onClick={() => setSelectedThreadId(thread.id)}
+                  onClick={() => !selectionMode && setSelectedThreadId(thread.id)}
                   currentUser={user}
                   onThreadUpdate={() => refetchThreads()}
+                  selectionMode={selectionMode}
+                  isSelectedForBulk={selectedThreadIds.has(thread.id)}
+                  onBulkSelect={handleBulkSelect}
                 />
               ))
             )}
@@ -605,6 +824,15 @@ export default function Inbox() {
           onLinkJob={() => {}}
         />
       )}
+
+      {/* Bulk Link Modal */}
+      <LinkThreadModal
+        open={showBulkLinkModal}
+        onClose={() => setShowBulkLinkModal(false)}
+        linkType="project"
+        onLinkProject={(projectId) => bulkLinkMutation.mutate(projectId)}
+        onLinkJob={() => {}}
+      />
 
       {/* Gmail History Search Modal */}
       <GmailHistorySearchModal

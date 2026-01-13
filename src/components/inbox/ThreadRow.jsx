@@ -3,13 +3,14 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X, MailOpen, Send, ArrowDown, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
 import { getThreadStatusChip, isThreadPinned, getThreadLinkChip } from "@/components/inbox/threadStatusChip";
 import { pinThread, unpinThread } from "@/components/inbox/threadPinActions";
 import { closeThread, reopenThread } from "@/components/inbox/threadCloseActions";
 import { useState } from "react";
 
-export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate }) {
+export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate, selectionMode, isSelectedForBulk, onBulkSelect }) {
   const [isPinningLoading, setIsPinningLoading] = useState(false);
   const [isClosingLoading, setIsClosingLoading] = useState(false);
   const [isTogglingRead, setIsTogglingRead] = useState(false);
@@ -76,14 +77,29 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
   };
 
   return (
-    <button
-      onClick={onClick}
-      className={`w-full px-4 py-3 text-left border-b border-[#E5E7EB] transition-all ${
+    <div
+      className={`w-full px-4 py-3 border-b border-[#E5E7EB] transition-all ${
         isSelected 
           ? 'bg-[#FAE008]/10 border-l-2 border-l-[#FAE008]' 
           : 'hover:bg-[#F9FAFB]'
-      }`}
+      } ${isSelectedForBulk ? 'bg-blue-50 border-l-2 border-l-blue-500' : ''}`}
     >
+      <div className="flex items-start gap-3">
+        {/* Bulk Selection Checkbox */}
+        {selectionMode && (
+          <div className="pt-1">
+            <Checkbox
+              checked={isSelectedForBulk}
+              onCheckedChange={(checked) => onBulkSelect?.(thread.id, checked)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        )}
+
+        <button
+          onClick={onClick}
+          className="flex-1 text-left min-w-0"
+        >
       <div className="space-y-2">
         {/* Subject & Chips (Status, Pin, Link) */}
          <div className="flex items-start justify-between gap-2 mb-2">
@@ -290,7 +306,9 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
         <div className="text-[11px] text-[#9CA3AF]">
           {thread.last_message_date && format(parseISO(thread.last_message_date), 'MMM d, h:mm a')}
         </div>
-      </div>
-    </button>
-  );
-}
+        </div>
+        </button>
+        </div>
+        </div>
+        );
+        }
