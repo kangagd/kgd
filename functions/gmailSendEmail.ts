@@ -235,8 +235,9 @@ Deno.serve(async (req) => {
         raw: encodedMessage
       };
 
-      // Add threadId if this is a reply
-      if (thread_id || gmail_thread_id) {
+      // Add threadId only if this is a reply (not when sending a draft)
+      // Drafts already have threadId encoded in Gmail
+      if ((thread_id || gmail_thread_id) && thread_id !== gmail_thread_id) {
         sendPayload.threadId = thread_id || gmail_thread_id;
       }
 
