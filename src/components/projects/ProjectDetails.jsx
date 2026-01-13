@@ -1273,7 +1273,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 setIsGeneratingHandover(true);
                 try {
                   const response = await base44.functions.invoke('generateProjectHandoverReport', {
-                    projectId: project.id
+                    project_id: project.id
                   });
                   
                   if (response.data.success && response.data.pdf_url) {
