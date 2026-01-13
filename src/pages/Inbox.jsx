@@ -234,7 +234,14 @@ export default function Inbox() {
         return a.isUnread ? -1 : 1;
       }
 
-      // 3. Then by lastMessageDate DESC
+      // 3. Assigned to me next (among non-pinned, same unread status)
+      const aAssignedToMe = a.assigned_to === user?.email;
+      const bAssignedToMe = b.assigned_to === user?.email;
+      if (aAssignedToMe !== bAssignedToMe) {
+        return aAssignedToMe ? -1 : 1;
+      }
+
+      // 4. Then by lastMessageDate DESC
       return new Date(b.last_message_date) - new Date(a.last_message_date);
     };
 
