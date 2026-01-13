@@ -231,29 +231,35 @@ export default function Inbox() {
     } else if (activeFilters['unlinked']) {
       result = result.filter(t => !t.project_id && !t.job_id && t.userStatus !== 'closed');
     }
+// Sorting logic
+// 1) Pinned first (newest pin first)
+// 2) Unread next (newest to oldest)
+// 3) Read last (newest to oldest)
+const sortFunction = (a, b) => {
+  // 1) Pinned first
+  const aPinned = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+  const bPinned = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
 
-    // Sorting logic
-    const sortFunction = (a, b) => {
-      // 1. Pinned first (pinnedAt DESC)
-      const aPinned = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
-      const bPinned = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
-      if (aPinned !== bPinned) return bPinned - aPinned;
+  if (aPinned !== bPinned) {
+    return bPinned - aPinned; // pinned first
+  }
 
-      // 2. Unread first (among non-pinned)
-      if (a.isUnread !== b.isUnread) {
-        return a.isUnread ? -1 : 1;
-      }
+  // 2) Unread first (among same pinned state)
+  if (a.isUnread !== b.isUnread) {
+    return a.isUnread ? -1 : 1;
+  }
 
-      // 3. Assigned to me next (among non-pinned, same unread status)
-      const aAssignedToMe = a.assigned_to === user?.email;
-      const bAssignedToMe = b.assigned_to === user?.email;
-      if (aAssignedToMe !== bAssignedToMe) {
-        return aAssignedToMe ? -1 : 1;
-      }
+  // 3) Newest to oldest by last_message_date
+  const aTime = a.last_message_date
+    ? new Date(a.last_message_date).getTime()
+    : 0;
+  const bTime = b.last_message_date
+    ? new Date(b.last_message_date).getTime()
+    : 0;
 
-      // 4. Then by lastMessageDate DESC
-      return new Date(b.last_message_date) - new Date(a.last_message_date);
-    };
+  return bTime - aTime;
+};
+
 
     return result.sort(sortFunction);
   }, [threads, searchTerm, activeFilters, user?.email]);
