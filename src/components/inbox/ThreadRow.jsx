@@ -147,7 +147,7 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
              )}
 
              {/* Pin Indicator + Toggle Button (separate from status) */}
-             {currentUser && (
+             {currentUser && !selectionMode && (
                <Button
                  size="sm"
                  variant="ghost"
@@ -172,7 +172,7 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
              )}
 
              {/* Assign to Me Button (Quick Action) */}
-             {currentUser && !thread.assigned_to && (
+             {currentUser && !thread.assigned_to && !selectionMode && (
                <Button
                  size="sm"
                  variant="ghost"
@@ -202,7 +202,7 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
              )}
 
              {/* Mark Read/Unread Button */}
-             {currentUser && (
+             {currentUser && !selectionMode && (
                <Button
                  size="sm"
                  variant="ghost"
@@ -220,7 +220,7 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
              )}
 
              {/* Close/Reopen Button */}
-             {currentUser && (
+             {currentUser && !selectionMode && (
                <Button
                  size="sm"
                  variant="ghost"

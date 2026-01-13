@@ -362,6 +362,7 @@ export default function Inbox() {
   };
 
   const bulkMarkAsRead = async () => {
+    const count = selectedThreadIds.size;
     try {
       const now = new Date().toISOString();
       await Promise.all(
@@ -375,13 +376,14 @@ export default function Inbox() {
       );
       await refetchThreads();
       setSelectedThreadIds(new Set());
-      toast.success(`Marked ${selectedThreadIds.size} threads as read`);
+      toast.success(`Marked ${count} thread${count !== 1 ? 's' : ''} as read`);
     } catch (error) {
       toast.error('Failed to mark threads as read');
     }
   };
 
   const bulkMarkAsUnread = async () => {
+    const count = selectedThreadIds.size;
     try {
       const now = new Date().toISOString();
       await Promise.all(
@@ -394,13 +396,14 @@ export default function Inbox() {
       );
       await refetchThreads();
       setSelectedThreadIds(new Set());
-      toast.success(`Marked ${selectedThreadIds.size} threads as unread`);
+      toast.success(`Marked ${count} thread${count !== 1 ? 's' : ''} as unread`);
     } catch (error) {
       toast.error('Failed to mark threads as unread');
     }
   };
 
   const bulkClose = async () => {
+    const count = selectedThreadIds.size;
     try {
       await Promise.all(
         Array.from(selectedThreadIds).map(id =>
@@ -409,13 +412,14 @@ export default function Inbox() {
       );
       await refetchThreads();
       setSelectedThreadIds(new Set());
-      toast.success(`Closed ${selectedThreadIds.size} threads`);
+      toast.success(`Closed ${count} thread${count !== 1 ? 's' : ''}`);
     } catch (error) {
       toast.error('Failed to close threads');
     }
   };
 
   const bulkAssignToMe = async () => {
+    const count = selectedThreadIds.size;
     try {
       const now = new Date().toISOString();
       await Promise.all(
@@ -431,7 +435,7 @@ export default function Inbox() {
       );
       await refetchThreads();
       setSelectedThreadIds(new Set());
-      toast.success(`Assigned ${selectedThreadIds.size} threads to you`);
+      toast.success(`Assigned ${count} thread${count !== 1 ? 's' : ''} to you`);
     } catch (error) {
       toast.error('Failed to assign threads');
     }
@@ -440,18 +444,19 @@ export default function Inbox() {
   const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
 
   const bulkLinkMutation = useMutation({
-    mutationFn: async (projectId) => {
+    mutationFn: async ({ projectId, count }) => {
       await Promise.all(
         Array.from(selectedThreadIds).map(id =>
           base44.entities.EmailThread.update(id, { project_id: projectId })
         )
       );
+      return count;
     },
-    onSuccess: () => {
+    onSuccess: (count) => {
       refetchThreads();
       setShowBulkLinkModal(false);
       setSelectedThreadIds(new Set());
-      toast.success(`Linked ${selectedThreadIds.size} threads to project`);
+      toast.success(`Linked ${count} thread${count !== 1 ? 's' : ''} to project`);
     },
     onError: () => {
       toast.error('Failed to link threads');
@@ -549,7 +554,13 @@ export default function Inbox() {
           {/* View Tabs & Compose Button */}
           <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2 items-center">
             <button
-              onClick={() => setActiveView("inbox")}
+              onClick={() => {
+                setActiveView("inbox");
+                if (selectionMode) {
+                  setSelectionMode(false);
+                  setSelectedThreadIds(new Set());
+                }
+              }}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activeView === "inbox"
                   ? "bg-[#FAE008] text-[#111827]"
@@ -559,7 +570,13 @@ export default function Inbox() {
               Inbox
             </button>
             <button
-              onClick={() => setActiveView("drafts")}
+              onClick={() => {
+                setActiveView("drafts");
+                if (selectionMode) {
+                  setSelectionMode(false);
+                  setSelectedThreadIds(new Set());
+                }
+              }}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 activeView === "drafts"
                   ? "bg-[#FAE008] text-[#111827]"
@@ -830,7 +847,7 @@ export default function Inbox() {
         open={showBulkLinkModal}
         onClose={() => setShowBulkLinkModal(false)}
         linkType="project"
-        onLinkProject={(projectId) => bulkLinkMutation.mutate(projectId)}
+        onLinkProject={(projectId) => bulkLinkMutation.mutate({ projectId, count: selectedThreadIds.size })}
         onLinkJob={() => {}}
       />
 
