@@ -2076,7 +2076,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {projectEmails.map((draft) => (
+                  {projectDrafts.map((draft) => (
                     <div
                       key={draft.id}
                       className="p-3 bg-amber-50 border border-amber-200 rounded-lg group hover:bg-amber-100 transition-colors"
@@ -2085,7 +2085,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         <span className="text-xs font-medium text-amber-800">Draft</span>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-amber-600">
-                            {new Date(draft.created_date || draft.updated_date).toLocaleDateString()}
+                            {new Date(draft.lastSavedAt || draft.created_date).toLocaleDateString()}
                           </span>
                           <button
                             onClick={(e) => {
@@ -2111,12 +2111,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                           <div className="text-sm font-medium text-[#111827] mb-1">{draft.subject}</div>
                         )}
                         <div className="text-xs text-[#6B7280] line-clamp-2">
-                          {draft.body_text?.substring(0, 100) || draft.body_html?.substring(0, 100) || 'No content'}
+                          {draft.bodyText?.substring(0, 100) || draft.bodyHtml?.substring(0, 100) || 'No content'}
                         </div>
                       </button>
-                      {(draft.to || draft.recipient) && (
+                      {draft.to && draft.to.length > 0 && (
                         <div className="text-xs text-[#9CA3AF] mt-2">
-                          To: {Array.isArray(draft.to) ? draft.to[0] : draft.to || draft.recipient}
+                          To: {draft.to[0]}
                         </div>
                       )}
                     </div>
