@@ -56,6 +56,20 @@ export default function EmailComposerDrawer({
     enabled: !!existingDraftId && open,
   });
 
+  // Check for existing draft for this thread
+  const { data: threadDraft } = useQuery({
+    queryKey: ["threadDraft", threadId, mode],
+    queryFn: async () => {
+      if (!threadId || mode === "new") return null;
+      const drafts = await base44.entities.DraftEmail.filter({
+        threadId: threadId,
+        status: { $in: ["draft", "failed"] }
+      }, "-lastSavedAt", 1);
+      return drafts.length > 0 ? drafts[0] : null;
+    },
+    enabled: !!threadId && mode !== "new" && open && !existingDraftId,
+  });
+
   // Load thread messages for reply mode
   const { data: threadMessages = [] } = useQuery({
     queryKey: ["threadMessages", threadId],
@@ -70,7 +84,7 @@ export default function EmailComposerDrawer({
     enabled: !!threadId && mode !== "new" && open,
   });
 
-  // Initialize draft from existing or thread
+  // Initialize draft from existing, thread draft, or thread
   useEffect(() => {
     if (!open) return;
 
@@ -82,7 +96,19 @@ export default function EmailComposerDrawer({
       setBodyHtml(existingDraft.bodyHtml || "");
       setShowCc(existingDraft.cc?.length > 0);
       setShowBcc(existingDraft.bcc?.length > 0);
+      setDraftId(existingDraft.id);
       setLastSavedAt(existingDraft.lastSavedAt);
+    } else if (threadDraft) {
+      // Load existing draft for this thread
+      setTo(threadDraft.to || []);
+      setCc(threadDraft.cc || []);
+      setBcc(threadDraft.bcc || []);
+      setSubject(threadDraft.subject || "");
+      setBodyHtml(threadDraft.bodyHtml || "");
+      setShowCc(threadDraft.cc?.length > 0);
+      setShowBcc(threadDraft.bcc?.length > 0);
+      setDraftId(threadDraft.id);
+      setLastSavedAt(threadDraft.lastSavedAt);
     } else if (threadMessages.length > 0 && mode !== "new") {
       const latestMessage = threadMessages[0];
       
@@ -110,19 +136,23 @@ export default function EmailComposerDrawer({
         setSubject(subj.startsWith("Re:") ? subj : `Re: ${subj}`);
       }
     }
-  }, [existingDraft, threadMessages, mode, open, user?.email]);
+  }, [existingDraft, threadDraft, threadMessages, mode, open, user?.email]);
 
-  // Autosave draft
+  // Autosave draft only if there's content or if updating existing draft
   useEffect(() => {
     if (!open || !user) return;
+    
+    // Don't autosave empty drafts unless we're updating an existing one
+    const hasContent = subject.trim() || bodyHtml.trim() || to.length > 0;
+    if (!hasContent && !draftId) return;
 
     clearTimeout(autosaveTimer.current);
     autosaveTimer.current = setTimeout(() => {
       saveDraft();
-    }, 1000);
+    }, 1500);
 
     return () => clearTimeout(autosaveTimer.current);
-  }, [to, cc, bcc, subject, bodyHtml, open, user]);
+  }, [to, cc, bcc, subject, bodyHtml, open, user, draftId]);
 
   const saveDraft = async (syncToGmail = false) => {
     if (!user) return;
@@ -192,6 +222,7 @@ export default function EmailComposerDrawer({
     mutationFn: async () => {
       if (!user) throw new Error("User not authenticated");
       if (to.length === 0) throw new Error("Please add at least one recipient");
+      if (!subject.trim() && !bodyHtml.trim()) throw new Error("Please add subject or message content");
 
       // Save draft locally first if not already saved
       if (!draftId) {

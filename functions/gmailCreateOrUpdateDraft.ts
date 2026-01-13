@@ -166,10 +166,68 @@ Deno.serve(async (req) => {
   }
 });
 
-// Helper to get Gmail access token
-// Note: This is a placeholder - implement proper OAuth token management
-async function getGmailAccessToken(userEmail) {
-  // TODO: Implement proper OAuth token retrieval and refresh
-  // For now, this is a placeholder that should be replaced with actual implementation
-  throw new Error('Gmail OAuth token retrieval not implemented');
+// Helper to get Gmail access token using service account
+async function getGmailAccessToken() {
+  try {
+    const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
+    const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL');
+    
+    if (!serviceAccountJson || !impersonateEmail) {
+      throw new Error('Service account credentials not configured');
+    }
+
+    const serviceAccount = JSON.parse(serviceAccountJson);
+    const now = Math.floor(Date.now() / 1000);
+    
+    // Create JWT for service account
+    const jwtHeader = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    
+    const jwtClaim = btoa(JSON.stringify({
+      iss: serviceAccount.client_email,
+      sub: impersonateEmail,
+      scope: 'https://www.googleapis.com/auth/gmail.modify',
+      aud: 'https://oauth2.googleapis.com/token',
+      iat: now,
+      exp: now + 3600
+    })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    
+    const message = `${jwtHeader}.${jwtClaim}`;
+    
+    // Sign with private key
+    const privateKey = await crypto.subtle.importKey(
+      'pkcs8',
+      Uint8Array.from(atob(serviceAccount.private_key.replace(/-----.*?-----/g, '').replace(/\n/g, '')), c => c.charCodeAt(0)),
+      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign(
+      'RSASSA-PKCS1-v1_5',
+      privateKey,
+      new TextEncoder().encode(message)
+    );
+    
+    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    
+    const jwt = `${message}.${signatureBase64}`;
+    
+    // Exchange JWT for access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+    });
+    
+    if (!tokenResponse.ok) {
+      throw new Error(`Token exchange failed: ${await tokenResponse.text()}`);
+    }
+    
+    const tokenData = await tokenResponse.json();
+    return tokenData.access_token;
+  } catch (error) {
+    throw new Error(`Failed to get Gmail access token: ${error.message}`);
+  }
 }
