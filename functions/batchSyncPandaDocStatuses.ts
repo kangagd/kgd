@@ -55,16 +55,33 @@ Deno.serve(async (req) => {
 
     for (const quote of quotes) {
       try {
-        // Fetch document from PandaDoc
-        const response = await fetch(
-          `https://api.pandadoc.com/public/v1/documents/${quote.pandadoc_document_id}`,
-          {
-            headers: {
-              'Authorization': `API-Key ${PANDADOC_API_KEY}`,
-              'Content-Type': 'application/json'
+        // Fetch document from PandaDoc with retry logic for rate limiting
+        let response;
+        let retries = 0;
+        const maxRetries = 3;
+        
+        while (retries <= maxRetries) {
+          response = await fetch(
+            `https://api.pandadoc.com/public/v1/documents/${quote.pandadoc_document_id}`,
+            {
+              headers: {
+                'Authorization': `API-Key ${PANDADOC_API_KEY}`,
+                'Content-Type': 'application/json'
+              }
             }
+          );
+
+          if (response.status === 429) {
+            // Rate limited - wait and retry
+            const retryAfter = parseInt(response.headers.get('Retry-After') || '5');
+            console.log(`Rate limited, waiting ${retryAfter}s before retry ${retries + 1}/${maxRetries}`);
+            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            retries++;
+            continue;
           }
-        );
+          
+          break;
+        }
 
         if (!response.ok) {
           results.failed++;
@@ -116,8 +133,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Delay to avoid rate limiting (1 second between requests)
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
 
     return Response.json({
