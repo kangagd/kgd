@@ -391,29 +391,55 @@ export default function EmailDetailView({
             </div>
             )}
 
-            {/* Resume Draft Banner */}
-            {existingDraft && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-blue-900 font-medium">
-                  You have a draft for this thread
-                </span>
+            {/* Draft Drafts Section */}
+            {threadDrafts.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Mail className="w-4 h-4 text-amber-600" />
+                  <span className="text-sm font-medium text-amber-900">
+                    Drafts ({threadDrafts.length})
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {threadDrafts.map((draft) => (
+                    <div key={draft.id} className="flex items-center justify-between gap-2 bg-white rounded p-2 border border-amber-100 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-amber-900 font-medium truncate">
+                          {draft.subject || "(No subject)"}
+                        </div>
+                        <div className="text-xs text-amber-700">
+                          To: {draft.to?.join(", ") || "No recipients"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {draft.status === "draft" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setComposerDraftId(draft.id);
+                              setComposerMode("reply");
+                              setShowComposerDrawer(true);
+                            }}
+                            className="text-xs h-7"
+                          >
+                            Resume
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setDeletingDraftId(draft.id)}
+                          className="text-red-600 hover:bg-red-50 h-7 w-7 p-0"
+                          title="Delete draft"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setComposerDraftId(existingDraft.id);
-                  setComposerMode("reply");
-                  setShowComposerDrawer(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Resume Draft
-              </Button>
-            </div>
-            </div>
             )}
 
             {/* Main Email Card */}
