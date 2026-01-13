@@ -15,7 +15,9 @@ import {
   Trash2,
   UserPlus,
   User,
-  Zap
+  Zap,
+  Mail,
+  MailOpen
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
@@ -75,6 +77,26 @@ export default function EmailDetailView({
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  // Mark as read when thread is opened
+  useEffect(() => {
+    if (thread?.id && thread.isUnread) {
+      const markAsRead = async () => {
+        try {
+          await base44.entities.EmailThread.update(thread.id, {
+            isUnread: false,
+            lastReadAt: new Date().toISOString()
+          });
+          onThreadUpdate?.();
+        } catch (error) {
+          console.error('Failed to mark thread as read:', error);
+        }
+      };
+      // Small delay to avoid marking as read if user quickly navigates away
+      const timer = setTimeout(markAsRead, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [thread?.id]);
 
   // Cleanup viewer on unmount (viewer tracking handled by parent Inbox component)
   useEffect(() => {
@@ -177,6 +199,22 @@ export default function EmailDetailView({
     queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
     if (onThreadUpdate) {
       onThreadUpdate();
+    }
+  };
+
+  const handleToggleReadStatus = async () => {
+    if (!thread?.id) return;
+    try {
+      const now = new Date().toISOString();
+      await base44.entities.EmailThread.update(thread.id, {
+        isUnread: !thread.isUnread,
+        lastReadAt: thread.isUnread ? now : thread.lastReadAt,
+        unreadUpdatedAt: now
+      });
+      handleThreadUpdate();
+      toast.success(thread.isUnread ? 'Marked as read' : 'Marked as unread');
+    } catch (error) {
+      toast.error('Failed to update read status');
     }
   };
 
@@ -363,6 +401,17 @@ export default function EmailDetailView({
 
                   {/* Work Actions - Link, Assign, AI */}
                   <div className="flex items-center gap-1">
+                    {/* Mark Read/Unread Button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleToggleReadStatus}
+                      title={thread.isUnread ? 'Mark as read' : 'Mark as unread'}
+                      className="h-9 w-9 hover:bg-blue-50 hover:text-blue-600"
+                    >
+                      {thread.isUnread ? <Mail className="w-4 h-4" /> : <MailOpen className="w-4 h-4" />}
+                    </Button>
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-amber-50 hover:text-amber-600" title="Work actions">

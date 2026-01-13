@@ -1,6 +1,7 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X } from "lucide-react";
+import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X, MailOpen } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
 import { getThreadStatusChip, isThreadPinned, getThreadLinkChip } from "@/components/inbox/threadStatusChip";
@@ -11,6 +12,7 @@ import { useState } from "react";
 export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate }) {
   const [isPinningLoading, setIsPinningLoading] = useState(false);
   const [isClosingLoading, setIsClosingLoading] = useState(false);
+  const [isTogglingRead, setIsTogglingRead] = useState(false);
   const linkingState = getThreadLinkingState(thread);
   const statusChip = getThreadStatusChip(thread);
   const isPinned = isThreadPinned(thread);
@@ -51,6 +53,24 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
     }
   };
 
+  const handleReadToggle = async (e) => {
+    e.stopPropagation();
+    if (!currentUser) return;
+
+    setIsTogglingRead(true);
+    try {
+      const now = new Date().toISOString();
+      await base44.entities.EmailThread.update(thread.id, {
+        isUnread: !thread.isUnread,
+        lastReadAt: thread.isUnread ? now : thread.lastReadAt,
+        unreadUpdatedAt: now
+      });
+      onThreadUpdate?.();
+    } finally {
+      setIsTogglingRead(false);
+    }
+  };
+
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
   };
@@ -67,9 +87,14 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
       <div className="space-y-2">
         {/* Subject & Chips (Status, Pin, Link) */}
          <div className="flex items-start justify-between gap-2 mb-2">
-           <h3 className="text-[14px] font-semibold text-[#111827] flex-1 truncate">
-             {thread.subject}
-           </h3>
+           <div className="flex items-start gap-2 flex-1 min-w-0">
+             {thread.isUnread && (
+               <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
+             )}
+             <h3 className={`text-[14px] flex-1 truncate ${thread.isUnread ? 'font-bold text-[#111827]' : 'font-semibold text-[#111827]'}`}>
+               {thread.subject}
+             </h3>
+           </div>
            <div className="flex items-center gap-1 flex-wrap flex-shrink-0 justify-end">
              {/* Status Chip (single, priority-based) */}
              {statusChip && (
@@ -103,6 +128,24 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
                  ) : (
                    <PinOff className="w-3 h-3" />
                  )}
+               </Button>
+             )}
+
+             {/* Mark Read/Unread Button */}
+             {currentUser && (
+               <Button
+                 size="sm"
+                 variant="ghost"
+                 onClick={handleReadToggle}
+                 disabled={isTogglingRead}
+                 className={`h-6 px-2 text-[11px] flex items-center gap-1 ${
+                   thread.isUnread 
+                     ? 'text-[#6B7280] hover:bg-[#F3F4F6]' 
+                     : 'text-[#6B7280] hover:bg-[#F3F4F6]'
+                 }`}
+                 title={thread.isUnread ? 'Mark as read' : 'Mark as unread'}
+               >
+                 {thread.isUnread ? <Mail className="w-3 h-3" /> : <MailOpen className="w-3 h-3" />}
                </Button>
              )}
 
