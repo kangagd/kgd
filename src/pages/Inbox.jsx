@@ -5,6 +5,7 @@ import { QUERY_CONFIG } from "@/components/api/queryConfig";
 import { inboxKeys } from "@/components/api/queryKeys";
 import { Mail, AlertTriangle, Loader, History, CheckSquare, X as XIcon, Link as LinkIcon, MailOpen, UserPlus } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import ThreadRow from "@/components/inbox/ThreadRow";
 import ThreadHeader from "@/components/inbox/ThreadHeader";
 import InboxFilterBar from "@/components/inbox/InboxFilterBar";
