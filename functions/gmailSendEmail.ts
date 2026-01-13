@@ -5,11 +5,16 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const lines = [];
 
+  // Ensure arrays
+  const toArray = Array.isArray(to) ? to : (to ? [to] : []);
+  const ccArray = Array.isArray(cc) ? cc : (cc ? [cc] : []);
+  const bccArray = Array.isArray(bcc) ? bcc : (bcc ? [bcc] : []);
+
   // Headers
   lines.push(`From: ${from}`);
-  lines.push(`To: ${to.join(', ')}`);
-  if (cc && cc.length > 0) lines.push(`Cc: ${cc.join(', ')}`);
-  if (bcc && bcc.length > 0) lines.push(`Bcc: ${bcc.join(', ')}`);
+  if (toArray.length > 0) lines.push(`To: ${toArray.join(', ')}`);
+  if (ccArray.length > 0) lines.push(`Cc: ${ccArray.join(', ')}`);
+  if (bccArray.length > 0) lines.push(`Bcc: ${bccArray.join(', ')}`);
   lines.push(`Subject: ${subject}`);
   
   // Thread headers for replies
