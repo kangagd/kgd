@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X, MailOpen } from "lucide-react";
+import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X, MailOpen, Send, ArrowDown } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
@@ -96,6 +96,30 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
              </h3>
            </div>
            <div className="flex items-center gap-1 flex-wrap flex-shrink-0 justify-end">
+             {/* Sent/Received Indicator */}
+             {thread.lastMessageDirection && thread.lastMessageDirection !== 'unknown' && (
+               <Badge 
+                 variant="outline" 
+                 className={`text-[10px] h-5 flex items-center gap-1 ${
+                   thread.lastMessageDirection === 'sent' 
+                     ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                     : 'bg-green-50 text-green-700 border-green-200'
+                 }`}
+               >
+                 {thread.lastMessageDirection === 'sent' ? (
+                   <>
+                     <Send className="w-3 h-3" />
+                     Sent
+                   </>
+                 ) : (
+                   <>
+                     <ArrowDown className="w-3 h-3" />
+                     Received
+                   </>
+                 )}
+               </Badge>
+             )}
+
              {/* Status Chip (single, priority-based) */}
              {statusChip && (
                <Badge 
