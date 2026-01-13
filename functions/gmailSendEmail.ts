@@ -238,10 +238,13 @@ Deno.serve(async (req) => {
   }
 });
 
-// Helper to get Gmail access token
-// Note: This is a placeholder - implement proper OAuth token management
+// Helper to get Gmail access token using app connector
 async function getGmailAccessToken(userEmail) {
-  // TODO: Implement proper OAuth token retrieval and refresh
-  // For now, this is a placeholder that should be replaced with actual implementation
-  throw new Error('Gmail OAuth token retrieval not implemented - you need to implement OAuth flow');
+  const base44 = createClientFromRequest(req);
+  try {
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
+    return accessToken;
+  } catch (error) {
+    throw new Error(`Failed to get Gmail access token: ${error.message}. Please authorize the Gmail app connector.`);
+  }
 }
