@@ -157,7 +157,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const addTradeRef = useRef(null);
   const [composerMode, setComposerMode] = useState(null);
   const [composerMessage, setComposerMessage] = useState(null);
-  const [deletingDraftId, setDeletingDraftId] = useState(null);
+
+  const deleteDraftMutation = useMutation({
+    mutationFn: (draftId) => base44.entities.DraftEmail.delete(draftId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      toast.success('Draft deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete draft');
+    }
+  });
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
