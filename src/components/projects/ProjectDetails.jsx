@@ -157,6 +157,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const addTradeRef = useRef(null);
   const [composerMode, setComposerMode] = useState(null);
   const [composerMessage, setComposerMessage] = useState(null);
+  const [deletingDraftId, setDeletingDraftId] = useState(null);
 
   // Get email thread ID from props, URL params, or project's source
   const urlParams = new URLSearchParams(window.location.search);
