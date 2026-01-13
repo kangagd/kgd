@@ -3,14 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X, MailOpen, Send, ArrowDown, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
 import { getThreadStatusChip, isThreadPinned, getThreadLinkChip } from "@/components/inbox/threadStatusChip";
 import { pinThread, unpinThread } from "@/components/inbox/threadPinActions";
 import { closeThread, reopenThread } from "@/components/inbox/threadCloseActions";
 import { useState } from "react";
 
-export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate, showCheckbox, isChecked, onCheck }) {
+export default function ThreadRow({ thread, isSelected, onClick, currentUser, onThreadUpdate }) {
   const [isPinningLoading, setIsPinningLoading] = useState(false);
   const [isClosingLoading, setIsClosingLoading] = useState(false);
   const [isTogglingRead, setIsTogglingRead] = useState(false);
@@ -77,8 +76,9 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
   };
 
   return (
-    <div
-      className={`w-full px-4 py-3 border-b border-[#E5E7EB] transition-all ${
+    <button
+      onClick={onClick}
+      className={`w-full px-4 py-3 text-left border-b border-[#E5E7EB] transition-all ${
         isSelected 
           ? 'bg-[#FAE008]/10 border-l-2 border-l-[#FAE008]' 
           : 'hover:bg-[#F9FAFB]'
@@ -88,24 +88,12 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
         {/* Subject & Chips (Status, Pin, Link) */}
          <div className="flex items-start justify-between gap-2 mb-2">
            <div className="flex items-start gap-2 flex-1 min-w-0">
-             {showCheckbox && (
-               <Checkbox
-                 checked={isChecked}
-                 onCheckedChange={(checked) => {
-                   onCheck?.();
-                 }}
-                 onClick={(e) => e.stopPropagation()}
-                 className="mt-2"
-               />
+             {thread.isUnread && (
+               <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
              )}
-             <div className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer" onClick={onClick}>
-               {thread.isUnread && (
-                 <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
-               )}
-               <h3 className={`text-[14px] flex-1 truncate ${thread.isUnread ? 'font-bold text-[#111827]' : 'font-semibold text-[#111827]'}`}>
-                 {thread.subject}
-               </h3>
-             </div>
+             <h3 className={`text-[14px] flex-1 truncate ${thread.isUnread ? 'font-bold text-[#111827]' : 'font-semibold text-[#111827]'}`}>
+               {thread.subject}
+             </h3>
            </div>
            <div className="flex items-center gap-1 flex-wrap flex-shrink-0 justify-end">
              {/* Sent/Received Indicator */}
@@ -303,6 +291,6 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
           {thread.last_message_date && format(parseISO(thread.last_message_date), 'MMM d, h:mm a')}
         </div>
       </div>
-    </div>
+    </button>
   );
 }

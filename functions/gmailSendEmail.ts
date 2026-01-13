@@ -194,23 +194,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Always create EmailMessage record for sent email (even for new threads)
-    try {
-      // Ensure arrays for recipients
-      const toArray = Array.isArray(to) ? to : (to ? [to] : []);
-      const ccArray = Array.isArray(cc) ? cc : (cc ? [cc] : []);
-      const bccArray = Array.isArray(bcc) ? bcc : (bcc ? [bcc] : []);
-
-      // If thread_id provided, update existing thread
-      if (thread_id) {
+    // Create EmailMessage record for sent email
+    if (thread_id) {
+      try {
         await base44.asServiceRole.entities.EmailMessage.create({
           thread_id,
           gmail_message_id: result.id,
           gmail_thread_id: result.threadId || gmail_thread_id,
           from_address: from || user.email,
-          to_addresses: toArray,
-          cc_addresses: ccArray,
-          bcc_addresses: bccArray,
+          to_addresses: to || [],
+          cc_addresses: cc || [],
+          bcc_addresses: bcc || [],
           subject: subject || '',
           body_html: htmlBody || body_html,
           body_text: textBody || body_text || (htmlBody || body_html || '').replace(/<[^>]*>/g, ''),
@@ -226,49 +220,12 @@ Deno.serve(async (req) => {
         if (thread) {
           await base44.asServiceRole.entities.EmailThread.update(thread_id, {
             last_message_date: new Date().toISOString(),
-            lastMessageDirection: 'sent',
-            last_activity_at: new Date().toISOString()
+            lastMessageDirection: 'sent'
           });
         }
-      } else {
-        // For new emails (no thread_id), create a new EmailThread
-        const newThread = await base44.asServiceRole.entities.EmailThread.create({
-          subject: subject || '(No subject)',
-          gmail_thread_id: result.threadId,
-          from_address: from || user.email,
-          to_addresses: toArray,
-          last_message_date: new Date().toISOString(),
-          last_message_snippet: (textBody || body_text || (htmlBody || body_html || '').replace(/<[^>]*>/g, '')).substring(0, 200),
-          lastMessageDirection: 'sent',
-          message_count: 1,
-          isUnread: false,
-          inferredState: 'waiting_on_customer',
-          lastInternalMessageAt: new Date().toISOString(),
-          last_activity_at: new Date().toISOString()
-        });
-
-        // Create the EmailMessage
-        await base44.asServiceRole.entities.EmailMessage.create({
-          thread_id: newThread.id,
-          gmail_message_id: result.id,
-          gmail_thread_id: result.threadId,
-          from_address: from || user.email,
-          to_addresses: toArray,
-          cc_addresses: ccArray,
-          bcc_addresses: bccArray,
-          subject: subject || '',
-          body_html: htmlBody || body_html,
-          body_text: textBody || body_text || (htmlBody || body_html || '').replace(/<[^>]*>/g, ''),
-          is_outbound: true,
-          sent_at: new Date().toISOString(),
-          performed_by_user_id: user.id,
-          performed_by_user_email: user.email,
-          performed_at: new Date().toISOString()
-        });
+      } catch (error) {
+        console.error('Error creating EmailMessage record:', error);
       }
-    } catch (error) {
-      console.error('Error creating EmailMessage/Thread record:', error);
-      // Don't throw - email was sent successfully, this is just for record keeping
     }
 
     return Response.json({

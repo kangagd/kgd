@@ -15,8 +15,6 @@ import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal"
 import { computeInferredStateWithAutoClear } from "@/components/inbox/inferredStateAutoClear";
 import DraftsList from "@/components/inbox/DraftsList";
 import EmailComposerDrawer from "@/components/inbox/EmailComposerDrawer";
-import BulkActionsToolbar from "@/components/inbox/BulkActionsToolbar";
-import BulkLinkProjectModal from "@/components/inbox/BulkLinkProjectModal";
 
 export default function Inbox() {
   const queryClient = useQueryClient();
@@ -37,8 +35,6 @@ export default function Inbox() {
   const [composerDraftId, setComposerDraftId] = useState(null);
   const [composerThreadId, setComposerThreadId] = useState(null);
   const [composerMode, setComposerMode] = useState("new");
-  const [selectedThreadIds, setSelectedThreadIds] = useState([]);
-  const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
 
   // Load current user
   useEffect(() => {
@@ -291,89 +287,6 @@ export default function Inbox() {
     }
   };
 
-  // Bulk actions
-  const handleBulkMarkAsRead = async () => {
-    try {
-      const now = new Date().toISOString();
-      await Promise.all(
-        selectedThreadIds.map(id =>
-          base44.entities.EmailThread.update(id, {
-            isUnread: false,
-            lastReadAt: now,
-            unreadUpdatedAt: now
-          })
-        )
-      );
-      await refetchThreads();
-      setSelectedThreadIds([]);
-      toast.success(`Marked ${selectedThreadIds.length} threads as read`);
-    } catch (error) {
-      toast.error("Failed to mark threads as read");
-    }
-  };
-
-  const handleBulkClose = async () => {
-    try {
-      await Promise.all(
-        selectedThreadIds.map(id =>
-          base44.entities.EmailThread.update(id, { userStatus: 'closed' })
-        )
-      );
-      await refetchThreads();
-      setSelectedThreadIds([]);
-      toast.success(`Closed ${selectedThreadIds.length} threads`);
-    } catch (error) {
-      toast.error("Failed to close threads");
-    }
-  };
-
-  const handleBulkAssign = async (userEmail) => {
-    try {
-      const assignedUser = teamUsers.find(u => u.email === userEmail);
-      const now = new Date().toISOString();
-      await Promise.all(
-        selectedThreadIds.map(id =>
-          base44.entities.EmailThread.update(id, {
-            assigned_to: userEmail,
-            assigned_to_name: assignedUser?.full_name || null,
-            assigned_by: user.email,
-            assigned_by_name: user.display_name || user.full_name,
-            assigned_at: now
-          })
-        )
-      );
-      await refetchThreads();
-      setSelectedThreadIds([]);
-      toast.success(`Assigned ${selectedThreadIds.length} threads to ${assignedUser?.full_name}`);
-    } catch (error) {
-      toast.error("Failed to assign threads");
-    }
-  };
-
-  const handleBulkLinkToProject = async (projectId) => {
-    try {
-      await Promise.all(
-        selectedThreadIds.map(id =>
-          base44.entities.EmailThread.update(id, { project_id: projectId })
-        )
-      );
-      await refetchThreads();
-      setSelectedThreadIds([]);
-      setShowBulkLinkModal(false);
-      toast.success(`Linked ${selectedThreadIds.length} threads to project`);
-    } catch (error) {
-      toast.error("Failed to link threads");
-    }
-  };
-
-  const toggleThreadSelection = (threadId) => {
-    setSelectedThreadIds(prev =>
-      prev.includes(threadId)
-        ? prev.filter(id => id !== threadId)
-        : [...prev, threadId]
-    );
-  };
-
   // Track thread view (debounced - only update once per 10 seconds)
   useEffect(() => {
     if (!selectedThread || !user) return;
@@ -508,19 +421,6 @@ export default function Inbox() {
           />
           )}
 
-          {/* Bulk Actions Toolbar */}
-          {selectedThreadIds.length > 0 && (
-            <BulkActionsToolbar
-              selectedCount={selectedThreadIds.length}
-              onLinkToProject={() => setShowBulkLinkModal(true)}
-              onMarkAsRead={handleBulkMarkAsRead}
-              onClose={handleBulkClose}
-              onAssign={handleBulkAssign}
-              users={teamUsers}
-              onClearSelection={() => setSelectedThreadIds([])}
-            />
-          )}
-
           {/* Sync Status Indicator & History Search */}
           <div className="px-3 py-2 border-b border-[#E5E7EB] space-y-2">
             <div className="flex items-center justify-between text-xs text-[#6B7280]">
@@ -579,9 +479,6 @@ export default function Inbox() {
                   onClick={() => setSelectedThreadId(thread.id)}
                   currentUser={user}
                   onThreadUpdate={() => refetchThreads()}
-                  isChecked={selectedThreadIds.includes(thread.id)}
-                  onCheck={() => toggleThreadSelection(thread.id)}
-                  showCheckbox={true}
                 />
               ))
             )}
@@ -722,13 +619,6 @@ export default function Inbox() {
         mode={composerMode}
         threadId={composerThreadId}
         existingDraftId={composerDraftId}
-      />
-
-      <BulkLinkProjectModal
-        open={showBulkLinkModal}
-        onClose={() => setShowBulkLinkModal(false)}
-        onLink={handleBulkLinkToProject}
-        selectedCount={selectedThreadIds.length}
       />
 
     </div>
