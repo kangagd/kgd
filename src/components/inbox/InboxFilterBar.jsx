@@ -40,43 +40,43 @@ export default function InboxFilterBar({
   const hasActiveFilters = Object.values(activeFilters).some(f => f);
 
   return (
-    <div className="bg-white border-b border-[#E5E7EB] p-4 space-y-3">
+    <div className="bg-white border-b border-[#E5E7EB] px-3 py-2.5 space-y-2">
       {/* Search */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
            <Input
              value={searchTerm}
              onChange={(e) => onSearchChange(e.target.value)}
              placeholder="Search threads..."
-             className="pl-9"
+             className="pl-9 h-8 text-[13px]"
            />
          </div>
       </div>
 
       {/* Filter Pills */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5 text-[12px]">
         {filters.map(filter => (
-          <Button
+          <button
             key={filter.id}
             onClick={() => handleToggleFilter(filter.id, filter.value)}
-            variant={activeFilters[filter.id] ? 'default' : 'outline'}
-            size="sm"
-            className={activeFilters[filter.id] ? 'bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]' : ''}
+            className={`px-2.5 py-1 rounded-full transition-colors whitespace-nowrap ${
+              activeFilters[filter.id]
+                ? 'bg-[#FAE008] text-[#111827] font-medium'
+                : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'
+            }`}
           >
             {filter.label}
-          </Button>
+          </button>
         ))}
         {hasActiveFilters && (
-          <Button
+          <button
             onClick={() => onFilterChange('clear', {})}
-            variant="ghost"
-            size="sm"
-            className="text-[#6B7280] hover:text-[#111827]"
+            className="px-2 py-1 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
+            title="Clear filters"
           >
-            <X className="w-3.5 h-3.5 mr-1" />
-            Clear
-          </Button>
+            <X className="w-3 h-3 inline" />
+          </button>
         )}
       </div>
     </div>
