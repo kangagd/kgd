@@ -10,6 +10,7 @@ const mapPandaDocStatus = (pdStatus) => {
     'document.completed': 'Approved',
     'document.voided': 'Voided',
     'document.declined': 'Declined',
+    'document.expired': 'Expired',
     'document.waiting_approval': 'Pending Approval',
     'document.approved': 'Approved',
     'document.rejected': 'Declined',
