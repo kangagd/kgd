@@ -1,14 +1,17 @@
 import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Paperclip } from 'lucide-react';
+import { Paperclip, CheckSquare, Square } from 'lucide-react';
 import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
 
 export default function GmailHistorySearchResults({
   threads,
   selectedThreadId,
   onSelectThread,
-  isLoading
+  isLoading,
+  selectedThreadIds = [],
+  onToggleThread,
+  isImporting = false
 }) {
   if (isLoading) {
     return (
@@ -36,18 +39,39 @@ export default function GmailHistorySearchResults({
     <div className="space-y-2 overflow-y-auto h-full">
       {threads.map((rawThread) => {
         const thread = normalizeGmailHistoryThread(rawThread);
-        const isSelected = selectedThreadId === thread.gmailThreadId;
+        const isActive = selectedThreadId === thread.gmailThreadId;
+        const isChecked = selectedThreadIds.includes(thread.gmailThreadId);
 
         return (
-          <button
+          <div
             key={thread.gmailThreadId}
-            onClick={() => onSelectThread(thread)}
-            className={`w-full text-left p-3 rounded-lg border transition-all ${
-              isSelected
+            className={`relative flex items-start gap-2 p-3 rounded-lg border transition-all ${
+              isActive
                 ? 'bg-blue-50 border-blue-300 shadow-sm'
                 : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
             }`}
           >
+            {/* Checkbox */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleThread?.(thread.gmailThreadId);
+              }}
+              disabled={isImporting}
+              className="flex-shrink-0 mt-0.5 hover:opacity-75 transition-opacity disabled:opacity-50"
+            >
+              {isChecked ? (
+                <CheckSquare className="w-4 h-4 text-[#111827]" />
+              ) : (
+                <Square className="w-4 h-4 text-gray-400" />
+              )}
+            </button>
+
+            {/* Thread Content */}
+            <button
+              onClick={() => onSelectThread(thread)}
+              className="flex-1 text-left"
+            >
             {/* Subject */}
             <h3 className="font-medium text-sm text-gray-900 truncate">
               {thread.subject || '(no subject)'}
@@ -100,7 +124,8 @@ export default function GmailHistorySearchResults({
                 </Badge>
               )}
             </div>
-          </button>
+            </button>
+          </div>
         );
       })}
     </div>
