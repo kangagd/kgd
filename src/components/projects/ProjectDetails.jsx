@@ -248,6 +248,19 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const handoverReports = projectData?.handoverReports || [];
   const customer = projectData?.customer || null;
 
+  // Fetch draft emails linked to this project
+  const { data: projectDrafts = [] } = useQuery({
+    queryKey: ['projectDrafts', project.id],
+    queryFn: async () => {
+      const allDrafts = await base44.entities.DraftEmail.filter({ 
+        linkedEntityId: project.id,
+        linkedEntityType: 'project'
+      });
+      return allDrafts;
+    },
+    ...QUERY_CONFIG.reference
+  });
+
   const [description, setDescription] = useState(project.description || "");
   const [notes, setNotes] = useState(project.notes || "");
 
