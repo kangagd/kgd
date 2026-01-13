@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
         'document.viewed': 'Viewed',
         'document.completed': 'Accepted',
         'document.voided': 'Declined',
-        'document.declined': 'Declined'
+        'document.declined': 'Declined',
+        'document.expired': 'Expired'
       };
 
       const mappedStatus = statusMap[pandadocStatus];
