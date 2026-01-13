@@ -128,7 +128,8 @@ export default function HandoverReportModal({ open, onClose, project, jobs = [] 
       return created;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["handover-reports", project?.id]);
+      queryClient.invalidateQueries({ queryKey: ["handover-reports", project?.id] });
+      queryClient.invalidateQueries({ queryKey: ["projects", project?.id] });
       toast.success("Handover report saved");
       onClose && onClose();
     },
