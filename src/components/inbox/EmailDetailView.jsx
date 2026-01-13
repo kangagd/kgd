@@ -788,6 +788,27 @@ export default function EmailDetailView({
             : null
         }
       />
-    </div>
-  );
-}
+
+      {/* Delete Draft Confirmation Dialog */}
+      <AlertDialog open={!!deletingDraftId} onOpenChange={() => setDeletingDraftId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The draft will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingDraftId && deleteDraftMutation.mutate(deletingDraftId)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      </div>
+      );
+      }
