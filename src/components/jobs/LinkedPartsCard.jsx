@@ -23,22 +23,42 @@ export default function LinkedPartsCard({ job }) {
 
   // Fetch parts linked to this job
   const { data: linkedParts = [] } = useQuery({
-    queryKey: ['linkedParts', job.id],
-    queryFn: async () => {
-      if (!job.project_id) return [];
-      // Optimization: fetch project parts and filter in memory since 'linked_logistics_jobs' is array
+  queryKey: ['linkedParts', job.id, job.project_id, job.purchase_order_id],
+  queryFn: async () => {
+    if (!job?.id) return [];
+
+    const results = [];
+
+    // 1) If job has a project, pull project parts and filter by linked_logistics_jobs
+    if (job.project_id) {
       const projectParts = await base44.entities.Part.filter({ project_id: job.project_id });
-      return projectParts.filter(p => p.linked_logistics_jobs && p.linked_logistics_jobs.includes(job.id));
-    },
-    enabled: !!job.id
-  });
+      results.push(
+        ...projectParts.filter(
+          (p) => Array.isArray(p.linked_logistics_jobs) && p.linked_logistics_jobs.includes(job.id)
+        )
+      );
+    }
 
-  if (!linkedParts || linkedParts.length === 0) {
-    return null;
-  }
+    // 2) If job is tied to a PO, also pull PO parts (covers projectless PO logistics jobs)
+    if (job.purchase_order_id) {
+      const poParts = await base44.entities.Part.filter({ purchase_order_id: job.purchase_order_id });
+      results.push(...poParts);
+    }
 
-  const isPickup = (job.job_type_name || "").toLowerCase().includes("pickup");
-  const isDelivery = (job.job_type_name || "").toLowerCase().includes("delivery");
+    // Dedupe by part.id
+    const deduped = [];
+    const seen = new Set();
+    for (const p of results) {
+      if (!p?.id) continue;
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
+      deduped.push(p);
+    }
+
+    return deduped;
+  },
+  enabled: !!job?.id,
+});
 
   return (
     <Card className="border-l-4 border-l-blue-500 shadow-sm">
