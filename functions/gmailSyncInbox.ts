@@ -251,6 +251,12 @@ Deno.serve(async (req) => {
         const fromAddress = lastHeaders['from'] || '';
         const toAddresses = lastHeaders['to'] ? lastHeaders['to'].split(',').map(e => e.trim()) : [];
 
+        // Skip Wix CRM emails to treat each as separate enquiry
+        if (fromAddress.includes('no-reply@crm.wix.com')) {
+          console.log(`[gmailSyncInbox] Skipping Wix CRM email thread ${gmailThread.id}`);
+          continue;
+        }
+
         // Create/update snippet
         let snippet = threadDetail.snippet || '';
         if (snippet.length > 200) {
