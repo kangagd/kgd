@@ -140,7 +140,7 @@ export default function EmailComposerDrawer({
         setSubject(subj.startsWith("Re:") ? subj : `Re: ${subj}`);
       }
     }
-  }, [existingDraft, threadMessages, mode, open, user?.email]);
+  }, [existingDraft, existingThreadDraft, threadMessages, mode, open, user?.email]);
 
   // Autosave draft
   useEffect(() => {
