@@ -208,6 +208,10 @@ export default function Inbox() {
       result = result.filter(t => t.userStatus !== 'closed');
     } else if (activeFilters['assigned-to-me']) {
       result = result.filter(t => t.assigned_to === user.email && t.userStatus !== 'closed');
+    } else if (activeFilters['sent']) {
+      result = result.filter(t => t.lastMessageDirection === 'sent' && t.userStatus !== 'closed');
+    } else if (activeFilters['received']) {
+      result = result.filter(t => t.lastMessageDirection === 'received' && t.userStatus !== 'closed');
     } else if (activeFilters['closed']) {
       result = result.filter(t => t.userStatus === 'closed');
     } else if (activeFilters['pinned']) {

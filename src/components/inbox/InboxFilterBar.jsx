@@ -18,6 +18,8 @@ export default function InboxFilterBar({
 }) {
   const filters = [
     { id: 'assigned-to-me', label: 'Assigned to Me', value: { assignedToMe: true } },
+    { id: 'sent', label: 'Sent', value: { direction: 'sent' } },
+    { id: 'received', label: 'Received', value: { direction: 'received' } },
     { id: 'pinned', label: 'Pinned', value: { pinned: true } },
     { id: 'linked', label: 'Linked', value: { linked: true } },
     { id: 'unlinked', label: 'Unlinked', value: { linked: false } },
