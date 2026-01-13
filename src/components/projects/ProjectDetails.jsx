@@ -2068,11 +2068,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             )}
             
             {/* Draft Emails Section */}
-            {projectEmails && projectEmails.length > 0 && (
+            {projectDrafts && projectDrafts.length > 0 && (
               <Card className="border border-[#E5E7EB] shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-[16px] font-semibold text-[#111827]">
-                    Draft Emails ({projectEmails.length})
+                    Draft Emails ({projectDrafts.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
