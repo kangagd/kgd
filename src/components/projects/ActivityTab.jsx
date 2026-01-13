@@ -5,7 +5,7 @@ import { QUERY_CONFIG } from "@/components/api/queryConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MessageSquare, User, Calendar, Plus, Paperclip, Link2, Unlink, FileEdit, Forward, Reply, Loader2, ChevronDown } from "lucide-react";
+import { Mail, Phone, MessageSquare, User, Calendar, Plus, Paperclip, Link2, Unlink, FileEdit, Forward, Reply, Loader2, ChevronDown, Search } from "lucide-react";
 import { format } from "date-fns";
 import LogManualActivityModal from "./LogManualActivityModal";
 import ManualActivityModal from "./ManualActivityModal";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import EmailMessageView from "../inbox/EmailMessageView";
 import LinkEmailThreadModal from "./LinkEmailThreadModal";
+import GmailHistorySearchModal from "../inbox/GmailHistorySearchModal";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   const [filter, setFilter] = useState("all");
   const [showLogModal, setShowLogModal] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
+  const [showGmailHistoryModal, setShowGmailHistoryModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedManualActivity, setSelectedManualActivity] = useState(null);
   const queryClient = useQueryClient();
@@ -353,6 +355,15 @@ export default function ActivityTab({ project, onComposeEmail }) {
                 Link Email
               </Button>
               <Button
+                onClick={() => setShowGmailHistoryModal(true)}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+              >
+                <Search className="w-4 h-4" />
+                Search History
+              </Button>
+              <Button
                 onClick={() => onComposeEmail?.()}
                 size="sm"
                 variant="outline"
@@ -514,6 +525,28 @@ export default function ActivityTab({ project, onComposeEmail }) {
         projectId={project.id}
         onLink={(threadId) => linkEmailMutation.mutate(threadId)}
         isLinking={linkEmailMutation.isPending}
+      />
+
+      <GmailHistorySearchModal
+        open={showGmailHistoryModal}
+        onOpenChange={setShowGmailHistoryModal}
+        defaultQuery={
+          [
+            project.customer_email && `(from:${project.customer_email} OR to:${project.customer_email})`,
+            project.customer_name,
+            project.address_suburb || project.address_street?.split(',')[0]
+          ].filter(Boolean).join(' ')
+        }
+        defaultLinkTarget={{
+          type: 'project',
+          id: project.id,
+          number: project.project_number,
+          title: project.title
+        }}
+        onSelectThread={(thread) => {
+          // Thread will be auto-imported and linked by the modal
+          refetchThreads();
+        }}
       />
 
       <ManualActivityModal
