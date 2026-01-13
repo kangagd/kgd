@@ -206,16 +206,8 @@ export default function Inbox() {
     if (Object.keys(activeFilters).length === 0) {
       // Default 'All' view: non-closed threads only
       result = result.filter(t => t.userStatus !== 'closed');
-    } else if (activeFilters['needs-reply']) {
-      result = result.filter(t => {
-        const displayState = computeInferredStateWithAutoClear(t);
-        return displayState === 'needs_reply' && t.userStatus !== 'closed';
-      });
-    } else if (activeFilters['waiting-on-customer']) {
-      result = result.filter(t => {
-        const displayState = computeInferredStateWithAutoClear(t);
-        return displayState === 'waiting_on_customer' && t.userStatus !== 'closed';
-      });
+    } else if (activeFilters['assigned-to-me']) {
+      result = result.filter(t => t.assigned_to === user.email && t.userStatus !== 'closed');
     } else if (activeFilters['closed']) {
       result = result.filter(t => t.userStatus === 'closed');
     } else if (activeFilters['pinned']) {
@@ -233,27 +225,12 @@ export default function Inbox() {
       const bPinned = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
       if (aPinned !== bPinned) return bPinned - aPinned;
 
-      // 2. If closed filter is active, only sort by lastMessageDate
-      if (activeFilters['closed']) {
-        return new Date(b.last_message_date) - new Date(a.last_message_date);
+      // 2. Unread first (among non-pinned)
+      if (a.isUnread !== b.isUnread) {
+        return a.isUnread ? -1 : 1;
       }
 
-      // 3. Sort by inferred state priority (apply auto-clear dynamically)
-      const getStateOrder = (thread) => {
-        const displayState = computeInferredStateWithAutoClear(thread);
-        const stateOrder = {
-          'needs_reply': 0,
-          'waiting_on_customer': 1,
-          'none': 2
-        };
-        return stateOrder[displayState] ?? 3;
-      };
-
-      const aStateOrder = getStateOrder(a);
-      const bStateOrder = getStateOrder(b);
-      if (aStateOrder !== bStateOrder) return aStateOrder - bStateOrder;
-
-      // 4. Then by lastMessageDate DESC
+      // 3. Then by lastMessageDate DESC
       return new Date(b.last_message_date) - new Date(a.last_message_date);
     };
 

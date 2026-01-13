@@ -155,6 +155,36 @@ export default function ThreadRow({ thread, isSelected, onClick, currentUser, on
                </Button>
              )}
 
+             {/* Assign to Me Button (Quick Action) */}
+             {currentUser && !thread.assigned_to && (
+               <Button
+                 size="sm"
+                 variant="ghost"
+                 onClick={async (e) => {
+                   e.stopPropagation();
+                   setIsTogglingRead(true);
+                   try {
+                     const now = new Date().toISOString();
+                     await base44.entities.EmailThread.update(thread.id, {
+                       assigned_to: currentUser.email,
+                       assigned_to_name: currentUser.display_name || currentUser.full_name,
+                       assigned_by: currentUser.email,
+                       assigned_by_name: currentUser.display_name || currentUser.full_name,
+                       assigned_at: now
+                     });
+                     onThreadUpdate?.();
+                   } finally {
+                     setIsTogglingRead(false);
+                   }
+                 }}
+                 disabled={isTogglingRead}
+                 className="h-6 px-2 text-[11px] flex items-center gap-1 text-[#6B7280] hover:bg-blue-50 hover:text-blue-700"
+                 title="Assign to me"
+               >
+                 <User className="w-3 h-3" />
+               </Button>
+             )}
+
              {/* Mark Read/Unread Button */}
              {currentUser && (
                <Button
