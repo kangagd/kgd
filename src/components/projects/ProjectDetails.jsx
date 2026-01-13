@@ -252,11 +252,18 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: projectDrafts = [] } = useQuery({
     queryKey: ['projectDrafts', project.id],
     queryFn: async () => {
-      const allDrafts = await base44.entities.DraftEmail.filter({ 
-        linkedEntityId: project.id,
-        linkedEntityType: 'project'
-      });
-      return allDrafts;
+      try {
+        const allDrafts = await base44.entities.DraftEmail.list();
+        console.log('[ProjectDrafts Query] All drafts:', allDrafts);
+        const filtered = allDrafts.filter(d => 
+          d.linkedEntityId === project.id && d.linkedEntityType === 'project'
+        );
+        console.log('[ProjectDrafts Query] Filtered for project:', filtered);
+        return filtered;
+      } catch (error) {
+        console.error('[ProjectDrafts Query] Error:', error);
+        return [];
+      }
     },
     ...QUERY_CONFIG.reference
   });
