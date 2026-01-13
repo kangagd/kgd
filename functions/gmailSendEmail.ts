@@ -304,9 +304,10 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('[gmailSendEmail] Error:', error.message, error.stack);
     return Response.json({ 
-      error: error.message || 'Failed to send email' 
+      error: error.message || 'Failed to send email',
+      details: error.stack
     }, { status: 500 });
   }
 });
