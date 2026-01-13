@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Search, Loader2, X, AlertCircle, ChevronDown } from 'lucide-react';
+import { Search, Loader2, X, AlertCircle, ChevronDown, CheckSquare, Square } from 'lucide-react';
 import GmailHistorySearchResults from './GmailHistorySearchResults';
 import GmailHistoryThreadPreview from './GmailHistoryThreadPreview';
 import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
@@ -57,6 +57,9 @@ export default function GmailHistorySearchModal({
   const [searchError, setSearchError] = useState(null);
   const [errorExpanded, setErrorExpanded] = useState(false);
   const [previewLimit] = useState(5);
+  const [selectedThreadIds, setSelectedThreadIds] = useState([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0, failures: [] });
 
   // Reset when modal closes
   useEffect(() => {
@@ -69,6 +72,9 @@ export default function GmailHistorySearchModal({
       setHasMore(false);
       setSearchError(null);
       setErrorExpanded(false);
+      setSelectedThreadIds([]);
+      setIsImporting(false);
+      setImportProgress({ current: 0, total: 0, failures: [] });
     }
   }, [open]);
 
@@ -198,6 +204,75 @@ export default function GmailHistorySearchModal({
     }, 1500);
   }, [queryClient, defaultLinkTarget, onOpenChange]);
 
+  const handleToggleThread = useCallback((threadId) => {
+    setSelectedThreadIds(prev => {
+      if (prev.includes(threadId)) {
+        return prev.filter(id => id !== threadId);
+      } else {
+        return [...prev, threadId];
+      }
+    });
+  }, []);
+
+  const handleToggleAll = useCallback(() => {
+    if (selectedThreadIds.length === allResults.length) {
+      setSelectedThreadIds([]);
+    } else {
+      setSelectedThreadIds(allResults.map(t => t.gmailThreadId));
+    }
+  }, [selectedThreadIds, allResults]);
+
+  const handleBatchImport = useCallback(async () => {
+    if (selectedThreadIds.length === 0) return;
+
+    setIsImporting(true);
+    setImportProgress({ current: 0, total: selectedThreadIds.length, failures: [] });
+
+    const failures = [];
+    
+    for (let i = 0; i < selectedThreadIds.length; i++) {
+      const threadId = selectedThreadIds[i];
+      
+      try {
+        const linkTarget = defaultLinkTarget ? {
+          linkedEntityType: defaultLinkTarget.type,
+          linkedEntityId: defaultLinkTarget.id,
+          linkedEntityNumber: defaultLinkTarget.number,
+          linkedEntityTitle: defaultLinkTarget.title
+        } : null;
+
+        await base44.functions.invoke('importGmailThread', {
+          gmailThreadId: threadId,
+          linkTarget
+        });
+
+        setImportProgress(prev => ({ ...prev, current: i + 1 }));
+      } catch (error) {
+        console.error('Failed to import thread:', threadId, error);
+        failures.push({ threadId, error: error.message || 'Unknown error' });
+        setImportProgress(prev => ({ ...prev, current: i + 1, failures }));
+      }
+    }
+
+    setIsImporting(false);
+
+    // Show results
+    const successCount = selectedThreadIds.length - failures.length;
+    if (failures.length === 0) {
+      toast.success(`Successfully imported ${successCount} thread${successCount !== 1 ? 's' : ''}`);
+    } else if (successCount > 0) {
+      toast.warning(`Imported ${successCount} of ${selectedThreadIds.length} threads (${failures.length} failed)`);
+    } else {
+      toast.error(`Failed to import all threads`);
+    }
+
+    // Invalidate caches
+    handleImportSuccess();
+
+    // Clear selection
+    setSelectedThreadIds([]);
+  }, [selectedThreadIds, defaultLinkTarget, handleImportSuccess]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[600px] p-0 gap-0 flex flex-col">
@@ -232,26 +307,52 @@ export default function GmailHistorySearchModal({
             />
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-4 text-sm">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filterNotImported}
-                onChange={(e) => setFilterNotImported(e.target.checked)}
-                className="w-4 h-4 rounded cursor-pointer"
-              />
-              <span>Not imported</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filterHasAttachments}
-                onChange={(e) => setFilterHasAttachments(e.target.checked)}
-                className="w-4 h-4 rounded cursor-pointer"
-              />
-              <span>Has attachments</span>
-            </label>
+          {/* Filters & Actions */}
+          <div className="flex items-center justify-between gap-4 text-sm flex-wrap">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filterNotImported}
+                  onChange={(e) => setFilterNotImported(e.target.checked)}
+                  className="w-4 h-4 rounded cursor-pointer"
+                />
+                <span>Not imported</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filterHasAttachments}
+                  onChange={(e) => setFilterHasAttachments(e.target.checked)}
+                  className="w-4 h-4 rounded cursor-pointer"
+                />
+                <span>Has attachments</span>
+              </label>
+            </div>
+
+            {/* Batch Actions */}
+            {selectedThreadIds.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600">
+                  {selectedThreadIds.length} selected
+                </span>
+                <Button
+                  onClick={handleBatchImport}
+                  disabled={isImporting}
+                  size="sm"
+                  className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                >
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      {importProgress.current}/{importProgress.total}
+                    </>
+                  ) : (
+                    `Import ${selectedThreadIds.length} Thread${selectedThreadIds.length !== 1 ? 's' : ''}`
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Help text */}
@@ -285,11 +386,34 @@ export default function GmailHistorySearchModal({
         <div className="flex-1 min-h-0 flex gap-0 overflow-hidden">
           {/* Results List */}
           <div className="w-80 flex-shrink-0 border-r border-gray-200 overflow-hidden flex flex-col">
+            {/* Select All Header */}
+            {allResults.length > 0 && (
+              <div className="border-b border-gray-200 p-3 flex items-center gap-2 bg-gray-50">
+                <button
+                  onClick={handleToggleAll}
+                  className="flex items-center gap-2 hover:opacity-75 transition-opacity"
+                  disabled={isImporting}
+                >
+                  {selectedThreadIds.length === allResults.length ? (
+                    <CheckSquare className="w-4 h-4 text-[#111827]" />
+                  ) : (
+                    <Square className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className="text-xs font-medium text-gray-600">
+                    Select All ({allResults.length})
+                  </span>
+                </button>
+              </div>
+            )}
+            
             <GmailHistorySearchResults
               threads={allResults}
               selectedThreadId={selectedThreadId}
               onSelectThread={handleSelectThread}
               isLoading={isSearching}
+              selectedThreadIds={selectedThreadIds}
+              onToggleThread={handleToggleThread}
+              isImporting={isImporting}
             />
 
             {/* Load More Button */}
