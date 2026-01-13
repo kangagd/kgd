@@ -1,6 +1,6 @@
 import { format, parseISO } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X, MailOpen, Send, ArrowDown } from "lucide-react";
+import { Mail, AlertCircle, LinkIcon, Sparkles, Pin, PinOff, X, MailOpen, Send, ArrowDown, User } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
