@@ -124,7 +124,7 @@ export default function EmailComposerDrawer({
     return () => clearTimeout(autosaveTimer.current);
   }, [to, cc, bcc, subject, bodyHtml, open, user]);
 
-  const saveDraft = async () => {
+  const saveDraft = async (syncToGmail = false) => {
     if (!user) return;
 
     try {
@@ -155,6 +155,31 @@ export default function EmailComposerDrawer({
         setDraftId(savedDraft.id);
       }
 
+      // Optionally sync to Gmail
+      if (syncToGmail) {
+        try {
+          const gmailResult = await base44.functions.invoke("gmailCreateOrUpdateDraft", {
+            draftId: savedDraft.id,
+            gmailDraftId: savedDraft.gmailDraftId,
+            from: user.email,
+            to,
+            cc,
+            bcc,
+            subject,
+            htmlBody: bodyHtml,
+            textBody: bodyHtml.replace(/<[^>]*>/g, ""),
+          });
+
+          if (gmailResult.data?.gmailDraftId) {
+            await base44.entities.DraftEmail.update(savedDraft.id, {
+              gmailDraftId: gmailResult.data.gmailDraftId,
+            });
+          }
+        } catch (error) {
+          console.error("Failed to sync draft to Gmail:", error);
+        }
+      }
+
       setLastSavedAt(savedDraft.lastSavedAt);
     } catch (error) {
       console.error("Failed to save draft:", error);
@@ -168,9 +193,25 @@ export default function EmailComposerDrawer({
       if (!user) throw new Error("User not authenticated");
       if (to.length === 0) throw new Error("Please add at least one recipient");
 
+      // Save draft locally first if not already saved
+      if (!draftId) {
+        await saveDraft(false);
+      }
+
       // Update draft status to sending
       if (draftId) {
         await base44.entities.DraftEmail.update(draftId, { status: "sending" });
+      }
+
+      // Get latest message for reply headers
+      let inReplyTo = null;
+      let references = null;
+      if (threadMessages.length > 0 && (mode === "reply" || mode === "reply_all")) {
+        const latestMessage = threadMessages[0];
+        inReplyTo = latestMessage.message_id;
+        references = latestMessage.references 
+          ? `${latestMessage.references} ${latestMessage.message_id}`
+          : latestMessage.message_id;
       }
 
       // Send email via backend function
@@ -180,21 +221,63 @@ export default function EmailComposerDrawer({
         bcc,
         subject,
         body_html: bodyHtml,
+        body_text: bodyHtml.replace(/<[^>]*>/g, ""),
         thread_id: threadId,
         gmail_thread_id: gmail_thread_id,
+        inReplyTo,
+        references,
+        from: user.email,
       });
 
-      // Mark draft as sent
+      if (!result.data?.success) {
+        throw new Error(result.data?.error || "Failed to send email");
+      }
+
+      // Import sent message into EmailMessage
+      if (result.data.gmailMessageId && threadId) {
+        try {
+          await base44.functions.invoke("importSentMessage", {
+            gmailMessageId: result.data.gmailMessageId,
+            gmailThreadId: result.data.gmailThreadId,
+            threadId: threadId,
+          });
+        } catch (error) {
+          console.error("Failed to import sent message:", error);
+        }
+      }
+
+      // Mark draft as sent and store IDs
       if (draftId) {
-        await base44.entities.DraftEmail.update(draftId, { status: "sent" });
+        await base44.entities.DraftEmail.update(draftId, {
+          status: "sent",
+          gmailMessageId: result.data.gmailMessageId,
+          gmailThreadId: result.data.gmailThreadId,
+        });
       }
 
       return result;
     },
     onSuccess: () => {
+      // Invalidate inbox queries
       queryClient.invalidateQueries({ queryKey: ["emailThreads"] });
-      queryClient.invalidateQueries({ queryKey: ["emailThread", threadId] });
+      queryClient.invalidateQueries({ queryKey: ["inboxThreads"] });
+      
+      // Invalidate thread detail
+      if (threadId) {
+        queryClient.invalidateQueries({ queryKey: ["emailThread", threadId] });
+        queryClient.invalidateQueries({ queryKey: ["threadMessages", threadId] });
+      }
+      
+      // Invalidate linked entity messages
+      if (defaultLinkTarget?.type === "project" && defaultLinkTarget?.id) {
+        queryClient.invalidateQueries({ queryKey: ["projectMessages", defaultLinkTarget.id] });
+      } else if (defaultLinkTarget?.type === "job" && defaultLinkTarget?.id) {
+        queryClient.invalidateQueries({ queryKey: ["jobMessages", defaultLinkTarget.id] });
+      }
+      
+      // Invalidate drafts
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
+      
       toast.success("Email sent successfully");
       handleClose();
     },
@@ -437,7 +520,7 @@ export default function EmailComposerDrawer({
             </Button>
             <Button
               variant="outline"
-              onClick={saveDraft}
+              onClick={() => saveDraft(true)}
               disabled={isSaving || sendMutation.isPending}
             >
               <Save className="w-4 h-4 mr-2" />
