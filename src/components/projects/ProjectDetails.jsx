@@ -2077,17 +2077,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDeletingDraftId(draft.id);
-                              base44.entities.EmailDraft.delete(draft.id).then(() => {
-                                queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-                                toast.success('Draft deleted');
-                                setDeletingDraftId(null);
-                              }).catch(() => {
-                                toast.error('Failed to delete draft');
-                                setDeletingDraftId(null);
-                              });
+                              deleteDraftMutation.mutate(draft.id);
                             }}
-                            disabled={deletingDraftId === draft.id}
+                            disabled={deleteDraftMutation.isPending}
                             className="p-1 text-amber-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                             title="Delete draft"
                           >
