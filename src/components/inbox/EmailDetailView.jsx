@@ -149,6 +149,33 @@ export default function EmailDetailView({
     enabled: !!thread.id,
   });
 
+  // Fetch all unsent drafts for this thread (for delete UI)
+  const { data: threadDrafts = [], refetch: refetchDrafts } = useQuery({
+    queryKey: ["threadDrafts", thread.id],
+    queryFn: async () => {
+      const drafts = await base44.entities.DraftEmail.filter({
+        threadId: thread.id,
+        status: { $in: ["draft", "failed", "sending"] }
+      }, "-lastSavedAt");
+      return drafts;
+    },
+    enabled: !!thread.id,
+  });
+
+  // Delete draft mutation
+  const deleteDraftMutation = useMutation({
+    mutationFn: (draftId) => base44.entities.DraftEmail.delete(draftId),
+    onSuccess: () => {
+      refetchDrafts();
+      setDeletingDraftId(null);
+      toast.success("Draft deleted");
+    },
+    onError: (error) => {
+      toast.error("Failed to delete draft");
+      console.error(error);
+    },
+  });
+
   // Update aiThread when thread prop changes
   React.useEffect(() => {
     setAiThread(thread);
