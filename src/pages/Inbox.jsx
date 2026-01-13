@@ -13,6 +13,8 @@ import EmailDetailView from "@/components/inbox/EmailDetailView";
 import LinkThreadModal from "@/components/inbox/LinkThreadModal";
 import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal";
 import { computeInferredStateWithAutoClear } from "@/components/inbox/inferredStateAutoClear";
+import DraftsList from "@/components/inbox/DraftsList";
+import EmailComposerDrawer from "@/components/inbox/EmailComposerDrawer";
 
 export default function Inbox() {
   const queryClient = useQueryClient();
@@ -28,6 +30,11 @@ export default function Inbox() {
   const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
   const [lastSyncRequestTime, setLastSyncRequestTime] = useState(0); // B8: Rate limit sync calls
   const [showHistorySearch, setShowHistorySearch] = useState(false);
+  const [activeView, setActiveView] = useState("inbox"); // inbox | drafts
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerDraftId, setComposerDraftId] = useState(null);
+  const [composerThreadId, setComposerThreadId] = useState(null);
+  const [composerMode, setComposerMode] = useState("new");
 
   // Load current user
   useEffect(() => {
@@ -358,8 +365,33 @@ export default function Inbox() {
         {/* Left Pane: Thread List */}
         <div className="w-[340px] flex-shrink-0 flex flex-col border-r border-[#E5E7EB] overflow-hidden">
           
+          {/* View Tabs */}
+          <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2">
+            <button
+              onClick={() => setActiveView("inbox")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                activeView === "inbox"
+                  ? "bg-[#FAE008] text-[#111827]"
+                  : "text-[#6B7280] hover:bg-[#F3F4F6]"
+              }`}
+            >
+              Inbox
+            </button>
+            <button
+              onClick={() => setActiveView("drafts")}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                activeView === "drafts"
+                  ? "bg-[#FAE008] text-[#111827]"
+                  : "text-[#6B7280] hover:bg-[#F3F4F6]"
+              }`}
+            >
+              Drafts
+            </button>
+          </div>
+
           {/* Filter Bar */}
-          <InboxFilterBar
+          {activeView === "inbox" && (
+            <InboxFilterBar
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             activeFilters={activeFilters}
@@ -375,6 +407,7 @@ export default function Inbox() {
             }}
             userEmail={user?.email}
           />
+          )}
 
           {/* Sync Status Indicator & History Search */}
           <div className="px-3 py-2 border-b border-[#E5E7EB] space-y-2">
@@ -401,9 +434,20 @@ export default function Inbox() {
             </button>
           </div>
 
-          {/* Thread List */}
+          {/* Content Area */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            {threadsLoading ? (
+            {activeView === "drafts" ? (
+              <div className="p-3">
+                <DraftsList
+                  onOpenDraft={(draft) => {
+                    setComposerDraftId(draft.id);
+                    setComposerThreadId(draft.threadId);
+                    setComposerMode(draft.threadId ? "reply" : "new");
+                    setComposerOpen(true);
+                  }}
+                />
+              </div>
+            ) : threadsLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Loader className="w-5 h-5 animate-spin text-[#FAE008]" />
               </div>
@@ -555,6 +599,14 @@ export default function Inbox() {
         open={showHistorySearch}
         onOpenChange={setShowHistorySearch}
         mode="inbox"
+      />
+
+      <EmailComposerDrawer
+        open={composerOpen}
+        onOpenChange={setComposerOpen}
+        mode={composerMode}
+        threadId={composerThreadId}
+        existingDraftId={composerDraftId}
       />
 
     </div>

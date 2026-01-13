@@ -25,6 +25,7 @@ import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import EmailComposer from "./EmailComposer";
 import AttachmentCard from "./AttachmentCard";
+import EmailComposerDrawer from "./EmailComposerDrawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,6 +72,8 @@ export default function EmailDetailView({
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [showCreateJobModal, setShowCreateJobModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showComposerDrawer, setShowComposerDrawer] = useState(false);
+  const [composerDraftId, setComposerDraftId] = useState(null);
   const [aiThread, setAiThread] = useState(thread);
   const [user, setUser] = useState(null);
 
@@ -120,6 +123,19 @@ export default function EmailDetailView({
     queryFn: () => base44.entities.EmailThreadViewer.filter({ thread_id: thread.id }),
     staleTime: 30000, // Keep viewers data fresh for 30s
     enabled: !!user
+  });
+
+  // Check for existing draft
+  const { data: existingDraft } = useQuery({
+    queryKey: ["threadDraft", thread.id],
+    queryFn: async () => {
+      const drafts = await base44.entities.DraftEmail.filter({
+        threadId: thread.id,
+        status: { $in: ["draft", "failed"] }
+      });
+      return drafts[0] || null;
+    },
+    enabled: !!thread.id,
   });
 
   // Update aiThread when thread prop changes
@@ -335,9 +351,34 @@ export default function EmailDetailView({
                 onCreateJobFromAI={() => setShowCreateJobModal(true)}
               />
             </div>
-          )}
+            )}
 
-          {/* Main Email Card */}
+            {/* Resume Draft Banner */}
+            {existingDraft && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-blue-900 font-medium">
+                  You have a draft for this thread
+                </span>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setComposerDraftId(existingDraft.id);
+                  setComposerMode("reply");
+                  setShowComposerDrawer(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Resume Draft
+              </Button>
+            </div>
+            </div>
+            )}
+
+            {/* Main Email Card */}
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
             {/* Header - Subject & Actions */}
             <div className="p-6 border-b border-[#E5E7EB]">
@@ -662,6 +703,27 @@ export default function EmailDetailView({
           }}
         />
       )}
+
+      {/* Email Composer Drawer */}
+      <EmailComposerDrawer
+        open={showComposerDrawer || !!composerMode}
+        onOpenChange={(open) => {
+          setShowComposerDrawer(open);
+          if (!open) {
+            setComposerMode(null);
+            setComposerDraftId(null);
+          }
+        }}
+        mode={composerMode || "reply"}
+        threadId={thread?.id}
+        gmail_thread_id={thread?.gmail_thread_id}
+        existingDraftId={composerDraftId}
+        defaultLinkTarget={
+          thread?.project_id
+            ? { type: "project", id: thread.project_id, number: thread.project_number }
+            : null
+        }
+      />
     </div>
   );
 }
