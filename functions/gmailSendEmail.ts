@@ -1,227 +1,85 @@
-/**
- * gmailSendEmail - Send email from shared inbox
- * 
- * Modes:
- *   - new: Send new email
- *   - reply: Reply to message in thread (with In-Reply-To + References)
- *   - forward: Forward message (optional: can be in-thread or new thread)
- * 
- * All emails sent from admin@kangaroogd.com.au with audit trail.
- * Stores sent messages and updates thread metadata.
- */
-
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-const GMAIL_SCOPES = [
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.send'
-];
+// Helper to build RFC 2822 MIME message
+function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inReplyTo, references, threadId }) {
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const lines = [];
 
-function base64urlEncode(data) {
-  const base64 = btoa(data);
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-function pemToArrayBuffer(pem) {
-  const cleanPem = pem.replace(/-----BEGIN PRIVATE KEY-----/g, '').replace(/-----END PRIVATE KEY-----/g, '').replace(/\s/g, '');
-  const binaryString = atob(cleanPem);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-async function createJwt(serviceAccount, impersonateEmail) {
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 3600;
-
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const payload = {
-    iss: serviceAccount.client_email,
-    scope: GMAIL_SCOPES.join(' '),
-    sub: impersonateEmail,
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: exp
-  };
-
-  const headerEncoded = base64urlEncode(JSON.stringify(header));
-  const payloadEncoded = base64urlEncode(JSON.stringify(payload));
-  const signatureInput = `${headerEncoded}.${payloadEncoded}`;
-
-  const privateKeyBuffer = pemToArrayBuffer(serviceAccount.private_key);
-  const key = await crypto.subtle.importKey(
-    'pkcs8',
-    privateKeyBuffer,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signatureBuffer = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(signatureInput));
-  const signatureArray = new Uint8Array(signatureBuffer);
-  const signatureBinary = String.fromCharCode(...signatureArray);
-  const signatureEncoded = base64urlEncode(signatureBinary);
-
-  return `${signatureInput}.${signatureEncoded}`;
-}
-
-async function getAccessToken() {
-  const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
-  const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL');
-
-  if (!serviceAccountJson || !impersonateEmail) {
-    throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_JSON or GOOGLE_IMPERSONATE_USER_EMAIL');
+  // Headers
+  lines.push(`From: ${from}`);
+  lines.push(`To: ${to.join(', ')}`);
+  if (cc && cc.length > 0) lines.push(`Cc: ${cc.join(', ')}`);
+  if (bcc && bcc.length > 0) lines.push(`Bcc: ${bcc.join(', ')}`);
+  lines.push(`Subject: ${subject}`);
+  
+  // Thread headers for replies
+  if (inReplyTo) lines.push(`In-Reply-To: ${inReplyTo}`);
+  if (references) lines.push(`References: ${references}`);
+  
+  lines.push('MIME-Version: 1.0');
+  
+  if (htmlBody) {
+    // Multipart for HTML + text
+    lines.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+    lines.push('');
+    
+    // Plain text part
+    lines.push(`--${boundary}`);
+    lines.push('Content-Type: text/plain; charset=UTF-8');
+    lines.push('Content-Transfer-Encoding: 7bit');
+    lines.push('');
+    lines.push(textBody || htmlBody.replace(/<[^>]*>/g, ''));
+    lines.push('');
+    
+    // HTML part
+    lines.push(`--${boundary}`);
+    lines.push('Content-Type: text/html; charset=UTF-8');
+    lines.push('Content-Transfer-Encoding: 7bit');
+    lines.push('');
+    lines.push(htmlBody);
+    lines.push('');
+    lines.push(`--${boundary}--`);
+  } else {
+    // Plain text only
+    lines.push('Content-Type: text/plain; charset=UTF-8');
+    lines.push('Content-Transfer-Encoding: 7bit');
+    lines.push('');
+    lines.push(textBody);
   }
 
-  const serviceAccount = JSON.parse(serviceAccountJson);
-  const jwt = await createJwt(serviceAccount, impersonateEmail);
-
-  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt
-    }).toString()
-  });
-
-  if (!tokenResponse.ok) {
-    const errorText = await tokenResponse.text();
-    throw new Error(`Failed to get access token: ${tokenResponse.status} ${errorText}`);
-  }
-
-  const tokenData = await tokenResponse.json();
-  return tokenData.access_token;
+  return lines.join('\r\n');
 }
 
-async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = null) {
-  let retries = 0;
-  const maxRetries = 3;
-  const backoffMs = 1000;
+// Base64url encoding
+function base64UrlEncode(str) {
+  const base64 = btoa(unescape(encodeURIComponent(str)));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
 
-  while (retries < maxRetries) {
+// Retry with exponential backoff for rate limits
+async function retryWithBackoff(fn, maxRetries = 4) {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const accessToken = await getAccessToken();
+      return await fn();
+    } catch (error) {
+      lastError = error;
       
-      let url = `https://www.googleapis.com${endpoint}`;
-      
-      if (queryParams) {
-        const params = new URLSearchParams();
-        Object.entries(queryParams).forEach(([key, value]) => {
-          if (value !== null && value !== undefined) {
-            params.append(key, value);
-          }
-        });
-        url += `?${params.toString()}`;
-      }
-
-      const options = {
-        method,
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      };
-
-      if (body) {
-        options.body = typeof body === 'string' ? body : JSON.stringify(body);
-      }
-
-      const response = await fetch(url, options);
-
-      if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
-        retries++;
-        if (retries >= maxRetries) {
-          throw new Error(`Max retries exceeded. Last status: ${response.status}`);
-        }
-        const waitMs = backoffMs * Math.pow(2, retries - 1);
-        console.log(`[gmailFetch] Retrying in ${waitMs}ms...`);
-        await new Promise(resolve => setTimeout(resolve, waitMs));
+      // Only retry on 429 rate limit errors
+      if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+        const delay = Math.min(1000 * Math.pow(2, attempt) + Math.random() * 1000, 10000);
+        await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gmail API error (${response.status}): ${errorText}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (retries < maxRetries - 1) {
-        retries++;
-        const waitMs = backoffMs * Math.pow(2, retries - 1);
-        console.log(`[gmailFetch] Retry ${retries}/${maxRetries}...`);
-        await new Promise(resolve => setTimeout(resolve, waitMs));
-      } else {
-        throw error;
-      }
+      
+      throw error;
     }
   }
-
-  throw new Error('Failed after max retries');
-}
-
-/**
- * Build RFC 2822 MIME message
- */
-function buildMimeMessage(to, subject, bodyHtml, cc, bcc, inReplyTo, references, attachments) {
-  const boundary = `boundary_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  let headers = [
-    `To: ${to}`,
-    `Subject: ${subject}`,
-    `MIME-Version: 1.0`,
-    `Content-Type: multipart/mixed; boundary="${boundary}"`
-  ];
-
-  if (cc) headers.push(`Cc: ${cc}`);
-  if (bcc) headers.push(`Bcc: ${bcc}`);
-  
-  // RFC threading headers
-  if (inReplyTo) {
-    headers.push(`In-Reply-To: ${inReplyTo}`);
-  }
-  if (references) {
-    headers.push(`References: ${references}`);
-  }
-
-  let body = headers.join('\r\n') + '\r\n\r\n';
-
-  // HTML part - explicitly UTF-8, use base64 for reliability
-  body += `--${boundary}\r\n`;
-  body += `Content-Type: text/html; charset="UTF-8"\r\n`;
-  body += `Content-Transfer-Encoding: base64\r\n\r\n`;
-  // Encode body as base64 to preserve UTF-8 characters
-  const bodyBase64 = btoa(unescape(encodeURIComponent(bodyHtml)));
-  body += bodyBase64 + '\r\n';
-
-  // Attachments (if any)
-  if (attachments && attachments.length > 0) {
-    for (const att of attachments) {
-      body += `--${boundary}\r\n`;
-      body += `Content-Type: ${att.mimeType || 'application/octet-stream'}; name="${att.filename}"\r\n`;
-      body += `Content-Transfer-Encoding: base64\r\n`;
-      body += `Content-Disposition: attachment; filename="${att.filename}"\r\n\r\n`;
-      body += att.data + '\r\n';
-    }
-  }
-
-  body += `--${boundary}--`;
-
-  // Encode to base64url for Gmail API
-  const encoded = btoa(unescape(encodeURIComponent(body)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
-
-  return encoded;
+  throw lastError;
 }
 
 Deno.serve(async (req) => {
-  let stage = 'init';
   try {
-    stage = 'auth';
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
@@ -229,194 +87,161 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admin and manager can send
-    const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
-    if (!isAdminOrManager) {
-      return Response.json({ error: 'Forbidden: Only admin/manager can send emails' }, { status: 403 });
-    }
-
-    stage = 'parse_request';
-    const bodyText = await req.text();
-    const requestBody = bodyText ? JSON.parse(bodyText) : {};
-
-    const {
-      mode = 'new', // new | reply | forward
-      to,
-      subject,
+    const { 
+      rawMimeBase64Url, 
+      gmailDraftId, 
+      from, 
+      to, 
+      cc, 
+      bcc, 
+      subject, 
+      textBody, 
+      htmlBody, 
       body_html,
-      cc = null,
-      bcc = null,
-      thread_id, // Base44 thread ID
-      gmail_thread_id, // Gmail thread ID (required for reply)
-      reply_to_gmail_message_id, // For reply: which message we're replying to
-      project_id = null,
-      job_id = null,
-      attachments = []
-    } = requestBody;
+      body_text,
+      thread_id,
+      gmail_thread_id,
+      inReplyTo, 
+      references 
+    } = await req.json();
 
-    stage = 'validate_fields';
+    // Get Gmail credentials
+    const GMAIL_CLIENT_ID = Deno.env.get('GMAIL_CLIENT_ID');
+    const GMAIL_CLIENT_SECRET = Deno.env.get('GMAIL_CLIENT_SECRET');
 
-    // Required fields
-    if (!to || !subject || !body_html) {
-      const missing = [];
-      if (!to) missing.push('to');
-      if (!subject) missing.push('subject');
-      if (!body_html) missing.push('body_html');
-      return Response.json(
-        { error: `Missing required fields: ${missing.join(', ')}` },
-        { status: 400 }
-      );
+    if (!GMAIL_CLIENT_ID || !GMAIL_CLIENT_SECRET) {
+      return Response.json({ error: 'Gmail credentials not configured' }, { status: 500 });
     }
 
-    // Reply requires thread context
-    if (mode === 'reply' && (!gmail_thread_id || !reply_to_gmail_message_id)) {
-      return Response.json(
-        { error: 'Reply mode requires gmail_thread_id and reply_to_gmail_message_id' },
-        { status: 400 }
-      );
-    }
+    // Get access token
+    const accessToken = await getGmailAccessToken(user.email);
 
-    stage = 'fetch_reply_context';
-    let inReplyTo = null;
-    let references = null;
+    let result;
 
-    if (mode === 'reply') {
-      // Fetch the message we're replying to for RFC headers
-      try {
-        const replyMsg = await gmailFetch(
-          `/gmail/v1/users/me/messages/${reply_to_gmail_message_id}`,
-          'GET',
-          null,
-          { format: 'metadata' }
+    if (gmailDraftId) {
+      // Send existing draft
+      result = await retryWithBackoff(async () => {
+        const response = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/drafts/${gmailDraftId}/send`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            }
+          }
         );
 
-        const headers = {};
-        if (replyMsg.payload?.headers) {
-          replyMsg.payload.headers.forEach(h => {
-            headers[h.name.toLowerCase()] = h.value;
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Gmail API error (${response.status}): ${error}`);
+        }
+
+        return await response.json();
+      });
+    } else {
+      // Build and send new message
+      let encodedMessage = rawMimeBase64Url;
+      if (!encodedMessage) {
+        const mimeMessage = buildMimeMessage({
+          from: from || user.email,
+          to: to || [],
+          cc,
+          bcc,
+          subject: subject || '',
+          textBody: textBody || body_text,
+          htmlBody: htmlBody || body_html,
+          inReplyTo,
+          references,
+          threadId: thread_id || gmail_thread_id
+        });
+        encodedMessage = base64UrlEncode(mimeMessage);
+      }
+
+      const sendPayload = {
+        raw: encodedMessage
+      };
+
+      // Add threadId if this is a reply
+      if (thread_id || gmail_thread_id) {
+        sendPayload.threadId = thread_id || gmail_thread_id;
+      }
+
+      result = await retryWithBackoff(async () => {
+        const response = await fetch(
+          'https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(sendPayload)
+          }
+        );
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Gmail API error (${response.status}): ${error}`);
+        }
+
+        return await response.json();
+      });
+    }
+
+    // Create EmailMessage record for sent email
+    if (thread_id) {
+      try {
+        await base44.asServiceRole.entities.EmailMessage.create({
+          thread_id,
+          gmail_message_id: result.id,
+          gmail_thread_id: result.threadId || gmail_thread_id,
+          from_address: from || user.email,
+          to_addresses: to || [],
+          cc_addresses: cc || [],
+          bcc_addresses: bcc || [],
+          subject: subject || '',
+          body_html: htmlBody || body_html,
+          body_text: textBody || body_text || (htmlBody || body_html || '').replace(/<[^>]*>/g, ''),
+          is_outbound: true,
+          sent_at: new Date().toISOString(),
+          performed_by_user_id: user.id,
+          performed_by_user_email: user.email,
+          performed_at: new Date().toISOString()
+        });
+
+        // Update thread last_message_date
+        const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
+        if (thread) {
+          await base44.asServiceRole.entities.EmailThread.update(thread_id, {
+            last_message_date: new Date().toISOString(),
+            lastMessageDirection: 'sent'
           });
         }
-
-        inReplyTo = headers['message-id'] || null;
-        // Build References chain: existing refs + in-reply-to
-        if (inReplyTo) {
-          if (headers['references']) {
-            references = `${headers['references']} ${inReplyTo}`;
-          } else {
-            references = inReplyTo;
-          }
-        }
-      } catch (err) {
-        console.error('[gmailSendEmail] Error fetching reply context:', err);
+      } catch (error) {
+        console.error('Error creating EmailMessage record:', error);
       }
     }
-
-    stage = 'build_mime';
-    const rawMessage = buildMimeMessage(to, subject, body_html, cc, bcc, inReplyTo, references, attachments);
-
-    stage = 'gmail_send';
-    const sendPayload = {
-      raw: rawMessage
-    };
-
-    // For reply, include threadId to keep it in the same thread
-    if (mode === 'reply' && gmail_thread_id) {
-      sendPayload.threadId = gmail_thread_id;
-    }
-
-    const sendResult = await gmailFetch('/gmail/v1/users/me/messages/send', 'POST', sendPayload);
-
-    stage = 'fetch_sent_metadata';
-    // Fetch sent message to capture proper Message-ID header
-    const sentMsg = await gmailFetch(
-      `/gmail/v1/users/me/messages/${sendResult.id}`,
-      'GET',
-      null,
-      { format: 'metadata' }
-    );
-
-    let messageId = `<${sendResult.id}@gmail.com>`;
-    if (sentMsg.payload?.headers) {
-      const msgIdHeader = sentMsg.payload.headers.find(h => h.name.toLowerCase() === 'message-id');
-      if (msgIdHeader?.value) {
-        messageId = msgIdHeader.value;
-      }
-    }
-
-    stage = 'upsert_thread';
-    // Find or create thread in Base44
-    let threadId = thread_id;
-
-    if (!threadId) {
-      // For new emails, create new thread
-      const newThread = await base44.asServiceRole.entities.EmailThread.create({
-        subject,
-        gmail_thread_id: sendResult.threadId,
-        from_address: Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au',
-        to_addresses: to.split(',').map(e => e.trim()),
-        last_message_date: new Date().toISOString(),
-        last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
-        message_count: 1,
-        is_read: true,
-        project_id: project_id || null,
-        job_id: job_id || null
-      });
-      threadId = newThread.id;
-    } else {
-      // Update existing thread
-      const now = new Date().toISOString();
-      const threadUpdates = {
-        last_message_date: now,
-        last_message_snippet: body_html.replace(/<[^>]*>/g, '').substring(0, 100),
-        message_count: (await base44.asServiceRole.entities.EmailMessage.filter({ thread_id })).length + 1,
-        is_read: true,
-        status: mode === 'reply' ? 'Waiting on Customer' : undefined,
-        last_activity_at: now
-      };
-      
-      // Update project/job links if provided
-      if (project_id) threadUpdates.project_id = project_id;
-      if (job_id) threadUpdates.job_id = job_id;
-
-      await base44.asServiceRole.entities.EmailThread.update(threadId, threadUpdates);
-    }
-
-    stage = 'store_message';
-    const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL') || 'admin@kangaroogd.com.au';
-
-    // Store sent message with audit trail
-    await base44.asServiceRole.entities.EmailMessage.create({
-      thread_id: threadId,
-      gmail_message_id: sendResult.id,
-      gmail_thread_id: sendResult.threadId,
-      from_address: impersonateEmail,
-      from_name: user.display_name || user.full_name || impersonateEmail,
-      to_addresses: to.split(',').map(e => e.trim()),
-      cc_addresses: cc ? cc.split(',').map(e => e.trim()) : [],
-      bcc_addresses: bcc ? bcc.split(',').map(e => e.trim()) : [],
-      subject,
-      body_html,
-      is_outbound: true,
-      sent_at: new Date().toISOString(),
-      message_id: messageId,
-      in_reply_to: inReplyTo,
-      references: references,
-      performed_by_user_id: user.id,
-      performed_by_user_email: user.email,
-      performed_at: new Date().toISOString()
-    });
 
     return Response.json({
       success: true,
-      messageId: sendResult.id,
-      threadId: sendResult.threadId,
-      baseThreadId: threadId
+      gmailMessageId: result.id,
+      gmailThreadId: result.threadId,
+      labelIds: result.labelIds
     });
+
   } catch (error) {
-    console.error(`[gmailSendEmail] Error at stage '${stage}':`, error);
-    return Response.json(
-      { error: error.message, stage },
-      { status: 500 }
-    );
+    console.error('Error sending email:', error);
+    return Response.json({ 
+      error: error.message || 'Failed to send email' 
+    }, { status: 500 });
   }
 });
+
+// Helper to get Gmail access token
+// Note: This is a placeholder - implement proper OAuth token management
+async function getGmailAccessToken(userEmail) {
+  // TODO: Implement proper OAuth token retrieval and refresh
+  // For now, this is a placeholder that should be replaced with actual implementation
+  throw new Error('Gmail OAuth token retrieval not implemented - you need to implement OAuth flow');
+}
