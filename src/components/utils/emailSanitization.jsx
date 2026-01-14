@@ -1,3 +1,5 @@
+import { decodeEmailText } from './emailFormatting';
+
 /**
  * Email HTML sanitization utilities
  */
@@ -9,7 +11,7 @@
 export const sanitizeForCompose = (html) => {
   if (!html) return html;
   
-  let sanitized = html;
+  let sanitized = decodeEmailText(html);
   
   // Remove outer HTML document wrappers
   sanitized = sanitized.replace(/<\!DOCTYPE[^>]*>/gi, '');
@@ -42,7 +44,7 @@ export const sanitizeForCompose = (html) => {
 export const sanitizeForDisplay = (html) => {
   if (!html) return html;
   
-  let sanitized = html;
+  let sanitized = decodeEmailText(html);
   
   // Only remove dangerous executable content
   sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
