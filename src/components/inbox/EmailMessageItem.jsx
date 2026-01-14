@@ -176,12 +176,12 @@ export default function EmailMessageItem({
   const hasQuoted = !!quotedHtml && quotedHtml.trim().length > 0;
 
   const previewText = useMemo(() => {
-    const base =
-      message.body_text?.trim()
-        ? sanitizeInboundText(message.body_text)
-        : htmlToTextPreview(message.body_html || "");
-    return base.length > 0 ? base : "";
-  }, [message.body_text, message.body_html]);
+   const base =
+    message.body_text?.trim()
+      ? message.body_text
+      : htmlToTextPreview(message.body_html || "");
+   return sanitizeInboundText(base || "");
+ }, [message.body_text, message.body_html]);
 
   const directionLabel = message.is_outbound ? "Sent" : "Received";
 
@@ -223,7 +223,7 @@ export default function EmailMessageItem({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-[14px] font-semibold text-[#111827]">
-                      {message.from_name || message.from_address}
+                      {sanitizeInboundText(message.from_name) || sanitizeInboundText(message.from_address)}
                     </span>
 
                     {/* Sent/Received chip */}
@@ -294,10 +294,10 @@ export default function EmailMessageItem({
                       )}
                     </div>
                     <div className="text-[12px] text-[#6B7280] mt-0.5">
-                      to {message.to_addresses?.join(", ") || "me"}
+                      to {(message.to_addresses || []).map(sanitizeInboundText).join(", ") || "me"}
                       {message.cc_addresses?.length > 0 && (
                         <span className="ml-1">
-                          • cc: {message.cc_addresses.join(", ")}
+                          • cc: {(message.cc_addresses || []).map(sanitizeInboundText).join(", ")}
                         </span>
                       )}
                     </div>
