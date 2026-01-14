@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
+import { sanitizeInboundText } from "@/components/utils/textSanitizers";
+
 
 import EmailMessageItem from "./EmailMessageItem";
 
@@ -95,7 +97,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
             <div className="p-6 border-b border-[#E5E7EB]">
               <h1 className="text-[24px] md:text-[28px] font-bold text-[#111827]">
-                {thread.subject || "(No subject)"}
+                {sanitizeInboundText(thread.subject) || "(No subject)"}
               </h1>
             </div>
 
