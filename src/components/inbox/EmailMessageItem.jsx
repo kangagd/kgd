@@ -5,227 +5,384 @@ import AttachmentCard from "./AttachmentCard";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
 import { Badge } from "@/components/ui/badge";
 
-const convertHtmlToFormattedText = (html) => {
-  if (!html) return '';
-  
-  let text = html;
-  
-  // Replace common block elements with line breaks
-  text = text.replace(/<\/p>/gi, '\n\n');
-  text = text.replace(/<br\s*\/?>/gi, '\n');
-  text = text.replace(/<\/div>/gi, '\n');
-  text = text.replace(/<\/h[1-6]>/gi, '\n\n');
-  text = text.replace(/<\/li>/gi, '\n');
-  text = text.replace(/<\/tr>/gi, '\n');
-  
-  // Remove remaining HTML tags
-  text = text.replace(/<[^>]*>/g, '');
-  
-  // Fix HTML entities
-  text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&amp;/g, '&');
-  text = text.replace(/&lt;/g, '<');
-  text = text.replace(/&gt;/g, '>');
-  text = text.replace(/&quot;/g, '"');
-  text = text.replace(/&#39;/g, "'");
-  text = text.replace(/&apos;/g, "'");
-  
-  // Clean up excessive whitespace but preserve intentional line breaks
-  text = text.replace(/\n\s*\n\s*\n/g, '\n\n'); // Max 2 line breaks
-  text = text.replace(/[ \t]+/g, ' '); // Multiple spaces to single space
-  
-  return text.trim();
+/**
+ * Extract quoted content from HTML for Gmail-style threads.
+ * We keep this lightweight + safe:
+ * - If we find blockquotes or common quote containers, we split main vs quoted.
+ * - Otherwise main=html, quoted=null.
+ */
+const splitQuotedHtml = (html) => {
+  if (!html) return { mainHtml: "", quotedHtml: "" };
+
+  const lower = html.toLowerCase();
+
+  // Common Gmail quote markers
+  const markers = [
+    "<blockquote",
+    "class=\"gmail_quote\"",
+    "class='gmail_quote'",
+    "class=\"yahoo_quoted\"",
+    "class='yahoo_quoted'",
+    "id=\"appendonsend\"",
+    "id='appendonsend'",
+    "class=\"moz-cite-prefix\"",
+    "class='moz-cite-prefix'",
+  ];
+
+  // Find earliest marker index
+  let idx = -1;
+  for (const m of markers) {
+    const i = lower.indexOf(m);
+    if (i !== -1 && (idx === -1 || i < idx)) idx = i;
+  }
+
+  if (idx === -1) {
+    // Also handle plain-text style: "On ... wrote:"
+    const onWroteIdx = lower.indexOf("on ");
+    const wroteIdx = lower.indexOf(" wrote:");
+    if (onWroteIdx !== -1 && wroteIdx !== -1 && wroteIdx > onWroteIdx) {
+      // Heuristic: if "On ... wrote:" appears, treat everything from that line as quoted
+      // NOTE: This is best-effort for HTML emails that include it as text.
+      const cut = lower.indexOf("on ");
+      if (cut !== -1) {
+        return {
+          mainHtml: html.slice(0, cut),
+          quotedHtml: html.slice(cut),
+        };
+      }
+    }
+
+    return { mainHtml: html, quotedHtml: "" };
+  }
+
+  return {
+    mainHtml: html.slice(0, idx),
+    quotedHtml: html.slice(idx),
+  };
 };
 
 const sanitizeBodyHtml = (html, inlineImages = []) => {
   if (!html) return html;
-  
+
   let sanitized = html;
-  
+
   // Fix encoding issues first
   sanitized = sanitizeInboundText(sanitized);
-  
-  // CRITICAL: Remove <style> tags and their content to prevent CSS from showing as text
-  sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
-  
+
+  // Remove <style> tags and their content
+  sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
+
   // Remove <head> tags and their content
-  sanitized = sanitized.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '');
-  
+  sanitized = sanitized.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "");
+
   // Extract body content if full HTML document
   const bodyMatch = sanitized.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   if (bodyMatch) {
     sanitized = bodyMatch[1];
   }
-  
+
   // Replace inline image references with actual URLs
   if (inlineImages && inlineImages.length > 0) {
-    inlineImages.forEach(img => {
+    inlineImages.forEach((img) => {
       if (img.content_id && img.url) {
-        // Match cid: references
-        const cidPattern = new RegExp(`cid:${img.content_id}`, 'gi');
+        const cidPattern = new RegExp(`cid:${img.content_id}`, "gi");
         sanitized = sanitized.replace(cidPattern, img.url);
       }
     });
   }
-  
+
   // Remove dangerous tags and attributes
-  sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, '');
-  sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
-  sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, '');
-  sanitized = sanitized.replace(/<embed[^>]*>/gi, '');
-  sanitized = sanitized.replace(/<form[^>]*>.*?<\/form>/gi, '');
-  sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
-  
+  sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, "");
+  sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, "");
+  sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, "");
+  sanitized = sanitized.replace(/<embed[^>]*>/gi, "");
+  sanitized = sanitized.replace(/<form[^>]*>.*?<\/form>/gi, "");
+  sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, "");
+
   return sanitized;
 };
 
-export default function EmailMessageItem({ message, isLast, totalMessages, getSenderInitials }) {
+// Safe HTML -> text preview without DOM dependency
+const htmlToTextPreview = (html) => {
+  if (!html) return "";
+
+  let text = html;
+
+  // Replace common blocks with newlines
+  text = text.replace(/<\/p>/gi, "\n\n");
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/div>/gi, "\n");
+  text = text.replace(/<\/h[1-6]>/gi, "\n\n");
+  text = text.replace(/<\/li>/gi, "\n");
+  text = text.replace(/<\/tr>/gi, "\n");
+
+  // Remove tags
+  text = text.replace(/<[^>]*>/g, "");
+
+  // Entities
+  text = text.replace(/&nbsp;/g, " ");
+  text = text.replace(/&amp;/g, "&");
+  text = text.replace(/&lt;/g, "<");
+  text = text.replace(/&gt;/g, ">");
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&apos;/g, "'");
+
+  // Normalize
+  text = sanitizeInboundText(text);
+  text = text.replace(/\n\s*\n\s*\n/g, "\n\n");
+  text = text.replace(/[ \t]+/g, " ");
+
+  return text.trim();
+};
+
+export default function EmailMessageItem({
+  message,
+  isLast,
+  totalMessages,
+  getSenderInitials,
+  isNew, // optional flag from EmailDetailView divider logic
+}) {
   // Collapse if it's not the last message and there are multiple messages
   const [expanded, setExpanded] = useState(isLast || totalMessages === 1);
-  
+  const [showQuoted, setShowQuoted] = useState(false);
+
   // Get inline images with URLs
   const inlineImages = useMemo(() => {
     if (!message.attachments) return [];
     return message.attachments
-      .filter(att => att.is_inline && att.content_id && att.url)
-      .map(att => ({
+      .filter((att) => att.is_inline && att.content_id && att.url)
+      .map((att) => ({
         content_id: att.content_id,
-        url: att.url
+        url: att.url,
       }));
   }, [message.attachments]);
 
   // Separate regular attachments from inline images
   const regularAttachments = useMemo(() => {
     if (!message.attachments) return [];
-    return message.attachments.filter(att => !att.is_inline || !att.content_id);
+    return message.attachments.filter((att) => !att.is_inline || !att.content_id);
   }, [message.attachments]);
 
-  // Strip HTML for preview text
-  const stripHtml = (html) => {
-    if (!html) return '';
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
+  // Body handling (main vs quoted)
+  const { mainHtml, quotedHtml } = useMemo(() => {
+    if (!message.body_html || !message.body_html.includes("<")) {
+      return { mainHtml: "", quotedHtml: "" };
+    }
+    const split = splitQuotedHtml(message.body_html);
+    return split;
+  }, [message.body_html]);
+
+  const hasQuoted = !!quotedHtml && quotedHtml.trim().length > 0;
+
+  const previewText = useMemo(() => {
+    const base =
+      message.body_text?.trim()
+        ? sanitizeInboundText(message.body_text)
+        : htmlToTextPreview(message.body_html || "");
+    return base.length > 0 ? base : "";
+  }, [message.body_text, message.body_html]);
+
+  const directionLabel = message.is_outbound ? "Sent" : "Received";
+
+  // Visual treatment
+  const accentClass = message.is_outbound ? "bg-blue-500" : "bg-[#E5E7EB]";
+  const containerTint = message.is_outbound ? "bg-blue-50/30" : "bg-white";
 
   return (
-    <div className={`bg-white rounded-lg border border-[#E5E7EB] overflow-hidden transition-all ${expanded ? 'shadow-sm' : ''}`}>
-      {/* Message Header - Compact when collapsed, full when expanded */}
-      <div
-        className={`cursor-pointer transition-all ${expanded ? 'p-4 border-b border-[#F3F4F6]' : 'px-4 py-3 hover:bg-[#F9FAFB]'}`}
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0 flex items-center gap-3">
-            {/* Avatar */}
-            <div className="w-9 h-9 rounded-full bg-[#FAE008]/20 flex items-center justify-center flex-shrink-0 border border-[#FAE008]/30">
-              <span className="text-[13px] font-semibold text-[#111827]">
-                {getSenderInitials(message.from_name, message.from_address)}
-              </span>
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[14px] font-semibold text-[#111827]">
-                  {message.from_name || message.from_address}
-                </span>
-                {message.is_outbound && (
-                  <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] h-5">
-                    You
+    <div
+      className={`rounded-lg border border-[#E5E7EB] overflow-hidden transition-all ${
+        expanded ? "shadow-sm" : ""
+      } ${containerTint}`}
+    >
+      {/* Accent bar to clearly show message start */}
+      <div className={`h-full w-[3px] ${accentClass} absolute`} style={{ display: "none" }} />
+      {/* We do accent bar using a flex wrapper so it works without absolute positioning */}
+      <div className="flex">
+        <div className={`w-[3px] ${accentClass}`} />
+
+        <div className="flex-1">
+          {/* Message Header */}
+          <div
+            className={`cursor-pointer transition-all ${
+              expanded
+                ? "p-4 border-b border-[#F3F4F6]"
+                : "px-4 py-3 hover:bg-[#F9FAFB]"
+            }`}
+            onClick={() => setExpanded(!expanded)}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0 flex items-center gap-3">
+                {/* Avatar */}
+                <div className="w-9 h-9 rounded-full bg-[#FAE008]/20 flex items-center justify-center flex-shrink-0 border border-[#FAE008]/30">
+                  <span className="text-[13px] font-semibold text-[#111827]">
+                    {getSenderInitials(message.from_name, message.from_address)}
+                  </span>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[14px] font-semibold text-[#111827]">
+                      {message.from_name || message.from_address}
+                    </span>
+
+                    {/* Sent/Received chip */}
+                    <Badge
+                      className={`text-[10px] h-5 ${
+                        message.is_outbound
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : "bg-gray-50 text-gray-700 border-gray-200"
+                      }`}
+                      variant="outline"
+                    >
+                      {directionLabel}
+                    </Badge>
+
+                    {/* Optional: new flag (subtle) */}
+                    {isNew && (
+                      <Badge className="bg-blue-600 text-white text-[10px] h-5">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+
+                  {!expanded && (
+                    <div className="text-[12px] text-[#9CA3AF] truncate mt-0.5">
+                      {(previewText || "(No content)").substring(0, 120)}
+                      {previewText.length > 120 ? "…" : ""}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {regularAttachments.length > 0 && !expanded && (
+                  <Badge variant="outline" className="text-[11px] h-5">
+                    📎 {regularAttachments.length}
                   </Badge>
                 )}
+                <span className="text-[12px] text-[#6B7280] whitespace-nowrap">
+                  {message.sent_at &&
+                    format(parseISO(message.sent_at), expanded ? "MMM d, h:mm a" : "MMM d")}
+                </span>
+                <button className="text-[#9CA3AF] hover:text-[#111827] flex-shrink-0">
+                  {expanded ? (
+                    <ChevronUp className="w-4 h-4" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4" />
+                  )}
+                </button>
               </div>
-              
-              {!expanded && (
-                <div className="text-[12px] text-[#9CA3AF] truncate mt-0.5">
-                  {stripHtml(message.body_html || message.body_text || '').substring(0, 100)}...
+            </div>
+          </div>
+
+          {/* Expanded Content */}
+          {expanded && (
+            <div className="px-5 pt-3 pb-5">
+              {/* Compact Metadata */}
+              <div className="mb-4 space-y-1">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] text-[#111827]">
+                      <span className="font-semibold">
+                        {message.from_name || message.from_address}
+                      </span>
+                      {message.from_name && (
+                        <span className="text-[#6B7280] ml-1">
+                          &lt;{message.from_address}&gt;
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[12px] text-[#6B7280] mt-0.5">
+                      to {message.to_addresses?.join(", ") || "me"}
+                      {message.cc_addresses?.length > 0 && (
+                        <span className="ml-1">
+                          • cc: {message.cc_addresses.join(", ")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-[12px] text-[#6B7280] whitespace-nowrap">
+                    {message.sent_at &&
+                      format(parseISO(message.sent_at), "MMM d, yyyy, h:mm a")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Attachments - Above content */}
+              {regularAttachments.length > 0 && (
+                <div className="mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {regularAttachments.map((att, attIdx) => (
+                      <AttachmentCard
+                        key={`${message.id}-att-${attIdx}`}
+                        attachment={att}
+                        gmailMessageId={message.gmail_message_id}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {regularAttachments.length > 0 && !expanded && (
-              <Badge variant="outline" className="text-[11px] h-5">
-                📎 {regularAttachments.length}
-              </Badge>
-            )}
-            <span className="text-[12px] text-[#6B7280] whitespace-nowrap">
-              {message.sent_at && format(parseISO(message.sent_at), expanded ? 'MMM d, h:mm a' : 'MMM d')}
-            </span>
-            <button className="text-[#9CA3AF] hover:text-[#111827] flex-shrink-0">
-              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Expanded Content */}
-      {expanded && (
-        <div className="px-5 pt-3 pb-5">
-          {/* Compact Metadata - Gmail style */}
-          <div className="mb-4 space-y-1">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] text-[#111827]">
-                  <span className="font-semibold">{message.from_name || message.from_address}</span>
-                  {message.from_name && (
-                    <span className="text-[#6B7280] ml-1">&lt;{message.from_address}&gt;</span>
+              {/* Email Body */}
+              <div className="mb-4">
+                <div
+                  className="gmail-email-body"
+                  style={{
+                    fontSize: "14px",
+                    lineHeight: "1.6",
+                    color: "#111827",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  {message.body_html && message.body_html.includes("<") ? (
+                    <>
+                      {/* Main content */}
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeBodyHtml(mainHtml || message.body_html, inlineImages),
+                        }}
+                      />
+
+                      {/* Quoted content (collapsed by default) */}
+                      {hasQuoted && (
+                        <div className="mt-4">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowQuoted((v) => !v);
+                            }}
+                            className="text-xs font-medium text-[#6B7280] hover:text-[#111827] px-2 py-1 rounded hover:bg-[#F3F4F6] transition-colors"
+                          >
+                            {showQuoted ? "Hide quoted text" : "Show quoted text"}
+                          </button>
+
+                          {showQuoted && (
+                            <div className="mt-2 pl-3 border-l border-[#E5E7EB] text-[#374151]">
+                              <div
+                                dangerouslySetInnerHTML={{
+                                  __html: sanitizeBodyHtml(quotedHtml, inlineImages),
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : message.body_text ? (
+                    <div className="whitespace-pre-wrap">
+                      {sanitizeInboundText(message.body_text)}
+                    </div>
+                  ) : (
+                    <div className="text-[#6B7280]">(No content)</div>
                   )}
                 </div>
-                <div className="text-[12px] text-[#6B7280] mt-0.5">
-                  to {message.to_addresses?.join(', ') || 'me'}
-                  {message.cc_addresses?.length > 0 && (
-                    <span className="ml-1">• cc: {message.cc_addresses.join(', ')}</span>
-                  )}
-                </div>
-              </div>
-              <span className="text-[12px] text-[#6B7280] whitespace-nowrap">
-                {message.sent_at && format(parseISO(message.sent_at), 'MMM d, yyyy, h:mm a')}
-              </span>
-            </div>
-          </div>
-
-          {/* Attachments - Above content like Gmail */}
-          {regularAttachments.length > 0 && (
-            <div className="mb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {regularAttachments.map((att, attIdx) => (
-                  <AttachmentCard
-                    key={`${message.id}-att-${attIdx}`}
-                    attachment={att}
-                    gmailMessageId={message.gmail_message_id}
-                  />
-                ))}
               </div>
             </div>
           )}
-
-          {/* Email Body - Gmail-style rendering */}
-          <div className="mb-4">
-            <div 
-              className="gmail-email-body"
-              style={{
-                fontSize: '14px',
-                lineHeight: '1.6',
-                color: '#111827',
-                wordBreak: 'break-word',
-                overflowWrap: 'break-word'
-              }}
-            >
-              {message.body_html && message.body_html.includes('<') ? (
-                <div dangerouslySetInnerHTML={{ __html: sanitizeBodyHtml(message.body_html, inlineImages) }} />
-              ) : message.body_text ? (
-                <div className="whitespace-pre-wrap">
-                  {sanitizeInboundText(message.body_text)}
-                </div>
-              ) : (
-                <div className="text-[#6B7280]">(No content)</div>
-              )}
-            </div>
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
