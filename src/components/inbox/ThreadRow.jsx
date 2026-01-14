@@ -10,7 +10,7 @@ import {
   X,
   Link as LinkIcon,
   Sparkles,
-  User
+  User,
 } from "lucide-react";
 
 import { base44 } from "@/api/base44Client";
@@ -22,13 +22,10 @@ import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStat
 import {
   getThreadStatusChip,
   isThreadPinned,
-  getThreadLinkChip
+  getThreadLinkChip,
 } from "@/components/inbox/threadStatusChip";
 import { pinThread, unpinThread } from "@/components/inbox/threadPinActions";
 import { closeThread, reopenThread } from "@/components/inbox/threadCloseActions";
-
-// ✅ Import your new direction helper (make sure path matches where you put it)
-import { inferThreadDirection } from "@/components/inbox/inferThreadDirection";
 
 export default function ThreadRow({
   thread,
@@ -51,8 +48,38 @@ export default function ThreadRow({
   const isClosed = thread?.userStatus === "closed";
   const linkChip = getThreadLinkChip(thread);
 
-  // ✅ Correct direction (sent vs received) derived from timestamps
-  const inferredDirection = useMemo(() => inferThreadDirection(thread), [thread]);
+  // ✅ Use your existing persisted direction field
+  const direction = thread?.lastMessageDirection || "unknown";
+
+  const lastMessageDateLabel = useMemo(() => {
+    try {
+      if (!thread?.last_message_date) return "";
+      return format(parseISO(thread.last_message_date), "MMM d, h:mm a");
+    } catch {
+      return "";
+    }
+  }, [thread?.last_message_date]);
+
+  const getInitials = (nameOrEmail) => {
+    const s = (nameOrEmail || "").trim();
+    if (!s) return "—";
+
+    // Email -> use first 2 chars of local part (cleaned)
+    if (s.includes("@")) {
+      const local = (s.split("@")[0] || "").trim();
+      const cleaned = local.replace(/[^a-zA-Z0-9]/g, "");
+      const a = cleaned?.[0] || local?.[0] || "";
+      const b = cleaned?.[1] || local?.[1] || "";
+      const out = `${a}${b}`.toUpperCase().trim();
+      return out || "—";
+    }
+
+    const parts = s.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] || "";
+    const second = parts.length > 1 ? parts[1]?.[0] : parts[0]?.[1] || "";
+    const out = `${first}${second}`.toUpperCase().trim();
+    return out || "—";
+  };
 
   const handlePinToggle = async (e) => {
     e.stopPropagation();
@@ -89,15 +116,11 @@ export default function ThreadRow({
     setIsTogglingRead(true);
     try {
       const now = new Date().toISOString();
-
-      // If marking as read: set lastReadAt = now
-      // If marking as unread: keep lastReadAt as-is (or null) but update unreadUpdatedAt
       await base44.entities.EmailThread.update(thread.id, {
         isUnread: !thread.isUnread,
         lastReadAt: thread.isUnread ? now : thread.lastReadAt || null,
         unreadUpdatedAt: now,
       });
-
       onThreadUpdate?.();
     } finally {
       setIsTogglingRead(false);
@@ -123,36 +146,6 @@ export default function ThreadRow({
       setIsAssigning(false);
     }
   };
-
-  const getInitials = (nameOrEmail) => {
-    const s = (nameOrEmail || "").trim();
-    if (!s) return "—";
-
-    // If it's an email, use first letter before @ + maybe second token
-    if (s.includes("@")) {
-      const local = s.split("@")[0] || "";
-      const cleaned = local.replace(/[^a-zA-Z0-9]/g, " ").trim();
-      const parts = cleaned.split(/\s+/).filter(Boolean);
-      const a = parts[0]?.[0] || local[0];
-      const b = parts[1]?.[0] || (local.length > 1 ? local[1] : "");
-      return `${(a || "").toUpperCase()}${(b || "").toUpperCase()}`.trim() || "—";
-    }
-
-    const parts = s.split(/\s+/).filter(Boolean);
-    const first = parts[0]?.[0] || "";
-    const second = parts.length > 1 ? parts[1]?.[0] : (parts[0]?.[1] || "");
-    const out = `${first}${second}`.toUpperCase().trim();
-    return out || "—";
-  };
-
-  const lastMessageDateLabel = useMemo(() => {
-    try {
-      if (!thread?.last_message_date) return "";
-      return format(parseISO(thread.last_message_date), "MMM d, h:mm a");
-    } catch {
-      return "";
-    }
-  }, [thread?.last_message_date]);
 
   return (
     <div
@@ -194,18 +187,18 @@ export default function ThreadRow({
               </div>
 
               <div className="flex items-center gap-1 flex-wrap flex-shrink-0 justify-end">
-                {/* ✅ Sent/Received Indicator (correct) */}
-                {inferredDirection !== "unknown" && (
+                {/* ✅ Sent/Received Indicator (uses existing field) */}
+                {direction !== "unknown" && (
                   <Badge
                     variant="outline"
                     className={`text-[10px] h-5 flex items-center gap-1 ${
-                      inferredDirection === "sent"
+                      direction === "sent"
                         ? "bg-blue-50 text-blue-700 border-blue-200"
                         : "bg-green-50 text-green-700 border-green-200"
                     }`}
-                    title="Based on last internal/external message timestamps"
+                    title="From EmailThread.lastMessageDirection"
                   >
-                    {inferredDirection === "sent" ? (
+                    {direction === "sent" ? (
                       <>
                         <Send className="w-3 h-3" />
                         Sent
@@ -334,8 +327,10 @@ export default function ThreadRow({
 
             {/* Customer + Job */}
             <div className="flex items-center gap-2 text-[12px] text-[#6B7280]">
-              {thread?.customer_name && <span className="truncate">{thread.customer_name}</span>}
-              {(thread?.job_number && !linkingState.isLinked) && (
+              {thread?.customer_name && (
+                <span className="truncate">{thread.customer_name}</span>
+              )}
+              {thread?.job_number && !linkingState.isLinked && (
                 <>
                   <span>•</span>
                   <span className="truncate">Job #{thread.job_number}</span>
