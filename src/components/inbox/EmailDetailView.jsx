@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 
 import EmailMessageItem from "./EmailMessageItem";
 
@@ -20,20 +17,30 @@ const formatDayLabel = (iso) => {
 };
 /* ----------------------------- */
 
-export default function EmailDetailView({
-  thread,
-  onClose,
-  onThreadUpdate,
-}) {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
+export default function EmailDetailView({ thread, onThreadUpdate }) {
   /* ---------- preserve lastReadAt for divider ---------- */
   const initialLastReadAtRef = useRef(thread?.lastReadAt || null);
 
   useEffect(() => {
     initialLastReadAtRef.current = thread?.lastReadAt || null;
   }, [thread?.id]);
+
+  /* ---------- getSenderInitials (REQUIRED by EmailMessageItem) ---------- */
+  const getSenderInitials = (name, email) => {
+    if (name && typeof name === "string") {
+      const parts = name.trim().split(" ").filter(Boolean);
+      if (parts.length > 1 && parts[0][0] && parts[1][0]) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      if (parts.length > 0 && parts[0][0]) {
+        return parts[0][0].toUpperCase();
+      }
+    }
+    if (email && typeof email === "string" && email[0]) {
+      return email[0].toUpperCase();
+    }
+    return "?";
+  };
 
   /* ---------- mark as read (unchanged logic) ---------- */
   useEffect(() => {
@@ -49,7 +56,7 @@ export default function EmailDetailView({
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [thread?.id, thread?.isUnread]);
+  }, [thread?.id, thread?.isUnread, onThreadUpdate]);
 
   /* ---------- messages ---------- */
   const { data: messages = [] } = useQuery({
@@ -59,9 +66,7 @@ export default function EmailDetailView({
         { thread_id: thread.id },
         "sent_at"
       );
-      return msgs.sort(
-        (a, b) => new Date(a.sent_at) - new Date(b.sent_at)
-      );
+      return msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
     },
     enabled: !!thread?.id,
   });
@@ -86,7 +91,6 @@ export default function EmailDetailView({
     <div className="flex flex-col h-full bg-[#F8F9FA]">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
-
           {/* THREAD SUBJECT */}
           <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
             <div className="p-6 border-b border-[#E5E7EB]">
@@ -102,12 +106,8 @@ export default function EmailDetailView({
                   const isNewStart = idx === newStartIndex;
 
                   const prev = messages[idx - 1];
-                  const prevDay = prev?.sent_at
-                    ? getDayKey(prev.sent_at)
-                    : null;
-                  const currDay = msg?.sent_at
-                    ? getDayKey(msg.sent_at)
-                    : null;
+                  const prevDay = prev?.sent_at ? getDayKey(prev.sent_at) : null;
+                  const currDay = msg?.sent_at ? getDayKey(msg.sent_at) : null;
 
                   const showDayDivider =
                     idx === 0 || (prevDay && currDay && prevDay !== currDay);
@@ -136,6 +136,7 @@ export default function EmailDetailView({
                         message={msg}
                         isLast={idx === messages.length - 1}
                         totalMessages={messages.length}
+                        getSenderInitials={getSenderInitials}
                         isNew={newStartIndex !== -1 && idx >= newStartIndex}
                       />
                     </React.Fragment>
