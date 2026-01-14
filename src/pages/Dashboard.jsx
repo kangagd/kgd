@@ -105,7 +105,7 @@ export default function Dashboard() {
         return scheduledDate >= new Date() && scheduledDate <= sevenDaysFromNow;
       });
     },
-    enabled: isAdminOrManager,
+    enabled: !!user,
     ...QUERY_CONFIG.reference,
   });
 
@@ -115,7 +115,7 @@ export default function Dashboard() {
     queryFn: () => base44.entities.ProjectTradeRequirement.filter({ 
       status: 'Required'
     }),
-    enabled: isAdminOrManager,
+    enabled: !!user,
     ...QUERY_CONFIG.reference,
   });
 
@@ -148,7 +148,7 @@ export default function Dashboard() {
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
-    enabled: isAdminOrManager,
+    enabled: !!user,
     ...QUERY_CONFIG.reference,
   });
 
@@ -162,7 +162,7 @@ export default function Dashboard() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list(),
-    enabled: isAdminOrManager,
+    enabled: !!user,
     ...QUERY_CONFIG.reference,
   });
 
@@ -368,7 +368,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          {isAdminOrManager && (
+          {user && (
             <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">Attention Items</h2>
