@@ -1,41 +1,81 @@
-/**
- * Sanitize inbound text from external sources (emails, forms, etc.)
- * Handles encoding issues, special characters, and normalizes whitespace
- */
-export const sanitizeInboundText = (text) => {
-  if (!text) return text;
+import { sanitizeInboundText } from './textSanitizers';
 
-  return text
-    // Fix broken UTF-8 sequences (mojibake from encoding mismatches)
-    // These patterns handle garbled characters like "â€™" → "'", "didnâ€™t" → "didn't"
-    .replace(/â€™/g, "'")   // â€™ → apostrophe
-    .replace(/â€œ/g, '"')   // â€œ → left quote
-    .replace(/â€\u009d/g, '"') // â€ → right quote
-    .replace(/â€"/g, '-')    // â€" → dash
-    .replace(/â€"/g, '-')    // â€" → dash (variant)
-    .replace(/â€˜/g, "'")   // â€˜ → left quote
-    .replace(/â€™/g, "'")   // â€™ → right quote/apostrophe
-    .replace(/â€¢/g, '•')   // â€¢ → bullet point
-    .replace(/â€¦/g, '...')  // â€¦ → ellipsis
-    .replace(/Â¢/g, "'")    // Â¢ → apostrophe
-    .replace(/Â¯/g, ' ')    // Â¯ → space
-    .replace(/Â /g, ' ')    // Â followed by space → single space
-    .replace(/Â /g, ' ')    // Â followed by nbsp → single space (multiple patterns)
-    .replace(/Â/g, '')      // Remove remaining Â characters
-    .replace(/â/g, '')      // Remove stray â characters
-    // Replace HTML non-breaking space entity
-    .replace(/&nbsp;/g, ' ')
-    // Replace narrow no-break space (common encoding issue)
-    .replace(/â¯/g, ' ')
-    // Replace Unicode non-breaking space
-    .replace(/\u00A0/g, ' ')
-    // Remove zero-width characters
-    .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    // Normalize curly quotes to straight quotes
-    .replace(/[\u201C\u201D]/g, '"')  // curly double quotes
-    .replace(/[\u2018\u2019]/g, "'")  // curly single quotes
-    // Normalize dashes
-    .replace(/[\u2013\u2014]/g, '-')  // en-dash and em-dash to hyphen
-    // Clean up double spaces from character fixes
-    .replace(/  +/g, ' ');
+export function decodeEmailText(text) {
+  return sanitizeInboundText(text) || '';
+}
+
+let sanitized = sanitizeInboundText(html);
+
+/**
+ * Normalize inbound text from external sources (emails, forms, etc.)
+ * - Fixes common UTF-8 mojibake (â etc.)
+ * - Decodes basic HTML entities
+ * - Removes zero-width chars
+ * - Normalizes whitespace
+ *
+ * NOTE: Avoid destructive blanket removals (e.g. removing all 'â')
+ */
+export const sanitizeInboundText = (input) => {
+  if (input === null || input === undefined) return input;
+
+  let text = String(input);
+
+  // Common Gmail/UTF-8 mojibake sequences (most important first)
+  const replacements = [
+    // Apostrophes / quotes
+    ['â', '’'],
+    ['â', '‘'],
+    ['â€™', '’'],
+    ['â€˜', '‘'],
+
+    // Double quotes
+    ['â', '“'],
+    ['â', '”'],
+    ['â€œ', '“'],
+    ['â€�', '”'],
+
+    // Dashes
+    ['â', '–'],
+    ['â', '—'],
+    ['â€"', '—'], // older variant
+
+    // Ellipsis / bullet
+    ['â¦', '…'],
+    ['â€¦', '…'],
+    ['â¢', '•'],
+    ['â€¢', '•'],
+
+    // NBSP artifacts
+    ['Â ', ' '], // NBSP rendered as "Â "
+    ['Â ', ' '],
+    ['&nbsp;', ' '],
+
+    // Misc
+    ['â€º', '›'],
+    ['â€¹', '‹'],
+  ];
+
+  for (const [bad, good] of replacements) {
+    text = text.split(bad).join(good);
+  }
+
+  // Replace Unicode NBSP with regular space
+  text = text.replace(/\u00A0/g, ' ');
+
+  // Remove zero-width characters
+  text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+  // Decode HTML entities (browser only)
+  if (typeof window !== 'undefined') {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    text = textarea.value;
+  }
+
+  // Normalize whitespace
+  text = text.replace(/\r\n/g, '\n');
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n');
+
+  return text;
 };
