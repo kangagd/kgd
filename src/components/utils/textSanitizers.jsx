@@ -1,28 +1,30 @@
-import { sanitizeInboundText } from './textSanitizers';
-
-export function decodeEmailText(text) {
-  return sanitizeInboundText(text) || '';
-}
-
-let sanitized = sanitizeInboundText(html);
-
 /**
- * Normalize inbound text from external sources (emails, forms, etc.)
- * - Fixes common UTF-8 mojibake (â etc.)
- * - Decodes basic HTML entities
- * - Removes zero-width chars
- * - Normalizes whitespace
+ * Text Sanitization Utilities
+ * Single source of truth for normalizing inbound text
+ * (emails, forms, external systems)
  *
- * NOTE: Avoid destructive blanket removals (e.g. removing all 'â')
+ * Responsibilities:
+ * - Fix common UTF-8 / Gmail mojibake (â etc.)
+ * - Decode basic HTML entities
+ * - Remove zero-width / invisible characters
+ * - Normalize whitespace
+ *
+ * IMPORTANT:
+ * - Do NOT destructively remove characters (e.g. /â/g)
+ * - Preserve legitimate non-English characters
  */
+
 export const sanitizeInboundText = (input) => {
   if (input === null || input === undefined) return input;
 
   let text = String(input);
 
-  // Common Gmail/UTF-8 mojibake sequences (most important first)
+  /**
+   * Common UTF-8 → Latin1 mojibake sequences seen in Gmail
+   * Order matters: more specific sequences first
+   */
   const replacements = [
-    // Apostrophes / quotes
+    // Single quotes / apostrophes
     ['â', '’'],
     ['â', '‘'],
     ['â€™', '’'],
@@ -37,20 +39,19 @@ export const sanitizeInboundText = (input) => {
     // Dashes
     ['â', '–'],
     ['â', '—'],
-    ['â€"', '—'], // older variant
+    ['â€"', '—'], // legacy variant
 
-    // Ellipsis / bullet
+    // Ellipsis / bullets
     ['â¦', '…'],
     ['â€¦', '…'],
     ['â¢', '•'],
     ['â€¢', '•'],
 
-    // NBSP artifacts
-    ['Â ', ' '], // NBSP rendered as "Â "
+    // Non-breaking space artifacts
     ['Â ', ' '],
     ['&nbsp;', ' '],
 
-    // Misc
+    // Misc punctuation
     ['â€º', '›'],
     ['â€¹', '‹'],
   ];
@@ -59,13 +60,13 @@ export const sanitizeInboundText = (input) => {
     text = text.split(bad).join(good);
   }
 
-  // Replace Unicode NBSP with regular space
+  // Replace Unicode non-breaking space with regular space
   text = text.replace(/\u00A0/g, ' ');
 
-  // Remove zero-width characters
+  // Remove zero-width / invisible characters
   text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
 
-  // Decode HTML entities (browser only)
+  // Decode basic HTML entities (browser only)
   if (typeof window !== 'undefined') {
     const textarea = document.createElement('textarea');
     textarea.innerHTML = text;
