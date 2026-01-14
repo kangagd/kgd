@@ -6,37 +6,68 @@
 /**
  * Decode common encoding artifacts (mojibake)
  */
-export function decodeEmailText(text) {
-  if (!text) return '';
-  
-  // Common mojibake replacements
-  const replacements = {
-    'â€™': "'",
-    'â€˜': "'",
-    'â€œ': '"',
-    'â€�': '"',
-    'â€"': '–',
-    'â€"': '—',
-    'â€¦': '…',
-    'Â': '',
-    'â€¢': '•',
-    'â€º': '›',
-    'â€¹': '‹',
-    'Ã©': 'é',
-    'Ã¨': 'è',
-    'Ã§': 'ç',
-    'Ã ': 'à',
-  };
+export function decodeEmailText(input) {
+  if (!input) return '';
 
-  let decoded = text;
-  for (const [bad, good] of Object.entries(replacements)) {
-    decoded = decoded.replace(new RegExp(bad, 'g'), good);
+  let text = String(input);
+
+  // Most common Gmail/UTF-8 mojibake sequences
+  const replacements = [
+    // Smart quotes / apostrophes
+    ['â', '’'],
+    ['â', '‘'],
+    ['â€™', '’'],
+    ['â€˜', '‘'],
+
+    // Double quotes
+    ['â', '“'],
+    ['â', '”'],
+    ['â€œ', '“'],
+    ['â€�', '”'],
+
+    // Dashes
+    ['â', '–'],
+    ['â', '—'],
+    ['â€"', '—'], // older variant; choose em dash
+
+    // Ellipsis / bullets
+    ['â¦', '…'],
+    ['â€¦', '…'],
+    ['â¢', '•'],
+    ['â€¢', '•'],
+
+    // Spacing artifacts
+    ['Â ', ' '],  // NBSP shown as "Â "
+    ['&nbsp;', ' '],
+    ['Â', ''],
+
+    // Misc
+    ['â€º', '›'],
+    ['â€¹', '‹'],
+
+    // Common latin1 double-encoding samples
+    ['Ã©', 'é'],
+    ['Ã¨', 'è'],
+    ['Ã§', 'ç'],
+    ['Ã ', 'à'],
+  ];
+
+  for (const [bad, good] of replacements) {
+    text = text.split(bad).join(good);
   }
 
-  // Remove zero-width and invisible characters
-  decoded = decoded.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  // Decode basic HTML entities (safe)
+  // (Browser only; if this runs server-side, skip)
+  if (typeof window !== 'undefined') {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    text = textarea.value;
+  }
 
-  return decoded;
+  // Remove zero-width + invisible characters
+  text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+  return text;
 }
 
 /**
