@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { format, parseISO } from "date-fns";
 import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import AttachmentCard from "./AttachmentCard";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
 import { sanitizeEmailHtml } from "@/components/utils/emailSanitization";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
+import { resolveInlineCidImages, hideUnresolvedInlineImages } from "@/components/utils/resolveInlineCidImages";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -174,20 +175,48 @@ export default function EmailMessageItem({
 
   // Memoize expensive sanitization operations
   const sanitizedMainHtml = useMemo(() => {
-    return sanitizeEmailHtml(mainHtml || message.body_html || "", "display", inlineImages);
-  }, [mainHtml, message.body_html, inlineImages]);
+    let html = sanitizeEmailHtml(mainHtml || message.body_html || "", "display", inlineImages);
+    // Resolve cid: references to actual inline image URLs
+    html = resolveInlineCidImages(html, message.attachments, {
+      onMissingUrl: (cidInfo) => {
+        // Lazy-load inline image if not yet resolved
+        if (cidInfo.gmail_message_id && cidInfo.attachment_id) {
+          base44.functions.invoke('gmailGetInlineAttachmentUrl', {
+            gmail_message_id: cidInfo.gmail_message_id,
+            attachment_id: cidInfo.attachment_id,
+          }).then(() => {
+            // Refetch message to get updated attachments with file_url
+            queryClient.invalidateQueries({ queryKey: ["emailMessages", threadId || message.thread_id] });
+          }).catch((err) => {
+            console.error('Failed to load inline image:', err);
+          });
+        }
+      }
+    });
+    return html;
+  }, [mainHtml, message.body_html, inlineImages, message.attachments, threadId, message.thread_id, queryClient]);
 
   const sanitizedQuotedHtml = useMemo(() => {
-    return sanitizeEmailHtml(quotedHtml || "", "display", inlineImages);
-  }, [quotedHtml, inlineImages]);
+    let html = sanitizeEmailHtml(quotedHtml || "", "display", inlineImages);
+    // Resolve cid: references in quoted content too
+    html = resolveInlineCidImages(html, message.attachments);
+    return html;
+  }, [quotedHtml, inlineImages, message.attachments]);
 
   const previewText = useMemo(() => {
-   const base =
-    message.body_text?.trim()
-      ? message.body_text
-      : htmlToTextPreview(message.body_html || "");
-   return sanitizeInboundText(base || "");
- }, [message.body_text, message.body_html]);
+    const base =
+     message.body_text?.trim()
+       ? message.body_text
+       : htmlToTextPreview(message.body_html || "");
+    return sanitizeInboundText(base || "");
+  }, [message.body_text, message.body_html]);
+
+  // Hide unresolved inline images on render
+  useEffect(() => {
+    if (expanded) {
+      hideUnresolvedInlineImages();
+    }
+  }, [expanded, sanitizedMainHtml]);
 
   const directionLabel = message.is_outbound ? "Sent" : "Received";
 
