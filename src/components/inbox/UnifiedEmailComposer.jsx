@@ -328,8 +328,7 @@ export default function UnifiedEmailComposer({
       setShowCc(true);
     }
 
-    // Body (quoted/forwarded) with signature
-    const signatureHtml = buildSignatureHtml(currentUser?.email_signature);
+    // Body (quoted/forwarded) without signature first
     let quotedBody = "";
 
     if (mode === "reply" || mode === "reply_all") {
@@ -343,7 +342,7 @@ export default function UnifiedEmailComposer({
         ? format(parseISO(msgToUse.sent_at), "d/M/yyyy 'at' HH:mm")
         : new Date().toLocaleString();
       const sender = msgToUse?.from_name || msgToUse?.from_address;
-      quotedBody = `${signatureHtml}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quoted}</blockquote></div>`;
+      quotedBody = `<div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quoted}</blockquote></div>`;
     } else if (mode === "forward") {
       let forwarded = "";
       if (msgToUse?.body_html) {
@@ -354,10 +353,12 @@ export default function UnifiedEmailComposer({
       const dateStr = msgToUse?.sent_at
         ? format(parseISO(msgToUse.sent_at), "d/M/yyyy 'at' HH:mm")
         : new Date().toLocaleString();
-      quotedBody = `${signatureHtml}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${msgToUse?.from_name || msgToUse?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${msgToUse?.subject}</div><div style="margin-top: 12px;">${forwarded}</div></div>`;
+      quotedBody = `<div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${msgToUse?.from_name || msgToUse?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${msgToUse?.subject}</div><div style="margin-top: 12px;">${forwarded}</div></div>`;
     }
 
-    if (quotedBody) setBody(ensureSignature(quotedBody, ""));
+    // Ensure signature is appended (deterministically)
+    const signatureHtml = buildSignatureHtml(currentUser?.email_signature);
+    setBody(ensureSignature(quotedBody, signatureHtml));
   };
 
 
