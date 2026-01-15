@@ -204,6 +204,7 @@ Deno.serve(async (req) => {
     const fileUrl = uploadRes.file_url;
 
     // Cache the file_url and url in EmailMessage.attachments (backwards compatibility)
+    phase = 'cache_write';
     if (emailMessage && emailMessage.attachments) {
       const updated = emailMessage.attachments.map((att) => {
         if (att.attachment_id === attachment_id) {
@@ -229,6 +230,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       file_url: fileUrl,
+      phase,
     });
   } catch (error) {
     console.error('[gmailGetInlineAttachmentUrl] Error:', error);
