@@ -257,8 +257,8 @@ export function formatEmailText(text) {
 
   let formatted = text;
 
-  // Convert URLs to clickable links (but not if already in HTML)
-  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  // Convert URLs to clickable links (stop at newline, space, or quote)
+  const urlRegex = /(https?:\/\/[^\s\n<>"]+)/g;
   formatted = formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">$1</a>');
 
   // Convert email addresses to mailto links
