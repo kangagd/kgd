@@ -465,6 +465,13 @@ export default function UnifiedEmailComposer({
     }
   };
 
+  // Compute valid reply context dynamically (non-sticky)
+  const hasValidReplyContext = !!(
+    thread?.gmail_thread_id &&
+    selectedMessage &&
+    (selectedMessage.gmail_message_id || selectedMessage.message_id)
+  );
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -714,7 +721,7 @@ export default function UnifiedEmailComposer({
 
       {/* Reply context guardrail */}
       {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
-        !selectedMessage && (
+        !hasValidReplyContext && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
             <div className="text-[12px] text-amber-800">
               <strong>⚠ Message context not available</strong> — reply will use thread headers only. Thread history may be limited.
