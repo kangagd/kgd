@@ -49,6 +49,49 @@ function isNonEmptyString(s) {
 }
 
 /**
+ * Check if message context is available (strict check)
+ * Requires at least one message with gmail_message_id AND (body_html OR body_text)
+ */
+function isMessageContextAvailable(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) return false;
+  
+  return messages.some((msg) => 
+    msg?.gmail_message_id && 
+    (
+      (msg.body_html && msg.body_html.trim().length > 0) ||
+      (msg.body_text && msg.body_text.trim().length > 0)
+    )
+  );
+}
+
+/**
+ * Pick best context message for reply/forward
+ * - reply/reply_all: prefer latest inbound message with body
+ * - forward: prefer latest message with body
+ * - fallback: latest message with body (any direction)
+ */
+function pickBestContextMessage(messages, mode) {
+  if (!Array.isArray(messages) || messages.length === 0) return null;
+  
+  const withBody = messages.filter(m => 
+    m?.gmail_message_id && (m.body_html?.trim() || m.body_text?.trim())
+  );
+  
+  if (withBody.length === 0) return null;
+  
+  // For reply/reply_all, prefer inbound (received) messages
+  if (mode === 'reply' || mode === 'reply_all') {
+    const inbound = withBody.filter(m => !m.is_outbound);
+    if (inbound.length > 0) {
+      return inbound.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at))[0];
+    }
+  }
+  
+  // Fallback: latest with body (any direction)
+  return withBody.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at))[0];
+}
+
+/**
  * Check if HTML is empty after stripping tags
  */
 function isEmptyHtml(html) {
