@@ -300,7 +300,7 @@ export default function UnifiedEmailComposer({
     }
 
     composeInitializedRef.current = true;
-  }, [currentUser, existingDraft, mode]);
+  }, [currentUser, existingDraft, mode, open]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
