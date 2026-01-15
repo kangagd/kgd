@@ -16,7 +16,7 @@ export default function DraftsList({ onOpenDraft }) {
   const [selectedDraft, setSelectedDraft] = useState(null);
 
   const { data: drafts = [], isLoading, refetch } = useQuery({
-    queryKey: ["drafts"],
+    queryKey: inboxKeys.drafts(),
     queryFn: async () => {
       const user = await base44.auth.me();
       if (!user) return [];
