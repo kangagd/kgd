@@ -1,5 +1,48 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// ============================================================================
+// Body Coalescing & Sync Status Helpers
+// ============================================================================
+
+/**
+ * Check if a string is non-empty (not null, not "", not whitespace-only)
+ */
+function isNonEmptyString(s) {
+  return typeof s === 'string' && s.trim().length > 0;
+}
+
+/**
+ * Check if HTML is empty after stripping tags
+ */
+function isEmptyHtml(html) {
+  if (!html) return true;
+  const stripped = html.replace(/<[^>]*>/g, '').trim();
+  return stripped.length === 0;
+}
+
+/**
+ * Determine if message has usable body content
+ */
+function hasBodyTruth(bodyHtml, bodyText) {
+  return isNonEmptyString(bodyHtml) && !isEmptyHtml(bodyHtml) ||
+         isNonEmptyString(bodyText);
+}
+
+/**
+ * Coalesce incoming and existing bodies, never downgrading
+ */
+function coalesceBody(existing, incoming) {
+  const incomingHtmlGood = isNonEmptyString(incoming.body_html) && !isEmptyHtml(incoming.body_html);
+  const existingHtmlGood = isNonEmptyString(existing?.body_html) && !isEmptyHtml(existing.body_html);
+  const incomingTextGood = isNonEmptyString(incoming.body_text);
+  const existingTextGood = isNonEmptyString(existing?.body_text);
+
+  return {
+    body_html: incomingHtmlGood ? incoming.body_html : (existingHtmlGood ? existing.body_html : ''),
+    body_text: incomingTextGood ? incoming.body_text : (existingTextGood ? existing.body_text : '')
+  };
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
