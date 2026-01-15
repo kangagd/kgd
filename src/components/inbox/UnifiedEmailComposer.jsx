@@ -195,6 +195,8 @@ export default function UnifiedEmailComposer({
   const subjectInputRef = useRef(null);
   const unmountedRef = useRef(false);
   const composeInitializedRef = useRef(false);
+  const syncInFlightRef = useRef(new Set()); // Track in-flight syncs per thread
+  const lastAutoSyncRef = useRef(new Map()); // Track last auto-sync timestamp per thread
 
   // Load user from auth (most reliable source for signature)
   useEffect(() => {
