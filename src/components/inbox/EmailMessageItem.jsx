@@ -186,26 +186,18 @@ export default function EmailMessageItem({
     // Resolve cid: references to actual inline image URLs
     html = resolveInlineCidImages(html, message.attachments, {
       onMissingUrl: (cidInfo) => {
-        // Mark as pending immediately (before attempting to load)
-        setInlineImageErrors((prev) => new Set(prev).add(cidInfo.content_id));
-        
-        // Lazy-load inline image if not yet resolved
-        if (cidInfo.gmail_message_id && cidInfo.attachment_id) {
-          base44.functions.invoke('gmailGetInlineAttachmentUrl', {
-              gmail_message_id: cidInfo.gmail_message_id,
-              attachment_id: cidInfo.attachment_id,
-            }).then(() => {
-              // Refetch message to get updated attachments with file_url
-              queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
-            }).catch((err) => {
-              console.error('Failed to load inline image:', err);
-              // Error banner stays visible
-            });
+        // Queue pending inline fetch: prefer attachment.gmail_message_id, fallback to message.gmail_message_id
+        const gmailMessageId = cidInfo.gmail_message_id || message.gmail_message_id;
+        if (gmailMessageId && cidInfo.attachment_id) {
+          pendingInlineFetchRef.current.set(cidInfo.content_id, {
+            gmail_message_id: gmailMessageId,
+            attachment_id: cidInfo.attachment_id,
+          });
         }
       }
     });
     return html;
-  }, [mainHtml, message.body_html, message.attachments, threadId, message.thread_id, queryClient]);
+  }, [mainHtml, message.body_html, message.attachments]);
 
   const sanitizedQuotedHtml = useMemo(() => {
     let html = sanitizeEmailHtml(quotedHtml || "", "display");
