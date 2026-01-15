@@ -948,10 +948,15 @@ export default function Inbox() {
         thread={selectedThread}
         message={composerLastMessage}
         existingDraft={composerDraftId ? { id: composerDraftId } : null}
-        onClose={() => setComposerOpen(false)}
+        onClose={() => {
+          setComposerOpen(false);
+          refetchDrafts();
+        }}
         onSent={() => {
           queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
+          queryClient.invalidateQueries({ queryKey: inboxKeys.drafts() });
           refetchThreads();
+          refetchDrafts();
         }}
       />
 
