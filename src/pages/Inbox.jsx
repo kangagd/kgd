@@ -83,6 +83,7 @@ export default function Inbox() {
   const [composerDraftId, setComposerDraftId] = useState(null);
   const [composerThreadId, setComposerThreadId] = useState(null);
   const [composerMode, setComposerMode] = useState("new");
+  const [composerLastMessage, setComposerLastMessage] = useState(null);
 
   // Bulk selection
   const [selectionMode, setSelectionMode] = useState(false);
@@ -791,6 +792,35 @@ export default function Inbox() {
                 onAssignChange={handleAssignChange}
                 currentUser={user}
                 onThreadUpdate={() => refetchThreads()}
+                hasMessages={selectedThread?.message_count > 0}
+                onReply={() => {
+                  setComposerMode('reply');
+                  setComposerThreadId(selectedThread.id);
+                  setComposerLastMessage(null);
+                  setComposerDraftId(null);
+                  setComposerOpen(true);
+                }}
+                onReplyAll={() => {
+                  setComposerMode('reply_all');
+                  setComposerThreadId(selectedThread.id);
+                  setComposerLastMessage(null);
+                  setComposerDraftId(null);
+                  setComposerOpen(true);
+                }}
+                onForward={() => {
+                  setComposerMode('forward');
+                  setComposerThreadId(selectedThread.id);
+                  setComposerLastMessage(null);
+                  setComposerDraftId(null);
+                  setComposerOpen(true);
+                }}
+                onAttach={() => {
+                  setComposerMode(selectedThread?.message_count > 0 ? 'reply' : 'new');
+                  setComposerThreadId(selectedThread?.message_count > 0 ? selectedThread.id : null);
+                  setComposerLastMessage(null);
+                  setComposerDraftId(null);
+                  setComposerOpen(true);
+                }}
               />
 
               <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
@@ -921,11 +951,32 @@ export default function Inbox() {
       {/* Composer drawer */}
       <EmailComposerDrawer
         open={composerOpen}
-        onOpenChange={setComposerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setComposerLastMessage(null);
+          }
+          setComposerOpen(open);
+        }}
         mode={composerMode}
         threadId={composerThreadId}
+        gmail_thread_id={selectedThread?.gmail_thread_id}
         existingDraftId={composerDraftId}
       />
+
+      {/* Warning for unsync'd threads */}
+      {selectedThread && selectedThreadId && !selectedThread?.message_count && selectedThread?.gmail_thread_id && (
+        <div className="fixed bottom-4 right-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs max-w-xs">
+          <p className="text-amber-900 font-medium mb-1">Messages not synced yet</p>
+          <p className="text-amber-800 mb-2">You can reply or forward using thread headers.</p>
+          <button
+            onClick={() => syncGmailInbox()}
+            disabled={isSyncing}
+            className="text-amber-700 hover:text-amber-900 font-medium text-xs underline"
+          >
+            {isSyncing ? 'Syncing...' : 'Sync this thread'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
