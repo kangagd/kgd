@@ -314,10 +314,9 @@ Deno.serve(async (req) => {
         raw: encodedMessage
       };
 
-      // Only add threadId for new messages being sent as replies
-      // When building the message from scratch (not from draft), include threadId if replying
-      if (!rawMimeBase64Url && (thread_id || gmail_thread_id)) {
-        sendPayload.threadId = thread_id || gmail_thread_id;
+      // Only add threadId if we have a valid Gmail thread ID (not our internal thread_id)
+      if (!rawMimeBase64Url && gmail_thread_id) {
+        sendPayload.threadId = gmail_thread_id;
       }
 
       result = await retryWithBackoff(async () => {
