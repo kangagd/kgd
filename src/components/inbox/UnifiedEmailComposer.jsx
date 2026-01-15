@@ -56,6 +56,9 @@ export default function UnifiedEmailComposer({
   const [currentUser, setCurrentUser] = useState(null);
   const [isReplyAll, setIsReplyAll] = useState(false);
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState(message || null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState(null);
 
   // State: Recipients (chip-style array)
   const [toChips, setToChips] = useState([]);
@@ -96,62 +99,68 @@ export default function UnifiedEmailComposer({
     }).catch(() => {});
   }, []);
 
+  // Update selectedMessage when message prop changes
+  useEffect(() => {
+    setSelectedMessage(message);
+  }, [message]);
+
   // Initialize draft or thread context
   useEffect(() => {
-    if (!currentUser) return;
+     if (!currentUser) return;
 
-    // Priority 1: Use provided draft
-    if (existingDraft) {
-      setToChips(existingDraft.to_addresses || []);
-      setCcChips(existingDraft.cc_addresses || []);
-      setBccChips(existingDraft.bcc_addresses || []);
-      setShowCc((existingDraft.cc_addresses || []).length > 0);
-      setShowBcc((existingDraft.bcc_addresses || []).length > 0);
-      setSubject(existingDraft.subject || "");
-      setBody(existingDraft.body_html || "");
-      setDraftId(existingDraft.id);
-      return;
-    }
+     // Priority 1: Use provided draft
+     if (existingDraft) {
+       setToChips(existingDraft.to_addresses || []);
+       setCcChips(existingDraft.cc_addresses || []);
+       setBccChips(existingDraft.bcc_addresses || []);
+       setShowCc((existingDraft.cc_addresses || []).length > 0);
+       setShowBcc((existingDraft.bcc_addresses || []).length > 0);
+       setSubject(existingDraft.subject || "");
+       setBody(existingDraft.body_html || "");
+       setDraftId(existingDraft.id);
+       return;
+     }
 
-    // Priority 2: Default "to" if provided
-    if (defaultTo) {
-      setToChips([defaultTo]);
-    }
+     // Priority 2: Default "to" if provided
+     if (defaultTo) {
+       setToChips([defaultTo]);
+     }
 
-    // Priority 3: Initialize from message context (reply/reply_all/forward)
-    if (thread && message && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
-      initializeFromMessage();
-    }
+     // Priority 3: Initialize from message context (reply/reply_all/forward)
+     if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
+       initializeFromMessage();
+     }
 
-    // Priority 4: Add signature to compose mode (and reply/forward if not already set)
-    if (mode === "compose" && !body) {
-      const signature = getSignature();
-      if (signature) {
-        setBody(signature);
-      }
-    }
-  }, [currentUser, existingDraft, thread, message, mode, defaultTo]);
+     // Priority 4: Add signature to compose mode (and reply/forward if not already set)
+     if (mode === "compose" && !body) {
+       const signature = getSignature();
+       if (signature) {
+         setBody(signature);
+       }
+     }
+   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
+    const msgToUse = selectedMessage;
 
     // Subject
     if (mode === "reply" || mode === "reply_all") {
-      const subject = message?.subject || thread?.subject || "";
+      const subject = msgToUse?.subject || thread?.subject || "";
       setSubject(subject.startsWith("Re:") ? subject : `Re: ${subject}`);
     } else if (mode === "forward") {
-      setSubject(`Fwd: ${message?.subject || thread?.subject || ""}`);
+      setSubject(`Fwd: ${msgToUse?.subject || thread?.subject || ""}`);
     }
 
     // Recipients for reply
     if (mode === "reply") {
-      const replyTo = message?.from_address || "";
+      const replyTo = msgToUse?.from_address || "";
       if (replyTo) setToChips([replyTo]);
     } else if (mode === "reply_all") {
-      const toAddrs = [message?.from_address].filter(Boolean);
+      const toAddrs = [msgToUse?.from_address].filter(Boolean);
       const ccAddrs = [
-        ...(message?.to_addresses || []),
-        ...(message?.cc_addresses || []),
+        ...(msgToUse?.to_addresses || []),
+        ...(msgToUse?.cc_addresses || []),
       ].filter((e) => e && e.toLowerCase() !== userEmail);
       setToChips(toAddrs);
       setCcChips(ccAddrs);
@@ -164,27 +173,27 @@ export default function UnifiedEmailComposer({
 
     if (mode === "reply" || mode === "reply_all") {
       let quoted = "";
-      if (message?.body_html) {
-        quoted = sanitizeForCompose(message.body_html);
-      } else if (message?.body_text) {
-        quoted = message.body_text.replace(/\n/g, "<br>");
+      if (msgToUse?.body_html) {
+        quoted = sanitizeForCompose(msgToUse.body_html);
+      } else if (msgToUse?.body_text) {
+        quoted = msgToUse.body_text.replace(/\n/g, "<br>");
       }
-      const dateStr = message?.sent_at
-        ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
+      const dateStr = msgToUse?.sent_at
+        ? format(parseISO(msgToUse.sent_at), "d/M/yyyy 'at' HH:mm")
         : new Date().toLocaleString();
-      const sender = message?.from_name || message?.from_address;
+      const sender = msgToUse?.from_name || msgToUse?.from_address;
       quotedBody = `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quoted}</blockquote></div>`;
     } else if (mode === "forward") {
       let forwarded = "";
-      if (message?.body_html) {
-        forwarded = sanitizeForCompose(message.body_html);
-      } else if (message?.body_text) {
-        forwarded = message.body_text.replace(/\n/g, "<br>");
+      if (msgToUse?.body_html) {
+        forwarded = sanitizeForCompose(msgToUse.body_html);
+      } else if (msgToUse?.body_text) {
+        forwarded = msgToUse.body_text.replace(/\n/g, "<br>");
       }
-      const dateStr = message?.sent_at
-        ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
+      const dateStr = msgToUse?.sent_at
+        ? format(parseISO(msgToUse.sent_at), "d/M/yyyy 'at' HH:mm")
         : new Date().toLocaleString();
-      quotedBody = `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${message?.from_name || message?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${message?.subject}</div><div style="margin-top: 12px;">${forwarded}</div></div>`;
+      quotedBody = `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${msgToUse?.from_name || msgToUse?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${msgToUse?.subject}</div><div style="margin-top: 12px;">${forwarded}</div></div>`;
     }
 
     if (quotedBody) setBody(quotedBody);
@@ -410,12 +419,12 @@ export default function UnifiedEmailComposer({
       };
 
       // Reply headers
-      if ((mode === "reply" || mode === "reply_all") && message?.gmail_message_id) {
-        payload.reply_to_gmail_message_id = message.gmail_message_id;
-        if (message.references || message.in_reply_to) {
-          payload.references = message.references
-            ? `${message.references} ${message.in_reply_to || ""}`
-            : message.in_reply_to;
+      if ((mode === "reply" || mode === "reply_all") && selectedMessage?.gmail_message_id) {
+        payload.reply_to_gmail_message_id = selectedMessage.gmail_message_id;
+        if (selectedMessage.references || selectedMessage.in_reply_to) {
+          payload.references = selectedMessage.references
+            ? `${selectedMessage.references} ${selectedMessage.in_reply_to || ""}`
+            : selectedMessage.in_reply_to;
         }
       }
 
@@ -652,7 +661,7 @@ export default function UnifiedEmailComposer({
 
       {/* Original Message (reply/forward) */}
       {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
-        message && (
+        selectedMessage && (
           <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
             <button
               onClick={() => setShowOriginalMessage(!showOriginalMessage)}
@@ -661,11 +670,11 @@ export default function UnifiedEmailComposer({
               <div className="flex items-center gap-2">
                 <span className="text-[13px] font-medium text-[#6B7280]">
                   Original message from{" "}
-                  {message.from_name || message.from_address}
+                  {selectedMessage.from_name || selectedMessage.from_address}
                 </span>
                 <span className="text-[11px] text-[#9CA3AF]">
-                  {message.sent_at
-                    ? format(parseISO(message.sent_at), "MMM d, yyyy")
+                  {selectedMessage.sent_at
+                    ? format(parseISO(selectedMessage.sent_at), "MMM d, yyyy")
                     : ""}
                 </span>
               </div>
@@ -680,21 +689,21 @@ export default function UnifiedEmailComposer({
             {showOriginalMessage && (
               <div className="p-4 bg-white border-t border-[#E5E7EB] max-h-[300px] overflow-y-auto">
                 <div className="text-[12px] text-[#6B7280] mb-2">
-                  <strong>From:</strong> {message.from_name || message.from_address}
+                  <strong>From:</strong> {selectedMessage.from_name || selectedMessage.from_address}
                   <br />
                   <strong>Date:</strong>{" "}
-                  {message.sent_at
-                    ? format(parseISO(message.sent_at), "PPpp")
+                  {selectedMessage.sent_at
+                    ? format(parseISO(selectedMessage.sent_at), "PPpp")
                     : ""}
                   <br />
-                  <strong>Subject:</strong> {message.subject}
+                  <strong>Subject:</strong> {selectedMessage.subject}
                 </div>
                 <div
                   className="text-[13px] text-[#111827] prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{
                     __html:
-                      message.body_html ||
-                      message.body_text?.replace(/\n/g, "<br>") ||
+                      selectedMessage.body_html ||
+                      selectedMessage.body_text?.replace(/\n/g, "<br>") ||
                       "",
                   }}
                 />
@@ -705,7 +714,7 @@ export default function UnifiedEmailComposer({
 
       {/* Reply context guardrail */}
       {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
-        !message && (
+        !selectedMessage && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
             <div className="text-[12px] text-amber-800">
               <strong>⚠ Message context not available</strong> — reply will use thread headers only. Thread history may be limited.
@@ -715,23 +724,58 @@ export default function UnifiedEmailComposer({
                 variant="outline"
                 size="sm"
                 onClick={async () => {
+                  setIsSyncing(true);
+                  setSyncError(null);
                   try {
                     const response = await base44.functions.invoke('gmailSyncThreadMessages', {
-                      gmail_thread_id: thread.gmail_thread_id,
+                      thread_id: thread.id,
                     });
                     if (response.data?.success) {
-                      toast.success(`Synced ${response.data.message_count} messages`);
-                      // Refetch thread to load messages
-                      queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
+                      // Invalidate and refetch queries
+                      await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
+                      await queryClient.invalidateQueries({ queryKey: ['emailThread', thread.id] });
+
+                      // Refetch to get latest data
+                      const refetchResult = await queryClient.refetchQueries({ queryKey: ['emailMessages', thread.id] });
+                      await queryClient.refetchQueries({ queryKey: ['emailThread', thread.id] });
+
+                      // Update selectedMessage with latest from refetch
+                      const messages = queryClient.getQueryData(['emailMessages', thread.id]);
+                      if (messages && messages.length > 0) {
+                        // Get the most recent message
+                        const latestMsg = messages[messages.length - 1];
+                        if (latestMsg?.body_html || latestMsg?.body_text) {
+                          setSelectedMessage(latestMsg);
+                          toast.success(`Synced ${response.data.message_count} messages`);
+                        } else {
+                          setSyncError('Messages synced, but content is still unavailable. Try running a full sync.');
+                          toast.warning('Messages synced, but content unavailable.');
+                        }
+                      } else {
+                        setSyncError('No messages found after sync.');
+                        toast.warning('No messages found after sync.');
+                      }
+                    } else {
+                      setSyncError(response.data?.error || 'Sync failed');
+                      toast.error('Failed to sync messages');
                     }
                   } catch (err) {
+                    setSyncError(err.message);
                     toast.error('Failed to sync messages');
+                  } finally {
+                    setIsSyncing(false);
                   }
                 }}
+                disabled={isSyncing}
                 className="h-7 text-[11px]"
               >
-                Sync messages
+                {isSyncing ? 'Syncing...' : 'Sync messages'}
               </Button>
+            )}
+            {syncError && (
+              <div className="text-[11px] text-amber-700 bg-amber-100 px-2 py-1 rounded">
+                {syncError}
+              </div>
             )}
           </div>
         )}
