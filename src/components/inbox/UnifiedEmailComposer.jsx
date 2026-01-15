@@ -149,17 +149,53 @@ export default function UnifiedEmailComposer({
   const unmountedRef = useRef(false);
   const composeInitializedRef = useRef(false);
 
-  // Load user with all custom fields
+  // Load user with reliable signature field handling
   useEffect(() => {
-    base44.auth.me().then(async (authUser) => {
-      // Fetch full user record to get custom fields like email_signature
-      if (authUser?.email) {
-        const fullUser = await base44.entities.User.filter({ email: authUser.email }).then(users => users[0]);
-        setCurrentUser(fullUser || authUser);
-      } else {
-        setCurrentUser(authUser);
+    const loadUser = async () => {
+      try {
+        const authUser = await base44.auth.me();
+        if (!authUser) return;
+
+        let fullUser = null;
+        
+        // Try to get full user by ID first
+        if (authUser.id) {
+          try {
+            fullUser = await base44.entities.User.get(authUser.id);
+          } catch (err) {
+            // Fall back to filter by email
+            const users = await base44.entities.User.filter({ email: authUser.email });
+            fullUser = users[0] || null;
+          }
+        } else {
+          // Fallback: filter by email
+          const users = await base44.entities.User.filter({ email: authUser.email });
+          fullUser = users[0] || null;
+        }
+
+        // Merge user objects with signature field name variants
+        const merged = { ...authUser, ...(fullUser || {}) };
+        merged.email_signature = merged.email_signature || 
+                                  merged.emailSignature || 
+                                  merged.signature_html || 
+                                  merged.signatureHtml || 
+                                  "";
+
+        if (!unmountedRef.current) {
+          setCurrentUser(merged);
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[UnifiedEmailComposer] User loaded, signature length: ${merged.email_signature?.length || 0}`);
+          }
+        }
+      } catch (err) {
+        console.error("[UnifiedEmailComposer] Error loading user:", err);
       }
-    }).catch(() => {});
+    };
+
+    loadUser();
+    return () => {
+      unmountedRef.current = true;
+    };
   }, []);
 
   // Update selectedMessage when message prop changes
@@ -171,7 +207,7 @@ export default function UnifiedEmailComposer({
   useEffect(() => {
     if (!currentUser) return;
 
-    // Priority 1: Use provided draft
+    // Priority 1: Use provided draft (no signature auto-insertion)
     if (existingDraft) {
       setToChips(existingDraft.to_addresses || []);
       setCcChips(existingDraft.cc_addresses || []);
@@ -194,15 +230,21 @@ export default function UnifiedEmailComposer({
       initializeFromMessage();
       return;
     }
-
-    // Priority 4: Add signature to compose mode
-    if (mode === "compose" && !body) {
-      const signature = getSignature();
-      if (signature) {
-        setBody(signature);
-      }
-    }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
+
+  // Step 3: Ensure compose mode auto-inserts signature once
+  useEffect(() => {
+    if (!currentUser || existingDraft || mode !== "compose" || composeInitializedRef.current) {
+      return;
+    }
+
+    const signatureHtml = buildSignatureHtml(currentUser.email_signature);
+    if (signatureHtml && isEmptyBody(body)) {
+      setBody(signatureHtml);
+    }
+
+    composeInitializedRef.current = true;
+  }, [currentUser, existingDraft, mode]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
