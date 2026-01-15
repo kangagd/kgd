@@ -64,11 +64,11 @@ function isEmptyBody(html) {
 }
 
 /**
- * Build signature HTML with marker
+ * Build signature HTML with marker and data attribute for idempotency
  */
 function buildSignatureHtml(signatureText) {
   if (!signatureText || !isNonEmptyString(signatureText)) return "";
-  return `${SIGNATURE_MARKER}<div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${signatureText}</div>`;
+  return `${SIGNATURE_MARKER}<div data-email-signature="true" style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${signatureText}</div>`;
 }
 
 /**
@@ -184,14 +184,17 @@ export default function UnifiedEmailComposer({
     setSelectedMessage(message);
   }, [message]);
 
-  // Inject signature once on fresh compose (only when body is empty)
+  // Inject signature once on fresh compose (only when body is empty, not for reply/forward)
   useEffect(() => {
-    if (mode !== "compose" || !currentUser || !composeInitializedRef.current) return;
-    if (!isEmptyBody(body)) return; // Only inject if body is still empty
+    if (mode !== "compose" || !currentUser) return;
+    if (!isEmptyBody(body)) return; // Only inject if body still empty
+    
+    // Check if signature already present (idempotent)
+    if (body.includes('data-email-signature="true"')) return;
 
     const signatureHtml = buildSignatureHtml(currentUser.email_signature);
     setBody(signatureHtml);
-  }, [currentUser, mode]);
+  }, [currentUser, mode, body]);
 
   // Initialize draft or thread context
   useEffect(() => {
