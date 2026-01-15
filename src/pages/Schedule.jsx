@@ -465,13 +465,13 @@ export default function Schedule() {
     navigate(`${createPageUrl("Jobs")}?jobId=${job.id}`);
   }, [navigate]);
 
-  // Helper: Round time to nearest 30 minutes
-  const roundToNearestHalfHour = (timeStr) => {
+  // Helper: Round time to nearest hour
+  const roundToNearestHour = (timeStr) => {
     if (!timeStr) return null;
     try {
       const [hours, minutes] = timeStr.split(':').map(Number);
       const totalMinutes = hours * 60 + minutes;
-      const rounded = Math.round(totalMinutes / 30) * 30;
+      const rounded = Math.round(totalMinutes / 60) * 60;
       const newHours = Math.floor(rounded / 60) % 24;
       const newMinutes = rounded % 60;
       return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
@@ -497,8 +497,9 @@ export default function Schedule() {
     if (destParts[0] === 'day' && destParts.length >= 4) {
       newDate = `${destParts[1]}-${destParts[2]}-${destParts[3]}`;
       if (destParts.length >= 6) {
-        // Time from droppable ID is already the correct slot time (e.g., 10:00, 10:30)
-        newTime = `${destParts[4]}:${destParts[5]}`;
+        // Snap time to nearest hour
+        const slotTime = `${destParts[4]}:${destParts[5]}`;
+        newTime = roundToNearestHour(slotTime);
       }
     }
     

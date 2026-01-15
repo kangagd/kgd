@@ -424,7 +424,7 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, l
                                         )}
                                         <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-[9px] px-1.5 py-0 rounded">
                                           <Clock className="w-2.5 h-2.5 mr-0.5" />
-                                          {job.scheduled_time?.slice(0, 5) || 'TBD'}
+                                          {job.scheduled_time?.slice(0, 5) || 'TBD'} {job.expected_duration ? `(${job.expected_duration}h)` : ''}
                                         </Badge>
                                       </div>
 

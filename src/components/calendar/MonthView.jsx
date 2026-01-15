@@ -181,7 +181,7 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                       </Badge>
                     </div>
                   ) : (
-                    <div className={`space-y-0.5 overflow-y-auto ${compactMode ? 'max-h-[60px]' : ''}`} style={{ maxHeight: compactMode ? '60px' : '90px' }}>
+                    <div className={`space-y-0.5 overflow-y-auto ${compactMode ? 'max-h-[80px]' : ''}`} style={{ maxHeight: compactMode ? '80px' : '110px' }}>
                       {dayJobs.slice(0, compactMode ? 2 : 3).map(job => {
                         const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
                         
@@ -213,6 +213,11 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                                   <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-semibold text-[8px] px-1 py-0 rounded">
                                     <Clock className="w-2 h-2 mr-0.5" />
                                     {job.scheduled_time.slice(0, 5)}
+                                  </Badge>
+                                )}
+                                {job.assigned_to_name && job.assigned_to_name.length > 0 && (
+                                  <Badge className="bg-[#DDD] text-[#5B5B5B] hover:bg-[#DDD] border-0 font-medium text-[7px] px-0.5 py-0 rounded">
+                                    {job.assigned_to_name[0]?.split(' ')[0] || ''}
                                   </Badge>
                                 )}
                               </div>
