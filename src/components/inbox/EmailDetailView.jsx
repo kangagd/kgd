@@ -81,7 +81,8 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
       }
     },
     enabled: !!thread?.id,
-    staleTime: 0,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   /* ---------- sync thread messages ---------- */
