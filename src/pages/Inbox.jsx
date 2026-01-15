@@ -67,6 +67,9 @@ export default function Inbox() {
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilters, setActiveFilters] = useState({});
+  
+  // NOTE: `showComposer`/`composerMessage` removed (GUARDRAIL: use composerOpen/composerMode instead - controls both visibility and mode)
+  // Composer state consolidated into: composerOpen, composerMode, composerThreadId, composerDraftId, composerLastMessage
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);

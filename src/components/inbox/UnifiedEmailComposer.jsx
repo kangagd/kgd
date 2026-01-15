@@ -250,6 +250,8 @@ export default function UnifiedEmailComposer({
   const fileInputRef = useRef(null);
   const bodyEditorRef = useRef(null);
   const subjectInputRef = useRef(null);
+  // NOTE: `toInputRef` removed (GUARDRAIL: not needed for chip-based recipient input)
+  // NOTE: `isReplyAll` state removed (GUARDRAIL: reply/reply_all mode set directly from parent Inbox.js - see onReply/onReplyAll handlers)
   const unmountedRef = useRef(false);
   const composeInitializedRef = useRef(false);
   const syncInFlightRef = useRef(new Set()); // Track in-flight syncs per thread
