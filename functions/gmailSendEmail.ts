@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { persistAttachmentsToEntity } from './shared/emailAttachmentPersistence.js';
 
 // Helper to build RFC 2822 MIME message with attachments
 function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inReplyTo, references, threadId, attachments }) {
@@ -344,9 +345,10 @@ Deno.serve(async (req) => {
     }
 
     // Create EmailMessage record for sent email
+    let emailMessageId = null;
     if (thread_id) {
       try {
-        await base44.asServiceRole.entities.EmailMessage.create({
+        const createdMessage = await base44.asServiceRole.entities.EmailMessage.create({
           thread_id,
           gmail_message_id: result.id,
           gmail_thread_id: result.threadId || gmail_thread_id,
@@ -363,6 +365,7 @@ Deno.serve(async (req) => {
           performed_by_user_email: user.email,
           performed_at: new Date().toISOString()
         });
+        emailMessageId = createdMessage.id;
 
         // Update thread last_message_date + auto-link to Project/Contract if provided
         const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
@@ -396,11 +399,52 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Persist attachments to linked Project/Contract (best-effort, non-blocking)
+    let attachmentPersistResult = null;
+    if (thread_id && attachments && attachments.length > 0) {
+      try {
+        const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
+        if (thread) {
+          // Determine link target: prefer contract_id, fallback to project_id
+          const targetContractId = contract_id || thread.contract_id;
+          const targetProjectId = project_id || thread.project_id;
+          
+          if (targetContractId) {
+            // Persist to Contract
+            attachmentPersistResult = await persistAttachmentsToEntity({
+              base44,
+              entityType: 'contract',
+              entityId: targetContractId,
+              threadId: thread_id,
+              messageId: emailMessageId,
+              attachments
+            });
+            console.log(`[gmailSendEmail] Attachment persist to contract: ${JSON.stringify(attachmentPersistResult)}`);
+          } else if (targetProjectId) {
+            // Persist to Project
+            attachmentPersistResult = await persistAttachmentsToEntity({
+              base44,
+              entityType: 'project',
+              entityId: targetProjectId,
+              threadId: thread_id,
+              messageId: emailMessageId,
+              attachments
+            });
+            console.log(`[gmailSendEmail] Attachment persist to project: ${JSON.stringify(attachmentPersistResult)}`);
+          }
+        }
+      } catch (error) {
+        console.error('[gmailSendEmail] Error persisting attachments:', error.message);
+        // Do not throw; attachment persistence is best-effort
+      }
+    }
+
     return Response.json({
       success: true,
       gmailMessageId: result.id,
       gmailThreadId: result.threadId,
-      labelIds: result.labelIds
+      labelIds: result.labelIds,
+      attachment_persist: attachmentPersistResult
     });
 
   } catch (error) {
