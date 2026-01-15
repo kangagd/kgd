@@ -179,6 +179,15 @@ export default function EmailMessageItem({
 
   const hasQuoted = !!quotedHtml && quotedHtml.trim().length > 0;
 
+  // Memoize expensive sanitization operations
+  const sanitizedMainHtml = useMemo(() => {
+    return sanitizeEmailHtml(mainHtml || message.body_html || "", "display", inlineImages);
+  }, [mainHtml, message.body_html, inlineImages]);
+
+  const sanitizedQuotedHtml = useMemo(() => {
+    return sanitizeEmailHtml(quotedHtml || "", "display", inlineImages);
+  }, [quotedHtml, inlineImages]);
+
   const previewText = useMemo(() => {
    const base =
     message.body_text?.trim()
@@ -201,7 +210,7 @@ export default function EmailMessageItem({
     >
       {/* We do accent bar using a flex wrapper */}
       <div className="flex">
-        <div className={`w-[3px] ${accentClass}`} />
+      <div className={`w-[3px] ${accentClass}`} />
 
         <div className="flex-1">
           {/* Message Header */}
@@ -361,7 +370,7 @@ export default function EmailMessageItem({
                       {/* Main content */}
                       <div
                         dangerouslySetInnerHTML={{
-                          __html: sanitizeEmailHtml(mainHtml || message.body_html, "display", inlineImages),
+                          __html: sanitizedMainHtml,
                         }}
                       />
 
@@ -382,7 +391,7 @@ export default function EmailMessageItem({
                             <div className="mt-2 pl-3 border-l border-[#E5E7EB] text-[#374151]">
                               <div
                                 dangerouslySetInnerHTML={{
-                                  __html: sanitizeEmailHtml(quotedHtml, "display", inlineImages),
+                                  __html: sanitizedQuotedHtml,
                                 }}
                               />
                             </div>
