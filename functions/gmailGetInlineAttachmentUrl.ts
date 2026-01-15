@@ -120,8 +120,10 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error('[gmailGetInlineAttachmentUrl] Error:', error);
+    // Extract error message safely (handle non-Error objects)
+    const errorMsg = error?.message || String(error) || 'Unknown error';
     return Response.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMsg },
       { status: 500 }
     );
   }
