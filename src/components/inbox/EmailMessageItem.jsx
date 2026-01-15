@@ -156,9 +156,12 @@ export default function EmailMessageItem({
   const [showQuoted, setShowQuoted] = useState(false);
 
   // Check if message has no body
-  const hasNoBody = message.has_body === false || 
-    (!message.body_html || message.body_html.trim() === '') &&
-    (!message.body_text || message.body_text.trim() === '');
+  const hasNoBody =
+    message?.has_body === false ||
+    (
+      (!message?.body_html || message.body_html.trim() === "") &&
+      (!message?.body_text || message.body_text.trim() === "")
+    );
 
   const handleReSyncMessage = async () => {
     setIsSyncing(true);
@@ -187,7 +190,7 @@ export default function EmailMessageItem({
         onResyncMessage?.();
       }
     } catch (error) {
-      console.error('Error syncing message:', error);
+      console.error('EmailMessageItem handleReSyncMessage error:', { messageId: message?.id, error });
       toast.error('Failed to sync message');
     } finally {
       setIsSyncing(false);
@@ -207,17 +210,17 @@ export default function EmailMessageItem({
 
   // Separate regular attachments from inline images
   const regularAttachments = useMemo(() => {
-    if (!message.attachments) return [];
-    return message.attachments.filter((att) => !att.is_inline || !att.content_id);
+    const attachments = Array.isArray(message?.attachments) ? message.attachments : [];
+    return attachments.filter((att) => {
+      const isInline = !!att?.is_inline;
+      const hasCid = !!att?.content_id;
+      return !(isInline || hasCid);
+    });
   }, [message.attachments]);
 
   // Body handling (main vs quoted)
   const { mainHtml, quotedHtml } = useMemo(() => {
-    if (!message.body_html || !message.body_html.includes("<")) {
-      return { mainHtml: "", quotedHtml: "" };
-    }
-    const split = splitQuotedHtml(message.body_html);
-    return split;
+    return splitQuotedHtml(message?.body_html || "");
   }, [message.body_html]);
 
   const hasQuoted = !!quotedHtml && quotedHtml.trim().length > 0;
@@ -242,9 +245,7 @@ export default function EmailMessageItem({
         expanded ? "shadow-sm" : ""
       } ${containerTint}`}
     >
-      {/* Accent bar to clearly show message start */}
-      <div className={`h-full w-[3px] ${accentClass} absolute`} style={{ display: "none" }} />
-      {/* We do accent bar using a flex wrapper so it works without absolute positioning */}
+      {/* We do accent bar using a flex wrapper */}
       <div className="flex">
         <div className={`w-[3px] ${accentClass}`} />
 
