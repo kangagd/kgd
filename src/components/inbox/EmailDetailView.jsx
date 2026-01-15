@@ -92,7 +92,17 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
       });
 
       if (response.data?.success) {
-        toast.success(`Synced ${response.data.message_count} messages`);
+        // Smart toast based on sync results
+        const { okCount = 0, partialCount = 0, failedCount = 0 } = response.data || {};
+        
+        if (okCount > 0) {
+          toast.success('Messages synced');
+        } else if (okCount === 0 && partialCount > 0) {
+          toast.warning('Messages updated, but content is still unavailable. Try again.');
+        } else if (failedCount > 0) {
+          toast.error('Some messages failed to sync');
+        }
+        
         // Refetch messages and thread
         await queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
         onThreadUpdate?.();
