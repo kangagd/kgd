@@ -118,13 +118,10 @@ export default function EmailMessageItem({
   const [expanded, setExpanded] = useState(isLast || totalMessages === 1);
   const [showQuoted, setShowQuoted] = useState(false);
 
-  // Check if message has no body
-  const hasNoBody =
-    message?.has_body === false ||
-    (
-      (!message?.body_html || message.body_html.trim() === "") &&
-      (!message?.body_text || message.body_text.trim() === "")
-    );
+  // Check if message has no body (ignore has_body flag; check actual content)
+  const hasHtml = !!message?.body_html && message.body_html.trim() !== "";
+  const hasText = !!message?.body_text && message.body_text.trim() !== "";
+  const hasNoBody = !hasHtml && !hasText;
 
   const handleReSyncMessage = async () => {
     setIsSyncing(true);
@@ -162,14 +159,10 @@ export default function EmailMessageItem({
       }));
   }, [message.attachments]);
 
-  // Separate regular attachments from inline images
+  // Separate regular attachments from inline images (only is_inline flag matters)
   const regularAttachments = useMemo(() => {
     const attachments = Array.isArray(message?.attachments) ? message.attachments : [];
-    return attachments.filter((att) => {
-      const isInline = !!att?.is_inline;
-      const hasCid = !!att?.content_id;
-      return !(isInline || hasCid);
-    });
+    return attachments.filter((att) => !att?.is_inline);
   }, [message.attachments]);
 
   // Body handling (main vs quoted)
