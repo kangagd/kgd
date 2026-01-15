@@ -218,7 +218,6 @@ export default function UnifiedEmailComposer({
 }) {
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
-  const [isReplyAll, setIsReplyAll] = useState(false);
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(message || null);
   const replyAllToggleRef = useRef(false); // Track toggle state to re-init recipients
@@ -227,7 +226,6 @@ export default function UnifiedEmailComposer({
 
   // State: Recipients (chip-style array)
   const [toChips, setToChips] = useState([]);
-  const [toInput, setToInput] = useState("");
   const [ccChips, setCcChips] = useState([]);
   const [ccInput, setCcInput] = useState("");
   const [bccChips, setBccChips] = useState([]);
@@ -250,7 +248,6 @@ export default function UnifiedEmailComposer({
 
   // Refs
   const fileInputRef = useRef(null);
-  const toInputRef = useRef(null);
   const bodyEditorRef = useRef(null);
   const subjectInputRef = useRef(null);
   const unmountedRef = useRef(false);
@@ -320,12 +317,7 @@ export default function UnifiedEmailComposer({
     setSelectedMessage(message);
   }, [message]);
 
-  // Re-initialize recipients when isReplyAll toggle changes (preserve body)
-  useEffect(() => {
-    if ((mode === "reply" || mode === "reply_all") && selectedMessage) {
-      initializeRecipientsFromMessage();
-    }
-  }, [isReplyAll, mode, selectedMessage, initializeRecipientsFromMessage]);
+
 
   // Initialize non-body fields (recipients, subject, draft ID)
   useEffect(() => {
@@ -1353,28 +1345,16 @@ export default function UnifiedEmailComposer({
     <Card className="border-2 border-[#FAE008] shadow-lg flex flex-col max-h-[90vh]">
       <CardHeader className="bg-[#FAE008]/10 border-b border-[#E5E7EB] flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CardTitle className="text-[18px] font-semibold">
+          <CardTitle className="text-[18px] font-semibold">
+            {
               {
-                {
-                  compose: "New Email",
-                  reply: "Reply",
-                  reply_all: "Reply All",
-                  forward: "Forward",
-                }[mode]
-              }
-            </CardTitle>
-            {mode === "reply" && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsReplyAll(!isReplyAll)}
-                className="h-7 text-[12px]"
-              >
-                {isReplyAll ? "Reply to Sender Only" : "Reply All"}
-              </Button>
-            )}
-          </div>
+                compose: "New Email",
+                reply: "Reply",
+                reply_all: "Reply All",
+                forward: "Forward",
+              }[mode]
+            }
+          </CardTitle>
           <Button variant="ghost" size="icon" onClick={handleClose}>
             <X className="w-5 h-5" />
           </Button>
