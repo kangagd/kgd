@@ -262,6 +262,7 @@ export default function UnifiedEmailComposer({
   const isTypingRef = useRef(false); // Track active typing (prevent autosave state mutations)
   const lastUserEditAtRef = useRef(0); // Track last keystroke timestamp
   const typingTimeoutRef = useRef(null); // Timeout for resetting isTypingRef
+  const lastSavedSnapshotRef = useRef(null); // Track last saved state for dirty detection
 
   // Load user from auth (most reliable source for signature)
   useEffect(() => {
@@ -484,6 +485,13 @@ export default function UnifiedEmailComposer({
     setter(list.filter((e) => e !== email));
   };
 
+  // Check if current state differs from last saved
+  const isDirty = () => {
+    const current = { to: toChips, cc: ccChips, bcc: bccChips, subject, body };
+    if (!lastSavedSnapshotRef.current) return true;
+    return JSON.stringify(current) !== JSON.stringify(lastSavedSnapshotRef.current);
+  };
+
   // Draft auto-save
   const saveDraft = useCallback(
     async (draftData) => {
@@ -511,6 +519,8 @@ export default function UnifiedEmailComposer({
           const newDraft = await base44.entities.EmailDraft.create(draft);
           setDraftId(newDraft.id);
         }
+        // Update snapshot after successful save
+        lastSavedSnapshotRef.current = { to: draftData.to, cc: draftData.cc, bcc: draftData.bcc, subject: draftData.subject, body: draftData.body };
         setLastSaved(new Date());
         if (onDraftSaved) onDraftSaved();
       } catch (error) {
@@ -537,14 +547,29 @@ export default function UnifiedEmailComposer({
     return () => debouncedSave.cancel();
   }, [toChips, ccChips, bccChips, subject, body, debouncedSave]);
 
-  // Cleanup typing timeout on unmount
+  // Cleanup typing timeout and final save on unmount
   useEffect(() => {
-    return () => {
+    return async () => {
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
+
+      // On unmount, flush debounce and do final save if dirty (max 800ms)
+      debouncedSave.flush();
+
+      if (isDirty() && (toChips.length > 0 || subject || body)) {
+        try {
+          const finalSavePromise = saveDraft({ to: toChips, cc: ccChips, bcc: bccChips, subject, body });
+          await Promise.race([
+            finalSavePromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Save timeout')), 800))
+          ]);
+        } catch (err) {
+          console.warn('[UnifiedEmailComposer] Unmount final save timeout or failed:', err.message);
+        }
+      }
     };
-  }, []);
+  }, [debouncedSave, saveDraft]);
 
   // Apply template (explicit user action - allowed to overwrite body)
   const handleApplyTemplate = async (templateId) => {
@@ -739,11 +764,27 @@ export default function UnifiedEmailComposer({
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    // Flush debounced save and do final save if dirty (max 800ms)
+    debouncedSave.flush();
+
+    if (isDirty() && (toChips.length > 0 || subject || body)) {
+      try {
+        const finalSavePromise = saveDraft({ to: toChips, cc: ccChips, bcc: bccChips, subject, body });
+        // Hard cap: wait max 800ms for final save
+        await Promise.race([
+          finalSavePromise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Save timeout')), 800))
+        ]);
+      } catch (err) {
+        console.warn('[UnifiedEmailComposer] Final save timeout or failed, closing anyway:', err.message);
+      }
+    }
+
     // Reset init/typing refs so next compose session initializes correctly
     didInitBodyRef.current = false;
     userHasTypedRef.current = false;
-    
+
     if (variant === "drawer" && onOpenChange) {
       onOpenChange(false);
     } else {
