@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, User, Clock, Check, Mail, X, Link as LinkIcon, Sparkles, FileText, Trash2 } from 'lucide-react';
+import { ChevronDown, User, Clock, Check, Mail, X, Link as LinkIcon, Sparkles, FileText, Trash2, Reply, ArrowRight, Paperclip } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import {
@@ -19,7 +19,20 @@ import CreateProjectFromThreadModal from './CreateProjectFromThreadModal';
 import ThreadInternalNotesModal from './ThreadInternalNotesModal';
 import DeleteThreadConfirmModal from './DeleteThreadConfirmModal';
 
-export default function ThreadHeader({ thread, users = [], onStatusChange, onAssignChange, loading = false, currentUser, onThreadUpdate }) {
+export default function ThreadHeader({ 
+  thread, 
+  users = [], 
+  onStatusChange, 
+  onAssignChange, 
+  loading = false, 
+  currentUser, 
+  onThreadUpdate,
+  hasMessages = false,
+  onReply = null,
+  onReplyAll = null,
+  onForward = null,
+  onAttach = null
+}) {
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [isClosingLoading, setIsClosingLoading] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
@@ -53,6 +66,8 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
   };
 
   const isViewer = currentUser?.role === 'viewer';
+  const canCompose = !isViewer;
+  const canReplyForward = canCompose && (hasMessages || thread.gmail_thread_id);
   const isLinked = thread.project_id || thread.contract_id;
   const linkedType = thread.project_id ? 'project' : thread.contract_id ? 'contract' : null;
   const linkedTitle = thread.project_title || thread.contract_name || '';
@@ -119,6 +134,45 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Reply */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onReply}
+            disabled={!canReplyForward}
+            className="h-7 px-2 text-[12px] flex items-center gap-1 text-[#6B7280] hover:bg-[#F3F4F6]"
+            title={!canReplyForward ? (isViewer ? 'Viewer cannot reply' : 'Sync this thread to reply') : 'Reply to sender'}
+          >
+            <Reply className="w-3.5 h-3.5" />
+            Reply
+          </Button>
+
+          {/* Forward */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onForward}
+            disabled={!canReplyForward}
+            className="h-7 px-2 text-[12px] flex items-center gap-1 text-[#6B7280] hover:bg-[#F3F4F6]"
+            title={!canReplyForward ? (isViewer ? 'Viewer cannot forward' : 'Sync this thread to forward') : 'Forward this thread'}
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+            Forward
+          </Button>
+
+          {/* Attach */}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onAttach}
+            disabled={!canCompose}
+            className="h-7 px-2 text-[12px] flex items-center gap-1 text-[#6B7280] hover:bg-[#F3F4F6]"
+            title={!canCompose ? 'Viewer cannot compose' : 'Compose with attachments'}
+          >
+            <Paperclip className="w-3.5 h-3.5" />
+            Attach
+          </Button>
+
           {/* Link Action */}
           <Button
             size="sm"
