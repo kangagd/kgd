@@ -58,9 +58,9 @@ export default function LinkThreadModal({
 
   const handleSelect = (item) => {
     if (isProject) {
-      onLinkProject(item.id, item.title);
+      onLinkProject(item.id);
     } else if (isContract) {
-      onLinkContract(item.id, item.name);
+      onLinkContract(item.id);
     }
   };
 
