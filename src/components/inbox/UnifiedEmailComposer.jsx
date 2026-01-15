@@ -671,6 +671,10 @@ export default function UnifiedEmailComposer({
   };
 
   const handleClose = () => {
+    // Reset init/typing refs so next compose session initializes correctly
+    didInitBodyRef.current = false;
+    userHasTypedRef.current = false;
+    
     if (variant === "drawer" && onOpenChange) {
       onOpenChange(false);
     } else {
