@@ -364,6 +364,17 @@ export default function UnifiedEmailComposer({
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
+  // Reset body init flag when thread/message context changes (but not when just opening the composer)
+  useEffect(() => {
+    if (existingDraft?.id) {
+      // Fresh draft being loaded, reset init flag
+      didInitBodyRef.current = false;
+    } else if (thread?.id || selectedMessage?.id) {
+      // Switching threads/messages, reset init flag
+      didInitBodyRef.current = false;
+    }
+  }, [thread?.id, selectedMessage?.id, existingDraft?.id]);
+
 
 
   const initializeRecipientsFromMessage = () => {
