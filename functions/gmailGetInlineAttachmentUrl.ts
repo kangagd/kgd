@@ -172,10 +172,15 @@ Deno.serve(async (req) => {
 
     const attachmentData = await gmailRes.json();
     if (!attachmentData.data) {
-      throw new Error('No attachment data in Gmail response');
+      return Response.json({
+        success: false,
+        error: 'No attachment data in Gmail response',
+        phase,
+      }, { status: 502 });
     }
 
-    // Decode base64url safely
+    // Decode base64url safely with padding
+    phase = 'decode';
     const bytes = decodeBase64Url(attachmentData.data);
 
     // Get attachment metadata for File object
