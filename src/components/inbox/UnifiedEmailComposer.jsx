@@ -314,7 +314,7 @@ export default function UnifiedEmailComposer({
     setSelectedMessage(message);
   }, [message]);
 
-  // Initialize draft or thread context
+  // Initialize non-body fields (recipients, subject, draft ID)
   useEffect(() => {
     if (!currentUser) return;
 
@@ -326,13 +326,12 @@ export default function UnifiedEmailComposer({
       setShowCc((existingDraft.cc_addresses || []).length > 0);
       setShowBcc((existingDraft.bcc_addresses || []).length > 0);
       setSubject(existingDraft.subject || "");
-      setBody(existingDraft.body_html || "");
       setDraftId(existingDraft.id);
       composeInitializedRef.current = true;
       return;
     }
 
-    // Priority 2: Fresh compose mode - init state, but don't inject signature yet
+    // Priority 2: Fresh compose mode - init state
     if (mode === "compose") {
       setToChips([]);
       setCcChips([]);
@@ -342,7 +341,6 @@ export default function UnifiedEmailComposer({
       setSubject("");
       setAttachments([]);
       setDraftId(null);
-      setBody(""); // Will be populated by next effect
 
       // Default "to" if provided
       if (defaultTo) {
@@ -353,9 +351,9 @@ export default function UnifiedEmailComposer({
       return;
     }
 
-    // Priority 3: Initialize from message context (reply/reply_all/forward)
+    // Priority 3: Initialize recipients for reply/reply_all/forward
     if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
-      initializeFromMessage();
+      initializeRecipientsFromMessage();
       return;
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
