@@ -61,6 +61,7 @@ const inferThreadDirection = (thread, orgEmails = []) => {
 
 export default function Inbox() {
   const queryClient = useQueryClient();
+  const mountedRef = useRef(true);
   const [user, setUser] = useState(null);
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -71,7 +72,6 @@ export default function Inbox() {
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
-  const [lastSyncRequestTime, setLastSyncRequestTime] = useState(0); // rate limit sync calls
   const [showHistorySearch, setShowHistorySearch] = useState(false);
   const [activeView, setActiveView] = useState("inbox"); // inbox | drafts
   const [composerOpen, setComposerOpen] = useState(false);
@@ -83,6 +83,13 @@ export default function Inbox() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedThreadIds, setSelectedThreadIds] = useState(new Set());
   const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
+
+  // Cleanup on unmount to avoid setState warnings
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Load current user
   useEffect(() => {
@@ -155,48 +162,66 @@ export default function Inbox() {
     };
   }, [user, queryClient, lastThreadFetchTime]);
 
-  // Sync Gmail inbox + messages (orchestrated)
+  // Sync Gmail inbox + messages (orchestrated with global mutex)
   const syncGmailInbox = async () => {
-    if (isSyncing) return;
+    // Check if sync already in flight (global level)
+    if (syncInFlight) {
+      console.log('[Inbox] Sync already in flight globally');
+      return syncInFlight;
+    }
 
-    const now = Date.now();
-    if (now - lastSyncRequestTime < 60000) {
-      console.log(`[Inbox] Sync blocked: last sync ${Math.round((now - lastSyncRequestTime) / 1000)}s ago`);
+    // Check local state
+    if (isSyncing) {
+      console.log('[Inbox] Sync already in progress locally');
       return;
     }
 
-    try {
-      setIsSyncing(true);
-      setLastSyncRequestTime(now);
-      const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
-
-      // Handle sync lock (already in progress)
-      if (result?.skipped && result?.reason === 'locked') {
-       console.log(`[Inbox] Sync already running, locked until ${result.locked_until}`);
-       toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
-       setIsSyncing(false);
-       return;
-      }
-
-      if (result?.summary) {
-       console.log(
-         `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
-       );
-      }
-
-      await refetchThreads();
-      setLastSyncTime(new Date());
-
-      if (result?.errors?.length) console.warn("Sync completed with errors:", result.errors);
-    } catch (error) {
-      console.error("Sync failed:", error);
-      toast.error("Failed to sync emails");
-    } finally {
-      setIsSyncing(false);
+    const now = Date.now();
+    // Throttle: do not sync more frequently than every 60 seconds
+    if (lastSyncTime && now - new Date(lastSyncTime).getTime() < 60000) {
+      console.log(`[Inbox] Sync throttled: last sync ${Math.round((now - new Date(lastSyncTime).getTime()) / 1000)}s ago`);
+      return;
     }
+
+    // Set sync in progress (local + global)
+    syncInFlight = (async () => {
+      try {
+        if (mountedRef.current) setIsSyncing(true);
+        
+        const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
+
+        // Handle sync lock (already in progress on backend)
+        if (result?.skipped && result?.reason === 'locked') {
+          console.log(`[Inbox] Sync already running, locked until ${result.locked_until}`);
+          if (mountedRef.current) toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
+          return;
+        }
+
+        if (result?.summary) {
+          console.log(
+            `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
+          );
+        }
+
+        if (mountedRef.current) {
+          await refetchThreads();
+          setLastSyncTime(new Date());
+        }
+
+        if (result?.errors?.length) console.warn("Sync completed with errors:", result.errors);
+      } catch (error) {
+        console.error("Sync failed:", error);
+        if (mountedRef.current) toast.error("Failed to sync emails");
+      } finally {
+        if (mountedRef.current) setIsSyncing(false);
+        syncInFlight = null;
+      }
+    })();
+
+    return syncInFlight;
   };
 
-  // Auto-sync on mount and when tab becomes visible (with staleTime gating)
+  // Auto-sync on mount and when tab becomes visible (with throttle)
   useEffect(() => {
     if (!user) return;
 
@@ -208,7 +233,10 @@ export default function Inbox() {
         clearTimeout(visibilityTimeout);
         visibilityTimeout = setTimeout(() => {
           const now = Date.now();
-          if (now - lastThreadFetchTime >= 30000) syncGmailInbox();
+          // Only auto-sync if threads data is > 30s stale
+          if (now - lastThreadFetchTime >= 30000) {
+            syncGmailInbox();
+          }
         }, 500);
       }
     };
@@ -692,7 +720,13 @@ export default function Inbox() {
             </div>
             <button
               onClick={() => setShowHistorySearch(true)}
-              className="w-full px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-colors"
+              disabled={isSyncing}
+              className={`w-full px-3 py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                isSyncing 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-50 hover:bg-blue-100 text-blue-700'
+              }`}
+              title={isSyncing ? 'Sync in progress' : ''}
             >
               <History className="w-3 h-3" />
               Search Gmail History
