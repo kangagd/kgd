@@ -316,10 +316,7 @@ export default function UnifiedEmailComposer({
     didInitBodyRef.current = true;
   }, [currentUser, existingDraft?.id, mode, thread?.id]);
 
-  // Update selectedMessage when message prop changes (but don't overwrite body)
-  useEffect(() => {
-    setSelectedMessage(message);
-  }, [message]);
+
 
 
 
