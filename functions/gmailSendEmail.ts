@@ -1,14 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Helper to build RFC 2822 MIME message
-function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inReplyTo, references, threadId }) {
+// Helper to build RFC 2822 MIME message with attachments
+function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inReplyTo, references, threadId, attachments }) {
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const alternativeBoundary = `----=_Alt_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const lines = [];
 
   // Ensure arrays
   const toArray = Array.isArray(to) ? to : (to ? [to] : []);
   const ccArray = Array.isArray(cc) ? cc : (cc ? [cc] : []);
   const bccArray = Array.isArray(bcc) ? bcc : (bcc ? [bcc] : []);
+  const attachmentArray = Array.isArray(attachments) ? attachments : [];
 
   // Headers
   lines.push(`From: ${from}`);
@@ -23,12 +25,68 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
   
   lines.push('MIME-Version: 1.0');
   
-  if (htmlBody) {
-    // Multipart for HTML + text
+  // If we have attachments, use multipart/mixed
+  if (attachmentArray.length > 0) {
+    lines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+    lines.push('');
+    
+    // Body part (multipart/alternative if both text and HTML, otherwise just text or HTML)
+    lines.push(`--${boundary}`);
+    
+    if (htmlBody) {
+      lines.push(`Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`);
+      lines.push('');
+      
+      // Plain text
+      lines.push(`--${alternativeBoundary}`);
+      lines.push('Content-Type: text/plain; charset=UTF-8');
+      lines.push('Content-Transfer-Encoding: 7bit');
+      lines.push('');
+      lines.push(textBody || htmlBody.replace(/<[^>]*>/g, ''));
+      lines.push('');
+      
+      // HTML
+      lines.push(`--${alternativeBoundary}`);
+      lines.push('Content-Type: text/html; charset=UTF-8');
+      lines.push('Content-Transfer-Encoding: 7bit');
+      lines.push('');
+      lines.push(htmlBody);
+      lines.push('');
+      lines.push(`--${alternativeBoundary}--`);
+    } else {
+      lines.push('Content-Type: text/plain; charset=UTF-8');
+      lines.push('Content-Transfer-Encoding: 7bit');
+      lines.push('');
+      lines.push(textBody);
+      lines.push('');
+    }
+    
+    // Attachments
+    for (const att of attachmentArray) {
+      if (!att.data || !att.filename) continue;
+      
+      lines.push(`--${boundary}`);
+      lines.push(`Content-Type: ${att.mimeType || 'application/octet-stream'}`);
+      lines.push('Content-Transfer-Encoding: base64');
+      lines.push(`Content-Disposition: attachment; filename="${att.filename}"`);
+      lines.push('');
+      
+      // Ensure data is clean base64 (no prefix)
+      let base64Data = att.data;
+      if (base64Data.includes(',')) {
+        base64Data = base64Data.split(',')[1];
+      }
+      lines.push(base64Data);
+      lines.push('');
+    }
+    
+    lines.push(`--${boundary}--`);
+  } else if (htmlBody) {
+    // No attachments, HTML + text
     lines.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
     lines.push('');
     
-    // Plain text part
+    // Plain text
     lines.push(`--${boundary}`);
     lines.push('Content-Type: text/plain; charset=UTF-8');
     lines.push('Content-Transfer-Encoding: 7bit');
@@ -36,7 +94,7 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
     lines.push(textBody || htmlBody.replace(/<[^>]*>/g, ''));
     lines.push('');
     
-    // HTML part
+    // HTML
     lines.push(`--${boundary}`);
     lines.push('Content-Type: text/html; charset=UTF-8');
     lines.push('Content-Transfer-Encoding: 7bit');
