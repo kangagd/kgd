@@ -84,25 +84,28 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Find the EmailMessage record to check if we already have a cached file_url
-    let emailMessages = [];
+    // Find the EmailMessage record to check if we already have a cached file_url or url
+    let emailMessage = null;
     try {
-      emailMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+      const emailMessages = await base44.asServiceRole.entities.EmailMessage.filter({
         gmail_message_id,
       });
+      emailMessage = emailMessages[0] || null;
     } catch (err) {
       console.error('[gmailGetInlineAttachmentUrl] Error fetching EmailMessage:', err);
+      // Non-fatal: continue without cache
     }
 
-    const emailMessage = emailMessages[0];
+    // Check cache: accept file_url OR url (backwards compatibility)
     if (emailMessage && emailMessage.attachments) {
       const cachedAttachment = emailMessage.attachments.find(
-        (att) => att.attachment_id === attachment_id && att.file_url
+        (att) => att.attachment_id === attachment_id && (att.file_url || att.url)
       );
       if (cachedAttachment) {
+        const cachedUrl = cachedAttachment.file_url || cachedAttachment.url;
         return Response.json({
           success: true,
-          file_url: cachedAttachment.file_url,
+          file_url: cachedUrl,
           fromCache: true,
         });
       }
