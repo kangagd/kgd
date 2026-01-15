@@ -217,11 +217,46 @@ export default function EmailMessageItem({
     return sanitizeInboundText(base || "");
   }, [message.body_text, message.body_html]);
 
-  // Hide unresolved inline images on render
+  // Attach error listeners to inline images and track loaded images
   useEffect(() => {
-    if (expanded) {
-      hideUnresolvedInlineImages();
-    }
+    if (!expanded) return;
+
+    const container = document.querySelector('[class*="gmail-email-body"]');
+    if (!container) return;
+
+    const images = container.querySelectorAll('img[data-cid-pending], img[data-cid]');
+    images.forEach((img) => {
+      const contentId = img.getAttribute('data-cid-pending') || img.getAttribute('data-cid');
+      
+      // Track successful loads
+      const handleLoad = () => {
+        if (contentId) {
+          setLoadedInlineImages((prev) => new Set(prev).add(contentId));
+          setInlineImageErrors((prev) => {
+            const next = new Set(prev);
+            next.delete(contentId);
+            return next;
+          });
+        }
+      };
+
+      // Track errors (add to error set for retry)
+      const handleError = () => {
+        if (contentId) {
+          setInlineImageErrors((prev) => new Set(prev).add(contentId));
+        }
+      };
+
+      img.addEventListener('load', handleLoad);
+      img.addEventListener('error', handleError);
+
+      return () => {
+        img.removeEventListener('load', handleLoad);
+        img.removeEventListener('error', handleError);
+      };
+    });
+
+    hideUnresolvedInlineImages();
   }, [expanded, sanitizedMainHtml]);
 
   // Process pending inline image fetches when message is expanded
