@@ -183,12 +183,9 @@ export default function UnifiedEmailComposer({
 
         if (!unmountedRef.current) {
           setCurrentUser(merged);
-          console.log(`[UnifiedEmailComposer] User loaded:`, {
-            email: merged.email,
-            hasSignature: !!merged.email_signature,
-            signatureLength: merged.email_signature?.length || 0,
-            signaturePreview: merged.email_signature?.substring(0, 100) || "(empty)"
-          });
+          if (process.env.NODE_ENV !== "production") {
+            console.log(`[UnifiedEmailComposer] User loaded, signature length: ${merged.email_signature?.length || 0}`);
+          }
         }
       } catch (err) {
         console.error("[UnifiedEmailComposer] Error loading user:", err);
@@ -206,7 +203,7 @@ export default function UnifiedEmailComposer({
     setSelectedMessage(message);
   }, [message]);
 
-  // Initialize draft or thread context (non-signature fields)
+  // Initialize draft or thread context
   useEffect(() => {
     if (!currentUser) return;
 
@@ -220,87 +217,44 @@ export default function UnifiedEmailComposer({
       setSubject(existingDraft.subject || "");
       setBody(existingDraft.body_html || "");
       setDraftId(existingDraft.id);
-      composeInitializedRef.current = true;
       return;
     }
 
-    // Priority 2: Initialize from message context (reply/reply_all/forward)
-    if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
-      initializeFromMessage();
-      composeInitializedRef.current = true;
-      return;
-    }
-
-    // Priority 3: Default "to" if provided
+    // Priority 2: Default "to" if provided
     if (defaultTo) {
       setToChips([defaultTo]);
-      setCcChips([]);
-      setBccChips([]);
-      setShowCc(false);
-      setShowBcc(false);
-      setSubject("");
-      setAttachments([]);
-      // Don't set initialized yet—signature effect will handle body
-      return;
     }
 
-    // Priority 4: Fresh compose → clear all state and RESET signature flag
-    if (mode === "compose") {
-      setToChips([]);
-      setCcChips([]);
-      setBccChips([]);
-      setShowCc(false);
-      setShowBcc(false);
-      setSubject("");
-      setAttachments([]);
-      setDraftId(null);
-      composeInitializedRef.current = false; // Reset for fresh compose
+    // Priority 3: Initialize from message context (reply/reply_all/forward)
+    if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
+      initializeFromMessage();
+      return;
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
   // Step 3: Ensure compose mode auto-inserts signature once
   useEffect(() => {
-    console.log("[UnifiedEmailComposer] Signature effect running:", {
-      mode,
-      currentUser: !!currentUser,
-      existingDraft: !!existingDraft,
-      refInitialized: composeInitializedRef.current,
-      body: body.substring(0, 50)
-    });
-
-    // Skip if already initialized or not in fresh compose
-    if (composeInitializedRef.current || existingDraft || mode !== "compose") {
-      console.log("[UnifiedEmailComposer] Signature effect exiting early (ref/draft/mode check)");
+    if (!currentUser || existingDraft || mode !== "compose" || composeInitializedRef.current) {
       return;
     }
 
-    // Wait for user to load
-    if (!currentUser) {
-      console.log("[UnifiedEmailComposer] Signature effect waiting for currentUser");
-      return;
-    }
-
-    // Body must be empty to insert signature
+    // Only proceed if body is truly empty (initial state)
     if (!isEmptyBody(body)) {
-      console.log("[UnifiedEmailComposer] Signature effect: body not empty, skipping");
       composeInitializedRef.current = true;
       return;
     }
 
-    // Build and insert signature
-    const rawSignature = currentUser.email_signature || "";
-    console.log("[UnifiedEmailComposer] Signature effect: inserting signature", {
-      hasSignature: !!rawSignature,
-      rawLength: rawSignature.length
-    });
-    
-    if (isNonEmptyString(rawSignature)) {
-      const signatureHtml = buildSignatureHtml(rawSignature);
-      setBody(signatureHtml);
+    // Only proceed if we have a non-empty signature
+    const signatureHtml = buildSignatureHtml(currentUser.email_signature);
+    if (!signatureHtml) {
+      composeInitializedRef.current = true;
+      return;
     }
 
+    // Insert signature once
+    setBody(signatureHtml);
     composeInitializedRef.current = true;
-  }, [currentUser, existingDraft, mode, open]);
+  }, [currentUser, existingDraft, mode]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
