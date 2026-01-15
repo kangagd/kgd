@@ -415,6 +415,11 @@ export default function UnifiedEmailComposer({
 
 
   const initializeRecipientsFromMessage = useCallback(() => {
+      // GUARDRAIL: Do not initialize if selectedMessage doesn't belong to current thread
+      if (!selectedMessage || selectedMessage.thread_id !== thread?.id) {
+        return;
+      }
+
       const userEmail = currentUser?.email?.toLowerCase();
       const msgToUse = selectedMessage;
 
