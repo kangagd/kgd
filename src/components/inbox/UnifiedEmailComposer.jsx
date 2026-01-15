@@ -778,10 +778,13 @@ export default function UnifiedEmailComposer({
   }, [mode, thread?.id, thread?.gmail_thread_id, messagesLoading, messages, queryClient]);
 
   // Compute valid reply context dynamically (non-sticky)
+  // Require sync_status to be OK (not partial/failed) for valid context
   const hasValidReplyContext = !!(
     thread?.gmail_thread_id &&
     selectedMessage &&
     (selectedMessage.gmail_message_id || selectedMessage.message_id) &&
+    selectedMessage.sync_status !== "partial" &&
+    selectedMessage.sync_status !== "failed" &&
     isMessageContextAvailable([selectedMessage])
   );
 
