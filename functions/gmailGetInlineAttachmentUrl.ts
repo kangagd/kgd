@@ -225,13 +225,21 @@ Deno.serve(async (req) => {
     phase = 'decode';
     const bytes = decodeBase64Url(attachmentData.data);
 
-    // Upload (prefer Blob over File in Deno)
+    // Upload using File object (UploadFile requires File, not Blob)
     phase = 'upload';
+    
+    // Defensive check for File API
+    if (typeof File === 'undefined') {
+      throw new Error('File API not available in this runtime');
+    }
+
     const attMeta = emailMessage?.attachments?.find((a) => a?.attachment_id === attachment_id) || null;
     const mimeType = attMeta?.mime_type || 'application/octet-stream';
+    const filename = attMeta?.filename || `inline-${attachment_id}.bin`;
 
     const blob = new Blob([bytes], { type: mimeType });
-    const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+    const file = new File([blob], filename, { type: mimeType });
+    const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
     if (!uploadRes?.file_url) {
       return Response.json({ success: false, error: 'Failed to upload attachment', phase }, { status: 500 });
