@@ -177,7 +177,7 @@ export default function EmailMessageItem({
 
   // Memoize expensive sanitization operations
   const sanitizedMainHtml = useMemo(() => {
-    let html = sanitizeEmailHtml(mainHtml || message.body_html || "", "display", inlineImages);
+    let html = sanitizeEmailHtml(mainHtml || message.body_html || "", "display");
     // Resolve cid: references to actual inline image URLs
     html = resolveInlineCidImages(html, message.attachments, {
       onMissingUrl: (cidInfo) => {
@@ -198,14 +198,14 @@ export default function EmailMessageItem({
       }
     });
     return html;
-  }, [mainHtml, message.body_html, inlineImages, message.attachments, threadId, message.thread_id, queryClient]);
+  }, [mainHtml, message.body_html, message.attachments, threadId, message.thread_id, queryClient]);
 
   const sanitizedQuotedHtml = useMemo(() => {
-    let html = sanitizeEmailHtml(quotedHtml || "", "display", inlineImages);
+    let html = sanitizeEmailHtml(quotedHtml || "", "display");
     // Resolve cid: references in quoted content too
     html = resolveInlineCidImages(html, message.attachments);
     return html;
-  }, [quotedHtml, inlineImages, message.attachments]);
+  }, [quotedHtml, message.attachments]);
 
   const previewText = useMemo(() => {
     const base =
