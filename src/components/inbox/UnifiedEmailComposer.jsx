@@ -83,9 +83,17 @@ export default function UnifiedEmailComposer({
   const fileInputRef = useRef(null);
   const toInputRef = useRef(null);
 
-  // Load user
+  // Load user with all custom fields
   useEffect(() => {
-    base44.auth.me().then(setCurrentUser).catch(() => {});
+    base44.auth.me().then(async (authUser) => {
+      // Fetch full user record to get custom fields like email_signature
+      if (authUser?.email) {
+        const fullUser = await base44.entities.User.filter({ email: authUser.email }).then(users => users[0]);
+        setCurrentUser(fullUser || authUser);
+      } else {
+        setCurrentUser(authUser);
+      }
+    }).catch(() => {});
   }, []);
 
   // Initialize draft or thread context
