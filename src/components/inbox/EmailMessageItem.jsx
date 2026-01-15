@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { format, parseISO } from "date-fns";
 import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
