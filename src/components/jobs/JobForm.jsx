@@ -22,6 +22,7 @@ import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 import GlobalCustomerOrgSearch from "../common/GlobalCustomerOrgSearch";
 import GlobalProjectSearch from "../common/GlobalProjectSearch";
+import GlobalContractSearch from "../common/GlobalContractSearch";
 
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId, createJobContext }) {
   // Detect logistics context from URL params or props
@@ -160,9 +161,18 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     staleTime: 30000
   });
 
-  const { data: allContracts = [] } = useQuery({
+  const { data: allContracts = [], isLoading: contractsLoading } = useQuery({
     queryKey: ['contracts'],
     queryFn: () => base44.entities.Contract.list(),
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: allOrganisations = [], isLoading: orgsLoading } = useQuery({
+    queryKey: ['organisations'],
+    queryFn: () => base44.entities.Organisation.list(),
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   const contracts = allContracts.filter(c => c.status === 'active');
@@ -788,22 +798,20 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
               <div className="space-y-2">
                 <Label htmlFor="contract_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Contract (Optional)</Label>
-                <Select 
-                  value={formData.contract_id || 'null'} 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, contract_id: val === 'null' ? '' : val }))}
-                >
-                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                    <SelectValue placeholder="No contract" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="null">No Contract</SelectItem>
-                    {contracts.map((contract) => (
-                      <SelectItem key={contract.id} value={contract.id}>
-                        {contract.contract_name || `Contract #${contract.contract_number || contract.id.slice(0, 8)}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <GlobalContractSearch
+                  contracts={contracts}
+                  organisations={allOrganisations}
+                  loading={contractsLoading || orgsLoading}
+                  value={formData.contract_id}
+                  onChange={(item) => {
+                    if (!item) {
+                      setFormData(prev => ({ ...prev, contract_id: "" }));
+                    } else {
+                      setFormData(prev => ({ ...prev, contract_id: item.id }));
+                    }
+                  }}
+                  placeholder="Search contract or leave blank…"
+                />
               </div>
             </div>
 
