@@ -1,0 +1,878 @@
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import debounce from "lodash/debounce";
+import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
+
+// UI Components
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+} from "@/components/ui/drawer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import ReactQuill from "react-quill";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { X, Send, Paperclip, Save, Check, ChevronUp, ChevronDown, User, Loader2 } from "lucide-react";
+
+// Utilities
+import { renderTemplate, buildTemplateContext } from "@/components/utils/templateHelpers";
+import { sanitizeForCompose } from "@/components/utils/emailSanitization";
+import SmartComposeHelper, { SmartComposeSuggestionUI } from "./SmartComposeHelper";
+
+export default function UnifiedEmailComposer({
+  // Presentation
+  variant = "inline",
+  open = true,
+  onOpenChange = null,
+
+  // Content
+  mode = "compose",
+  thread = null,
+  message = null,
+  existingDraft = null,
+  defaultTo = null,
+  linkTarget = null,
+  autoOpenAttachments = false,
+
+  // Callbacks
+  onClose = () => {},
+  onSent = null,
+  onDraftSaved = null,
+}) {
+  const queryClient = useQueryClient();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isReplyAll, setIsReplyAll] = useState(false);
+  const [showOriginalMessage, setShowOriginalMessage] = useState(false);
+
+  // State: Recipients (chip-style array)
+  const [toChips, setToChips] = useState([]);
+  const [toInput, setToInput] = useState("");
+  const [ccChips, setCcChips] = useState([]);
+  const [ccInput, setCcInput] = useState("");
+  const [bccChips, setBccChips] = useState([]);
+  const [bccInput, setBccInput] = useState("");
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
+
+  // State: Content
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+
+  // State: Draft & Sending
+  const [draftId, setDraftId] = useState(existingDraft?.id || null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+
+  // Refs
+  const fileInputRef = useRef(null);
+  const toInputRef = useRef(null);
+
+  // Load user
+  useEffect(() => {
+    base44.auth.me().then(setCurrentUser).catch(() => {});
+  }, []);
+
+  // Initialize draft or thread context
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Priority 1: Use provided draft
+    if (existingDraft) {
+      setToChips(existingDraft.to_addresses || []);
+      setCcChips(existingDraft.cc_addresses || []);
+      setBccChips(existingDraft.bcc_addresses || []);
+      setShowCc((existingDraft.cc_addresses || []).length > 0);
+      setShowBcc((existingDraft.bcc_addresses || []).length > 0);
+      setSubject(existingDraft.subject || "");
+      setBody(existingDraft.body_html || "");
+      setDraftId(existingDraft.id);
+      return;
+    }
+
+    // Priority 2: Default "to" if provided
+    if (defaultTo) {
+      setToChips([defaultTo]);
+    }
+
+    // Priority 3: Initialize from message context (reply/reply_all/forward)
+    if (thread && message && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
+      initializeFromMessage();
+    }
+  }, [currentUser, existingDraft, thread, message, mode, defaultTo]);
+
+  const initializeFromMessage = () => {
+    const userEmail = currentUser?.email?.toLowerCase();
+
+    // Subject
+    if (mode === "reply" || mode === "reply_all") {
+      const subject = message?.subject || thread?.subject || "";
+      setSubject(subject.startsWith("Re:") ? subject : `Re: ${subject}`);
+    } else if (mode === "forward") {
+      setSubject(`Fwd: ${message?.subject || thread?.subject || ""}`);
+    }
+
+    // Recipients for reply
+    if (mode === "reply") {
+      const replyTo = message?.from_address || "";
+      if (replyTo) setToChips([replyTo]);
+    } else if (mode === "reply_all") {
+      const toAddrs = [message?.from_address].filter(Boolean);
+      const ccAddrs = [
+        ...(message?.to_addresses || []),
+        ...(message?.cc_addresses || []),
+      ].filter((e) => e && e.toLowerCase() !== userEmail);
+      setToChips(toAddrs);
+      setCcChips(ccAddrs);
+      setShowCc(true);
+    }
+
+    // Body (quoted/forwarded)
+    const signature = getSignature();
+    let quotedBody = "";
+
+    if (mode === "reply" || mode === "reply_all") {
+      let quoted = "";
+      if (message?.body_html) {
+        quoted = sanitizeForCompose(message.body_html);
+      } else if (message?.body_text) {
+        quoted = message.body_text.replace(/\n/g, "<br>");
+      }
+      const dateStr = message?.sent_at
+        ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
+        : new Date().toLocaleString();
+      const sender = message?.from_name || message?.from_address;
+      quotedBody = `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quoted}</blockquote></div>`;
+    } else if (mode === "forward") {
+      let forwarded = "";
+      if (message?.body_html) {
+        forwarded = sanitizeForCompose(message.body_html);
+      } else if (message?.body_text) {
+        forwarded = message.body_text.replace(/\n/g, "<br>");
+      }
+      const dateStr = message?.sent_at
+        ? format(parseISO(message.sent_at), "d/M/yyyy 'at' HH:mm")
+        : new Date().toLocaleString();
+      quotedBody = `${signature}<br><br><div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${message?.from_name || message?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${message?.subject}</div><div style="margin-top: 12px;">${forwarded}</div></div>`;
+    }
+
+    if (quotedBody) setBody(quotedBody);
+  };
+
+  const getSignature = () => {
+    if (!currentUser?.email_signature) return "";
+    return `<br><br><div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${currentUser.email_signature}</div>`;
+  };
+
+  // Smart compose helper
+  const smartCompose = SmartComposeHelper({
+    currentText: body,
+    onAcceptSuggestion: (suggestion) => setBody(body + suggestion),
+  });
+
+  // Fetch templates
+  const { data: templates = [] } = useQuery({
+    queryKey: ["messageTemplates", "email"],
+    queryFn: () =>
+      base44.entities.MessageTemplate.filter({
+        channel: "email",
+        active: true,
+      }),
+    staleTime: 120000,
+  });
+
+  // Fetch linked project for templates (NO Job context)
+  const { data: linkedProject } = useQuery({
+    queryKey: ["project", linkTarget?.id],
+    queryFn: () => base44.entities.Project.get(linkTarget.id),
+    enabled: !!linkTarget?.id && linkTarget?.type === "project",
+  });
+
+  // Fetch customers for to/cc suggestions
+  const { data: customers = [] } = useQuery({
+    queryKey: ["customersForEmail"],
+    queryFn: () => base44.entities.Customer.filter({ status: "active" }),
+    staleTime: 60000,
+  });
+
+  // Chip handlers
+  const addChip = (list, setter, input, setSetter) => {
+    const emails = input
+      .split(/[,\n\s]+/)
+      .map((e) => e.trim())
+      .filter((e) => e.includes("@"));
+    if (emails.length > 0) {
+      setter([...list, ...emails]);
+      setSetter("");
+    }
+  };
+
+  const removeChip = (list, setter, email) => {
+    setter(list.filter((e) => e !== email));
+  };
+
+  // Draft auto-save
+  const saveDraft = useCallback(
+    async (draftData) => {
+      if (!draftData.subject && toChips.length === 0 && !draftData.body) return;
+
+      setIsSavingDraft(true);
+      try {
+        const draft = {
+          thread_id: thread?.id || null,
+          to_addresses: draftData.to || [],
+          cc_addresses: draftData.cc || [],
+          bcc_addresses: draftData.bcc || [],
+          subject: draftData.subject,
+          body_html: draftData.body,
+          mode: mode !== "compose" ? mode : "compose",
+        };
+
+        if (draftId) {
+          await base44.entities.EmailDraft.update(draftId, draft);
+        } else {
+          const newDraft = await base44.entities.EmailDraft.create(draft);
+          setDraftId(newDraft.id);
+        }
+        setLastSaved(new Date());
+        if (onDraftSaved) onDraftSaved();
+      } catch (error) {
+        console.error("Failed to save draft:", error);
+      } finally {
+        setIsSavingDraft(false);
+      }
+    },
+    [draftId, thread?.id, mode, onDraftSaved]
+  );
+
+  const debouncedSave = useCallback(
+    debounce((data) => saveDraft(data), 2000),
+    [saveDraft]
+  );
+
+  useEffect(() => {
+    debouncedSave({ to: toChips, cc: ccChips, bcc: bccChips, subject, body });
+    return () => debouncedSave.cancel();
+  }, [toChips, ccChips, bccChips, subject, body, debouncedSave]);
+
+  // Apply template
+  const handleApplyTemplate = async (templateId) => {
+    const template = templates.find((t) => t.id === templateId);
+    if (!template) return;
+
+    // Build context: NO Job context
+    let customer = null;
+    if (toChips.length > 0) {
+      customer = customers.find(
+        (c) => c.email?.toLowerCase() === toChips[0].toLowerCase()
+      );
+    }
+    if (!customer && linkedProject?.customer_id) {
+      try {
+        customer = await base44.entities.Customer.get(
+          linkedProject.customer_id
+        );
+      } catch (error) {
+        console.log("Could not fetch customer:", error);
+      }
+    }
+
+    const context = buildTemplateContext({
+      project: linkedProject,
+      customer,
+      user: currentUser,
+    });
+
+    const rendered = renderTemplate(template, context);
+    if (rendered.subject && !subject) setSubject(rendered.subject);
+    if (rendered.body) setBody(rendered.body);
+
+    setSelectedTemplate("");
+    toast.success(`Template "${template.name}" applied`);
+  };
+
+  // File handling
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    const newAttachments = await Promise.all(
+      files.map(
+        (file) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              resolve({
+                filename: file.name,
+                mimeType: file.type,
+                data: reader.result.split(",")[1],
+                size: file.size,
+              });
+            };
+            reader.readAsDataURL(file);
+          })
+      )
+    );
+    setAttachments([...attachments, ...newAttachments]);
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
+  // Auto-open attachments on mount
+  useEffect(() => {
+    if (autoOpenAttachments && variant === "inline") {
+      setTimeout(() => {
+        try {
+          fileInputRef.current?.click();
+        } catch (error) {
+          console.error("Could not auto-open file picker:", error);
+        }
+      }, 100);
+    }
+  }, [autoOpenAttachments, variant]);
+
+  // Send email
+  const handleSend = async () => {
+    const textBody = body.replace(/<[^>]*>/g, "");
+    if (toChips.length === 0 || !subject || !textBody.trim()) {
+      toast.error("Please fill in recipients, subject, and message");
+      return;
+    }
+
+    // Guardrail: reply/forward needs gmail context OR message
+    const needsGmailContext =
+      (mode === "reply" || mode === "reply_all" || mode === "forward") &&
+      !thread?.gmail_thread_id;
+    if (needsGmailContext && !message) {
+      toast.warning(
+        "Message history not available. Reply will use thread headers only."
+      );
+    }
+
+    setIsSending(true);
+    try {
+      const payload = {
+        to: toChips,
+        cc: ccChips.length > 0 ? ccChips : undefined,
+        bcc: bccChips.length > 0 ? bccChips : undefined,
+        subject,
+        body_html: body,
+        attachments: attachments.length > 0 ? attachments : undefined,
+        thread_id: thread?.id || null,
+        gmail_thread_id: thread?.gmail_thread_id || undefined,
+
+        // Linking: Project or Contract ONLY (NO Job)
+        project_id:
+          linkTarget?.type === "project"
+            ? linkTarget.id
+            : thread?.project_id || undefined,
+        contract_id:
+          linkTarget?.type === "contract"
+            ? linkTarget.id
+            : thread?.contract_id || undefined,
+      };
+
+      // Reply headers
+      if ((mode === "reply" || mode === "reply_all") && message?.gmail_message_id) {
+        payload.reply_to_gmail_message_id = message.gmail_message_id;
+        if (message.references || message.in_reply_to) {
+          payload.references = message.references
+            ? `${message.references} ${message.in_reply_to || ""}`
+            : message.in_reply_to;
+        }
+      }
+
+      const response = await base44.functions.invoke("gmailSendEmail", payload);
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || "Failed to send email");
+      }
+
+      // Mark draft as sent
+      if (draftId) {
+        try {
+          await base44.entities.EmailDraft.update(draftId, {
+            status: "sent",
+            sent_at: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.error("Failed to mark draft as sent:", err);
+        }
+      }
+
+      toast.success("Email sent successfully");
+      if (onSent) await onSent(response.data?.baseThreadId || thread?.id);
+
+      handleClose();
+    } catch (error) {
+      toast.error(error.message || "Failed to send email");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (variant === "drawer" && onOpenChange) {
+      onOpenChange(false);
+    } else {
+      onClose();
+    }
+  };
+
+  // Content (shared between drawer and inline)
+  const renderContent = () => (
+    <>
+      {/* Recipients */}
+      <div className="space-y-2">
+        {/* To field with chips */}
+        <div>
+          <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
+            To
+          </label>
+          <div className="flex flex-wrap gap-1 mb-1 p-2 bg-white border border-[#E5E7EB] rounded-lg min-h-[40px]">
+            {toChips.map((email) => (
+              <Badge key={email} variant="secondary" className="flex items-center gap-1">
+                {email}
+                <button
+                  onClick={() => removeChip(toChips, setToChips, email)}
+                  className="ml-1 hover:text-red-600"
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+            <input
+              ref={toInputRef}
+              type="text"
+              value={toInput}
+              onChange={(e) => setToInput(e.target.value)}
+              onKeyDown={(e) => {
+                if ([",", "Enter", " "].includes(e.key)) {
+                  e.preventDefault();
+                  addChip(toChips, setToChips, toInput, setToInput);
+                }
+              }}
+              placeholder="Add recipients..."
+              className="flex-1 outline-none text-[14px] min-w-[100px]"
+            />
+          </div>
+          <div className="flex gap-2 mt-1">
+            <button
+              onClick={() => setShowCc(!showCc)}
+              className="text-[12px] text-[#6B7280] hover:text-[#111827]"
+            >
+              {showCc ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />} Cc
+            </button>
+            <button
+              onClick={() => setShowBcc(!showBcc)}
+              className="text-[12px] text-[#6B7280] hover:text-[#111827]"
+            >
+              {showBcc ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />} Bcc
+            </button>
+          </div>
+        </div>
+
+        {/* Cc field */}
+        {showCc && (
+          <div>
+            <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
+              Cc
+            </label>
+            <div className="flex flex-wrap gap-1 p-2 bg-white border border-[#E5E7EB] rounded-lg min-h-[40px]">
+              {ccChips.map((email) => (
+                <Badge key={email} variant="secondary" className="flex items-center gap-1">
+                  {email}
+                  <button
+                    onClick={() => removeChip(ccChips, setCcChips, email)}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              <input
+                type="text"
+                value={ccInput}
+                onChange={(e) => setCcInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ([",", "Enter", " "].includes(e.key)) {
+                    e.preventDefault();
+                    addChip(ccChips, setCcChips, ccInput, setCcInput);
+                  }
+                }}
+                placeholder="Add Cc recipients..."
+                className="flex-1 outline-none text-[14px] min-w-[100px]"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Bcc field */}
+        {showBcc && (
+          <div>
+            <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
+              Bcc
+            </label>
+            <div className="flex flex-wrap gap-1 p-2 bg-white border border-[#E5E7EB] rounded-lg min-h-[40px]">
+              {bccChips.map((email) => (
+                <Badge key={email} variant="secondary" className="flex items-center gap-1">
+                  {email}
+                  <button
+                    onClick={() => removeChip(bccChips, setBccChips, email)}
+                    className="ml-1 hover:text-red-600"
+                  >
+                    ×
+                  </button>
+                </Badge>
+              ))}
+              <input
+                type="text"
+                value={bccInput}
+                onChange={(e) => setBccInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if ([",", "Enter", " "].includes(e.key)) {
+                    e.preventDefault();
+                    addChip(bccChips, setBccChips, bccInput, setBccInput);
+                  }
+                }}
+                placeholder="Add Bcc recipients..."
+                className="flex-1 outline-none text-[14px] min-w-[100px]"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Subject */}
+        <div>
+          <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
+            Subject
+          </label>
+          <Input
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Email subject..."
+            className="text-[14px]"
+          />
+        </div>
+
+        {/* Templates */}
+        {templates.length > 0 && (
+          <div>
+            <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
+              Template
+            </label>
+            <Select
+              value={selectedTemplate}
+              onValueChange={handleApplyTemplate}
+            >
+              <SelectTrigger className="text-[14px]">
+                <SelectValue placeholder="Use template..." />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    {template.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
+
+      {/* Original Message (reply/forward) */}
+      {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
+        message && (
+          <div className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+            <button
+              onClick={() => setShowOriginalMessage(!showOriginalMessage)}
+              className="w-full flex items-center justify-between p-3 bg-[#F9FAFB] hover:bg-[#F3F4F6] transition-colors text-left"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-medium text-[#6B7280]">
+                  Original message from{" "}
+                  {message.from_name || message.from_address}
+                </span>
+                <span className="text-[11px] text-[#9CA3AF]">
+                  {message.sent_at
+                    ? format(parseISO(message.sent_at), "MMM d, yyyy")
+                    : ""}
+                </span>
+              </div>
+              <div
+                className={`text-[#6B7280] transform transition-transform ${
+                  showOriginalMessage ? "rotate-180" : ""
+                }`}
+              >
+                ▼
+              </div>
+            </button>
+            {showOriginalMessage && (
+              <div className="p-4 bg-white border-t border-[#E5E7EB] max-h-[300px] overflow-y-auto">
+                <div className="text-[12px] text-[#6B7280] mb-2">
+                  <strong>From:</strong> {message.from_name || message.from_address}
+                  <br />
+                  <strong>Date:</strong>{" "}
+                  {message.sent_at
+                    ? format(parseISO(message.sent_at), "PPpp")
+                    : ""}
+                  <br />
+                  <strong>Subject:</strong> {message.subject}
+                </div>
+                <div
+                  className="text-[13px] text-[#111827] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      message.body_html ||
+                      message.body_text?.replace(/\n/g, "<br>") ||
+                      "",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+      {/* Reply context guardrail */}
+      {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
+        !message &&
+        thread?.gmail_thread_id && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[12px] text-amber-800">
+            <strong>Messages not synced yet</strong> — reply will be sent using
+            thread headers only.
+          </div>
+        )}
+
+      {/* Body */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
+          <div />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            className="gap-2"
+          >
+            <Paperclip className="w-4 h-4" />
+            Attach
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+        </div>
+
+        <ReactQuill
+          theme="snow"
+          value={body}
+          onChange={(html) => {
+            setBody(html);
+            smartCompose.handleTextChange(html.replace(/<[^>]*>/g, ""));
+          }}
+          placeholder="Write your message..."
+          className="bg-white rounded-lg [&_.ql-container]:min-h-[200px] [&_.ql-editor]:min-h-[200px]"
+          modules={{
+            toolbar: [
+              [{ header: [1, 2, 3, false] }],
+              ["bold", "italic", "underline", "strike"],
+              [{ color: [] }, { background: [] }],
+              [{ list: "ordered" }, { list: "bullet" }],
+              [{ indent: "-1" }, { indent: "+1" }],
+              ["link"],
+              ["clean"],
+            ],
+          }}
+        />
+
+        <SmartComposeSuggestionUI
+          suggestion={smartCompose.suggestion}
+          loading={smartCompose.loading}
+          visible={smartCompose.visible}
+          onAccept={smartCompose.onAcceptSuggestion}
+          onReject={smartCompose.onRejectSuggestion}
+        />
+      </div>
+
+      {/* Attachments */}
+      {attachments.length > 0 && (
+        <div className="space-y-2 bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+          <div className="flex items-center gap-2 mb-2">
+            <Paperclip className="w-4 h-4 text-[#6B7280]" />
+            <label className="text-[13px] font-semibold text-[#4B5563]">
+              {attachments.length} Attachment
+              {attachments.length !== 1 ? "s" : ""}
+            </label>
+          </div>
+          <div className="space-y-2">
+            {attachments.map((att, idx) => (
+              <div
+                key={idx}
+                className="flex items-center justify-between bg-white rounded-lg px-3 py-2.5 border border-[#E5E7EB]"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <Paperclip className="w-4 h-4 text-[#9CA3AF] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[13px] font-medium text-[#111827] block truncate">
+                      {att.filename}
+                    </span>
+                    <span className="text-[11px] text-[#9CA3AF]">
+                      {(att.size / 1024).toFixed(1)} KB
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeAttachment(idx)}
+                  className="h-8 w-8 flex-shrink-0 hover:bg-red-50 hover:text-red-600"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // Draft status
+  const draftStatus = (
+    <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1.5">
+      {isSavingDraft && (
+        <>
+          <Loader2 className="w-3 h-3 animate-spin" />
+          <span>Saving...</span>
+        </>
+      )}
+      {!isSavingDraft && lastSaved && (
+        <>
+          <Check className="w-3 h-3 text-green-600" />
+          <span className="text-green-600">Saved</span>
+        </>
+      )}
+    </div>
+  );
+
+  // Drawer variant
+  if (variant === "drawer") {
+    const drawerTitle =
+      {
+        compose: "Compose Email",
+        reply: "Reply",
+        reply_all: "Reply All",
+        forward: "Forward",
+      }[mode] || "Email";
+
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="h-[90vh] max-h-[90vh]">
+          <DrawerHeader className="border-b border-[#E5E7EB]">
+            <div className="flex items-center justify-between">
+              <DrawerTitle>{drawerTitle}</DrawerTitle>
+              <div className="flex items-center gap-2">{draftStatus}</div>
+            </div>
+          </DrawerHeader>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {renderContent()}
+          </div>
+
+          <DrawerFooter className="border-t border-[#E5E7EB]">
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="ghost"
+                onClick={handleClose}
+                disabled={isSending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSend}
+                disabled={isSending || toChips.length === 0 || !subject || !body}
+                className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2 font-semibold"
+              >
+                <Send className="w-4 h-4" />
+                {isSending ? "Sending..." : "Send"}
+              </Button>
+            </div>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  // Inline variant (card)
+  return (
+    <Card className="border-2 border-[#FAE008] shadow-lg flex flex-col max-h-[90vh]">
+      <CardHeader className="bg-[#FAE008]/10 border-b border-[#E5E7EB] flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-[18px] font-semibold">
+              {
+                {
+                  compose: "New Email",
+                  reply: "Reply",
+                  reply_all: "Reply All",
+                  forward: "Forward",
+                }[mode]
+              }
+            </CardTitle>
+            {mode === "reply" && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsReplyAll(!isReplyAll)}
+                className="h-7 text-[12px]"
+              >
+                {isReplyAll ? "Reply to Sender Only" : "Reply All"}
+              </Button>
+            )}
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleClose}>
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
+        {renderContent()}
+      </CardContent>
+
+      <div className="border-t border-[#E5E7EB] px-4 py-3 flex items-center justify-between flex-shrink-0 bg-[#F9FAFB]">
+        <div>{draftStatus}</div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleClose} disabled={isSending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSend}
+            disabled={isSending || toChips.length === 0 || !subject || !body}
+            className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2 font-semibold"
+          >
+            <Send className="w-4 h-4" />
+            {isSending ? "Sending..." : "Send"}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
