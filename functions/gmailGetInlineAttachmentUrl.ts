@@ -46,12 +46,16 @@ async function fetchWithRetry(url, options, maxRetries = 3) {
   throw lastError || new Error('Max retries exceeded');
 }
 
-// Helper: safely decode base64url
+// Helper: safely decode base64url with padding
 function decodeBase64Url(b64url) {
   if (!b64url) throw new Error('No attachment data provided');
   
-  // Convert base64url to base64
-  const b64 = String(b64url).replace(/-/g, '+').replace(/_/g, '/');
+  // Convert base64url to base64 and add padding
+  let b64 = String(b64url).replace(/-/g, '+').replace(/_/g, '/');
+  // Add padding to make length multiple of 4
+  while (b64.length % 4) {
+    b64 += '=';
+  }
   
   try {
     const binaryStr = atob(b64);
