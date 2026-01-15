@@ -8,6 +8,19 @@ import { INVENTORY_LOCATION } from "@/components/domain/inventoryLocationConfig"
 import { useMemo } from "react";
 
 export default function LinkedPartsCard({ job }) {
+  // Determine job logistics type
+  const isPickup = React.useMemo(() => {
+    const t = `${job?.job_type_name || ""} ${job?.job_type || ""}`.toLowerCase();
+    const purpose = `${job?.logistics_purpose || ""}`.toLowerCase();
+    return purpose.includes("pickup") || t.includes("pickup") || t.includes("pick up");
+  }, [job]);
+
+  const isDelivery = React.useMemo(() => {
+    const t = `${job?.job_type_name || ""} ${job?.job_type || ""}`.toLowerCase();
+    const purpose = `${job?.logistics_purpose || ""}`.toLowerCase();
+    return purpose.includes("delivery") || purpose.includes("deliver") || t.includes("delivery");
+  }, [job]);
+
   // Fetch price list items for displaying linked item info
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems-for-linked-parts'],
