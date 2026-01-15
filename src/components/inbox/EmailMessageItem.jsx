@@ -149,14 +149,14 @@ export default function EmailMessageItem({
     }
   };
 
-  // Get inline images with URLs
+  // Get inline images with URLs (prefer file_url from lazy-load, fallback to url)
   const inlineImages = useMemo(() => {
     if (!message.attachments) return [];
     return message.attachments
-      .filter((att) => att.is_inline && att.content_id && att.url)
+      .filter((att) => att.is_inline && att.content_id && (att.file_url || att.url))
       .map((att) => ({
         content_id: att.content_id,
-        url: att.url,
+        url: att.file_url || att.url,
       }));
   }, [message.attachments]);
 
