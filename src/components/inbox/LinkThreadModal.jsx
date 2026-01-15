@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
 
-export default function LinkThreadModal({ open, onClose, linkType, onLinkProject, onLinkJob }) {
+export default function LinkThreadModal({ open, onClose, linkType, onLinkProject, onLinkContract }) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: projects = [] } = useQuery({
@@ -15,35 +15,43 @@ export default function LinkThreadModal({ open, onClose, linkType, onLinkProject
     enabled: linkType === 'project'
   });
 
-  const { data: jobs = [] } = useQuery({
-    queryKey: ['allJobs'],
-    queryFn: () => base44.entities.Job.list('-updated_date'),
-    enabled: linkType === 'job'
+  const { data: contracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => base44.entities.Contract.list('-updated_date'),
+    enabled: linkType === 'contract'
   });
 
   const isProject = linkType === 'project';
-  const items = isProject ? projects.filter(p => !p.deleted_at) : jobs.filter(j => !j.deleted_at);
+  const isContract = linkType === 'contract';
+  const items = isProject 
+    ? projects.filter(p => !p.deleted_at) 
+    : isContract 
+      ? contracts 
+      : [];
 
   const filteredItems = items.filter(item => {
+    const search = searchTerm.toLowerCase();
     if (isProject) {
       return (
-        item.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.customer_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.title?.toLowerCase().includes(search) ||
+        item.customer_name?.toLowerCase().includes(search)
       );
-    } else {
+    } else if (isContract) {
       return (
-        item.job_number?.toString().includes(searchTerm) ||
-        item.customer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.address?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.name?.toLowerCase().includes(search) ||
+        item.contract_type?.toLowerCase().includes(search) ||
+        item.status?.toLowerCase().includes(search) ||
+        item.organisation_name?.toLowerCase().includes(search)
       );
     }
+    return false;
   }).slice(0, 50);
 
   const handleSelect = (item) => {
     if (isProject) {
       onLinkProject(item.id, item.title);
-    } else {
-      onLinkJob(item.id, item.job_number);
+    } else if (isContract) {
+      onLinkContract(item.id, item.name);
     }
   };
 
@@ -52,14 +60,14 @@ export default function LinkThreadModal({ open, onClose, linkType, onLinkProject
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            Link to {isProject ? 'Project' : 'Job'}
+            Link to {isProject ? 'Project' : 'Contract'}
           </DialogTitle>
         </DialogHeader>
 
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
           <Input
-            placeholder={`Search ${isProject ? 'projects' : 'jobs'}...`}
+            placeholder={`Search ${isProject ? 'projects' : 'contracts'}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -69,7 +77,7 @@ export default function LinkThreadModal({ open, onClose, linkType, onLinkProject
         <div className="flex-1 overflow-y-auto space-y-2">
           {filteredItems.length === 0 ? (
             <p className="text-center text-[#4B5563] py-8">
-              No {isProject ? 'projects' : 'jobs'} found
+              No {isProject ? 'projects' : 'contracts'} found
             </p>
           ) : (
             filteredItems.map(item => (
@@ -79,13 +87,24 @@ export default function LinkThreadModal({ open, onClose, linkType, onLinkProject
                 className="p-4 border border-[#E5E7EB] rounded-lg hover:bg-[#F9FAFB] hover:border-[#FAE008] cursor-pointer transition-colors"
               >
                 <h4 className="text-[14px] font-semibold text-[#111827] mb-1">
-                  {isProject ? item.title : `Job #${item.job_number}`}
+                  {isProject ? item.title : item.name}
                 </h4>
                 <p className="text-[13px] text-[#4B5563]">
-                  {item.customer_name}
+                  {isProject ? item.customer_name : item.organisation_name}
                 </p>
-                {!isProject && item.address && (
-                  <p className="text-[12px] text-[#6B7280] mt-1">{item.address}</p>
+                {isContract && (
+                  <div className="flex items-center gap-2 mt-2">
+                    {item.contract_type && (
+                      <span className="text-[11px] bg-[#F3F4F6] text-[#4B5563] px-2 py-1 rounded">
+                        {item.contract_type}
+                      </span>
+                    )}
+                    {item.status && (
+                      <span className="text-[11px] bg-[#F3F4F6] text-[#4B5563] px-2 py-1 rounded">
+                        {item.status}
+                      </span>
+                    )}
+                  </div>
                 )}
                 {isProject && item.status && (
                   <span className="inline-block mt-2 text-[11px] bg-[#F3F4F6] text-[#4B5563] px-2 py-1 rounded">
