@@ -10,6 +10,7 @@ import { sanitizeEmailHtml } from "@/components/utils/emailSanitization";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
 import { resolveInlineCidImages, hideUnresolvedInlineImages } from "@/components/utils/resolveInlineCidImages";
 import { hasRenderableBody } from "@/components/utils/emailBodyState";
+import { inboxKeys } from "@/components/api/queryKeys";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
