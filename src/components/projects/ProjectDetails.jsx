@@ -81,6 +81,7 @@ import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
 
 import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
+import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
 import { QUERY_CONFIG, invalidateProjectData } from "../api/queryConfig";
 
 const statusColors = {
@@ -2044,6 +2045,35 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="activity" className="mt-3 space-y-4">
+            {composerMode && (
+              <div className="mb-4">
+                <UnifiedEmailComposer
+                  mode={composerMode}
+                  thread={composerMessage?.thread}
+                  message={composerMessage?.message}
+                  existingDraft={composerMessage?.existingDraft}
+                  onClose={() => {
+                    setComposerMode(null);
+                    setComposerMessage(null);
+                  }}
+                  onSent={async () => {
+                    setComposerMode(null);
+                    setComposerMessage(null);
+                    await queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+                    await queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
+                    await queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
+                    await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
+                    await queryClient.refetchQueries({ queryKey: ['projectEmailThreads', project.id] });
+                    toast.success('Email sent successfully');
+                  }}
+                  onDraftSaved={() => {
+                    queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
+                  }}
+                  defaultTo={project.customer_email}
+                  linkTarget={{ type: 'project', id: project.id }}
+                />
+              </div>
+            )}
             
             {/* Draft Emails Section */}
             {projectDrafts && projectDrafts.length > 0 && (
@@ -2106,8 +2136,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             <ActivityTab 
               project={project}
               onComposeEmail={(params) => {
-                setComposerMode(params?.mode || 'compose');
-                setComposerMessage(params);
+                if (!params) {
+                  setComposerMode('compose');
+                  setComposerMessage(null);
+                } else {
+                  setComposerMode(params.mode || 'compose');
+                  setComposerMessage(params);
+                }
               }}
             />
           </TabsContent>
