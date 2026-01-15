@@ -278,6 +278,8 @@ export default function UnifiedEmailComposer({
   const lastUserEditAtRef = useRef(0); // Track last keystroke timestamp
   const typingTimeoutRef = useRef(null); // Timeout for resetting isTypingRef
   const lastSavedSnapshotRef = useRef(null); // Track last saved state for dirty detection
+  const editorFocusedRef = useRef(false); // GUARDRAIL: Track if Quill editor is focused (prevent state updates while focused)
+  const lastKeystrokeAtRef = useRef(0); // GUARDRAIL: Track timestamp of last keystroke for idle detection
 
   // Load user from auth (most reliable source for signature)
   useEffect(() => {
@@ -536,7 +538,12 @@ export default function UnifiedEmailComposer({
     async (draftData) => {
       if (!draftData.subject && draftData.to.length === 0 && !draftData.body) return;
 
-      setIsSavingDraft(true);
+      // GUARDRAIL: Only set isSavingDraft state if editor is NOT focused
+      // This prevents re-renders that cause Quill selection instability
+      if (!editorFocusedRef.current) {
+        setIsSavingDraft(true);
+      }
+
       try {
         const draft = {
           thread_id: thread?.id || null,
@@ -560,12 +567,17 @@ export default function UnifiedEmailComposer({
         }
         // Update snapshot after successful save
         lastSavedSnapshotRef.current = { to: draftData.to, cc: draftData.cc, bcc: draftData.bcc, subject: draftData.subject, body: draftData.body };
-        setLastSaved(new Date());
+        // GUARDRAIL: Only update lastSaved UI state if editor not focused (no re-render during active editing)
+        if (!editorFocusedRef.current) {
+          setLastSaved(new Date());
+        }
         if (onDraftSaved) onDraftSaved();
       } catch (error) {
         console.error("Failed to save draft:", error);
       } finally {
-        setIsSavingDraft(false);
+        if (!editorFocusedRef.current) {
+          setIsSavingDraft(false);
+        }
       }
     },
     [draftId, thread?.id, mode, linkTarget, onDraftSaved]
@@ -1222,17 +1234,25 @@ export default function UnifiedEmailComposer({
             // Mark active typing to prevent autosave from mutating state
             isTypingRef.current = true;
             lastUserEditAtRef.current = Date.now();
+            lastKeystrokeAtRef.current = Date.now();
 
-            // Clear previous timeout and set new one (500ms after last keystroke)
+            // Clear previous timeout and set new one (1500ms grace period for safer idle detection)
+            // GUARDRAIL: Longer grace period prevents cursor jumps from rapid state updates
             if (typingTimeoutRef.current) {
               clearTimeout(typingTimeoutRef.current);
             }
             typingTimeoutRef.current = setTimeout(() => {
               isTypingRef.current = false;
-            }, 500);
+            }, 1500);
 
             setBody(html);
             smartCompose.handleTextChange(html.replace(/<[^>]*>/g, ""));
+          }}
+          onFocus={() => {
+            editorFocusedRef.current = true;
+          }}
+          onBlur={() => {
+            editorFocusedRef.current = false;
           }}
           placeholder="Write your message..."
           className="bg-white rounded-lg [&_.ql-container]:min-h-[200px] [&_.ql-editor]:min-h-[200px]"
