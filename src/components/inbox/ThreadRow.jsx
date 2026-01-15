@@ -158,10 +158,21 @@ export default function ThreadRow({
 
     setIsSyncingPreview(true);
     try {
-      await base44.functions.invoke('gmailSyncThreadMessages', {
+      const response = await base44.functions.invoke('gmailSyncThreadMessages', {
         gmail_thread_id: thread.gmail_thread_id,
       });
-      toast.success('Preview synced');
+
+      // Smart toast based on sync results
+      const { okCount = 0, partialCount = 0, failedCount = 0 } = response.data || {};
+      
+      if (okCount > 0) {
+        toast.success('Messages synced');
+      } else if (okCount === 0 && partialCount > 0) {
+        toast.warning('Messages updated, but content is still unavailable. Try again.');
+      } else if (failedCount > 0) {
+        toast.error('Some messages failed to sync');
+      }
+      
       onThreadUpdate?.();
     } catch (error) {
       toast.error('Failed to sync preview');
