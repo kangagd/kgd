@@ -56,11 +56,17 @@ export default function LinkThreadModal({
     return false;
   }).slice(0, 50);
 
-  const handleSelect = (item) => {
-    if (isProject) {
-      onLinkProject(item.id);
-    } else if (isContract) {
-      onLinkContract(item.id);
+  const handleSelect = async (item) => {
+    try {
+      if (isProject) {
+        console.log('Linking to project:', item.id, item.title);
+        await onLinkProject(item.id);
+      } else if (isContract) {
+        console.log('Linking to contract:', item.id, item.name);
+        await onLinkContract(item.id);
+      }
+    } catch (error) {
+      console.error('Error in handleSelect:', error);
     }
   };
 
