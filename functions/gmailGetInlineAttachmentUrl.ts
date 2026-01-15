@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
       phase,
     });
   } catch (error) {
-    console.error('[gmailGetInlineAttachmentUrl] Error:', error);
+    console.error('[gmailGetInlineAttachmentUrl] Error in phase', phase, ':', error);
     // Extract error message safely
     let errorMsg = 'Failed to fetch inline attachment';
     if (error?.message && typeof error.message === 'string') {
@@ -244,7 +244,7 @@ Deno.serve(async (req) => {
       errorMsg = error;
     }
     return Response.json(
-      { success: false, error: errorMsg },
+      { success: false, error: errorMsg, phase },
       { status: 500 }
     );
   }
