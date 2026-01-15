@@ -492,15 +492,15 @@ export default function EmailMessageItem({
                 </div>
               )}
 
-              {/* Inline Image Error Notice */}
-              {inlineImageErrors.size > 0 && (
+              {/* Inline Image Loading/Error Notice */}
+              {hasInlineImages && !allInlineImagesLoaded && (
                 <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between gap-3">
                   <span className="text-[12px] text-amber-800">
-                    Some inline images couldn't be loaded
+                    {inlineImageErrors.size > 0 ? 'Some inline images failed to load' : 'Loading inline images...'}
                   </span>
                   <Button
                     onClick={handleRetryImages}
-                    disabled={isRetryingImages}
+                    disabled={isRetryingImages || inlineImageErrors.size === 0}
                     size="sm"
                     variant="outline"
                     className="text-[11px] h-6 px-2 flex-shrink-0 gap-1"
