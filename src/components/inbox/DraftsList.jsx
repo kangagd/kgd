@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Mail, Trash2, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { inboxKeys } from "@/components/api/queryKeys";
 
 export default function DraftsList({ onOpenDraft }) {
   const queryClient = useQueryClient();
