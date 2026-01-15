@@ -258,6 +258,9 @@ export default function UnifiedEmailComposer({
   const lastAutoSyncRef = useRef(new Map()); // Track last auto-sync timestamp per thread
   const didInitBodyRef = useRef(false); // Track if body has been initialized once
   const userHasTypedRef = useRef(false); // Track if user has typed to prevent background overwrites
+  const isTypingRef = useRef(false); // Track active typing (prevent autosave state mutations)
+  const lastUserEditAtRef = useRef(0); // Track last keystroke timestamp
+  const typingTimeoutRef = useRef(null); // Timeout for resetting isTypingRef
 
   // Load user from auth (most reliable source for signature)
   useEffect(() => {
@@ -504,7 +507,12 @@ export default function UnifiedEmailComposer({
   );
 
   const debouncedSave = useCallback(
-    debounce((data) => saveDraft(data), 2000),
+    debounce((data) => {
+      // Only save if user is not actively typing (prevent state mutations during typing)
+      if (!isTypingRef.current) {
+        saveDraft(data);
+      }
+    }, 2000),
     [saveDraft]
   );
 
@@ -512,6 +520,15 @@ export default function UnifiedEmailComposer({
     debouncedSave({ to: toChips, cc: ccChips, bcc: bccChips, subject, body });
     return () => debouncedSave.cancel();
   }, [toChips, ccChips, bccChips, subject, body, debouncedSave]);
+
+  // Cleanup typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Apply template (explicit user action - allowed to overwrite body)
   const handleApplyTemplate = async (templateId) => {
@@ -1106,6 +1123,19 @@ export default function UnifiedEmailComposer({
           value={body}
           onChange={(html) => {
             userHasTypedRef.current = true;
+
+            // Mark active typing to prevent autosave from mutating state
+            isTypingRef.current = true;
+            lastUserEditAtRef.current = Date.now();
+
+            // Clear previous timeout and set new one (500ms after last keystroke)
+            if (typingTimeoutRef.current) {
+              clearTimeout(typingTimeoutRef.current);
+            }
+            typingTimeoutRef.current = setTimeout(() => {
+              isTypingRef.current = false;
+            }, 500);
+
             setBody(html);
             smartCompose.handleTextChange(html.replace(/<[^>]*>/g, ""));
           }}
