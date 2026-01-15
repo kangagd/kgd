@@ -181,6 +181,9 @@ export default function EmailMessageItem({
     // Resolve cid: references to actual inline image URLs
     html = resolveInlineCidImages(html, message.attachments, {
       onMissingUrl: (cidInfo) => {
+        // Mark as pending immediately (before attempting to load)
+        setInlineImageErrors((prev) => new Set(prev).add(cidInfo.content_id));
+        
         // Lazy-load inline image if not yet resolved
         if (cidInfo.gmail_message_id && cidInfo.attachment_id) {
           base44.functions.invoke('gmailGetInlineAttachmentUrl', {
@@ -191,8 +194,7 @@ export default function EmailMessageItem({
             queryClient.invalidateQueries({ queryKey: ["emailMessages", threadId || message.thread_id] });
           }).catch((err) => {
             console.error('Failed to load inline image:', err);
-            // Mark this CID as failed
-            setInlineImageErrors((prev) => new Set(prev).add(cidInfo.content_id));
+            // Error banner stays visible
           });
         }
       }
