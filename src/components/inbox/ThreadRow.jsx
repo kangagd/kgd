@@ -11,12 +11,14 @@ import {
   Link as LinkIcon,
   Sparkles,
   User,
+  RefreshCw,
 } from "lucide-react";
 
 import { base44 } from "@/api/base44Client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 import { getThreadLinkingState } from "@/components/utils/emailThreadLinkingStates";
 import {
@@ -41,6 +43,7 @@ export default function ThreadRow({
   const [isClosingLoading, setIsClosingLoading] = useState(false);
   const [isTogglingRead, setIsTogglingRead] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isSyncingPreview, setIsSyncingPreview] = useState(false);
 
   const linkingState = getThreadLinkingState(thread);
   const statusChip = getThreadStatusChip(thread);
@@ -143,6 +146,27 @@ export default function ThreadRow({
       onThreadUpdate?.();
     } finally {
       setIsAssigning(false);
+    }
+  };
+
+  const handleSyncPreview = async (e) => {
+    e.stopPropagation();
+    if (!thread?.gmail_thread_id) {
+      toast.error('This thread is missing Gmail IDs; cannot sync.');
+      return;
+    }
+
+    setIsSyncingPreview(true);
+    try {
+      await base44.functions.invoke('gmailSyncThreadMessages', {
+        gmail_thread_id: thread.gmail_thread_id,
+      });
+      toast.success('Preview synced');
+      onThreadUpdate?.();
+    } catch (error) {
+      toast.error('Failed to sync preview');
+    } finally {
+      setIsSyncingPreview(false);
     }
   };
 
@@ -309,11 +333,31 @@ export default function ThreadRow({
             {/* Preview + Assignee avatar */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] text-[#9CA3AF] truncate">
-                  {(thread?.snippet && thread.snippet.trim()) || 
-                   (thread?.last_message_snippet && thread.last_message_snippet.trim()) ||
-                   "(No preview available)"}
-                </p>
+                {thread?.snippet && thread.snippet.trim() ? (
+                  <p className="text-[12px] text-[#9CA3AF] truncate">
+                    {thread.snippet}
+                  </p>
+                ) : thread?.last_message_snippet && thread.last_message_snippet.trim() ? (
+                  <p className="text-[12px] text-[#9CA3AF] truncate">
+                    {thread.last_message_snippet}
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className="text-[12px] text-[#9CA3AF]">No preview available</p>
+                    {thread?.gmail_thread_id && !selectionMode && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleSyncPreview}
+                        disabled={isSyncingPreview}
+                        className="h-5 px-2 text-[10px] text-blue-600 hover:bg-blue-50"
+                        title="Sync messages to load preview"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isSyncingPreview ? 'animate-spin' : ''}`} />
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
