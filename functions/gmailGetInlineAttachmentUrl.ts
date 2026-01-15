@@ -133,18 +133,40 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Handle 404 (attachment not found)
+    // Handle Gmail errors with specific status codes
     if (gmailRes.status === 404) {
       return Response.json({
         success: false,
         error: 'Attachment not found in Gmail',
+        status: 404,
+        phase,
       }, { status: 404 });
+    }
+
+    if (gmailRes.status === 429) {
+      return Response.json({
+        success: false,
+        error: 'Gmail rate limited',
+        status: 429,
+        phase,
+      }, { status: 503 });
+    }
+
+    if (gmailRes.status === 503) {
+      return Response.json({
+        success: false,
+        error: 'Gmail service unavailable',
+        status: 503,
+        phase,
+      }, { status: 503 });
     }
 
     if (!gmailRes.ok) {
       return Response.json({
         success: false,
-        error: `Gmail API error: ${gmailRes.status} ${gmailRes.statusText}`,
+        error: `Gmail API error ${gmailRes.status}`,
+        status: gmailRes.status,
+        phase,
       }, { status: 502 });
     }
 
