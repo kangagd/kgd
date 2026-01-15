@@ -736,15 +736,12 @@ export default function UnifiedEmailComposer({
         throw new Error(response.data?.error || "Failed to send email");
       }
 
-      // Mark draft as sent
+      // Delete draft after successful send
       if (draftId) {
         try {
-          await base44.entities.EmailDraft.update(draftId, {
-            status: "sent",
-            sent_at: new Date().toISOString(),
-          });
+          await base44.entities.EmailDraft.delete(draftId);
         } catch (err) {
-          console.error("Failed to mark draft as sent:", err);
+          console.error("Failed to delete draft:", err);
         }
       }
 
