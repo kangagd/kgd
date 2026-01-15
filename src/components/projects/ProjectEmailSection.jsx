@@ -8,7 +8,7 @@ import { Mail, LinkIcon, ExternalLink, Reply, FileEdit, Trash2, Sparkles } from 
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
-import EmailComposer from "../inbox/EmailComposer";
+import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
 import LinkEmailThreadModal from "./LinkEmailThreadModal";
 
 export default function ProjectEmailSection({ project, onThreadLinked }) {
@@ -187,23 +187,22 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     <div className="space-y-4">
       {/* Composer */}
        {composerMode && (
-         <div className="p-4 bg-white rounded-lg border border-[#E5E7EB]">
-           <EmailComposer
-             mode={composerMode.type || composerMode}
-             thread={composerMode.thread || null}
-             message={selectedMessage}
-             onClose={() => {
-               setComposerMode(null);
-               setSelectedMessage(null);
-             }}
-             onSent={handleEmailSent}
-             onDraftSaved={handleDraftSaved}
-             defaultTo={project.customer_email}
-             projectId={project.id}
-             existingDraft={editingDraft}
-           />
-         </div>
-       )}
+          <UnifiedEmailComposer
+            variant="inline"
+            mode={composerMode.type || composerMode}
+            thread={composerMode.thread || null}
+            message={selectedMessage}
+            existingDraft={editingDraft}
+            defaultTo={project.customer_email}
+            linkTarget={{ type: "project", id: project.id, number: project.project_number }}
+            onClose={() => {
+              setComposerMode(null);
+              setSelectedMessage(null);
+            }}
+            onSent={handleEmailSent}
+            onDraftSaved={handleDraftSaved}
+          />
+        )}
 
       {/* Loading State */}
       {isLoading ? (

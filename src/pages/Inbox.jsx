@@ -28,7 +28,7 @@ import EmailDetailView from "@/components/inbox/EmailDetailView";
 import LinkThreadModal from "@/components/inbox/LinkThreadModal";
 import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal";
 import DraftsList from "@/components/inbox/DraftsList";
-import EmailComposerDrawer from "@/components/inbox/EmailComposerDrawer";
+import UnifiedEmailComposer from "@/components/inbox/UnifiedEmailComposer";
 
 /* -------------------------
    Direction helpers
@@ -948,8 +948,9 @@ export default function Inbox() {
       {/* Gmail history search */}
       <GmailHistorySearchModal open={showHistorySearch} onOpenChange={setShowHistorySearch} mode="inbox" />
 
-      {/* Composer drawer */}
-      <EmailComposerDrawer
+      {/* Unified composer drawer */}
+      <UnifiedEmailComposer
+        variant="drawer"
         open={composerOpen}
         onOpenChange={(open) => {
           if (!open) {
@@ -958,9 +959,14 @@ export default function Inbox() {
           setComposerOpen(open);
         }}
         mode={composerMode}
-        threadId={composerThreadId}
-        gmail_thread_id={selectedThread?.gmail_thread_id}
-        existingDraftId={composerDraftId}
+        thread={selectedThread}
+        message={composerLastMessage}
+        existingDraft={composerDraftId ? { id: composerDraftId } : null}
+        onClose={() => setComposerOpen(false)}
+        onSent={() => {
+          queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
+          refetchThreads();
+        }}
       />
 
       {/* Warning for unsync'd threads */}
