@@ -446,7 +446,7 @@ export default function EmailMessageItem({
                         </Button>
                       )}
                     </div>
-                  ) : message.body_html && message.body_html.includes("<") ? (
+                  ) : message?.body_html?.trim() && message.body_html.includes("<") ? (
                     <>
                       {/* Main content */}
                       <div
