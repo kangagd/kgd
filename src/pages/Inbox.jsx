@@ -279,9 +279,9 @@ export default function Inbox() {
     } else if (activeFilters["pinned"]) {
       result = result.filter((t) => t.pinnedAt && t.userStatus !== "closed");
     } else if (activeFilters["linked"]) {
-      result = result.filter((t) => t.project_id || t.job_id);
+      result = result.filter((t) => t.project_id || t.contract_id);
     } else if (activeFilters["unlinked"]) {
-      result = result.filter((t) => !t.project_id && !t.job_id && t.userStatus !== "closed");
+      result = result.filter((t) => !t.project_id && !t.contract_id && t.userStatus !== "closed");
     }
 
     // Sorting:
@@ -478,30 +478,67 @@ export default function Inbox() {
   };
 
   const bulkLinkMutation = useMutation({
-    mutationFn: async ({ projectId, count }) => {
-      await Promise.all(Array.from(selectedThreadIds).map((id) => base44.entities.EmailThread.update(id, { project_id: projectId })));
+    mutationFn: async ({ projectId, contractId, linkType, count }) => {
+      if (linkType === 'project') {
+        await Promise.all(
+          Array.from(selectedThreadIds).map((id) =>
+            base44.functions.invoke('linkEmailThreadToProject', { threadId: id, projectId })
+          )
+        );
+      } else if (linkType === 'contract') {
+        await Promise.all(
+          Array.from(selectedThreadIds).map((id) =>
+            base44.functions.invoke('linkEmailThreadToContract', { threadId: id, contractId })
+          )
+        );
+      }
       return count;
     },
     onSuccess: (count) => {
       refetchThreads();
       setShowBulkLinkModal(false);
       setSelectedThreadIds(new Set());
-      toast.success(`Linked ${count} thread${count !== 1 ? "s" : ""} to project`);
+      toast.success(`Linked ${count} thread${count !== 1 ? "s" : ""}`);
     },
     onError: () => toast.error("Failed to link threads"),
   });
 
   const linkThreadMutation = useMutation({
-    mutationFn: async (projectId) => {
+    mutationFn: async ({ projectId }) => {
       if (!selectedThread) return;
-      await base44.entities.EmailThread.update(selectedThread.id, { project_id: projectId });
+      const response = await base44.functions.invoke('linkEmailThreadToProject', {
+        threadId: selectedThread.id,
+        projectId
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to link thread');
+      }
     },
     onSuccess: () => {
       refetchThreads();
       setShowLinkModal(false);
       toast.success("Thread linked to project");
     },
-    onError: () => toast.error("Failed to link thread"),
+    onError: (error) => toast.error(error.message || "Failed to link thread"),
+  });
+
+  const linkContractMutation = useMutation({
+    mutationFn: async ({ contractId }) => {
+      if (!selectedThread) return;
+      const response = await base44.functions.invoke('linkEmailThreadToContract', {
+        threadId: selectedThread.id,
+        contractId
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to link thread to contract');
+      }
+    },
+    onSuccess: () => {
+      refetchThreads();
+      setShowLinkModal(false);
+      toast.success("Thread linked to contract");
+    },
+    onError: (error) => toast.error(error.message || "Failed to link thread to contract"),
   });
 
   if (!user) {
@@ -806,9 +843,8 @@ export default function Inbox() {
         <LinkThreadModal
           open={showLinkModal}
           onClose={() => setShowLinkModal(false)}
-          linkType="project"
-          onLinkProject={(projectId) => linkThreadMutation.mutate(projectId)}
-          onLinkJob={() => {}}
+          onLinkProject={(projectId) => linkThreadMutation.mutate({ projectId })}
+          onLinkContract={(contractId) => linkContractMutation.mutate({ contractId })}
         />
       )}
 
@@ -816,9 +852,8 @@ export default function Inbox() {
       <LinkThreadModal
         open={showBulkLinkModal}
         onClose={() => setShowBulkLinkModal(false)}
-        linkType="project"
-        onLinkProject={(projectId) => bulkLinkMutation.mutate({ projectId, count: selectedThreadIds.size })}
-        onLinkJob={() => {}}
+        onLinkProject={(projectId) => bulkLinkMutation.mutate({ projectId, linkType: 'project', count: selectedThreadIds.size })}
+        onLinkContract={(contractId) => bulkLinkMutation.mutate({ contractId, linkType: 'contract', count: selectedThreadIds.size })}
       />
 
       {/* Gmail history search */}
