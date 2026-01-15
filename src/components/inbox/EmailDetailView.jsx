@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
+import { getBestPreviewMessage } from "@/components/utils/emailBodyState";
 import { inboxKeys } from "@/components/api/queryKeys";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
