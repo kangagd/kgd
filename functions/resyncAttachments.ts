@@ -40,6 +40,65 @@ async function refreshTokenIfNeeded(user, base44) {
   return user.gmail_access_token;
 }
 
+// Helper to retry Gmail API calls with exponential backoff (429/503 only)
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  const delays = [200, 500, 1200];
+  let lastError;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // 404 is non-fatal - return as-is
+      if (response.status === 404) {
+        return response;
+      }
+      
+      // Retry on 429 (rate limit) and 503 (service unavailable)
+      if ((response.status === 429 || response.status === 503) && attempt < maxRetries - 1) {
+        const delay = delays[attempt];
+        console.log(`Rate limited. Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+      }
+    }
+  }
+  
+  throw lastError || new Error('Max retries exceeded');
+}
+
+// Helper to check if document already exists (by URL or metadata)
+function isDocumentAlreadyExists(newUrl, newGmailMessageId, newAttachmentId, existingDocs) {
+  return existingDocs.some(doc => {
+    const docUrl = typeof doc === 'string' ? doc : doc.url;
+    
+    // Exact URL match
+    if (docUrl === newUrl) return true;
+    
+    // Metadata match for object-based docs
+    if (typeof doc === 'object' && doc.source) {
+      if (doc.source.gmail_message_id === newGmailMessageId && 
+          doc.source.attachment_id === newAttachmentId) {
+        return true;
+      }
+    }
+    
+    return false;
+  });
+}
+
+// Helper to check if image already exists (by exact URL only)
+function isImageAlreadyExists(newUrl, existingImages) {
+  return existingImages.some(url => url === newUrl);
+}
+
 // Helper to identify and filter out logos/inline images
 function isLikelyLogoOrInlineImage(attachment) {
   if (!attachment.filename) return false;
