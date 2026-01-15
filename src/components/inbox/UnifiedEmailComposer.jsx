@@ -264,32 +264,23 @@ export default function UnifiedEmailComposer({
 
     // Wait for user to load
     if (!currentUser) {
-      console.log("[UnifiedEmailComposer] Signature effect: waiting for currentUser");
       return;
     }
 
     // Body must be empty to insert signature
     if (!isEmptyBody(body)) {
-      console.log("[UnifiedEmailComposer] Signature effect: body not empty, skipping");
       composeInitializedRef.current = true;
       return;
     }
 
-    // Build signature
+    // Build and insert signature
     const signatureHtml = buildSignatureHtml(currentUser.email_signature);
-    console.log("[UnifiedEmailComposer] Signature effect: building signature", {
-      hasSignature: !!currentUser.email_signature,
-      signatureHtmlBuilt: !!signatureHtml,
-      length: signatureHtml?.length || 0
-    });
-
     if (signatureHtml) {
       setBody(signatureHtml);
-      console.log("[UnifiedEmailComposer] Signature inserted into body");
     }
 
     composeInitializedRef.current = true;
-  }, [currentUser, body, existingDraft, mode]);
+  }, [currentUser, existingDraft, mode]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
