@@ -5,6 +5,7 @@ import { format, parseISO } from "date-fns";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { showSyncToast } from "@/components/utils/emailSyncToast";
 
 import EmailMessageItem from "./EmailMessageItem";
 
@@ -97,17 +98,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
       });
 
       if (response.data?.success) {
-        // Smart toast based on sync results
-        const { okCount = 0, partialCount = 0, failedCount = 0 } = response.data || {};
-        
-        if (okCount > 0) {
-          toast.success('Messages synced');
-        } else if (okCount === 0 && partialCount > 0) {
-          toast.warning('Messages updated, but content is still unavailable. Try again.');
-        } else if (failedCount > 0) {
-          toast.error('Some messages failed to sync');
-        }
-        
+        showSyncToast(response.data);
         // Refetch messages and thread
         await queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
         onThreadUpdate?.();

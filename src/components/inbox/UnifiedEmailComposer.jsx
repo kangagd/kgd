@@ -30,6 +30,7 @@ import { X, Send, Paperclip, Save, Check, ChevronUp, ChevronDown, User, Loader2 
 // Utilities
 import { renderTemplate, buildTemplateContext } from "@/components/utils/templateHelpers";
 import { sanitizeForCompose } from "@/components/utils/emailSanitization";
+import { showSyncToast } from "@/components/utils/emailSyncToast";
 import SmartComposeHelper, { SmartComposeSuggestionUI } from "./SmartComposeHelper";
 
 export default function UnifiedEmailComposer({
@@ -739,34 +740,32 @@ export default function UnifiedEmailComposer({
                       thread_id: thread.id,
                     });
                     if (response.data?.success) {
-                      // Invalidate and refetch queries
-                      await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
-                      await queryClient.invalidateQueries({ queryKey: ['emailThread', thread.id] });
+                       showSyncToast(response.data);
+                       // Invalidate and refetch queries
+                       await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
+                       await queryClient.invalidateQueries({ queryKey: ['emailThread', thread.id] });
 
-                      // Refetch to get latest data
-                      const refetchResult = await queryClient.refetchQueries({ queryKey: ['emailMessages', thread.id] });
-                      await queryClient.refetchQueries({ queryKey: ['emailThread', thread.id] });
+                       // Refetch to get latest data
+                       const refetchResult = await queryClient.refetchQueries({ queryKey: ['emailMessages', thread.id] });
+                       await queryClient.refetchQueries({ queryKey: ['emailThread', thread.id] });
 
-                      // Update selectedMessage with latest from refetch
-                      const messages = queryClient.getQueryData(['emailMessages', thread.id]);
-                      if (messages && messages.length > 0) {
-                        // Get the most recent message
-                        const latestMsg = messages[messages.length - 1];
-                        if (latestMsg?.body_html || latestMsg?.body_text) {
-                          setSelectedMessage(latestMsg);
-                          toast.success(`Synced ${response.data.message_count} messages`);
-                        } else {
-                          setSyncError('Messages synced, but content is still unavailable. Try running a full sync.');
-                          toast.warning('Messages synced, but content unavailable.');
-                        }
-                      } else {
-                        setSyncError('No messages found after sync.');
-                        toast.warning('No messages found after sync.');
-                      }
-                    } else {
-                      setSyncError(response.data?.error || 'Sync failed');
-                      toast.error('Failed to sync messages');
-                    }
+                       // Update selectedMessage with latest from refetch
+                       const messages = queryClient.getQueryData(['emailMessages', thread.id]);
+                       if (messages && messages.length > 0) {
+                         // Get the most recent message
+                         const latestMsg = messages[messages.length - 1];
+                         if (latestMsg?.body_html || latestMsg?.body_text) {
+                           setSelectedMessage(latestMsg);
+                         } else {
+                           setSyncError('Messages synced, but content is still unavailable. Try running a full sync.');
+                         }
+                       } else {
+                         setSyncError('No messages found after sync.');
+                       }
+                     } else {
+                       setSyncError(response.data?.error || 'Sync failed');
+                       toast.error('Failed to sync messages');
+                     }
                   } catch (err) {
                     setSyncError(err.message);
                     toast.error('Failed to sync messages');

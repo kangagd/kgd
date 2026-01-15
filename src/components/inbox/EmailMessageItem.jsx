@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AttachmentCard from "./AttachmentCard";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
+import { showSyncToast } from "@/components/utils/emailSyncToast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -172,16 +173,7 @@ export default function EmailMessageItem({
           gmail_thread_id: message.gmail_thread_id,
         });
         
-        // Smart toast based on sync results
-        const { okCount = 0, partialCount = 0, failedCount = 0 } = response.data || {};
-        
-        if (okCount > 0) {
-          toast.success('Messages synced');
-        } else if (okCount === 0 && partialCount > 0) {
-          toast.warning('Messages updated, but content is still unavailable. Try again.');
-        } else if (failedCount > 0) {
-          toast.error('Some messages failed to sync');
-        }
+        showSyncToast(response.data);
         
         // Refetch messages for this thread
         await queryClient.invalidateQueries({ 
