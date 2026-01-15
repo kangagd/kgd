@@ -14,17 +14,24 @@ export default function DraftsList({ onOpenDraft }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDraft, setSelectedDraft] = useState(null);
 
-  const { data: drafts = [], isLoading } = useQuery({
+  const { data: drafts = [], isLoading, refetch } = useQuery({
     queryKey: ["drafts"],
     queryFn: async () => {
+      const user = await base44.auth.me();
+      if (!user) return [];
       const allDrafts = await base44.entities.EmailDraft.filter(
-        { status: 'draft' },
+        { status: 'draft', created_by: user.email },
         "-updated_date"
       );
       return allDrafts;
     },
     refetchInterval: 30000, // Refetch every 30s
   });
+
+  // Trigger refetch when invalidated
+  useEffect(() => {
+    refetch();
+  }, []);
 
   // Fetch linked entities for display
   const { data: linkedProjects = [] } = useQuery({
