@@ -245,7 +245,14 @@ Deno.serve(async (req) => {
     }
 
     // Get access token using service account
-    const accessToken = await getGmailAccessToken();
+    let accessToken;
+    try {
+      accessToken = await getGmailAccessToken();
+      console.log('[gmailSendEmail] Access token obtained');
+    } catch (tokenError) {
+      console.error('[gmailSendEmail] Failed to get access token:', tokenError.message);
+      throw new Error(`Authentication failed: ${tokenError.message}`);
+    }
 
     let result;
 
