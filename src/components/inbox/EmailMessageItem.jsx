@@ -221,6 +221,44 @@ export default function EmailMessageItem({
     }
   }, [expanded, sanitizedMainHtml]);
 
+  // Process pending inline image fetches when message is expanded
+  useEffect(() => {
+    if (!expanded || !message.attachments) return;
+
+    const pendingList = Array.from(pendingInlineFetchRef.current.entries());
+    if (pendingList.length === 0) return;
+
+    const fetchPending = async () => {
+      for (const [contentId, { gmail_message_id, attachment_id }] of pendingList) {
+        // Skip if already attempted
+        if (attemptedInlineFetchRef.current.has(contentId)) {
+          continue;
+        }
+
+        // Mark as attempted immediately to prevent loops
+        attemptedInlineFetchRef.current.add(contentId);
+
+        try {
+          await base44.functions.invoke('gmailGetInlineAttachmentUrl', {
+            gmail_message_id,
+            attachment_id,
+          });
+          // Success: invalidate to refresh attachments with file_url
+          await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
+        } catch (err) {
+          console.error(`Failed to load inline image ${contentId}:`, err);
+          // Mark as error so retry banner shows
+          setInlineImageErrors((prev) => new Set(prev).add(contentId));
+        }
+      }
+
+      // Clear pending list after processing
+      pendingInlineFetchRef.current.clear();
+    };
+
+    fetchPending();
+  }, [expanded, message.attachments, threadId, message.thread_id, queryClient]);
+
   const directionLabel = message.is_outbound ? "Sent" : "Received";
 
   // Visual treatment
