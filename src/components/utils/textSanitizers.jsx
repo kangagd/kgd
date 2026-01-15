@@ -15,56 +15,51 @@ export const sanitizeInboundText = (input) => {
   // --- Fix common UTF-8 mojibake sequences (Gmail / copy/paste artifacts)
   // These occur when UTF-8 bytes are incorrectly interpreted as Latin-1
   const replacements = [
-    // Apostrophes / quotes (single byte and 2-byte UTF-8 sequences)
-    ["â€™", "'"],    // UTF-8 mojibake for right single quotation mark
-    ["â€˜", "'"],    // UTF-8 mojibake for left single quotation mark
-    ["â", "'"],      // simpler variant
-    ["â", "'"],      // simpler variant
-    ["â", "'"],      // final variant
+    // Em dash, en dash (CRITICAL - most common issue)
+    ['â€"', '—'],    // UTF-8 mojibake for em dash
+    ['â€"', '–'],    // UTF-8 mojibake for en dash
+    ['â—', '—'],     // simpler em dash variant
+    ['â–', '–'],     // simpler en dash variant
 
-    // Double quotes (single byte and 2-byte UTF-8 sequences)
-    ["â€œ", '"'],    // UTF-8 mojibake for left double quotation mark
-    ["â€", '"'],     // UTF-8 mojibake for right double quotation mark
-    ["â", '"'],      // simpler variant
-    ["â", '"'],      // simpler variant
-    ["â€\u009d", '"'],    // replacement character variant
-
-    // Em dash, en dash, and minus (most common formatting issue)
-    ["â€"", "—"],    // UTF-8 mojibake for em dash (most common)
-    ["â€"", "–"],    // UTF-8 mojibake for en dash
-    ["â", "–"],      // simpler en dash variant
-    ["â", "—"],      // simpler em dash variant
-    ["â€"", "—"],    // alternative em dash encoding
+    // Apostrophes / quotes
+    ['â€™', "'"],    // UTF-8 mojibake for right single quotation mark
+    ['â€˜', "'"],    // UTF-8 mojibake for left single quotation mark
+    ['â€\u009d', '"'],    // right double quotation mark
+    ['â€\u009c', '"'],    // left double quotation mark
+    ['â', "'"],      // simpler variants
+    ['â', "'"],
+    ['â', '"'],
+    ['â', '"'],
 
     // Ellipsis
-    ["â€¦", "…"],    // UTF-8 mojibake for horizontal ellipsis
-    ["â¦", "…"],     // simpler variant
+    ['â€¦', '…'],    // UTF-8 mojibake for horizontal ellipsis
+    ['â¦', '…'],     // simpler variant
 
     // Bullets
-    ["â€¢", "•"],    // UTF-8 mojibake for bullet
-    ["â¢", "•"],     // simpler variant
+    ['â€¢', '•'],    // UTF-8 mojibake for bullet
+    ['â¢', '•'],     // simpler variant
 
     // Angle quotes / guillemets
-    ["â€º", "›"],    // right-pointing angle quotation mark
-    ["â€¹", "‹"],    // left-pointing angle quotation mark
+    ['â€º', '›'],    // right-pointing angle quotation mark
+    ['â€¹', '‹'],    // left-pointing angle quotation mark
 
     // Space variants (NBSP, narrow NBSP mojibake)
-    ["Â ", " "],     // NBSP rendered as "Â " (UTF-8 mojibake)
-    ["â¯", " "],     // mojibake for narrow no-break space (U+202F)
-    ["&nbsp;", " "], // HTML entity appearing in plain text
-    ["Â", ""],       // stray Â character
+    ['Â ', ' '],     // NBSP rendered as "Â "
+    ['â¯', ' '],     // mojibake for narrow no-break space
+    ['&nbsp;', ' '], // HTML entity appearing in plain text
+    ['Â', ''],       // stray Â character
 
-    // Copyright, registered, trademark symbols
-    ["â„¢", "™"],    // trademark mojibake
-    ["Â®", "®"],     // registered mojibake
+    // Trademark, registered symbols
+    ['â„¢', '™'],    // trademark mojibake
+    ['Â®', '®'],     // registered mojibake
 
     // Common accented characters (Latin-1 double-encoding)
-    ["Ã©", "é"],     // e acute
-    ["Ã¨", "è"],     // e grave
-    ["Ã", "à"],      // a grave
-    ["Ã§", "ç"],     // c cedilla
-    ["Ã¼", "ü"],     // u umlaut
-    ["Ã¶", "ö"],     // o umlaut
+    ['Ã©', 'é'],     // e acute
+    ['Ã¨', 'è'],     // e grave
+    ['Ã', 'à'],      // a grave
+    ['Ã§', 'ç'],     // c cedilla
+    ['Ã¼', 'ü'],     // u umlaut
+    ['Ã¶', 'ö'],     // o umlaut
   ];
 
   for (const [bad, good] of replacements) {
@@ -74,19 +69,19 @@ export const sanitizeInboundText = (input) => {
   // --- Normalize actual Unicode special spaces to regular spaces
   // NBSP (U+00A0), Narrow NBSP (U+202F), Thin space (U+2009), Hair space (U+200A)
   text = text
-    .replace(/\u00A0/g, " ")
-    .replace(/\u202F/g, " ")
-    .replace(/\u2009/g, " ")
-    .replace(/\u200A/g, " ");
+    .replace(/\u00A0/g, ' ')
+    .replace(/\u202F/g, ' ')
+    .replace(/\u2009/g, ' ')
+    .replace(/\u200A/g, ' ');
 
   // --- Remove invisible / joiner characters that break URLs and formatting
-  // zero-width space/joiner + BOM + word joiner (U+2060) + soft hyphen
-  text = text.replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g, "");
+  // zero-width space/joiner + BOM + word joiner + soft hyphen
+  text = text.replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g, '');
 
   // --- Normalize line endings + tame whitespace (don't over-normalize)
-  text = text.replace(/\r\n/g, "\n");
-  text = text.replace(/[ \t]+/g, " ");
-  text = text.replace(/\n{3,}/g, "\n\n");
+  text = text.replace(/\r\n/g, '\n');
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n');
 
   return text;
 };
