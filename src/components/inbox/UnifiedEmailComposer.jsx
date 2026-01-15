@@ -305,10 +305,7 @@ export default function UnifiedEmailComposer({
     if (quotedBody) setBody(ensureSignature(quotedBody, ""));
   };
 
-  const getSignature = () => {
-    if (!currentUser?.email_signature) return "";
-    return `<div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${currentUser.email_signature}</div>`;
-  };
+
 
   // Smart compose helper
   const smartCompose = SmartComposeHelper({
@@ -433,7 +430,10 @@ export default function UnifiedEmailComposer({
 
     const rendered = renderTemplate(template, context);
     if (rendered.subject && !subject) setSubject(rendered.subject);
-    if (rendered.body) setBody(rendered.body);
+    if (rendered.body) {
+      const signatureHtml = buildSignatureHtml(currentUser?.email_signature);
+      setBody(ensureSignature(rendered.body, signatureHtml));
+    }
 
     setSelectedTemplate("");
     toast.success(`Template "${template.name}" applied`);
