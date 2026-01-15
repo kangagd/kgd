@@ -70,7 +70,7 @@ export default function DraftsList({ onOpenDraft }) {
   const deleteMutation = useMutation({
     mutationFn: (draftId) => base44.entities.EmailDraft.delete(draftId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["drafts"] });
+      queryClient.invalidateQueries({ queryKey: inboxKeys.drafts() });
       toast.success("Draft deleted");
       setDeleteDialogOpen(false);
       setSelectedDraft(null);
