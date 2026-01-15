@@ -244,6 +244,15 @@ export default function UnifiedEmailComposer({
     setSelectedMessage(message);
   }, [message]);
 
+  // Inject signature once on fresh compose (only when body is empty)
+  useEffect(() => {
+    if (mode !== "compose" || !currentUser || !composeInitializedRef.current) return;
+    if (!isEmptyBody(body)) return; // Only inject if body is still empty
+
+    const signatureHtml = buildSignatureHtml(currentUser.email_signature);
+    setBody(signatureHtml);
+  }, [currentUser, mode]);
+
   // Initialize draft or thread context
   useEffect(() => {
     if (!currentUser) return;
