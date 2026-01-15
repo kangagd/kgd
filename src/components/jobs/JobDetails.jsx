@@ -351,6 +351,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   // Detect logistics job - check is_logistics flag on JobType entity OR presence of logistics fields
   const isLogisticsJob = !!(currentJobType?.is_logistics === true || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id || job.is_logistics_job === true);
+  
+  // Helper function to determine if this is a pickup job
+  const isPickupJob = (jobData) => {
+    const t = `${jobData?.job_type_name || ""} ${jobData?.job_type || ""}`.toLowerCase();
+    const purpose = `${jobData?.logistics_purpose || ""}`.toLowerCase();
+    return purpose.includes("pickup") || t.includes("pickup") || t.includes("pick up");
+  };
+  
+  const isPickup = isPickupJob(job);
 
   // Fetch purchase order data for logistics jobs
   const { data: purchaseOrder } = useQuery({
