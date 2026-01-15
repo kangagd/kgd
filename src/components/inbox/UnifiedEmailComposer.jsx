@@ -260,31 +260,42 @@ export default function UnifiedEmailComposer({
 
   // Step 3: Ensure compose mode auto-inserts signature once
   useEffect(() => {
+    console.log("[UnifiedEmailComposer] Signature effect running:", {
+      mode,
+      currentUser: !!currentUser,
+      existingDraft: !!existingDraft,
+      refInitialized: composeInitializedRef.current,
+      body: body.substring(0, 50)
+    });
+
     // Skip if already initialized or not in fresh compose
     if (composeInitializedRef.current || existingDraft || mode !== "compose") {
+      console.log("[UnifiedEmailComposer] Signature effect exiting early (ref/draft/mode check)");
       return;
     }
 
     // Wait for user to load
     if (!currentUser) {
+      console.log("[UnifiedEmailComposer] Signature effect waiting for currentUser");
       return;
     }
 
     // Body must be empty to insert signature
     if (!isEmptyBody(body)) {
+      console.log("[UnifiedEmailComposer] Signature effect: body not empty, skipping");
       composeInitializedRef.current = true;
       return;
     }
 
     // Build and insert signature
     const rawSignature = currentUser.email_signature || "";
+    console.log("[UnifiedEmailComposer] Signature effect: inserting signature", {
+      hasSignature: !!rawSignature,
+      rawLength: rawSignature.length
+    });
+    
     if (isNonEmptyString(rawSignature)) {
       const signatureHtml = buildSignatureHtml(rawSignature);
-      console.log("[UnifiedEmailComposer] Signature effect final:", {
-        rawLength: rawSignature.length,
-        wrappedLength: signatureHtml.length,
-        wrappedPreview: signatureHtml.substring(0, 200)
-      });
       setBody(signatureHtml);
     }
 
