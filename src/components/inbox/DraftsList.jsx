@@ -17,9 +17,9 @@ export default function DraftsList({ onOpenDraft }) {
   const { data: drafts = [], isLoading } = useQuery({
     queryKey: ["drafts"],
     queryFn: async () => {
-      const allDrafts = await base44.entities.DraftEmail.filter(
-        { status: { $in: ["draft", "failed", "sending"] } },
-        "-lastSavedAt"
+      const allDrafts = await base44.entities.EmailDraft.filter(
+        { status: 'draft' },
+        "-updated_date"
       );
       return allDrafts;
     },
@@ -60,7 +60,7 @@ export default function DraftsList({ onOpenDraft }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (draftId) => base44.entities.DraftEmail.delete(draftId),
+    mutationFn: (draftId) => base44.entities.EmailDraft.delete(draftId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drafts"] });
       toast.success("Draft deleted");
@@ -90,16 +90,9 @@ export default function DraftsList({ onOpenDraft }) {
   };
 
   const getStatusBadge = (status) => {
-    const config = {
-      draft: { label: "Draft", variant: "secondary" },
-      sending: { label: "Sending...", variant: "default", icon: <Loader2 className="w-3 h-3 animate-spin" /> },
-      failed: { label: "Failed", variant: "error", icon: <AlertCircle className="w-3 h-3" /> },
-    };
-    const c = config[status] || config.draft;
     return (
-      <Badge variant={c.variant} className="flex items-center gap-1">
-        {c.icon}
-        {c.label}
+      <Badge variant="secondary" className="flex items-center gap-1">
+        Draft
       </Badge>
     );
   };
@@ -126,8 +119,8 @@ export default function DraftsList({ onOpenDraft }) {
       <div className="space-y-2">
         {drafts.map((draft) => {
           const linkedEntity = getLinkedEntity(draft);
-          const firstRecipient = draft.to?.[0] || "No recipient";
-          const recipientCount = draft.to?.length || 0;
+          const firstRecipient = draft.to_addresses?.[0] || "No recipient";
+          const recipientCount = draft.to_addresses?.length || 0;
 
           return (
             <Card
@@ -151,12 +144,12 @@ export default function DraftsList({ onOpenDraft }) {
                   </p>
                   
                   <div className="flex flex-wrap items-center gap-2 text-xs text-[#6B7280]">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {draft.lastSavedAt 
-                        ? formatDistanceToNow(new Date(draft.lastSavedAt), { addSuffix: true })
-                        : "Not saved"}
-                    </span>
+                   <span className="flex items-center gap-1">
+                     <Clock className="w-3 h-3" />
+                     {draft.updated_date 
+                       ? formatDistanceToNow(new Date(draft.updated_date), { addSuffix: true })
+                       : "Not saved"}
+                   </span>
                     
                     {linkedEntity && (
                       <Badge variant="outline" className="text-xs">
@@ -165,11 +158,7 @@ export default function DraftsList({ onOpenDraft }) {
                     )}
                   </div>
 
-                  {draft.status === "failed" && draft.errorMessage && (
-                    <p className="text-xs text-red-600 mt-2">
-                      Error: {draft.errorMessage}
-                    </p>
-                  )}
+
                 </div>
 
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -182,7 +171,7 @@ export default function DraftsList({ onOpenDraft }) {
                       e.stopPropagation();
                       handleDelete(draft);
                     }}
-                    disabled={draft.status === "sending"}
+
                   >
                     <Trash2 className="w-4 h-4 text-[#6B7280] hover:text-red-600" />
                   </Button>
