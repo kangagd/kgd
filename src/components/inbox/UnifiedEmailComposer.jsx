@@ -217,12 +217,28 @@ export default function UnifiedEmailComposer({
       setSubject(existingDraft.subject || "");
       setBody(existingDraft.body_html || "");
       setDraftId(existingDraft.id);
+      composeInitializedRef.current = true;
       return;
     }
 
-    // Priority 2: Default "to" if provided
-    if (defaultTo) {
-      setToChips([defaultTo]);
+    // Priority 2: Fresh compose mode - CLEAR state to prevent prior email persistence
+    if (mode === "compose") {
+      setToChips([]);
+      setCcChips([]);
+      setBccChips([]);
+      setShowCc(false);
+      setShowBcc(false);
+      setSubject("");
+      setBody(""); // Empty body allows signature to inject
+      setAttachments([]);
+      setDraftId(null);
+      composeInitializedRef.current = false; // Allow signature effect to run
+      
+      // Default "to" if provided
+      if (defaultTo) {
+        setToChips([defaultTo]);
+      }
+      return;
     }
 
     // Priority 3: Initialize from message context (reply/reply_all/forward)
