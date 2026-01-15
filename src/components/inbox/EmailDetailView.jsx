@@ -24,6 +24,7 @@ const formatDayLabel = (iso) => {
 export default function EmailDetailView({ thread, onThreadUpdate }) {
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [loadedCount, setLoadedCount] = useState(30); // Start with 30 newest messages
   
   /* ---------- preserve lastReadAt for divider ---------- */
   const initialLastReadAtRef = useRef(thread?.lastReadAt || null);
@@ -117,20 +118,26 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
     }
   };
 
-  /* ---------- NEW MESSAGES divider index ---------- */
+  /* ---------- paginate messages (show last N) ---------- */
+  const visibleMessages = useMemo(() => {
+    if (messages.length <= loadedCount) return messages;
+    return messages.slice(Math.max(0, messages.length - loadedCount));
+  }, [messages, loadedCount]);
+
+  /* ---------- NEW MESSAGES divider index (within visible) ---------- */
   const newStartIndex = useMemo(() => {
     const lastReadAt = initialLastReadAtRef.current;
     if (!lastReadAt) return -1;
 
     const lastReadTs = new Date(lastReadAt).getTime();
-    for (let i = 0; i < messages.length; i++) {
-      const ts = messages[i]?.sent_at
-        ? new Date(messages[i].sent_at).getTime()
+    for (let i = 0; i < visibleMessages.length; i++) {
+      const ts = visibleMessages[i]?.sent_at
+        ? new Date(visibleMessages[i].sent_at).getTime()
         : 0;
       if (ts > lastReadTs) return i;
     }
     return -1;
-  }, [messages]);
+  }, [visibleMessages]);
 
   /* ---------- render ---------- */
   return (
@@ -182,12 +189,25 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
                   Loading messages…
                 </div>
               ) : messages.length > 0 ? (
-                messages.map((msg, idx) => {
-                  const isNewStart = idx === newStartIndex;
+                <>
+                  {/* Load older messages button */}
+                  {messages.length > loadedCount && (
+                    <div className="px-6 py-3 text-center bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                      <button
+                        onClick={() => setLoadedCount(prev => prev + 30)}
+                        className="text-[13px] font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        Load {Math.min(30, messages.length - loadedCount)} older messages
+                      </button>
+                    </div>
+                  )}
 
-                  const prev = messages[idx - 1];
-                  const prevDay = prev?.sent_at ? getDayKey(prev.sent_at) : null;
-                  const currDay = msg?.sent_at ? getDayKey(msg.sent_at) : null;
+                  {visibleMessages.map((msg, idx) => {
+                   const isNewStart = idx === newStartIndex;
+
+                   const prevMsg = idx > 0 ? visibleMessages[idx - 1] : null;
+                   const prevDay = prevMsg?.sent_at ? getDayKey(prevMsg.sent_at) : null;
+                   const currDay = msg?.sent_at ? getDayKey(msg.sent_at) : null;
 
                   const showDayDivider =
                     idx === 0 || (prevDay && currDay && prevDay !== currDay);
@@ -224,9 +244,10 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
                         }}
                       />
                     </React.Fragment>
-                  );
-                })
-              ) : (
+                    );
+                    })
+                    </>
+                    ) : (
                 <div className="text-[14px] text-[#6B7280] text-center py-8 space-y-4">
                   <p>Messages for this thread haven't been synced yet.</p>
                   {thread?.gmail_thread_id ? (
