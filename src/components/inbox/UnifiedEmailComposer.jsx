@@ -469,6 +469,13 @@ export default function UnifiedEmailComposer({
   const totalAttachmentSize = attachments.reduce((sum, att) => sum + (att.size || 0), 0);
   const attachmentSizeWarning = totalAttachmentSize > 20 * 1024 * 1024;
 
+  // Clear attachments when opening fresh compose (drawer variant reuse)
+  useEffect(() => {
+    if (variant === "drawer" && mode === "compose" && open && !existingDraft) {
+      setAttachments([]);
+    }
+  }, [variant, mode, open, existingDraft]);
+
   // Auto-open attachments on mount
   useEffect(() => {
     if (autoOpenAttachments && variant === "inline") {
