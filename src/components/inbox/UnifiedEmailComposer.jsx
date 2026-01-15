@@ -106,39 +106,40 @@ export default function UnifiedEmailComposer({
 
   // Initialize draft or thread context
   useEffect(() => {
-     if (!currentUser) return;
+    if (!currentUser) return;
 
-     // Priority 1: Use provided draft
-     if (existingDraft) {
-       setToChips(existingDraft.to_addresses || []);
-       setCcChips(existingDraft.cc_addresses || []);
-       setBccChips(existingDraft.bcc_addresses || []);
-       setShowCc((existingDraft.cc_addresses || []).length > 0);
-       setShowBcc((existingDraft.bcc_addresses || []).length > 0);
-       setSubject(existingDraft.subject || "");
-       setBody(existingDraft.body_html || "");
-       setDraftId(existingDraft.id);
-       return;
-     }
+    // Priority 1: Use provided draft
+    if (existingDraft) {
+      setToChips(existingDraft.to_addresses || []);
+      setCcChips(existingDraft.cc_addresses || []);
+      setBccChips(existingDraft.bcc_addresses || []);
+      setShowCc((existingDraft.cc_addresses || []).length > 0);
+      setShowBcc((existingDraft.bcc_addresses || []).length > 0);
+      setSubject(existingDraft.subject || "");
+      setBody(existingDraft.body_html || "");
+      setDraftId(existingDraft.id);
+      return;
+    }
 
-     // Priority 2: Default "to" if provided
-     if (defaultTo) {
-       setToChips([defaultTo]);
-     }
+    // Priority 2: Default "to" if provided
+    if (defaultTo) {
+      setToChips([defaultTo]);
+    }
 
-     // Priority 3: Initialize from message context (reply/reply_all/forward)
-     if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
-       initializeFromMessage();
-     }
+    // Priority 3: Initialize from message context (reply/reply_all/forward)
+    if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
+      initializeFromMessage();
+      return;
+    }
 
-     // Priority 4: Add signature to compose mode (and reply/forward if not already set)
-     if (mode === "compose" && !body) {
-       const signature = getSignature();
-       if (signature) {
-         setBody(signature);
-       }
-     }
-   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
+    // Priority 4: Add signature to compose mode
+    if (mode === "compose" && !body) {
+      const signature = getSignature();
+      if (signature) {
+        setBody(signature);
+      }
+    }
+  }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
