@@ -305,8 +305,8 @@ Deno.serve(async (req) => {
     // Filter if not using has_body flag
     if (!onlyIfHasBodyFalse) {
       messagesToProcess = messagesToProcess.filter(m => 
-        !m.body_html || m.body_html.trim() === '' &&
-        !m.body_text || m.body_text.trim() === ''
+        (!m.body_html || m.body_html.trim() === '') &&
+        (!m.body_text || m.body_text.trim() === '')
       );
     }
 
