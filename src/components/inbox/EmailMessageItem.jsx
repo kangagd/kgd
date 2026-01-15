@@ -138,10 +138,10 @@ export default function EmailMessageItem({
         showSyncToast(response.data);
         
         // Refetch messages for this thread
-        await queryClient.invalidateQueries({ 
-          queryKey: ["emailMessages", threadId || message.thread_id] 
-        });
-        onResyncMessage?.();
+         await queryClient.invalidateQueries({ 
+           queryKey: inboxKeys.messages(threadId || message.thread_id) 
+         });
+         onResyncMessage?.();
       }
     } catch (error) {
       console.error('EmailMessageItem handleReSyncMessage error:', { messageId: message?.id, error });
