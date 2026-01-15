@@ -938,6 +938,9 @@ export default function Inbox() {
         onOpenChange={(open) => {
           if (!open) {
             setComposerLastMessage(null);
+            setComposerDraftId(null);
+            setComposerMode("new");
+            setComposerThreadId(null);
           }
           setComposerOpen(open);
         }}

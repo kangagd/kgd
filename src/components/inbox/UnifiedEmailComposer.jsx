@@ -194,7 +194,7 @@ export default function UnifiedEmailComposer({
 
     const signatureHtml = buildSignatureHtml(currentUser.email_signature);
     setBody(signatureHtml);
-  }, [currentUser, mode, body]);
+  }, [currentUser, mode, body, open]);
 
   // Initialize draft or thread context
   useEffect(() => {
