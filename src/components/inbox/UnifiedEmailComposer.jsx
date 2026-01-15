@@ -114,6 +114,14 @@ export default function UnifiedEmailComposer({
     if (thread && message && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
       initializeFromMessage();
     }
+
+    // Priority 4: Add signature to compose mode (and reply/forward if not already set)
+    if (mode === "compose" && !body) {
+      const signature = getSignature();
+      if (signature) {
+        setBody(signature);
+      }
+    }
   }, [currentUser, existingDraft, thread, message, mode, defaultTo]);
 
   const initializeFromMessage = () => {
@@ -176,7 +184,7 @@ export default function UnifiedEmailComposer({
 
   const getSignature = () => {
     if (!currentUser?.email_signature) return "";
-    return `<br><br><div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${currentUser.email_signature}</div>`;
+    return `<div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${currentUser.email_signature}</div>`;
   };
 
   // Smart compose helper
