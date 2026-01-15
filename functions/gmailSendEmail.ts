@@ -384,10 +384,10 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[gmailSendEmail] Error:', error.message, error.stack);
+    console.error('[gmailSendEmail] Error:', error.message);
+    if (error.stack) console.error('[gmailSendEmail] Stack:', error.stack);
     return Response.json({ 
-      error: error.message || 'Failed to send email',
-      details: error.stack
+      error: error.message || 'Failed to send email'
     }, { status: 500 });
   }
 });
