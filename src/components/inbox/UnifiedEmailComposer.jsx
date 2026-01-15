@@ -256,6 +256,21 @@ export default function UnifiedEmailComposer({
     composeInitializedRef.current = true;
   }, [currentUser, existingDraft, mode]);
 
+  // Drawer-specific: reinitialize signature when drawer opens
+  useEffect(() => {
+    if (variant !== "drawer" || !open || mode !== "compose" || existingDraft) {
+      return;
+    }
+
+    // Drawer is opening in compose mode
+    if (isEmptyBody(body) && currentUser?.email_signature) {
+      const signatureHtml = buildSignatureHtml(currentUser.email_signature);
+      if (signatureHtml) {
+        setBody(signatureHtml);
+      }
+    }
+  }, [open, variant, currentUser]);
+
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
     const msgToUse = selectedMessage;
