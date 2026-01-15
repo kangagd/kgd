@@ -2,56 +2,36 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, X, FileText } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 
 /**
- * GlobalContractSearch (schema-aware)
+ * GlobalContractSearch
  *
- * Contract schema fields:
- * - name (required)
- * - organisation_id (required)
- * - contract_type
- * - start_date, end_date
- * - sla_response_time_hours
- * - service_coverage
- * - billing_model
- * - status (Active | On-Hold | Expired)
- * - notes
+ * - Does NOT clear selection on every keystroke.
+ * - Selection clears only when:
+ *   - user hits the X button, OR
+ *   - parent changes `value` to empty, OR
+ *   - user selects a different item.
  *
- * Props:
- * - contracts: array of contract entities
- * - organisations: optional array of org entities so we can show org name and search it
- * - value: selected contract_id
- * - onChange: (item|null) => void
- *
- * Returned item:
- * {
- *   type: "contract",
- *   id: string,
- *   name: string,
- *   subLabel: string,
- *   status: string,
- *   raw: contract,
- *   searchText: string
- * }
+ * Optional:
+ * - onQueryChange(queryString) lets parent react to typing without clearing selection
  */
 export default function GlobalContractSearch({
   contracts = [],
-  organisations = [],
-
   value = "",
   onChange,
-
+  onQueryChange,
   placeholder = "Search contracts…",
   disabled = false,
   loading = false,
   minChars = 0,
   maxResults = 50,
-
   className = "",
   dropdownClassName = "",
-
-  emptyText = "No matches",
+  getLabel,
+  getSubLabel,
+  getTokens,
+  emptyText = "No contracts found",
 }) {
   const inputRef = useRef(null);
   const listRef = useRef(null);
@@ -61,43 +41,50 @@ export default function GlobalContractSearch({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const orgNameById = useMemo(() => {
-    const map = new Map();
-    (organisations || []).forEach((o) => {
-      if (o?.id != null) map.set(String(o.id), o?.name || o?.organisation_name || "");
-    });
-    return map;
-  }, [organisations]);
+  // Build all items once per prop change
+  const allItems = useMemo(() => {
+    return buildItems({ contracts, getLabel, getSubLabel, getTokens });
+  }, [contracts, getLabel, getSubLabel, getTokens]);
 
+  // Find selected item from `value`
   const selectedItem = useMemo(() => {
     const v = value ? String(value) : "";
     if (!v) return null;
-    const all = buildContractItems({ contracts, orgNameById });
-    return all.find((x) => x.id === v) || null;
-  }, [value, contracts, orgNameById]);
+    return allItems.find((x) => x.id === v) || null;
+  }, [value, allItems]);
 
-  // Keep input showing selected label when closed
+  // When dropdown closes, snap query to selected label (or empty)
   useEffect(() => {
-    if (!open && selectedItem) setQuery(selectedItem.name);
-    if (!open && !selectedItem && value === "" && query) setQuery("");
-  }, [open, selectedItem?.id]);
+    if (!open) {
+      if (selectedItem) setQuery(selectedItem.name);
+      else if (!value) setQuery("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, selectedItem?.id, value]);
 
+  // If parent clears the value externally, clear the query too (when not open)
+  useEffect(() => {
+    if (!open && !value && query) setQuery("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  // Filter items based on query
   const items = useMemo(() => {
-    const all = buildContractItems({ contracts, orgNameById });
     const q = query.trim().toLowerCase();
 
     if (q.length < minChars) {
-      return all.slice(0, Math.min(all.length, maxResults));
+      return allItems.slice(0, Math.min(allItems.length, maxResults));
     }
 
-    return all
+    return allItems
       .map((it) => ({ it, score: scoreMatch(q, it.searchText) }))
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score || a.it.name.localeCompare(b.it.name))
       .slice(0, maxResults)
       .map((x) => x.it);
-  }, [contracts, orgNameById, query, minChars, maxResults]);
+  }, [allItems, query, minChars, maxResults]);
 
+  // Reset activeIndex when opening or query changes
   useEffect(() => {
     setActiveIndex(0);
   }, [query, open]);
@@ -112,7 +99,7 @@ export default function GlobalContractSearch({
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, []);
 
-  // Keep active row visible when navigating
+  // Ensure active item is visible when navigating
   useEffect(() => {
     if (!open) return;
     const el = listRef.current;
@@ -132,6 +119,7 @@ export default function GlobalContractSearch({
     setQuery(item.name);
     setOpen(false);
     onChange?.(item);
+    requestAnimationFrame(() => inputRef.current?.blur?.());
   };
 
   const clearSelection = () => {
@@ -149,6 +137,7 @@ export default function GlobalContractSearch({
       setOpen(true);
       return;
     }
+
     if (!open) return;
 
     if (e.key === "Escape") {
@@ -156,16 +145,19 @@ export default function GlobalContractSearch({
       setOpen(false);
       return;
     }
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActiveIndex((i) => Math.min(i + 1, Math.max(items.length - 1, 0)));
       return;
     }
+
     if (e.key === "ArrowUp") {
       e.preventDefault();
       setActiveIndex((i) => Math.max(i - 1, 0));
       return;
     }
+
     if (e.key === "Enter") {
       e.preventDefault();
       const item = items[activeIndex];
@@ -177,28 +169,29 @@ export default function GlobalContractSearch({
   return (
     <div ref={wrapperRef} className={cn("relative w-full", className)}>
       <div className="relative">
-        <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input
           ref={inputRef}
           value={query}
           disabled={disabled}
           placeholder={placeholder}
-          className="pl-9 pr-10"
+          className={cn("pl-9 pr-10")}
           onFocus={() => setOpen(true)}
           onChange={(e) => {
             const v = e.target.value;
             setQuery(v);
             setOpen(true);
-            if (value) onChange?.(null); // typing clears selection
+            onQueryChange?.(v);
+            // ✅ DO NOT clear selection here
           }}
           onKeyDown={onKeyDown}
           aria-autocomplete="list"
           aria-expanded={open}
-          aria-controls="global-contract-dropdown"
+          aria-controls="global-contract-search-dropdown"
           role="combobox"
         />
 
-        {(loading || disabled) && (
+        {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
           </div>
@@ -218,7 +211,7 @@ export default function GlobalContractSearch({
 
       {open && (
         <div
-          id="global-contract-dropdown"
+          id="global-contract-search-dropdown"
           className={cn(
             "absolute z-50 mt-2 w-full rounded-xl border border-slate-200 bg-white shadow-lg",
             dropdownClassName
@@ -240,7 +233,7 @@ export default function GlobalContractSearch({
                     aria-selected={isSelected}
                     data-idx={idx}
                     onMouseEnter={() => setActiveIndex(idx)}
-                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseDown={(e) => e.preventDefault()} // prevent blur before click
                     onClick={() => commitSelection(item)}
                     className={cn(
                       "w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-slate-50",
@@ -250,24 +243,12 @@ export default function GlobalContractSearch({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="text-sm font-medium text-slate-900 truncate">{item.name}</div>
-
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "shrink-0",
-                            item.status === "Active"
-                              ? "bg-green-100 text-green-800"
-                              : item.status === "On-Hold"
-                              ? "bg-amber-100 text-amber-800"
-                              : item.status === "Expired"
-                              ? "bg-slate-200 text-slate-700"
-                              : "bg-emerald-100 text-emerald-800"
-                          )}
-                        >
-                          {item.status || "Contract"}
-                        </Badge>
+                        {item.statusBadge && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {item.statusBadge}
+                          </Badge>
+                        )}
                       </div>
-
                       {item.subLabel ? (
                         <div className="text-xs text-slate-500 truncate mt-0.5">{item.subLabel}</div>
                       ) : null}
@@ -294,55 +275,51 @@ export default function GlobalContractSearch({
   );
 }
 
-function buildContractItems({ contracts, orgNameById }) {
-  return (contracts || [])
-    .filter((c) => !c?.deleted_at) // safe, even if field doesn't exist
-    .map((c) => {
-      const id = c?.id != null ? String(c.id) : "";
-      const name = String(c?.name || "").trim();
+function buildItems({ contracts, getLabel, getSubLabel, getTokens }) {
+  const labeler = getLabel || ((c) => c?.name || "");
+  const subLabeler =
+    getSubLabel ||
+    ((c) => {
+      const bits = [];
+      if (c?.contract_type) bits.push(c.contract_type);
+      if (c?.organisation_name) bits.push(c.organisation_name);
+      if (c?.start_date) bits.push(`Start: ${c.start_date}`);
+      if (c?.end_date) bits.push(`End: ${c.end_date}`);
+      return bits.filter(Boolean).join(" • ");
+    });
 
-      const orgId = c?.organisation_id != null ? String(c.organisation_id) : "";
-      const orgName = (orgId && orgNameById?.get?.(orgId)) || "";
+  const tokener =
+    getTokens ||
+    ((c) => {
+      const tokens = [];
+      // Include searchable fields
+      if (c?.name) tokens.push(c.name);
+      if (c?.contract_type) tokens.push(c.contract_type);
+      if (c?.status) tokens.push(c.status);
+      if (c?.organisation_id) tokens.push(c.organisation_id);
+      if (c?.organisation_name) tokens.push(c.organisation_name);
+      if (c?.start_date) tokens.push(String(c.start_date));
+      if (c?.end_date) tokens.push(String(c.end_date));
+      return tokens;
+    });
 
-      const status = c?.status || "Active";
-      const type = c?.contract_type || "";
-      const billing = c?.billing_model || "";
-      const sla = c?.sla_response_time_hours != null ? `${c.sla_response_time_hours}h SLA` : "";
-      const start = c?.start_date || "";
-      const end = c?.end_date || "";
-      const range = start || end ? `${start || "?"} → ${end || "?"}` : "";
+  const out = [];
 
-      const subBits = [orgName, type, billing, range, sla].filter(Boolean);
-      const subLabel = subBits.join(" • ");
+  (contracts || []).forEach((c) => {
+    const name = labeler(c) || "";
+    const subLabel = subLabeler(c) || "";
+    const tokens = tokener(c);
+    out.push({
+      id: c?.id != null ? String(c.id) : "",
+      name,
+      subLabel,
+      statusBadge: c?.status || null,
+      raw: c,
+      searchText: [name, subLabel, ...(tokens || [])].join(" ").toLowerCase(),
+    });
+  });
 
-      // Search fields (schema-based, no noise)
-      const searchFields = [
-        name,
-        orgName,
-        orgId,
-        status,
-        type,
-        billing,
-        c?.service_coverage || "",
-        c?.notes || "",
-        start,
-        end,
-        c?.sla_response_time_hours != null ? String(c.sla_response_time_hours) : "",
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return {
-        type: "contract",
-        id,
-        name,
-        status,
-        subLabel,
-        raw: c,
-        searchText: searchFields,
-      };
-    })
+  return out
     .filter((x) => x.id && x.name)
     .filter((x, idx, arr) => arr.findIndex((y) => y.id === x.id) === idx);
 }
@@ -360,7 +337,6 @@ function scoreMatch(q, hay) {
 
   if (hay.includes(q)) return 60;
 
-  // loose sequential char match
   let qi = 0;
   for (let i = 0; i < hay.length && qi < q.length; i++) {
     if (hay[i] === q[qi]) qi++;
