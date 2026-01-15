@@ -32,6 +32,7 @@ import { renderTemplate, buildTemplateContext } from "@/components/utils/templat
 import { sanitizeForCompose } from "@/components/utils/emailSanitization";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
 import SmartComposeHelper, { SmartComposeSuggestionUI } from "./SmartComposeHelper";
+import RecipientAutocomplete from "./RecipientAutocomplete";
 
 // ============================================================================
 // Signature Marker & Helpers (Private)
