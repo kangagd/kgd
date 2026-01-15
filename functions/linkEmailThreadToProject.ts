@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     }
 
     // Update EmailThread with cached fields
+    // CRITICAL: Clear contract link to enforce mutual exclusivity
     const threadUpdates = {
       project_id: project.id,
       project_number: project.project_number || null,
@@ -43,7 +44,12 @@ Deno.serve(async (req) => {
       organisation_id: project.organisation_id || null,
       organisation_name: project.organisation_name || null,
       linked_to_project_at: new Date().toISOString(),
-      linked_to_project_by: user.email
+      linked_to_project_by: user.email,
+      // Clear contract link (mutually exclusive)
+      contract_id: null,
+      contract_name: null,
+      contract_status: null,
+      contract_type: null
     };
 
     await base44.asServiceRole.entities.EmailThread.update(email_thread_id, threadUpdates);
