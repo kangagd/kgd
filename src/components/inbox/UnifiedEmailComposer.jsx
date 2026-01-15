@@ -394,10 +394,23 @@ export default function UnifiedEmailComposer({
       setBody("");
       setAttachments([]);
       setDraftId(null);
+      // CRITICAL: Clear selectedMessage immediately to prevent recipient init from using old message
       setSelectedMessage(null);
       lastSavedSnapshotRef.current = null;
     }
   }, [thread?.id]);
+
+  // GUARDRAIL: Ignore stale message props from previous thread
+  // Only update selectedMessage if it belongs to current thread
+  useEffect(() => {
+    if (!message || !thread?.id) return;
+    // Reject if message doesn't have thread_id (incomplete data)
+    // or if it doesn't match current thread
+    if (message.thread_id && message.thread_id !== thread.id) {
+      return; // Ignore message from different thread
+    }
+    setSelectedMessage(message);
+  }, [message?.id, thread?.id]);
 
 
 
