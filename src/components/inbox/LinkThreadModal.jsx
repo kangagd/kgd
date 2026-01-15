@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
 
-export default function LinkThreadModal({ open, onClose, linkType, onLinkProject, onLinkContract }) {
+export default function LinkThreadModal({ open, onClose, onLinkProject, onLinkContract }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [linkType, setLinkType] = useState('project'); // 'project' or 'contract'
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -60,9 +61,39 @@ export default function LinkThreadModal({ open, onClose, linkType, onLinkProject
       <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            Link to {isProject ? 'Project' : 'Contract'}
+            Link Email Thread
           </DialogTitle>
         </DialogHeader>
+
+        {/* Link Type Selector */}
+        <div className="flex gap-2 p-1 bg-[#F3F4F6] rounded-lg mb-4">
+          <button
+            onClick={() => {
+              setLinkType('project');
+              setSearchTerm('');
+            }}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              linkType === 'project'
+                ? 'bg-white text-[#111827] shadow-sm'
+                : 'text-[#6B7280] hover:text-[#111827]'
+            }`}
+          >
+            Link to Project
+          </button>
+          <button
+            onClick={() => {
+              setLinkType('contract');
+              setSearchTerm('');
+            }}
+            className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              linkType === 'contract'
+                ? 'bg-white text-[#111827] shadow-sm'
+                : 'text-[#6B7280] hover:text-[#111827]'
+            }`}
+          >
+            Link to Contract
+          </button>
+        </div>
 
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
