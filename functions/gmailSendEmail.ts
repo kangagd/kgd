@@ -233,7 +233,9 @@ Deno.serve(async (req) => {
       gmail_thread_id,
       inReplyTo, 
       references,
-      attachments
+      attachments,
+      project_id,
+      contract_id
     } = await req.json();
 
     // Get Service Account credentials
@@ -362,16 +364,35 @@ Deno.serve(async (req) => {
           performed_at: new Date().toISOString()
         });
 
-        // Update thread last_message_date
+        // Update thread last_message_date + auto-link to Project/Contract if provided
         const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
         if (thread) {
-          await base44.asServiceRole.entities.EmailThread.update(thread_id, {
+          const updateData = {
             last_message_date: new Date().toISOString(),
             lastMessageDirection: 'sent'
-          });
+          };
+
+          // Auto-link to Project or Contract (safe: prefer provided IDs, warn on conflicts)
+          if (project_id) {
+            if (thread.contract_id && !contract_id) {
+              // Existing contract link; only set project if no conflict
+              console.warn(`[gmailSendEmail] Thread ${thread_id} already linked to contract ${thread.contract_id}; adding project ${project_id} alongside`);
+            }
+            updateData.project_id = project_id;
+          }
+
+          if (contract_id) {
+            if (thread.project_id && !project_id) {
+              // Existing project link; only set contract if no conflict
+              console.warn(`[gmailSendEmail] Thread ${thread_id} already linked to project ${thread.project_id}; adding contract ${contract_id} alongside`);
+            }
+            updateData.contract_id = contract_id;
+          }
+
+          await base44.asServiceRole.entities.EmailThread.update(thread_id, updateData);
         }
       } catch (error) {
-        console.error('Error creating EmailMessage record:', error);
+        console.error('Error creating EmailMessage record or updating thread linking:', error);
       }
     }
 
