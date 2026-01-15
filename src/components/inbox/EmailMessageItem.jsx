@@ -271,7 +271,7 @@ export default function EmailMessageItem({
     const failedAttachments = (message.attachments || []).filter(
       (att) => att.is_inline && att.content_id && inlineImageErrors.has(att.content_id) && !(att.file_url || att.url)
     );
-    
+
     try {
       await Promise.all(
         failedAttachments.map((att) =>
@@ -287,8 +287,15 @@ export default function EmailMessageItem({
       toast.success('Images loaded');
     } catch (err) {
       let errorMsg = 'Failed to load images';
-      if (err?.response?.data?.error && typeof err.response.data.error === 'string' && err.response.data.error !== '[object Object]') {
-        errorMsg = err.response.data.error;
+      const responseData = err?.response?.data;
+      if (responseData) {
+        if (responseData.error && typeof responseData.error === 'string' && responseData.error !== '[object Object]') {
+          errorMsg = `${responseData.error}${responseData.phase ? ` (${responseData.phase})` : ''}`;
+        }
+        if (responseData.status && [404, 429, 503].includes(responseData.status)) {
+          // These are expected errors, not retryable
+          errorMsg = responseData.error || `Error (${responseData.status})`;
+        }
       } else if (err?.message) {
         errorMsg = err.message;
       }
