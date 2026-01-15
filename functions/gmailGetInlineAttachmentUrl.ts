@@ -161,11 +161,15 @@ Deno.serve(async (req) => {
 
     const fileUrl = uploadRes.file_url;
 
-    // Cache the file_url in EmailMessage.attachments
+    // Cache the file_url and url in EmailMessage.attachments (backwards compatibility)
     if (emailMessage && emailMessage.attachments) {
       const updated = emailMessage.attachments.map((att) => {
         if (att.attachment_id === attachment_id) {
-          return { ...att, file_url: fileUrl };
+          // Only write if not already cached; never overwrite non-empty values
+          const existingFileUrl = att.file_url || att.url;
+          if (!existingFileUrl) {
+            return { ...att, file_url: fileUrl, url: fileUrl };
+          }
         }
         return att;
       });
