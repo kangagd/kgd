@@ -394,6 +394,22 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error('Error creating EmailMessage record or updating thread linking:', error);
       }
+
+      // Persist attachments to Project/Contract storage (best-effort)
+      if (attachments && attachments.length > 0 && (project_id || contract_id)) {
+        try {
+          await persistEmailAttachments({
+            attachments,
+            project_id,
+            contract_id,
+            base44,
+            subject,
+            user_email: user.email
+          });
+        } catch (error) {
+          console.error('[gmailSendEmail] Attachment persistence failed (email still sent):', error.message);
+        }
+      }
     }
 
     return Response.json({
