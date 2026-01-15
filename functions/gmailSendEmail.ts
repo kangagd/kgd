@@ -293,34 +293,33 @@ Deno.serve(async (req) => {
       });
     } else {
       // Build and send new message
-      let encodedMessage = rawMimeBase64Url;
-      if (!encodedMessage) {
-        const mimeMessage = buildMimeMessage({
-               from: from || user.email,
-               to: to || [],
-               cc,
-               bcc,
-               subject: subject || '',
-               textBody: textBody || body_text,
-               htmlBody: htmlBody || body_html,
-               inReplyTo,
-               references,
-               threadId: thread_id || gmail_thread_id,
-               attachments: attachments || []
-             });
+       let encodedMessage = rawMimeBase64Url;
+       if (!encodedMessage) {
+         const mimeMessage = buildMimeMessage({
+                from: from || user.email,
+                to: to || [],
+                cc,
+                bcc,
+                subject: subject || '',
+                textBody: canonicalBodyText,
+                htmlBody: canonicalBodyHtml,
+                inReplyTo,
+                references,
+                threadId: thread_id || gmail_thread_id,
+                attachments: attachments || []
+              });
 
-             // Ensure body is not empty
-             if (!subject || !to || to.length === 0) {
-               throw new Error('Subject and at least one recipient (To) are required');
-             }
+              // Ensure body is not empty
+              if (!subject || !to || to.length === 0) {
+                throw new Error('Subject and at least one recipient (To) are required');
+              }
 
-             const htmlOrText = (htmlBody || body_html || textBody || body_text || '').trim();
-             if (!htmlOrText) {
-               throw new Error('Message body cannot be empty');
-             }
+              if (!(canonicalBodyHtml || canonicalBodyText).trim()) {
+                throw new Error('Message body cannot be empty');
+              }
 
-             encodedMessage = base64UrlEncode(mimeMessage);
-      }
+              encodedMessage = base64UrlEncode(mimeMessage);
+       }
 
       const sendPayload = {
         raw: encodedMessage
