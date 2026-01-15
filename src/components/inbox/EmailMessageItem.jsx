@@ -118,6 +118,8 @@ export default function EmailMessageItem({
   // Collapse if it's not the last message and there are multiple messages
   const [expanded, setExpanded] = useState(isLast || totalMessages === 1);
   const [showQuoted, setShowQuoted] = useState(false);
+  const [inlineImageErrors, setInlineImageErrors] = useState(new Set()); // Track failed image CIDs
+  const [isRetryingImages, setIsRetryingImages] = useState(false);
 
   // Check if message has no body (ignore has_body flag; check actual content)
   const hasHtml = !!message?.body_html && message.body_html.trim() !== "";
@@ -189,6 +191,8 @@ export default function EmailMessageItem({
             queryClient.invalidateQueries({ queryKey: ["emailMessages", threadId || message.thread_id] });
           }).catch((err) => {
             console.error('Failed to load inline image:', err);
+            // Mark this CID as failed
+            setInlineImageErrors((prev) => new Set(prev).add(cidInfo.content_id));
           });
         }
       }
@@ -223,6 +227,32 @@ export default function EmailMessageItem({
   // Visual treatment
   const accentClass = message.is_outbound ? "bg-blue-500" : "bg-[#E5E7EB]";
   const containerTint = message.is_outbound ? "bg-blue-50/30" : "bg-white";
+
+  // Retry failed inline images
+  const handleRetryImages = async () => {
+    setIsRetryingImages(true);
+    const failedAttachments = (message.attachments || []).filter(
+      (att) => att.is_inline && att.content_id && inlineImageErrors.has(att.content_id) && !att.file_url
+    );
+    
+    try {
+      await Promise.all(
+        failedAttachments.map((att) =>
+          base44.functions.invoke('gmailGetInlineAttachmentUrl', {
+            gmail_message_id: message.gmail_message_id,
+            attachment_id: att.attachment_id,
+          })
+        )
+      );
+      // Refetch to get updated attachments
+      await queryClient.invalidateQueries({ queryKey: ["emailMessages", threadId || message.thread_id] });
+      setInlineImageErrors(new Set()); // Clear errors on success
+    } catch (err) {
+      console.error('Retry failed for inline images:', err);
+    } finally {
+      setIsRetryingImages(false);
+    }
+  };
 
   return (
     <div
@@ -354,6 +384,25 @@ export default function EmailMessageItem({
                       />
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Inline Image Error Notice */}
+              {inlineImageErrors.size > 0 && (
+                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center justify-between gap-3">
+                  <span className="text-[12px] text-amber-800">
+                    Some inline images couldn't be loaded
+                  </span>
+                  <Button
+                    onClick={handleRetryImages}
+                    disabled={isRetryingImages}
+                    size="sm"
+                    variant="outline"
+                    className="text-[11px] h-6 px-2 flex-shrink-0 gap-1"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isRetryingImages ? 'animate-spin' : ''}`} />
+                    {isRetryingImages ? 'Retrying...' : 'Retry'}
+                  </Button>
                 </div>
               )}
 
