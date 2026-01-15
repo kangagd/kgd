@@ -159,16 +159,18 @@ export default function EmailMessageItem({
     }
   };
 
-  // Get inline images with URLs (prefer file_url from lazy-load, fallback to url)
-  const inlineImages = useMemo(() => {
-    if (!message.attachments) return [];
-    return message.attachments
-      .filter((att) => att.is_inline && att.content_id && (att.file_url || att.url))
-      .map((att) => ({
-        content_id: att.content_id,
-        url: att.file_url || att.url,
-      }));
+  // Get all inline images (with or without URL)
+  const hasInlineImages = useMemo(() => {
+    if (!message.attachments) return false;
+    return message.attachments.some((att) => att.is_inline && att.content_id);
   }, [message.attachments]);
+
+  // Check if all inline images are loaded
+  const allInlineImagesLoaded = useMemo(() => {
+    if (!hasInlineImages) return true;
+    const inlineCount = message.attachments?.filter((att) => att.is_inline && att.content_id).length || 0;
+    return loadedInlineImages.size >= inlineCount;
+  }, [hasInlineImages, loadedInlineImages, message.attachments]);
 
   // Separate regular attachments from inline images (only is_inline flag matters)
   const regularAttachments = useMemo(() => {
