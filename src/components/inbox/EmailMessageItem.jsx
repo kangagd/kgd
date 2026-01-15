@@ -123,6 +123,10 @@ export default function EmailMessageItem({
   const [inlineImageErrors, setInlineImageErrors] = useState(new Set()); // Track failed image CIDs
   const [isRetryingImages, setIsRetryingImages] = useState(false);
 
+  // Refs to prevent repeated inline image fetch attempts
+  const pendingInlineFetchRef = useRef(new Map()); // key: content_id -> { gmail_message_id, attachment_id }
+  const attemptedInlineFetchRef = useRef(new Set()); // content_ids already attempted for auto fetch
+
   // Check if message has renderable body (actual content, not flags)
   const hasBody = hasRenderableBody(message);
   const hasNoBody = !hasBody;
