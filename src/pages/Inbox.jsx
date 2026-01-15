@@ -1,4 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+
+/* -------------------------
+   Global sync mutex (prevent concurrent syncs)
+------------------------ */
+let syncInFlight = null;
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { QUERY_CONFIG } from "@/components/api/queryConfig";
