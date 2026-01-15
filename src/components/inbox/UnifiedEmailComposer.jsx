@@ -238,13 +238,20 @@ export default function UnifiedEmailComposer({
       return;
     }
 
+    // Only proceed if we have a non-empty signature
     const signatureHtml = buildSignatureHtml(currentUser.email_signature);
-    if (signatureHtml && isEmptyBody(body)) {
+    if (!signatureHtml) {
+      composeInitializedRef.current = true;
+      return;
+    }
+
+    // Insert signature if body is empty
+    if (isEmptyBody(body)) {
       setBody(signatureHtml);
     }
 
     composeInitializedRef.current = true;
-  }, [currentUser, existingDraft, mode]);
+  }, [currentUser, existingDraft, mode, body]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
