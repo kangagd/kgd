@@ -25,6 +25,7 @@ import EditableField from "./EditableField";
 import EditableFileUpload from "./EditableFileUpload";
 import CustomerEditModal from "../customers/CustomerEditModal";
 import RichTextField from "../common/RichTextField";
+import AddressAutocomplete from "../common/AddressAutocomplete";
 import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { PO_STATUS, LOGISTICS_LOCATION, getPoStatusLabel, normaliseLegacyPoStatus } from "../domain/logisticsConfig";
@@ -1333,12 +1334,38 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 <Navigation className="text-green-600 w-5 h-5 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
-                  <button
-                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank')}
-                    className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
-                  >
-                    {job.address}
-                  </button>
+                  <EditableField
+                    value={job.address_full || job.address}
+                    onSave={(newAddressData) => {
+                      // newAddressData could be string or object from AddressAutocomplete
+                      const addressObj = typeof newAddressData === 'string' 
+                        ? { address_full: newAddressData, address: newAddressData }
+                        : newAddressData;
+                      
+                      const updates = {
+                        ...addressObj,
+                        address: addressObj.address_full || addressObj.address
+                      };
+                      
+                      logChange('address', job.address, updates.address);
+                      base44.entities.Job.update(job.id, updates).then(() => {
+                        queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+                        queryClient.invalidateQueries({ queryKey: ['jobs'] });
+                        toast.success('Address updated');
+                      });
+                    }}
+                    type="address"
+                    displayFormat={(val) => (
+                      <button
+                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`, '_blank')}
+                        className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
+                      >
+                        {val}
+                      </button>
+                    )}
+                    placeholder="Set address"
+                    className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                  />
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
