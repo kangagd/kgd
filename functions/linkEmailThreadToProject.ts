@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
 
     // Update EmailThread with cached fields
     // CRITICAL: Clear contract link to enforce mutual exclusivity
+    // DEPRECATED: Do NOT set job_id (job linking removed)
     const threadUpdates = {
       project_id: project.id,
       project_number: project.project_number || null,
