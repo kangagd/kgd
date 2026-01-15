@@ -911,18 +911,34 @@ export default function UnifiedEmailComposer({
           </div>
         )}
 
-      {/* Reply context guardrail - only show if no valid context AND sync failed */}
+      {/* Reply context guardrail - only show if no valid context */}
       {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
         !hasValidReplyContext && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
             <div className="text-[12px] text-amber-800">
-              <strong>⚠ Message context not available</strong> — reply will use thread headers only. Thread history may be limited.
+              {isSyncing ? (
+                <><strong>⏳ Syncing message context…</strong> you can keep writing.</>
+              ) : (
+                <><strong>⚠ Message context not available</strong> — reply will use thread headers only. Thread history may be limited.</>
+              )}
             </div>
             {thread?.gmail_thread_id && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={async () => {
+                  const tid = thread.id;
+                  // Check lock before manual sync
+                  if (syncInFlightRef.current.has(tid)) return;
+
+                  const lastTs = lastAutoSyncRef.current.get(tid) || 0;
+                  if (Date.now() - lastTs < 60000) {
+                    toast.info('Already synced recently, try again in a moment');
+                    return;
+                  }
+
+                  lastAutoSyncRef.current.set(tid, Date.now());
+                  syncInFlightRef.current.add(tid);
                   setIsSyncing(true);
                   setSyncError(null);
                   try {
@@ -935,17 +951,15 @@ export default function UnifiedEmailComposer({
                        await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
                        await queryClient.refetchQueries({ queryKey: ['emailMessages', thread.id] });
 
-                       // Get latest messages from cache
-                       const messages = queryClient.getQueryData(['emailMessages', thread.id]) || [];
-                       if (messages.length > 0) {
-                         // Find newest message with body
-                         const sortedMsgs = [...messages].sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
-                         const found = sortedMsgs.find(m => m?.body_html || m?.body_text);
-                         if (found) {
-                           setSelectedMessage(found);
+                       // Get latest messages and pick best context
+                       const fresh = queryClient.getQueryData(['emailMessages', thread.id]) || [];
+                       if (fresh.length > 0) {
+                         const best = pickBestContextMessage(fresh, mode);
+                         if (best && (best.body_html || best.body_text)) {
+                           setSelectedMessage(best);
                            // Banner auto-disappears when hasValidReplyContext becomes true
                          } else {
-                           setSyncError('Messages synced but no retrievable body found.');
+                           setSyncError('Messages synced but body content still unavailable. Header-only reply will be used.');
                          }
                        }
                      } else {
@@ -956,13 +970,14 @@ export default function UnifiedEmailComposer({
                     setSyncError(err.message);
                     toast.error('Failed to sync messages');
                   } finally {
+                    syncInFlightRef.current.delete(tid);
                     setIsSyncing(false);
                   }
                 }}
-                disabled={isSyncing}
+                disabled={isSyncing || syncInFlightRef.current.has(thread?.id)}
                 className="h-7 text-[11px]"
               >
-                {isSyncing ? 'Syncing...' : 'Sync messages'}
+                {isSyncing ? 'Syncing…' : 'Sync messages manually'}
               </Button>
             )}
             {syncError && (
