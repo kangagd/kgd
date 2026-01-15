@@ -33,6 +33,7 @@ import { sanitizeForCompose } from "@/components/utils/emailSanitization";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
 import SmartComposeHelper, { SmartComposeSuggestionUI } from "./SmartComposeHelper";
 import RecipientAutocomplete from "./RecipientAutocomplete";
+import MergeFieldsHelper from "./MergeFieldsHelper";
 
 // ============================================================================
 // Signature Marker & Helpers (Private)
@@ -147,6 +148,8 @@ export default function UnifiedEmailComposer({
   // Refs
   const fileInputRef = useRef(null);
   const toInputRef = useRef(null);
+  const bodyEditorRef = useRef(null);
+  const subjectInputRef = useRef(null);
   const unmountedRef = useRef(false);
   const composeInitializedRef = useRef(false);
 
@@ -662,39 +665,69 @@ export default function UnifiedEmailComposer({
         )}
 
         {/* Subject */}
-        <div>
-          <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
-            Subject
-          </label>
-          <Input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Email subject..."
-            className="text-[14px]"
-          />
-        </div>
+         <div>
+           <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
+             Subject
+           </label>
+           <Input
+             ref={subjectInputRef}
+             value={subject}
+             onChange={(e) => setSubject(e.target.value)}
+             placeholder="Email subject..."
+             className="text-[14px]"
+           />
+         </div>
 
-        {/* Templates */}
+        {/* Templates + Merge Fields */}
         {templates.length > 0 && (
-          <div>
-            <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
-              Template
-            </label>
-            <Select
-              value={selectedTemplate}
-              onValueChange={handleApplyTemplate}
-            >
-              <SelectTrigger className="text-[14px]">
-                <SelectValue placeholder="Use template..." />
-              </SelectTrigger>
-              <SelectContent>
-                {templates.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
+                Template
+              </label>
+              <Select
+                value={selectedTemplate}
+                onValueChange={handleApplyTemplate}
+              >
+                <SelectTrigger className="text-[14px]">
+                  <SelectValue placeholder="Use template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <MergeFieldsHelper
+              onInsert={(field) => {
+                // Insert into subject if focused, else body
+                const isFocused = document.activeElement === subjectInputRef.current;
+                if (isFocused) {
+                  setSubject(subject + field);
+                } else {
+                  setBody(body + field);
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* Merge fields only (if no templates) */}
+        {templates.length === 0 && (
+          <div className="flex justify-end">
+            <MergeFieldsHelper
+              onInsert={(field) => {
+                const isFocused = document.activeElement === subjectInputRef.current;
+                if (isFocused) {
+                  setSubject(subject + field);
+                } else {
+                  setBody(body + field);
+                }
+              }}
+            />
           </div>
         )}
       </div>
