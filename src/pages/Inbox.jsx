@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import ThreadRow from "@/components/inbox/ThreadRow";
 import ThreadHeader from "@/components/inbox/ThreadHeader";
 import InboxFilterBar from "@/components/inbox/InboxFilterBar";
-import SharedComposer from "@/components/inbox/SharedComposer";
+
 import EmailDetailView from "@/components/inbox/EmailDetailView";
 import LinkThreadModal from "@/components/inbox/LinkThreadModal";
 import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal";
@@ -898,22 +898,7 @@ export default function Inbox() {
                   )}
                 </div>
 
-                {showComposer && (
-                  <div className="border-t border-[#E5E7EB] p-4 bg-white flex-shrink-0">
-                    <SharedComposer
-                      mode="reply"
-                      thread={selectedThread}
-                      message={composerMessage?.message}
-                      existingDraft={composerMessage?.draft}
-                      currentUser={user}
-                      onClose={() => {
-                        setShowComposer(false);
-                        setComposerMessage(null);
-                      }}
-                      onSent={handleComposerSent}
-                    />
-                  </div>
-                )}
+
               </div>
             </>
           ) : (
