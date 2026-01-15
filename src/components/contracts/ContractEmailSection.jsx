@@ -353,14 +353,17 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
       // Fetch drafts for linked threads
       function useLinkThreadDrafts(contract, linkedThreads) {
       return useQuery({
-      queryKey: ['contractEmailDrafts', contract.id, linkedThreads.map(t => t.id).join(',')],
-      queryFn: async () => {
-      if (linkedThreads.length === 0) return [];
-      const user = await base44.auth.me();
-      const allDrafts = await base44.entities.EmailDraft.filter({ created_by: user.email }, '-updated_date');
-      const threadIds = linkedThreads.map(t => t.id);
-      return allDrafts.filter(d => threadIds.includes(d.thread_id));
-      },
-      enabled: linkedThreads.length > 0
+        queryKey: ['contractEmailDrafts', contract.id, linkedThreads.map(t => t.id).join(',')],
+        queryFn: async () => {
+          if (linkedThreads.length === 0) return [];
+          const user = await base44.auth.me();
+          const allDrafts = await base44.entities.EmailDraft.filter({ 
+            created_by: user.email,
+            status: 'draft'
+          }, '-updated_date');
+          const threadIds = linkedThreads.map(t => t.id);
+          return allDrafts.filter(d => threadIds.includes(d.thread_id));
+        },
+        enabled: linkedThreads.length > 0
       });
       }
