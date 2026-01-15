@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
+import { inboxKeys } from "@/components/api/queryKeys";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
@@ -105,7 +106,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
         await queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
         await queryClient.refetchQueries({ queryKey: ["emailMessages", thread.id] });
         // Invalidate threads list to update snippet, message_count, etc.
-        await queryClient.invalidateQueries({ queryKey: ["inbox", "threads"] });
+        await queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
         onThreadUpdate?.();
       } else {
         toast.error('Failed to sync messages');
