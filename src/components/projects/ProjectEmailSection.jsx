@@ -96,7 +96,13 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
         project_number: null,
         project_title: null,
         linked_to_project_at: null,
-        linked_to_project_by: null
+        linked_to_project_by: null,
+        contract_id: null,
+        contract_name: null,
+        contract_status: null,
+        contract_type: null,
+        linked_to_contract_at: null,
+        linked_to_contract_by: null
       });
     },
     onSuccess: () => {
