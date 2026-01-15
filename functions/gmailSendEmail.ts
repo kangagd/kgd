@@ -357,22 +357,22 @@ Deno.serve(async (req) => {
     if (thread_id) {
       try {
         const createdMessage = await base44.asServiceRole.entities.EmailMessage.create({
-          thread_id,
-          gmail_message_id: result.id,
-          gmail_thread_id: result.threadId || gmail_thread_id,
-          from_address: from || user.email,
-          to_addresses: to || [],
-          cc_addresses: cc || [],
-          bcc_addresses: bcc || [],
-          subject: subject || '',
-          body_html: htmlBody || body_html,
-          body_text: textBody || body_text || (htmlBody || body_html || '').replace(/<[^>]*>/g, ''),
-          is_outbound: true,
-          sent_at: new Date().toISOString(),
-          performed_by_user_id: user.id,
-          performed_by_user_email: user.email,
-          performed_at: new Date().toISOString()
-        });
+           thread_id,
+           gmail_message_id: result.id,
+           gmail_thread_id: result.threadId || gmail_thread_id,
+           from_address: from || user.email,
+           to_addresses: to || [],
+           cc_addresses: cc || [],
+           bcc_addresses: bcc || [],
+           subject: subject || '',
+           body_html: canonicalBodyHtml,
+           body_text: canonicalBodyText || canonicalBodyHtml.replace(/<[^>]*>/g, ''),
+           is_outbound: true,
+           sent_at: new Date().toISOString(),
+           performed_by_user_id: user.id,
+           performed_by_user_email: user.email,
+           performed_at: new Date().toISOString()
+         });
         emailMessageId = createdMessage.id;
 
         // Update thread last_message_date + auto-link to Project/Contract if provided
