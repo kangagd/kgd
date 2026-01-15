@@ -310,7 +310,9 @@ export default function ThreadRow({
             <div className="flex items-center justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] text-[#9CA3AF] truncate">
-                  {thread?.last_message_snippet || "No messages"}
+                  {(thread?.snippet && thread.snippet.trim()) || 
+                   (thread?.last_message_snippet && thread.last_message_snippet.trim()) ||
+                   "(No preview available)"}
                 </p>
               </div>
 
