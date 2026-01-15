@@ -383,24 +383,22 @@ Deno.serve(async (req) => {
             lastMessageDirection: 'sent'
           };
 
-          // Auto-link to Project or Contract (safe: prefer provided IDs, warn on conflicts)
-          if (project_id) {
-            if (thread.contract_id && !contract_id) {
-              // Existing contract link; only set project if no conflict
-              console.warn(`[gmailSendEmail] Thread ${thread_id} already linked to contract ${thread.contract_id}; adding project ${project_id} alongside`);
-            }
+          // Safe linking: only set if not already linked (GUARDRAIL #1: never overwrite existing non-null link)
+          if (project_id && !thread.project_id) {
             updateData.project_id = project_id;
+            updateData.linked_to_project_at = new Date().toISOString();
+            updateData.linked_to_project_by = user.email;
           }
 
-          if (contract_id) {
-            if (thread.project_id && !project_id) {
-              // Existing project link; only set contract if no conflict
-              console.warn(`[gmailSendEmail] Thread ${thread_id} already linked to project ${thread.project_id}; adding contract ${contract_id} alongside`);
-            }
+          if (contract_id && !thread.contract_id) {
             updateData.contract_id = contract_id;
+            updateData.linked_to_contract_at = new Date().toISOString();
+            updateData.linked_to_contract_by = user.email;
           }
 
-          await base44.asServiceRole.entities.EmailThread.update(thread_id, updateData);
+          if (Object.keys(updateData).length > 2) { // More than just last_message_date and lastMessageDirection
+            await base44.asServiceRole.entities.EmailThread.update(thread_id, updateData);
+          }
         }
       } catch (error) {
         console.error('Error creating EmailMessage record or updating thread linking:', error);
