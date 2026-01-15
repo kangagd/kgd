@@ -685,7 +685,7 @@ export default function UnifiedEmailComposer({
     if (!thread?.id || !thread?.gmail_thread_id) return;
     if (messagesLoading) return; // Wait for messages to load
     
-    // If context is available, upgrade selectedMessage if needed
+    // If context is available, upgrade selectedMessage if needed (but don't overwrite body if user typed)
     const hasContext = isMessageContextAvailable(messages);
     if (hasContext) {
       const best = pickBestContextMessage(messages, mode);
@@ -727,10 +727,12 @@ export default function UnifiedEmailComposer({
           await queryClient.refetchQueries({ queryKey: ['emailMessages', tid] });
           
           // Attempt to upgrade selectedMessage with synced content
+          // BUT: Do NOT update body if user has already started typing
           const fresh = queryClient.getQueryData(['emailMessages', tid]) || [];
           const best = pickBestContextMessage(fresh, mode);
           if (best && (best.body_html || best.body_text)) {
             setSelectedMessage(best);
+            // Body will be populated by init effect if not already typed
           } else {
             setSyncError('Messages synced but body content still unavailable. Header-only reply will be used.');
           }
