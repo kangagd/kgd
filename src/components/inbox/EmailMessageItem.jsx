@@ -269,14 +269,14 @@ export default function EmailMessageItem({
   const handleRetryImages = async () => {
     setIsRetryingImages(true);
     const failedAttachments = (message.attachments || []).filter(
-      (att) => att.is_inline && att.content_id && inlineImageErrors.has(att.content_id) && !att.file_url
+      (att) => att.is_inline && att.content_id && inlineImageErrors.has(att.content_id) && !(att.file_url || att.url)
     );
     
     try {
       await Promise.all(
         failedAttachments.map((att) =>
           base44.functions.invoke('gmailGetInlineAttachmentUrl', {
-            gmail_message_id: message.gmail_message_id,
+            gmail_message_id: att.gmail_message_id || message.gmail_message_id,
             attachment_id: att.attachment_id,
           })
         )
