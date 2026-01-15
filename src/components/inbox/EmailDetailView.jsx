@@ -100,9 +100,11 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
 
       if (response.data?.success) {
         showSyncToast(response.data);
-        // Invalidate and refetch immediately for responsive UX
+        // Invalidate and refetch messages immediately for responsive UX
         await queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
         await queryClient.refetchQueries({ queryKey: ["emailMessages", thread.id] });
+        // Invalidate threads list to update snippet, message_count, etc.
+        await queryClient.invalidateQueries({ queryKey: ["inbox", "threads"] });
         onThreadUpdate?.();
       } else {
         toast.error('Failed to sync messages');
