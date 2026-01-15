@@ -47,25 +47,27 @@ export default function MergeFieldsHelper({ onInsert }) {
           <ChevronDown className="w-3 h-3" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2 max-h-[400px] overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="space-y-1">
-          <div className="text-[11px] font-semibold text-[#6B7280] px-2 py-1">
-            Available fields
-          </div>
-          {MERGE_FIELDS.map((field) => (
-            <button
-              key={field.key}
-              onClick={() => handleSelect(field.key)}
-              className="w-full text-left px-3 py-2 rounded-lg text-[13px] text-[#111827] hover:bg-[#F3F4F6] transition-colors"
-            >
-              <span className="font-medium">{field.label}</span>
-              <span className="text-[11px] text-[#9CA3AF] block">
-                {`{${field.key}}`}
-              </span>
-            </button>
-          ))}
+      <PopoverContent className="w-56 p-0">
+        <div className="text-[11px] font-semibold text-[#6B7280] px-2 py-1">
+          Available fields
         </div>
-        <div className="border-t border-[#E5E7EB] mt-2 pt-2 px-2">
+        <div className="max-h-[400px] overflow-y-auto px-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-1">
+            {MERGE_FIELDS.map((field) => (
+              <button
+                key={field.key}
+                onClick={() => handleSelect(field.key)}
+                className="w-full text-left px-3 py-2 rounded-lg text-[13px] text-[#111827] hover:bg-[#F3F4F6] transition-colors"
+              >
+                <span className="font-medium">{field.label}</span>
+                <span className="text-[11px] text-[#9CA3AF] block">
+                  {`{${field.key}}`}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="border-t border-[#E5E7EB] px-2 py-2">
           <div className="text-[11px] text-[#6B7280] leading-relaxed">
             Fields populate from linked Project/Contract + Customer data
           </div>
