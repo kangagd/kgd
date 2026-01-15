@@ -231,7 +231,8 @@ Deno.serve(async (req) => {
       thread_id,
       gmail_thread_id,
       inReplyTo, 
-      references 
+      references,
+      attachments
     } = await req.json();
 
     // Get Service Account credentials
