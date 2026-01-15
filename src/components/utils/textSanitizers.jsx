@@ -23,11 +23,11 @@ export const sanitizeInboundText = (input) => {
     ["â", "'"],      // final variant
 
     // Double quotes (single byte and 2-byte UTF-8 sequences)
-    ["â€œ", """],    // UTF-8 mojibake for left double quotation mark
-    ["â€", """],     // UTF-8 mojibake for right double quotation mark
-    ["â", """],      // simpler variant
-    ["â", """],      // simpler variant
-    ["â€�", """],    // replacement character variant
+    ["â€œ", '"'],    // UTF-8 mojibake for left double quotation mark
+    ["â€", '"'],     // UTF-8 mojibake for right double quotation mark
+    ["â", '"'],      // simpler variant
+    ["â", '"'],      // simpler variant
+    ["â€\u009d", '"'],    // replacement character variant
 
     // Em dash, en dash, and minus (most common formatting issue)
     ["â€"", "—"],    // UTF-8 mojibake for em dash (most common)
