@@ -60,26 +60,28 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
   const handleLinkProject = async (projectId) => {
     try {
       await base44.functions.invoke('linkEmailThreadToProject', {
-        threadId: thread.id,
-        projectId,
+        email_thread_id: thread.id,
+        project_id: projectId,
       });
       setShowLinkModal(false);
       onThreadUpdate?.();
     } catch (error) {
       console.error('Failed to link:', error);
+      toast.error('Failed to link thread to project');
     }
   };
 
   const handleLinkContract = async (contractId) => {
     try {
       await base44.functions.invoke('linkEmailThreadToContract', {
-        threadId: thread.id,
-        contractId,
+        email_thread_id: thread.id,
+        contract_id: contractId,
       });
       setShowLinkModal(false);
       onThreadUpdate?.();
     } catch (error) {
       console.error('Failed to link:', error);
+      toast.error('Failed to link thread to contract');
     }
   };
 
