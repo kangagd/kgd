@@ -1,9 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import AttachmentCard from "./AttachmentCard";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 /**
  * Extract quoted content from HTML for Gmail-style threads.
@@ -142,10 +146,42 @@ export default function EmailMessageItem({
   totalMessages,
   getSenderInitials,
   isNew, // optional flag from EmailDetailView divider logic
+  threadId,
+  onResyncMessage,
 }) {
+  const queryClient = useQueryClient();
+  const [isSyncing, setIsSyncing] = useState(false);
   // Collapse if it's not the last message and there are multiple messages
   const [expanded, setExpanded] = useState(isLast || totalMessages === 1);
   const [showQuoted, setShowQuoted] = useState(false);
+
+  // Check if message has no body
+  const hasNoBody = message.has_body === false || 
+    (!message.body_html || message.body_html.trim() === '') &&
+    (!message.body_text || message.body_text.trim() === '');
+
+  const handleReSyncMessage = async () => {
+    setIsSyncing(true);
+    try {
+      // Re-sync just this message thread
+      if (message.gmail_thread_id) {
+        await base44.functions.invoke('gmailSyncThreadMessages', {
+          gmail_thread_id: message.gmail_thread_id,
+        });
+        // Refetch messages for this thread
+        await queryClient.invalidateQueries({ 
+          queryKey: ["emailMessages", threadId || message.thread_id] 
+        });
+        toast.success('Message synced');
+        onResyncMessage?.();
+      }
+    } catch (error) {
+      console.error('Error syncing message:', error);
+      toast.error('Failed to sync message');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Get inline images with URLs
   const inlineImages = useMemo(() => {
@@ -336,7 +372,25 @@ export default function EmailMessageItem({
                     overflowWrap: "break-word",
                   }}
                 >
-                  {message.body_html && message.body_html.includes("<") ? (
+                  {hasNoBody ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between gap-3">
+                      <div className="text-[13px] text-amber-900">
+                        Content not available yet
+                      </div>
+                      {message.gmail_thread_id && (
+                        <Button
+                          onClick={handleReSyncMessage}
+                          disabled={isSyncing}
+                          size="sm"
+                          variant="outline"
+                          className="text-[12px] h-7 gap-1"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+                          {isSyncing ? 'Syncing...' : 'Re-sync'}
+                        </Button>
+                      )}
+                    </div>
+                  ) : message.body_html && message.body_html.includes("<") ? (
                     <>
                       {/* Main content */}
                       <div
@@ -374,9 +428,7 @@ export default function EmailMessageItem({
                     <div className="whitespace-pre-wrap">
                       {sanitizeInboundText(message.body_text)}
                     </div>
-                  ) : (
-                    <div className="text-[#6B7280]">(No content)</div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
