@@ -36,6 +36,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     job_number: null,
     project_id: "",
     project_name: "",
+    contract_id: "",
     customer_id: "",
     customer_name: "",
     customer_phone: "",
@@ -157,6 +158,13 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     queryFn: () => base44.entities.TechnicianLeave.list('-start_time'),
     staleTime: 30000
   });
+
+  const { data: allContracts = [] } = useQuery({
+    queryKey: ['contracts'],
+    queryFn: () => base44.entities.Contract.list(),
+  });
+
+  const contracts = allContracts.filter(c => c.status === 'active');
 
   // Filter job types based on logistics toggle (only when creating new job)
   const jobTypes = !job 
@@ -758,27 +766,49 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                return null;
             })()}
 
-            {!preselectedProjectId && (
+            <div className="grid md:grid-cols-2 gap-6">
+              {!preselectedProjectId && (
+                <div className="space-y-2">
+                  <Label htmlFor="project_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Project (Optional)</Label>
+                  <Select 
+                    value={formData.project_id || 'null'} 
+                    onValueChange={handleProjectChange}
+                  >
+                    <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                      <SelectValue placeholder="Standalone job or select project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="null">No Project (Standalone)</SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="project_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Project (Optional)</Label>
+                <Label htmlFor="contract_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Contract (Optional)</Label>
                 <Select 
-                  value={formData.project_id || 'null'} 
-                  onValueChange={handleProjectChange}
+                  value={formData.contract_id || 'null'} 
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, contract_id: val === 'null' ? '' : val }))}
                 >
                   <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                    <SelectValue placeholder="Standalone job or select project" />
+                    <SelectValue placeholder="No contract" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="null">No Project (Standalone)</SelectItem>
-                    {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.title}
+                    <SelectItem value="null">No Contract</SelectItem>
+                    {contracts.map((contract) => (
+                      <SelectItem key={contract.id} value={contract.id}>
+                        {contract.contract_name || `Contract #${contract.contract_number || contract.id.slice(0, 8)}`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            )}
+            </div>
 
             {/* Supplier field for logistics jobs, Customer for normal jobs */}
             {isLogisticsJob ? (
