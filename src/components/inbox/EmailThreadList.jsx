@@ -227,8 +227,25 @@ export default function EmailThreadList({
               )}
 
               {/* Linked indicator - show if thread is linked to Project OR Contract */}
-              {(thread.project_id || thread.contract_id) && (
-                <LinkIcon className="w-3 h-3 text-[#4B5563]" />
+              {thread.project_id && (
+                <Badge 
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 h-5 bg-purple-50 text-purple-700 border-purple-200"
+                  title="Linked to Project"
+                >
+                  <LinkIcon className="w-2.5 h-2.5 mr-0.5" />
+                  Project
+                </Badge>
+              )}
+              {thread.contract_id && (
+                <Badge 
+                  variant="outline"
+                  className="text-[10px] px-1.5 py-0 h-5 bg-blue-50 text-blue-700 border-blue-200"
+                  title="Linked to Contract"
+                >
+                  <LinkIcon className="w-2.5 h-2.5 mr-0.5" />
+                  Contract
+                </Badge>
               )}
             </div>
           </div>
