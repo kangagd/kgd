@@ -220,15 +220,35 @@ export default function UnifiedEmailComposer({
       return;
     }
 
-    // Priority 2: Default "to" if provided
-    if (defaultTo) {
-      setToChips([defaultTo]);
-    }
-
-    // Priority 3: Initialize from message context (reply/reply_all/forward)
+    // Priority 2: Initialize from message context (reply/reply_all/forward)
     if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
       initializeFromMessage();
       return;
+    }
+
+    // Priority 3: Default "to" if provided
+    if (defaultTo) {
+      setToChips([defaultTo]);
+      setCcChips([]);
+      setBccChips([]);
+      setShowCc(false);
+      setShowBcc(false);
+      setSubject("");
+      setAttachments([]);
+      return;
+    }
+
+    // Priority 4: Fresh compose → clear all state
+    if (mode === "compose") {
+      setToChips([]);
+      setCcChips([]);
+      setBccChips([]);
+      setShowCc(false);
+      setShowBcc(false);
+      setSubject("");
+      setAttachments([]);
+      setDraftId(null);
+      // Body will be set by signature effect
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
