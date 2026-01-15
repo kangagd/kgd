@@ -20,6 +20,7 @@ import {
 import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
+import GlobalCustomerOrgSearch from "../common/GlobalCustomerOrgSearch";
 
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId, createJobContext }) {
   // Detect logistics context from URL params or props
@@ -777,28 +778,21 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               <div className="space-y-2">
                 <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
                 <div className="flex gap-2">
-                  {(() => {
-                    const selectedCustomerId = formData.customer_id ? String(formData.customer_id) : "";
-                    return (
-                      <Select
-                        value={selectedCustomerId}
-                        onValueChange={handleCustomerChange}
-                        required
-                        disabled={!!formData.project_id}
-                      >
-                        <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                          <SelectValue placeholder="Select customer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {customers.map((customer) => (
-                            <SelectItem key={customer.id} value={String(customer.id)}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    );
-                  })()}
+                  <GlobalCustomerOrgSearch
+                    mode="customers"
+                    customers={customers}
+                    value={formData.customer_id}
+                    onChange={(item) => {
+                      if (!item) {
+                        setFormData(prev => ({ ...prev, customer_id: "", customer_name: "" }));
+                      } else {
+                        handleCustomerChange(item.id);
+                      }
+                    }}
+                    placeholder="Search customer..."
+                    disabled={!!formData.project_id}
+                    className="flex-1"
+                  />
                   {!formData.project_id && (
                     <Button
                       type="button"
