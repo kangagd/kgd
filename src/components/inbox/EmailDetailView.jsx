@@ -178,6 +178,10 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
                         totalMessages={messages.length}
                         getSenderInitials={getSenderInitials}
                         isNew={newStartIndex !== -1 && idx >= newStartIndex}
+                        threadId={thread.id}
+                        onResyncMessage={() => {
+                          queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
+                        }}
                       />
                     </React.Fragment>
                   );
