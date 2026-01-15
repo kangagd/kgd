@@ -863,206 +863,213 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Status</Label>
-                <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                  <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {JOB_STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduled_date" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Scheduled Date *</Label>
-                <Input
-                  id="scheduled_date"
-                  type="date"
-                  value={formData.scheduled_date}
-                  onChange={(e) => {
-                    const newDate = e.target.value;
-                    const newStatus = newDate ? JOB_STATUS.SCHEDULED : JOB_STATUS.OPEN;
-                    setFormData({ 
-                      ...formData, 
-                      scheduled_date: newDate,
-                      status: newStatus
-                    });
-                  }}
-                  required
-                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduled_time" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Scheduled Time</Label>
-                <Input
-                  id="scheduled_time"
-                  type="time"
-                  value={formData.scheduled_time}
-                  onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="expected_duration" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Expected Duration (hours)</Label>
-                <Input
-                  id="expected_duration"
-                  type="number"
-                  step="0.5"
-                  value={formData.expected_duration || ""}
-                  onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
-                  placeholder="Duration"
-                  className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
-                />
-              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-[14px] font-medium text-[#111827] leading-[1.4]">Assigned Technicians</Label>
-              <MultiTechnicianSelect
-                selectedEmails={formData.assigned_to || []}
-                technicians={technicians}
-                onChange={handleTechnicianChange}
-                leaves={technicianLeaves}
-                scheduledDate={formData.scheduled_date}
-              />
-            </div>
+            {/* Show scheduling fields only when editing existing job */}
+            {job && (
+              <>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="status" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Status</Label>
+                    <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
+                      <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {JOB_STATUS_OPTIONS.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {/* Scheduled Visits Section */}
-              <div className="space-y-4 pt-4 border-t-2 border-slate-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Scheduled Visits</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addScheduledVisit}
-                  className="border-2 hover:bg-slate-100"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Visit
-                </Button>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_date" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Scheduled Date *</Label>
+                    <Input
+                      id="scheduled_date"
+                      type="date"
+                      value={formData.scheduled_date}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        const newStatus = newDate ? JOB_STATUS.SCHEDULED : JOB_STATUS.OPEN;
+                        setFormData({ 
+                          ...formData, 
+                          scheduled_date: newDate,
+                          status: newStatus
+                        });
+                      }}
+                      required
+                      className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                    />
+                  </div>
 
-              {formData.scheduled_visits && formData.scheduled_visits.length > 0 ? (
-                <div className="space-y-3">
-                  {formData.scheduled_visits.map((visit, index) => (
-                    <div key={visit.id} className="p-4 border-2 border-slate-200 rounded-xl bg-slate-50">
-                      <div className="flex items-start justify-between mb-3">
-                        <h4 className="text-[16px] font-medium text-[#111827]">Visit {index + 1}</h4>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeScheduledVisit(index)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_time" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Scheduled Time</Label>
+                    <Input
+                      id="scheduled_time"
+                      type="time"
+                      value={formData.scheduled_time}
+                      onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
+                      className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                    />
+                  </div>
 
-                      <div className="grid md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label className="text-[13px]">Date</Label>
-                          <Input
-                            type="date"
-                            value={visit.date || ""}
-                            onChange={(e) => updateScheduledVisit(index, { date: e.target.value })}
-                            className="border-2 border-slate-300"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[13px]">Time</Label>
-                          <Input
-                            type="time"
-                            value={visit.time || ""}
-                            onChange={(e) => updateScheduledVisit(index, { time: e.target.value })}
-                            className="border-2 border-slate-300"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[13px]">Duration (hours)</Label>
-                          <Input
-                            type="number"
-                            step="0.5"
-                            value={visit.duration || ""}
-                            onChange={(e) => updateScheduledVisit(index, { duration: e.target.value ? parseFloat(e.target.value) : null })}
-                            placeholder="Hours"
-                            className="border-2 border-slate-300"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 mt-4">
-                        <Label className="text-[13px]">Assigned Technicians</Label>
-                        <MultiTechnicianSelect
-                          selectedEmails={visit.assigned_to || []}
-                          technicians={technicians}
-                          onChange={(emails) => handleVisitTechnicianChange(index, emails)}
-                          leaves={technicianLeaves}
-                          scheduledDate={visit.date}
-                        />
-                        {visit.assigned_to && visit.assigned_to.length > 0 && (
-                          <div className="flex items-center gap-2 mt-2">
-                            {visit.assigned_to.map((email, idx) => {
-                              const tech = technicians.find(t => t.email === email);
-                              const name = tech?.display_name || tech?.full_name || visit.assigned_to_name?.[idx] || email;
-                              const getInitials = (name) => {
-                                if (!name) return "?";
-                                return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-                              };
-                              const avatarColors = [
-                                "bg-blue-500",
-                                "bg-purple-500",
-                                "bg-green-500",
-                                "bg-orange-500",
-                                "bg-pink-500",
-                                "bg-indigo-500",
-                                "bg-red-500",
-                                "bg-teal-500"
-                              ];
-                              const getAvatarColor = (name) => {
-                                if (!name) return avatarColors[0];
-                                const index = name.charCodeAt(0) % avatarColors.length;
-                                return avatarColors[index];
-                              };
-                              return (
-                                <div
-                                  key={email}
-                                  className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
-                                  title={name}
-                                >
-                                  {getInitials(name)}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 mt-4">
-                        <Label className="text-[13px]">Visit Notes</Label>
-                        <Input
-                          value={visit.notes || ""}
-                          onChange={(e) => updateScheduledVisit(index, { notes: e.target.value })}
-                          placeholder="Any specific notes for this visit..."
-                          className="border-2 border-slate-300"
-                        />
-                      </div>
-                    </div>
-                  ))}
+                  <div className="space-y-2">
+                    <Label htmlFor="expected_duration" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Expected Duration (hours)</Label>
+                    <Input
+                      id="expected_duration"
+                      type="number"
+                      step="0.5"
+                      value={formData.expected_duration || ""}
+                      onChange={(e) => setFormData({ ...formData, expected_duration: e.target.value ? parseFloat(e.target.value) : null })}
+                      placeholder="Duration"
+                      className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all"
+                    />
+                  </div>
                 </div>
-              ) : (
-                <p className="text-[14px] text-slate-500 italic">No scheduled visits yet. Click "Add Visit" to schedule.</p>
-              )}
-              </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[14px] font-medium text-[#111827] leading-[1.4]">Assigned Technicians</Label>
+                  <MultiTechnicianSelect
+                    selectedEmails={formData.assigned_to || []}
+                    technicians={technicians}
+                    onChange={handleTechnicianChange}
+                    leaves={technicianLeaves}
+                    scheduledDate={formData.scheduled_date}
+                  />
+                </div>
+
+                {/* Scheduled Visits Section */}
+                <div className="space-y-4 pt-4 border-t-2 border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">Scheduled Visits</h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={addScheduledVisit}
+                      className="border-2 hover:bg-slate-100"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Visit
+                    </Button>
+                  </div>
+
+                  {formData.scheduled_visits && formData.scheduled_visits.length > 0 ? (
+                    <div className="space-y-3">
+                      {formData.scheduled_visits.map((visit, index) => (
+                        <div key={visit.id} className="p-4 border-2 border-slate-200 rounded-xl bg-slate-50">
+                          <div className="flex items-start justify-between mb-3">
+                            <h4 className="text-[16px] font-medium text-[#111827]">Visit {index + 1}</h4>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeScheduledVisit(index)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          <div className="grid md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-[13px]">Date</Label>
+                              <Input
+                                type="date"
+                                value={visit.date || ""}
+                                onChange={(e) => updateScheduledVisit(index, { date: e.target.value })}
+                                className="border-2 border-slate-300"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[13px]">Time</Label>
+                              <Input
+                                type="time"
+                                value={visit.time || ""}
+                                onChange={(e) => updateScheduledVisit(index, { time: e.target.value })}
+                                className="border-2 border-slate-300"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-[13px]">Duration (hours)</Label>
+                              <Input
+                                type="number"
+                                step="0.5"
+                                value={visit.duration || ""}
+                                onChange={(e) => updateScheduledVisit(index, { duration: e.target.value ? parseFloat(e.target.value) : null })}
+                                placeholder="Hours"
+                                className="border-2 border-slate-300"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-2 mt-4">
+                            <Label className="text-[13px]">Assigned Technicians</Label>
+                            <MultiTechnicianSelect
+                              selectedEmails={visit.assigned_to || []}
+                              technicians={technicians}
+                              onChange={(emails) => handleVisitTechnicianChange(index, emails)}
+                              leaves={technicianLeaves}
+                              scheduledDate={visit.date}
+                            />
+                            {visit.assigned_to && visit.assigned_to.length > 0 && (
+                              <div className="flex items-center gap-2 mt-2">
+                                {visit.assigned_to.map((email, idx) => {
+                                  const tech = technicians.find(t => t.email === email);
+                                  const name = tech?.display_name || tech?.full_name || visit.assigned_to_name?.[idx] || email;
+                                  const getInitials = (name) => {
+                                    if (!name) return "?";
+                                    return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+                                  };
+                                  const avatarColors = [
+                                    "bg-blue-500",
+                                    "bg-purple-500",
+                                    "bg-green-500",
+                                    "bg-orange-500",
+                                    "bg-pink-500",
+                                    "bg-indigo-500",
+                                    "bg-red-500",
+                                    "bg-teal-500"
+                                  ];
+                                  const getAvatarColor = (name) => {
+                                    if (!name) return avatarColors[0];
+                                    const index = name.charCodeAt(0) % avatarColors.length;
+                                    return avatarColors[index];
+                                  };
+                                  return (
+                                    <div
+                                      key={email}
+                                      className={`${getAvatarColor(name)} w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm`}
+                                      title={name}
+                                    >
+                                      {getInitials(name)}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="space-y-2 mt-4">
+                            <Label className="text-[13px]">Visit Notes</Label>
+                            <Input
+                              value={visit.notes || ""}
+                              onChange={(e) => updateScheduledVisit(index, { notes: e.target.value })}
+                              placeholder="Any specific notes for this visit..."
+                              className="border-2 border-slate-300"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[14px] text-slate-500 italic">No scheduled visits yet. Click "Add Visit" to schedule.</p>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Checklist Items for Logistics Jobs */}
             {isLogisticsJob && (
