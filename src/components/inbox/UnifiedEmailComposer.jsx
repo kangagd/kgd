@@ -210,43 +210,23 @@ export default function UnifiedEmailComposer({
   const unmountedRef = useRef(false);
   const composeInitializedRef = useRef(false);
 
-  // Load user with reliable signature field handling
+  // Load user from auth (most reliable source for signature)
   useEffect(() => {
     const loadUser = async () => {
       try {
         const authUser = await base44.auth.me();
-        if (!authUser) return;
+        if (!authUser || unmountedRef.current) return;
 
-        let fullUser = null;
-        
-        // Try to get full user by ID first
-        if (authUser.id) {
-          try {
-            fullUser = await base44.entities.User.get(authUser.id);
-          } catch (err) {
-            // Fall back to filter by email
-            const users = await base44.entities.User.filter({ email: authUser.email });
-            fullUser = users[0] || null;
-          }
-        } else {
-          // Fallback: filter by email
-          const users = await base44.entities.User.filter({ email: authUser.email });
-          fullUser = users[0] || null;
-        }
+        // Normalize signature field (check multiple field names)
+        const signature = authUser?.email_signature || 
+                         authUser?.emailSignature || 
+                         authUser?.signature || 
+                         "";
 
-        // Merge user objects with signature field name variants
-        const merged = { ...authUser, ...(fullUser || {}) };
-        merged.email_signature = merged.email_signature || 
-                                  merged.emailSignature || 
-                                  merged.signature_html || 
-                                  merged.signatureHtml || 
-                                  "";
+        const user = { ...authUser, email_signature: signature };
 
         if (!unmountedRef.current) {
-          setCurrentUser(merged);
-          if (process.env.NODE_ENV !== "production") {
-            console.log(`[UnifiedEmailComposer] User loaded, signature length: ${merged.email_signature?.length || 0}`);
-          }
+          setCurrentUser(user);
         }
       } catch (err) {
         console.error("[UnifiedEmailComposer] Error loading user:", err);
