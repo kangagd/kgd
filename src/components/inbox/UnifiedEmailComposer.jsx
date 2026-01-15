@@ -205,10 +205,17 @@ export default function UnifiedEmailComposer({
 
   // Initialize draft or thread context
   useEffect(() => {
-    if (!currentUser) return;
+    console.log(`[UnifiedEmailComposer Init] mode=${mode}, currentUser=${!!currentUser}, existingDraft=${!!existingDraft}, defaultTo=${defaultTo}`);
+    
+    if (!currentUser) {
+      console.log("[UnifiedEmailComposer Init] Skipping: no currentUser");
+      return;
+    }
 
     // Priority 1: Use provided draft (no signature auto-insertion)
     if (existingDraft) {
+      console.log("[UnifiedEmailComposer Init] Using existingDraft");
+
       setToChips(existingDraft.to_addresses || []);
       setCcChips(existingDraft.cc_addresses || []);
       setBccChips(existingDraft.bcc_addresses || []);
