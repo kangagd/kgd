@@ -213,14 +213,19 @@ export default function ThreadHeader({
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setShowLinkModal(true)}
+            onClick={handleLinkButtonClick}
+            onDoubleClick={handleLinkButtonDoubleClick}
             disabled={isViewer}
             className={`h-7 px-2 text-[12px] flex items-center gap-1 ${
               isLinked
                 ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
                 : 'text-[#6B7280] hover:bg-[#F3F4F6]'
             }`}
-            title={isViewer ? 'Viewer cannot link' : 'Link to Project or Contract'}
+            title={isViewer 
+              ? 'Viewer cannot link' 
+              : isLinked 
+                ? `${linkedType === 'project' ? 'Project' : 'Contract'} - double-click to unlink`
+                : 'Link to Project or Contract'}
           >
             <LinkIcon className="w-3.5 h-3.5" />
             {isLinked ? `${linkedType === 'project' ? 'Project' : 'Contract'}` : 'Link'}
