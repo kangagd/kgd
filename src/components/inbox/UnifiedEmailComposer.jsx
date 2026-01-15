@@ -206,7 +206,7 @@ export default function UnifiedEmailComposer({
     setSelectedMessage(message);
   }, [message]);
 
-  // Initialize draft or thread context
+  // Initialize draft or thread context (non-signature fields)
   useEffect(() => {
     if (!currentUser) return;
 
@@ -220,12 +220,14 @@ export default function UnifiedEmailComposer({
       setSubject(existingDraft.subject || "");
       setBody(existingDraft.body_html || "");
       setDraftId(existingDraft.id);
+      composeInitializedRef.current = true;
       return;
     }
 
     // Priority 2: Initialize from message context (reply/reply_all/forward)
     if (thread && selectedMessage && (mode === "reply" || mode === "reply_all" || mode === "forward")) {
       initializeFromMessage();
+      composeInitializedRef.current = true;
       return;
     }
 
@@ -238,6 +240,7 @@ export default function UnifiedEmailComposer({
       setShowBcc(false);
       setSubject("");
       setAttachments([]);
+      // Don't set initialized yet—signature effect will handle body
       return;
     }
 
@@ -251,7 +254,7 @@ export default function UnifiedEmailComposer({
       setSubject("");
       setAttachments([]);
       setDraftId(null);
-      // Body will be set by signature effect
+      // Don't set initialized yet—signature effect will handle body
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
