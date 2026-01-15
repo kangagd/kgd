@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, User, Clock, Check, Mail, X, Link as LinkIcon, Sparkles, FileText, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -10,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { base44 } from '@/api/base44Client';
 import { computeInferredStateWithAutoClear } from '@/components/inbox/inferredStateAutoClear';
 import { closeThread, reopenThread } from '@/components/inbox/threadCloseActions';
 import LinkThreadModal from './LinkThreadModal';
