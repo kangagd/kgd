@@ -67,8 +67,6 @@ export default function Inbox() {
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilters, setActiveFilters] = useState({});
-  const [showComposer, setShowComposer] = useState(false);
-  const [composerMessage, setComposerMessage] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -402,19 +400,11 @@ export default function Inbox() {
 
   // Composer sent
   const handleComposerSent = async () => {
-    setShowComposer(false);
-    setComposerMessage(null);
     await refetchThreads();
     await refetchDrafts();
     if (selectedThread) {
       queryClient.invalidateQueries({ queryKey: inboxKeys.thread(selectedThread.id) });
     }
-  };
-
-  // Draft click
-  const handleEditDraft = (draft) => {
-    setComposerMessage({ draft });
-    setShowComposer(true);
   };
 
   // Bulk actions
