@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { createPageUrl } from "@/utils";
 import { ChevronDown, User, Clock, Check, Mail, X, Link as LinkIcon, Sparkles, FileText, Trash2, Reply, ArrowRight, Paperclip } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
@@ -135,14 +136,14 @@ export default function ThreadHeader({
     if (linkClickTimer) clearTimeout(linkClickTimer);
 
     // Set a timer to detect double-click
-    const timer = setTimeout(() => {
-      // Single click - navigate to project/contract
-      const url = linkedType === 'project' 
-        ? `/?projectId=${thread.project_id}`
-        : `/?contractId=${thread.contract_id}`;
-      window.location.href = url;
-      setLinkClickTimer(null);
-    }, 300);
+      const timer = setTimeout(() => {
+        // Single click - navigate to project/contract
+        const url = linkedType === 'project' 
+          ? createPageUrl("Projects") + `?projectId=${thread.project_id}`
+          : createPageUrl("Contracts") + `?contractId=${thread.contract_id}`;
+        window.location.href = url;
+        setLinkClickTimer(null);
+      }, 300);
 
     setLinkClickTimer(timer);
   };
