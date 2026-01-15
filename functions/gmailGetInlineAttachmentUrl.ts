@@ -70,12 +70,14 @@ function decodeBase64Url(b64url) {
 }
 
 Deno.serve(async (req) => {
+  let phase = 'start';
   try {
     const base44 = createClientFromRequest(req);
+    phase = 'auth';
     const user = await base44.auth.me();
 
     if (!user) {
-      return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+      return Response.json({ success: false, error: 'Unauthorized', phase }, { status: 401 });
     }
 
     const payload = await req.json();
@@ -85,6 +87,7 @@ Deno.serve(async (req) => {
       return Response.json({
         success: false,
         error: 'Missing gmail_message_id or attachment_id',
+        phase,
       }, { status: 400 });
     }
 
