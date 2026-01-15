@@ -246,17 +246,10 @@ export default function UnifiedEmailComposer({
 
   // Initialize draft or thread context
   useEffect(() => {
-    console.log(`[UnifiedEmailComposer Init] mode=${mode}, currentUser=${!!currentUser}, existingDraft=${!!existingDraft}, defaultTo=${defaultTo}`);
-    
-    if (!currentUser) {
-      console.log("[UnifiedEmailComposer Init] Skipping: no currentUser");
-      return;
-    }
+    if (!currentUser) return;
 
-    // Priority 1: Use provided draft (no signature auto-insertion)
+    // Priority 1: Use provided draft (restore as-is)
     if (existingDraft) {
-      console.log("[UnifiedEmailComposer Init] Using existingDraft");
-
       setToChips(existingDraft.to_addresses || []);
       setCcChips(existingDraft.cc_addresses || []);
       setBccChips(existingDraft.bcc_addresses || []);
@@ -269,7 +262,7 @@ export default function UnifiedEmailComposer({
       return;
     }
 
-    // Priority 2: Fresh compose mode - CLEAR state and inject signature
+    // Priority 2: Fresh compose mode - init state, but don't inject signature yet
     if (mode === "compose") {
       setToChips([]);
       setCcChips([]);
@@ -279,19 +272,13 @@ export default function UnifiedEmailComposer({
       setSubject("");
       setAttachments([]);
       setDraftId(null);
+      setBody(""); // Will be populated by next effect
 
-      // Inject signature immediately
-      const signatureHtml = buildSignatureHtml(currentUser.email_signature);
-      if (process.env.NODE_ENV !== "production") {
-        console.log(`[Compose Init] Signature: "${currentUser.email_signature?.substring(0, 50)}..." → HTML: "${signatureHtml?.substring(0, 50)}..."`);
-      }
-      setBody(signatureHtml || "");
-      
       // Default "to" if provided
       if (defaultTo) {
         setToChips([defaultTo]);
       }
-      
+
       composeInitializedRef.current = true;
       return;
     }
