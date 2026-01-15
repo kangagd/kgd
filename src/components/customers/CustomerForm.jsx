@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import GlobalCustomerOrgSearch from "../common/GlobalCustomerOrgSearch";
 import {
   Dialog,
   DialogContent,
@@ -306,34 +307,30 @@ export default function CustomerForm({ customer, onSubmit, onCancel, isSubmittin
 
             <div className="space-y-2">
               <Label htmlFor="organisation_id">Organisation (Optional)</Label>
-              <div className="flex gap-2 mb-2">
-                <Select value={orgTypeFilter} onValueChange={setOrgTypeFilter}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="Strata">Strata</SelectItem>
-                    <SelectItem value="Builder">Builder</SelectItem>
-                    <SelectItem value="Real Estate">Real Estate</SelectItem>
-                    <SelectItem value="Supplier">Supplier</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="flex gap-2">
-                <Select value={formData.organisation_id || "none"} onValueChange={handleOrganisationChange}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select organisation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {filteredOrganisations.map((org) => (
-                      <SelectItem key={org.id} value={org.id}>
-                        {org.name}{org.organisation_type ? ` (${org.organisation_type})` : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <GlobalCustomerOrgSearch
+                  mode="orgs"
+                  orgs={organisations}
+                  value={formData.organisation_id}
+                  onChange={(item) => {
+                    if (!item) {
+                      setFormData(prev => ({
+                        ...prev,
+                        organisation_id: "",
+                        organisation_name: ""
+                      }));
+                    } else {
+                      setFormData(prev => ({
+                        ...prev,
+                        organisation_id: item.id,
+                        organisation_name: item.name
+                      }));
+                    }
+                  }}
+                  placeholder="Search organisation..."
+                  className="flex-1"
+                  showTypeBadge={false}
+                />
                 <Button
                   type="button"
                   variant="outline"

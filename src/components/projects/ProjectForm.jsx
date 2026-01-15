@@ -24,6 +24,7 @@ import AddressAutocomplete from "../common/AddressAutocomplete";
 import { handleEnterToNextField } from "../common/formNavigator";
 import MergeCustomersModal from "../customers/MergeCustomersModal";
 import { toast } from "sonner";
+import GlobalCustomerOrgSearch from "../common/GlobalCustomerOrgSearch";
 
 export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting }) {
   const navigate = useNavigate();
@@ -493,67 +494,21 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
             <div className="space-y-2">
               <Label htmlFor="customer_id">Customer *</Label>
               <div className="flex gap-2">
-                <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={customerSearchOpen}
-                      className="w-full justify-between border-2 border-slate-300 focus:border-[#fae008] h-10"
-                    >
-                      {selectedCustomer ? selectedCustomer.name : "Select customer"}
-                      <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[400px] p-0 z-[9999] pointer-events-auto" align="start" sideOffset={5}>
-                    <Command shouldFilter={false}>
-                      <CommandInput 
-                        placeholder="Search customers..." 
-                        value={customerSearchQuery}
-                        onValueChange={setCustomerSearchQuery}
-                      />
-                      <CommandList>
-                        {customersLoading ? (
-                          <div className="p-4 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading customers...
-                          </div>
-                        ) : (
-                          <>
-                            <CommandEmpty>No customer found.</CommandEmpty>
-                            <CommandGroup>
-                              {filteredCustomers.map((customer) => {
-                            const searchable = `${customer.name || ""} ${customer.email || ""} ${customer.phone || ""}`.trim();
-
-                            return (
-                              <CommandItem
-                                key={customer.id}
-                                value={customer.id}
-                                keywords={[searchable]}
-                                onSelect={(val) => {
-                                  handleCustomerChange(val);
-                                  setCustomerSearchOpen(false);
-                                  setCustomerSearchQuery("");
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <div className="flex flex-col w-full">
-                                  <span className="font-medium">{customer.name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {[customer.email, customer.phone].filter(Boolean).join(" • ")}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            );
-                          })}
-                            </CommandGroup>
-                          </>
-                        )}
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <GlobalCustomerOrgSearch
+                  mode="customers"
+                  customers={customers}
+                  value={formData.customer_id}
+                  onChange={(item) => {
+                    if (!item) {
+                      setFormData(prev => ({ ...prev, customer_id: "", customer_name: "" }));
+                    } else {
+                      handleCustomerChange(item.id);
+                    }
+                  }}
+                  placeholder="Search customer..."
+                  loading={customersLoading}
+                  className="flex-1"
+                />
                 <Button
                   type="button"
                   variant="outline"
