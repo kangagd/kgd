@@ -122,7 +122,18 @@ Deno.serve(async (req) => {
 
     // Not cached → fetch from Gmail
     phase = 'gmail_fetch';
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
+    let accessToken;
+    try {
+      // Try to get Gmail token through Google Drive connector (same OAuth scope)
+      accessToken = await base44.asServiceRole.connectors.getAccessToken('googledrive');
+    } catch (err) {
+      console.error('[gmailGetInlineAttachmentUrl] Failed to get Gmail access token:', err);
+      return Response.json({
+        success: false,
+        error: 'Gmail access not authorized. Please authorize Gmail access in settings.',
+        phase,
+      }, { status: 401 });
+    }
 
     // Fetch attachment from Gmail API with retry logic
     const gmailUrl = `https://www.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}/attachments/${attachment_id}`;
