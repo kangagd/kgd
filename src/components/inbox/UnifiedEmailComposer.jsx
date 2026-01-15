@@ -211,11 +211,13 @@ export default function UnifiedEmailComposer({
   });
 
   // Chip handlers
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  
   const addChip = (list, setter, input, setSetter) => {
     const emails = input
-      .split(/[,\n\s]+/)
+      .split(/[,;\n]+/)
       .map((e) => e.trim())
-      .filter((e) => e.includes("@"));
+      .filter((e) => e.length > 0);
     if (emails.length > 0) {
       setter([...list, ...emails]);
       setSetter("");
@@ -333,6 +335,10 @@ export default function UnifiedEmailComposer({
     setAttachments(attachments.filter((_, i) => i !== index));
   };
 
+  // Calculate total attachment size
+  const totalAttachmentSize = attachments.reduce((sum, att) => sum + (att.size || 0), 0);
+  const attachmentSizeWarning = totalAttachmentSize > 20 * 1024 * 1024;
+
   // Auto-open attachments on mount
   useEffect(() => {
     if (autoOpenAttachments && variant === "inline") {
@@ -434,6 +440,24 @@ export default function UnifiedEmailComposer({
     }
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Cmd/Ctrl+Enter sends
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !isSending && toChips.length > 0 && subject && body) {
+        e.preventDefault();
+        handleSend();
+      }
+      // Esc closes
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSending, toChips.length, subject, body]);
+
   // Content (shared between drawer and inline)
   const renderContent = () => (
     <>
@@ -461,13 +485,18 @@ export default function UnifiedEmailComposer({
               type="text"
               value={toInput}
               onChange={(e) => setToInput(e.target.value)}
+              onBlur={() => {
+                if (toInput.trim()) {
+                  addChip(toChips, setToChips, toInput, setToInput);
+                }
+              }}
               onKeyDown={(e) => {
-                if ([",", "Enter", " "].includes(e.key)) {
+                if ([",", ";", "Enter"].includes(e.key)) {
                   e.preventDefault();
                   addChip(toChips, setToChips, toInput, setToInput);
                 }
               }}
-              placeholder="Add recipients..."
+              placeholder="Add recipients... (comma or semicolon separated)"
               className="flex-1 outline-none text-[14px] min-w-[100px]"
             />
           </div>
@@ -509,13 +538,18 @@ export default function UnifiedEmailComposer({
                 type="text"
                 value={ccInput}
                 onChange={(e) => setCcInput(e.target.value)}
+                onBlur={() => {
+                  if (ccInput.trim()) {
+                    addChip(ccChips, setCcChips, ccInput, setCcInput);
+                  }
+                }}
                 onKeyDown={(e) => {
-                  if ([",", "Enter", " "].includes(e.key)) {
+                  if ([",", ";", "Enter"].includes(e.key)) {
                     e.preventDefault();
                     addChip(ccChips, setCcChips, ccInput, setCcInput);
                   }
                 }}
-                placeholder="Add Cc recipients..."
+                placeholder="Add Cc recipients... (comma or semicolon separated)"
                 className="flex-1 outline-none text-[14px] min-w-[100px]"
               />
             </div>
@@ -544,13 +578,18 @@ export default function UnifiedEmailComposer({
                 type="text"
                 value={bccInput}
                 onChange={(e) => setBccInput(e.target.value)}
+                onBlur={() => {
+                  if (bccInput.trim()) {
+                    addChip(bccChips, setBccChips, bccInput, setBccInput);
+                  }
+                }}
                 onKeyDown={(e) => {
-                  if ([",", "Enter", " "].includes(e.key)) {
+                  if ([",", ";", "Enter"].includes(e.key)) {
                     e.preventDefault();
                     addChip(bccChips, setBccChips, bccInput, setBccInput);
                   }
                 }}
-                placeholder="Add Bcc recipients..."
+                placeholder="Add Bcc recipients... (comma or semicolon separated)"
                 className="flex-1 outline-none text-[14px] min-w-[100px]"
               />
             </div>
@@ -650,11 +689,34 @@ export default function UnifiedEmailComposer({
 
       {/* Reply context guardrail */}
       {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
-        !message &&
-        thread?.gmail_thread_id && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[12px] text-amber-800">
-            <strong>Messages not synced yet</strong> — reply will be sent using
-            thread headers only.
+        !message && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+            <div className="text-[12px] text-amber-800">
+              <strong>⚠ Message context not available</strong> — reply will use thread headers only. Thread history may be limited.
+            </div>
+            {thread?.gmail_thread_id && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const response = await base44.functions.invoke('gmailSyncThreadMessages', {
+                      gmail_thread_id: thread.gmail_thread_id,
+                    });
+                    if (response.data?.success) {
+                      toast.success(`Synced ${response.data.message_count} messages`);
+                      // Refetch thread to load messages
+                      queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
+                    }
+                  } catch (err) {
+                    toast.error('Failed to sync messages');
+                  }
+                }}
+                className="h-7 text-[11px]"
+              >
+                Sync messages
+              </Button>
+            )}
           </div>
         )}
 
@@ -713,13 +775,20 @@ export default function UnifiedEmailComposer({
 
       {/* Attachments */}
       {attachments.length > 0 && (
-        <div className="space-y-2 bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
-          <div className="flex items-center gap-2 mb-2">
-            <Paperclip className="w-4 h-4 text-[#6B7280]" />
-            <label className="text-[13px] font-semibold text-[#4B5563]">
-              {attachments.length} Attachment
-              {attachments.length !== 1 ? "s" : ""}
-            </label>
+        <div className={`space-y-2 bg-[#F9FAFB] rounded-lg p-3 border ${attachmentSizeWarning ? "border-amber-300 bg-amber-50" : "border-[#E5E7EB]"}`}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Paperclip className="w-4 h-4 text-[#6B7280]" />
+              <label className="text-[13px] font-semibold text-[#4B5563]">
+                {attachments.length} Attachment
+                {attachments.length !== 1 ? "s" : ""} ({(totalAttachmentSize / 1024 / 1024).toFixed(1)} MB)
+              </label>
+            </div>
+            {attachmentSizeWarning && (
+              <span className="text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded">
+                ⚠ Large attachment
+              </span>
+            )}
           </div>
           <div className="space-y-2">
             {attachments.map((att, idx) => (
@@ -754,7 +823,19 @@ export default function UnifiedEmailComposer({
     </>
   );
 
-  // Draft status
+  // Draft status with relative time
+  const getRelativeTime = (date) => {
+    if (!date) return "";
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return "now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
   const draftStatus = (
     <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1.5">
       {isSavingDraft && (
@@ -766,7 +847,7 @@ export default function UnifiedEmailComposer({
       {!isSavingDraft && lastSaved && (
         <>
           <Check className="w-3 h-3 text-green-600" />
-          <span className="text-green-600">Saved</span>
+          <span className="text-green-600">Saved {getRelativeTime(lastSaved)}</span>
         </>
       )}
     </div>
