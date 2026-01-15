@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
-
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 import EmailMessageItem from "./EmailMessageItem";
 
@@ -20,6 +21,9 @@ const formatDayLabel = (iso) => {
 /* ----------------------------- */
 
 export default function EmailDetailView({ thread, onThreadUpdate }) {
+  const queryClient = useQueryClient();
+  const [isSyncing, setIsSyncing] = useState(false);
+  
   /* ---------- preserve lastReadAt for divider ---------- */
   const initialLastReadAtRef = useRef(thread?.lastReadAt || null);
 
@@ -61,7 +65,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
   }, [thread?.id, thread?.isUnread, onThreadUpdate]);
 
   /* ---------- messages ---------- */
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["emailMessages", thread.id],
     queryFn: async () => {
       const msgs = await base44.entities.EmailMessage.filter(
@@ -71,7 +75,37 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
       return msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
     },
     enabled: !!thread?.id,
+    staleTime: 30000,
   });
+
+  /* ---------- sync thread messages ---------- */
+  const handleSyncMessages = async () => {
+    if (!thread?.gmail_thread_id) {
+      toast.error('This thread is missing Gmail IDs; cannot sync messages.');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const response = await base44.functions.invoke('gmailSyncThreadMessages', {
+        gmail_thread_id: thread.gmail_thread_id,
+      });
+
+      if (response.data?.success) {
+        toast.success(`Synced ${response.data.message_count} messages`);
+        // Refetch messages and thread
+        await queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
+        onThreadUpdate?.();
+      } else {
+        toast.error('Failed to sync messages');
+      }
+    } catch (error) {
+      console.error('Error syncing messages:', error);
+      toast.error('Error syncing messages');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   /* ---------- NEW MESSAGES divider index ---------- */
   const newStartIndex = useMemo(() => {
@@ -103,7 +137,11 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
 
             {/* MESSAGE LIST */}
             <div className="divide-y divide-[#E5E7EB]">
-              {messages.length > 0 ? (
+              {messagesLoading ? (
+                <div className="text-[14px] text-[#6B7280] text-center py-8">
+                  Loading messages…
+                </div>
+              ) : messages.length > 0 ? (
                 messages.map((msg, idx) => {
                   const isNewStart = idx === newStartIndex;
 
@@ -145,8 +183,21 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
                   );
                 })
               ) : (
-                <div className="text-[14px] text-[#6B7280] text-center py-8">
-                  No messages in this thread
+                <div className="text-[14px] text-[#6B7280] text-center py-8 space-y-4">
+                  <p>Messages for this thread haven't been synced yet.</p>
+                  {thread?.gmail_thread_id ? (
+                    <Button
+                      onClick={handleSyncMessages}
+                      disabled={isSyncing}
+                      size="sm"
+                    >
+                      {isSyncing ? 'Syncing...' : 'Sync this thread'}
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-red-600">
+                      This thread is missing Gmail IDs; cannot sync messages.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
