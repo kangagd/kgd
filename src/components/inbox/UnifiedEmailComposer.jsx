@@ -491,7 +491,7 @@ export default function UnifiedEmailComposer({
     return () => debouncedSave.cancel();
   }, [toChips, ccChips, bccChips, subject, body, debouncedSave]);
 
-  // Apply template
+  // Apply template (explicit user action - allowed to overwrite body)
   const handleApplyTemplate = async (templateId) => {
     const template = templates.find((t) => t.id === templateId);
     if (!template) return;
@@ -524,6 +524,7 @@ export default function UnifiedEmailComposer({
     if (rendered.body) {
       const signatureHtml = buildSignatureHtml(currentUser?.email_signature);
       setBody(ensureSignature(rendered.body, signatureHtml));
+      // Allow this explicit user action, even if userHasTyped
     }
 
     setSelectedTemplate("");
