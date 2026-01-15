@@ -70,7 +70,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
 
   /* ---------- messages ---------- */
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ["emailMessages", thread?.id],
+    queryKey: inboxKeys.messages(thread?.id),
     queryFn: async () => {
       try {
         const msgs = await base44.entities.EmailMessage.filter(
