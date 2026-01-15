@@ -81,6 +81,9 @@ export default function SharedComposer({
       }
 
       toast.success("Email sent successfully");
+      
+      // No draft cleanup needed - SharedComposer doesn't use EmailDraft
+      
       if (onSent) {
         await onSent(response.data?.baseThreadId);
       }

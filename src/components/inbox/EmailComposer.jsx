@@ -306,15 +306,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
     return () => debouncedSave.cancel();
   }, [to, cc, bcc, subject, body, debouncedSave]);
 
-  const deleteDraft = async () => {
-    if (draftId) {
-      try {
-        await base44.entities.EmailDraft.delete(draftId);
-      } catch (error) {
-        console.error("Failed to delete draft:", error);
-      }
-    }
-  };
+
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files);
@@ -363,7 +355,8 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         body_html: body,
         attachments: attachments.length > 0 ? attachments : undefined,
         project_id: projectId || thread?.project_id || undefined,
-        job_id: jobId || thread?.linked_job_id || undefined
+        job_id: jobId || thread?.linked_job_id || undefined,
+        thread_id: thread?.id || null
       };
       
       // Pass Gmail thread ID and RFC headers for replies
@@ -381,6 +374,7 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
         }
       }
       
+      // STANDARDIZATION: Never pass gmailDraftId - always build MIME and send
       const response = await base44.functions.invoke('gmailSendEmail', payload);
 
       if (!response.data?.success) {
@@ -388,7 +382,18 @@ export default function EmailComposer({ mode = "compose", thread, message, onClo
       }
 
       toast.success("Email sent successfully");
-      await deleteDraft();
+      
+      // Mark draft as sent (keep record) instead of deleting
+      if (draftId) {
+        try {
+          await base44.entities.EmailDraft.update(draftId, {
+            status: 'sent',
+            sent_at: new Date().toISOString()
+          });
+        } catch (err) {
+          console.error('Failed to mark draft as sent:', err);
+        }
+      }
       
       // Pass base44 threadId back to parent for cache invalidation
       if (onSent) {
