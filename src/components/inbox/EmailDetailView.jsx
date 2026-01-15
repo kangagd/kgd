@@ -234,7 +234,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
 
                       <EmailMessageItem
                         message={msg}
-                        isLast={idx === messages.length - 1}
+                        isLast={idx === visibleMessages.length - 1}
                         totalMessages={messages.length}
                         getSenderInitials={getSenderInitials}
                         isNew={newStartIndex !== -1 && idx >= newStartIndex}
@@ -244,10 +244,10 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
                         }}
                       />
                     </React.Fragment>
-                    );
-                    })
-                    </>
-                    ) : (
+                  );
+                  })}
+                  </>
+                  ) : (
                 <div className="text-[14px] text-[#6B7280] text-center py-8 space-y-4">
                   <p>Messages for this thread haven't been synced yet.</p>
                   {thread?.gmail_thread_id ? (
