@@ -429,7 +429,7 @@ export default function Jobs() {
 
   if (selectedJob) {
     return (
-      <div className="bg-[#ffffff] min-h-screen">
+      <div className="bg-[#ffffff] min-h-screen overflow-y-auto">
         <div className="mx-auto p-5 md:p-10 max-w-4xl">
           <JobDetails
             job={selectedJob}
