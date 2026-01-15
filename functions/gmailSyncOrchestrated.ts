@@ -11,6 +11,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+  const LOCK_KEY = 'gmail_sync';
+  const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
+  let lockAcquired = false;
+  
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -23,6 +27,54 @@ Deno.serve(async (req) => {
     const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
     if (!isAdminOrManager) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Acquire global sync lock
+    try {
+      const now = new Date();
+      const lockExpiry = new Date(now.getTime() + LOCK_TTL_MS);
+      
+      // Try to find existing lock
+      const locks = await base44.asServiceRole.entities.EmailSyncLock.filter({ lock_key: LOCK_KEY });
+      let existingLock = locks.length > 0 ? locks[0] : null;
+      
+      // Check if lock is currently held
+      if (existingLock && existingLock.locked_until) {
+        const lockedUntil = new Date(existingLock.locked_until);
+        if (lockedUntil > now) {
+          console.log(`[gmailSyncOrchestrated] Sync already in progress, locked by ${existingLock.locked_by} until ${existingLock.locked_until}`);
+          return Response.json({
+            success: false,
+            skipped: true,
+            reason: 'locked',
+            locked_by: existingLock.locked_by,
+            locked_until: existingLock.locked_until,
+            message: 'Sync already in progress. Please wait and try again.'
+          });
+        }
+      }
+      
+      // Acquire lock
+      if (existingLock) {
+        await base44.asServiceRole.entities.EmailSyncLock.update(existingLock.id, {
+          locked_until: lockExpiry.toISOString(),
+          locked_by: user.email,
+          locked_at: now.toISOString()
+        });
+      } else {
+        await base44.asServiceRole.entities.EmailSyncLock.create({
+          lock_key: LOCK_KEY,
+          locked_until: lockExpiry.toISOString(),
+          locked_by: user.email,
+          locked_at: now.toISOString()
+        });
+      }
+      
+      lockAcquired = true;
+      console.log(`[gmailSyncOrchestrated] Lock acquired by ${user.email} until ${lockExpiry.toISOString()}`);
+    } catch (lockError) {
+      console.error('[gmailSyncOrchestrated] Lock acquisition failed (continuing anyway):', lockError.message);
+      // Continue with sync but log the error
     }
 
     const results = {
@@ -121,5 +173,21 @@ Deno.serve(async (req) => {
       },
       { status: 500 }
     );
+  } finally {
+    // Always release lock
+    if (lockAcquired) {
+      try {
+        const base44 = createClientFromRequest(req);
+        const locks = await base44.asServiceRole.entities.EmailSyncLock.filter({ lock_key: LOCK_KEY });
+        if (locks.length > 0) {
+          await base44.asServiceRole.entities.EmailSyncLock.update(locks[0].id, {
+            locked_until: new Date().toISOString() // Release lock immediately
+          });
+          console.log('[gmailSyncOrchestrated] Lock released');
+        }
+      } catch (releaseError) {
+        console.error('[gmailSyncOrchestrated] Failed to release lock:', releaseError.message);
+      }
+    }
   }
 });
