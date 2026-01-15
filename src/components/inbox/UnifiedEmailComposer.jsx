@@ -287,6 +287,28 @@ export default function UnifiedEmailComposer({
     };
   }, []);
 
+  // Single initialization effect: runs ONCE per composer session
+  useEffect(() => {
+    if (!currentUser) return;
+    if (didInitBodyRef.current) return; // Already initialized
+    
+    const initialBody = computeInitialBody(
+      existingDraft,
+      mode,
+      currentUser,
+      selectedMessage || message,
+      thread,
+      buildSignatureHtml,
+      ensureSignature,
+      sanitizeForCompose,
+      format,
+      parseISO
+    );
+
+    setBody(initialBody);
+    didInitBodyRef.current = true;
+  }, [currentUser, existingDraft?.id, mode]);
+
   // Update selectedMessage when message prop changes
   useEffect(() => {
     setSelectedMessage(message);
