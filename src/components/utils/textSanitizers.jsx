@@ -18,6 +18,8 @@ export const sanitizeInboundText = (input) => {
     // Em dash, en dash (CRITICAL - most common issue)
     ['â€"', '—'],    // UTF-8 mojibake for em dash
     ['â€"', '–'],    // UTF-8 mojibake for en dash
+    ['–€"', '—'],    // Variant with € character
+    ['–€', '—'],     // Short variant with €
     ['â—', '—'],     // simpler em dash variant
     ['â–', '–'],     // simpler en dash variant
 
