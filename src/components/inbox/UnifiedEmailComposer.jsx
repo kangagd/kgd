@@ -245,6 +245,7 @@ export default function UnifiedEmailComposer({
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [isSending, setIsSending] = useState(false);
+  const [confirmedLargeRecipients, setConfirmedLargeRecipients] = useState(false);
 
   // Refs
   const fileInputRef = useRef(null);
@@ -610,6 +611,20 @@ export default function UnifiedEmailComposer({
       toast.error("Please fill in recipients, subject, and message");
       return;
     }
+
+    // Check recipient count (warn if > 10, but allow override)
+    const totalRecipients = toChips.length + ccChips.length + bccChips.length;
+    if (totalRecipients > 10 && !confirmedLargeRecipients) {
+      toast.warning(
+        `You're about to email ${totalRecipients} recipients. Click send again to confirm.`,
+        { duration: 4000 }
+      );
+      setConfirmedLargeRecipients(true);
+      return;
+    }
+
+    // Reset confirmation flag for next send
+    setConfirmedLargeRecipients(false);
 
     // Guardrail: reply/forward needs gmail context OR message
     const needsGmailContext =
