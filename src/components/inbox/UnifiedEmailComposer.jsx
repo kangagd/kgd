@@ -183,9 +183,12 @@ export default function UnifiedEmailComposer({
 
         if (!unmountedRef.current) {
           setCurrentUser(merged);
-          if (process.env.NODE_ENV !== "production") {
-            console.log(`[UnifiedEmailComposer] User loaded, signature length: ${merged.email_signature?.length || 0}`);
-          }
+          console.log(`[UnifiedEmailComposer] User loaded:`, {
+            email: merged.email,
+            hasSignature: !!merged.email_signature,
+            signatureLength: merged.email_signature?.length || 0,
+            signaturePreview: merged.email_signature?.substring(0, 100) || "(empty)"
+          });
         }
       } catch (err) {
         console.error("[UnifiedEmailComposer] Error loading user:", err);
