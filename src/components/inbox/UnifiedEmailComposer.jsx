@@ -92,6 +92,64 @@ function pickBestContextMessage(messages, mode) {
 }
 
 /**
+ * Compute initial body HTML based on compose mode and available data
+ * Priority:
+ * A) existingDraft.body_html
+ * B) reply/forward computed quotedBody (signature + quote)
+ * C) compose signature only
+ * D) empty string
+ */
+function computeInitialBody(existingDraft, mode, currentUser, selectedMessage, thread, buildSignatureHtml, ensureSignature, sanitizeForCompose, format, parseISO) {
+  // A) Use existing draft body if available
+  if (existingDraft?.body_html) {
+    return existingDraft.body_html;
+  }
+
+  const signatureHtml = buildSignatureHtml(currentUser?.email_signature);
+
+  // B) For reply/forward, build quoted message
+  if ((mode === "reply" || mode === "reply_all" || mode === "forward") && selectedMessage) {
+    const userEmail = currentUser?.email?.toLowerCase();
+    let quotedBody = "";
+
+    if (mode === "reply" || mode === "reply_all") {
+      let quoted = "";
+      if (selectedMessage?.body_html) {
+        quoted = sanitizeForCompose(selectedMessage.body_html);
+      } else if (selectedMessage?.body_text) {
+        quoted = selectedMessage.body_text.replace(/\n/g, "<br>");
+      }
+      const dateStr = selectedMessage?.sent_at
+        ? format(parseISO(selectedMessage.sent_at), "d/M/yyyy 'at' HH:mm")
+        : new Date().toLocaleString();
+      const sender = selectedMessage?.from_name || selectedMessage?.from_address;
+      quotedBody = `<div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">On ${dateStr}, ${sender} wrote:</div><blockquote style="margin: 0; padding-left: 12px; border-left: 3px solid #d1d5db; color: #4b5563;">${quoted}</blockquote></div>`;
+    } else if (mode === "forward") {
+      let forwarded = "";
+      if (selectedMessage?.body_html) {
+        forwarded = sanitizeForCompose(selectedMessage.body_html);
+      } else if (selectedMessage?.body_text) {
+        forwarded = selectedMessage.body_text.replace(/\n/g, "<br>");
+      }
+      const dateStr = selectedMessage?.sent_at
+        ? format(parseISO(selectedMessage.sent_at), "d/M/yyyy 'at' HH:mm")
+        : new Date().toLocaleString();
+      quotedBody = `<div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb;"><div style="color: #6b7280; font-size: 13px; font-weight: 600; margin-bottom: 8px;">---------- Forwarded message ----------</div><div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;"><strong>From:</strong> ${selectedMessage?.from_name || selectedMessage?.from_address}<br><strong>Date:</strong> ${dateStr}<br><strong>Subject:</strong> ${selectedMessage?.subject}</div><div style="margin-top: 12px;">${forwarded}</div></div>`;
+    }
+
+    return ensureSignature(quotedBody, signatureHtml);
+  }
+
+  // C) Fresh compose - signature only
+  if (mode === "compose") {
+    return signatureHtml;
+  }
+
+  // D) Fallback
+  return "";
+}
+
+/**
  * Check if HTML is empty after stripping tags
  */
 function isEmptyHtml(html) {
