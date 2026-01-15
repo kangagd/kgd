@@ -221,6 +221,7 @@ export default function UnifiedEmailComposer({
   const [isReplyAll, setIsReplyAll] = useState(false);
   const [showOriginalMessage, setShowOriginalMessage] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(message || null);
+  const replyAllToggleRef = useRef(false); // Track toggle state to re-init recipients
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState(null);
 
@@ -318,6 +319,13 @@ export default function UnifiedEmailComposer({
     setSelectedMessage(message);
   }, [message]);
 
+  // Re-initialize recipients when isReplyAll toggle changes (preserve body)
+  useEffect(() => {
+    if ((mode === "reply" || mode === "reply_all") && selectedMessage) {
+      initializeRecipientsFromMessage();
+    }
+  }, [isReplyAll, mode, selectedMessage, initializeRecipientsFromMessage]);
+
   // Initialize non-body fields (recipients, subject, draft ID)
   useEffect(() => {
     if (!currentUser) return;
@@ -381,33 +389,41 @@ export default function UnifiedEmailComposer({
 
 
 
-  const initializeRecipientsFromMessage = () => {
-    const userEmail = currentUser?.email?.toLowerCase();
-    const msgToUse = selectedMessage;
+  const initializeRecipientsFromMessage = useCallback(() => {
+      const userEmail = currentUser?.email?.toLowerCase();
+      const msgToUse = selectedMessage;
 
-    // Subject
-    if (mode === "reply" || mode === "reply_all") {
-      const subject = msgToUse?.subject || thread?.subject || "";
-      setSubject(subject.startsWith("Re:") ? subject : `Re: ${subject}`);
-    } else if (mode === "forward") {
-      setSubject(`Fwd: ${msgToUse?.subject || thread?.subject || ""}`);
-    }
+      // Determine effective mode (reply, reply_all, or forward)
+      let effectiveMode = mode;
+      if (mode === "reply" && isReplyAll) {
+        effectiveMode = "reply_all";
+      }
 
-    // Recipients for reply
-    if (mode === "reply") {
-      const replyTo = msgToUse?.from_address || "";
-      if (replyTo) setToChips([replyTo]);
-    } else if (mode === "reply_all") {
-      const toAddrs = [msgToUse?.from_address].filter(Boolean);
-      const ccAddrs = [
-        ...(msgToUse?.to_addresses || []),
-        ...(msgToUse?.cc_addresses || []),
-      ].filter((e) => e && e.toLowerCase() !== userEmail);
-      setToChips(toAddrs);
-      setCcChips(ccAddrs);
-      setShowCc(true);
-    }
-  };
+      // Subject
+      if (effectiveMode === "reply" || effectiveMode === "reply_all") {
+        const subject = msgToUse?.subject || thread?.subject || "";
+        setSubject(subject.startsWith("Re:") ? subject : `Re: ${subject}`);
+      } else if (effectiveMode === "forward") {
+        setSubject(`Fwd: ${msgToUse?.subject || thread?.subject || ""}`);
+      }
+
+      // Recipients based on effective mode
+      if (effectiveMode === "reply") {
+        const replyTo = msgToUse?.from_address || "";
+        if (replyTo) setToChips([replyTo]);
+        setCcChips([]);
+        setShowCc(false);
+      } else if (effectiveMode === "reply_all") {
+        const toAddrs = [msgToUse?.from_address].filter(Boolean);
+        const ccAddrs = [
+          ...(msgToUse?.to_addresses || []),
+          ...(msgToUse?.cc_addresses || []),
+        ].filter((e) => e && e.toLowerCase() !== userEmail);
+        setToChips(toAddrs);
+        setCcChips(ccAddrs);
+        setShowCc(true);
+      }
+    }, [mode, isReplyAll, selectedMessage, currentUser?.email, thread?.subject]);
 
 
 
