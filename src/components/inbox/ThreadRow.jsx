@@ -48,8 +48,7 @@ export default function ThreadRow({
   const isClosed = thread?.userStatus === "closed";
   const linkChip = getThreadLinkChip(thread);
 
-  // ✅ Use your existing persisted direction field
-  const direction = thread?.lastMessageDirection || "unknown";
+
 
   const lastMessageDateLabel = useMemo(() => {
     try {
@@ -187,31 +186,6 @@ export default function ThreadRow({
               </div>
 
               <div className="flex items-center gap-1 flex-wrap flex-shrink-0 justify-end">
-                {/* ✅ Sent/Received Indicator (uses existing field) */}
-                {direction !== "unknown" && (
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] h-5 flex items-center gap-1 ${
-                      direction === "sent"
-                        ? "bg-blue-50 text-blue-700 border-blue-200"
-                        : "bg-green-50 text-green-700 border-green-200"
-                    }`}
-                    title="From EmailThread.lastMessageDirection"
-                  >
-                    {direction === "sent" ? (
-                      <>
-                        <Send className="w-3 h-3" />
-                        Sent
-                      </>
-                    ) : (
-                      <>
-                        <ArrowDown className="w-3 h-3" />
-                        Received
-                      </>
-                    )}
-                  </Badge>
-                )}
-
                 {/* Status Chip */}
                 {statusChip && (
                   <Badge
