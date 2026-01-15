@@ -122,10 +122,9 @@ export default function EmailMessageItem({
   const [inlineImageErrors, setInlineImageErrors] = useState(new Set()); // Track failed image CIDs
   const [isRetryingImages, setIsRetryingImages] = useState(false);
 
-  // Check if message has no body (ignore has_body flag; check actual content)
-  const hasHtml = !!message?.body_html && message.body_html.trim() !== "";
-  const hasText = !!message?.body_text && message.body_text.trim() !== "";
-  const hasNoBody = !hasHtml && !hasText;
+  // Check if message has renderable body (actual content, not flags)
+  const hasBody = hasRenderableBody(message);
+  const hasNoBody = !hasBody;
 
   const handleReSyncMessage = async () => {
     setIsSyncing(true);
