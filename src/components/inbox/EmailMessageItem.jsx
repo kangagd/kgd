@@ -248,7 +248,7 @@ export default function EmailMessageItem({
         )
       );
       // Refetch to get updated attachments
-      await queryClient.invalidateQueries({ queryKey: ["emailMessages", threadId || message.thread_id] });
+      await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
       setInlineImageErrors(new Set()); // Clear errors on success
       toast.success('Images loaded');
     } catch (err) {
