@@ -92,6 +92,7 @@ Deno.serve(async (req) => {
     }
 
     // Find the EmailMessage record to check if we already have a cached file_url or url
+    phase = 'cache_lookup';
     let emailMessage = null;
     try {
       const emailMessages = await base44.asServiceRole.entities.EmailMessage.filter({
@@ -114,11 +115,13 @@ Deno.serve(async (req) => {
           success: true,
           file_url: cachedUrl,
           fromCache: true,
+          phase,
         });
       }
     }
 
     // Not cached → fetch from Gmail
+    phase = 'gmail_fetch';
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
 
     // Fetch attachment from Gmail API with retry logic
