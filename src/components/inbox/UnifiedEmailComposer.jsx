@@ -293,7 +293,8 @@ export default function UnifiedEmailComposer({
   }, []);
 
   // Single initialization effect: runs ONCE per composer session
-  // GUARDRAIL: Include thread?.id so body reinitializes when switching threads
+  // GUARDRAIL: Include thread?.id in dependencies so body reinitializes when switching threads
+  // PROBLEM PREVENTED: Without thread?.id, switching threads kept previous thread's body/quote (persistence bug)
   useEffect(() => {
     if (!currentUser) return;
     if (didInitBodyRef.current) return; // Already initialized
@@ -635,7 +636,8 @@ export default function UnifiedEmailComposer({
   const attachmentSizeWarning = totalAttachmentSize > 20 * 1024 * 1024;
 
   // Clear attachments when opening fresh compose or switching threads (drawer variant reuse)
-  // GUARDRAIL: Include thread?.id so attachments clear when switching threads
+  // GUARDRAIL: Include thread?.id in dependencies so attachments clear when switching threads
+  // PROBLEM PREVENTED: Without thread?.id, switching threads carried over previous attachments (carryover bug)
   useEffect(() => {
     if (variant === "drawer" && open && !existingDraft) {
       setAttachments([]);
