@@ -21,6 +21,7 @@ import MultiTechnicianSelect from "./MultiTechnicianSelect";
 import RichTextField from "../common/RichTextField";
 import AddressAutocomplete from "../common/AddressAutocomplete";
 import GlobalCustomerOrgSearch from "../common/GlobalCustomerOrgSearch";
+import GlobalProjectSearch from "../common/GlobalProjectSearch";
 
 export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmitting, preselectedCustomerId, preselectedProjectId, createJobContext }) {
   // Detect logistics context from URL params or props
@@ -770,22 +771,18 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               {!preselectedProjectId && (
                 <div className="space-y-2">
                   <Label htmlFor="project_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Project (Optional)</Label>
-                  <Select 
-                    value={formData.project_id || 'null'} 
-                    onValueChange={handleProjectChange}
-                  >
-                    <SelectTrigger className="border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                      <SelectValue placeholder="Standalone job or select project" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="null">No Project (Standalone)</SelectItem>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <GlobalProjectSearch
+                    projects={projects}
+                    value={formData.project_id}
+                    onChange={(item) => {
+                      if (!item) {
+                        handleProjectChange('null');
+                      } else {
+                        handleProjectChange(item.id);
+                      }
+                    }}
+                    placeholder="Search projects or leave blank for standalone..."
+                  />
                 </div>
               )}
 
