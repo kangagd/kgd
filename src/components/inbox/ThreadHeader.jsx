@@ -39,6 +39,7 @@ export default function ThreadHeader({
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [linkClickTimer, setLinkClickTimer] = useState(null);
 
   const statusOptions = ['Open', 'Waiting on Customer', 'Internal', 'Closed'];
 
