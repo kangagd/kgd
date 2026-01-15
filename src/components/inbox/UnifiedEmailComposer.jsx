@@ -758,6 +758,10 @@ export default function UnifiedEmailComposer({
           if (best && (best.body_html || best.body_text)) {
             setSelectedMessage(best);
             // Body will be populated by init effect if not already typed
+            // Check if synced content is still partial
+            if (best.sync_status === "partial") {
+              setSyncError('Messages synced, but some content is still unavailable (partial). Reply will use available content.');
+            }
           } else {
             setSyncError('Messages synced but body content still unavailable. Header-only reply will be used.');
           }
