@@ -185,7 +185,8 @@ async function getGmailAccessToken() {
     );
     
     const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+      .replace(/\s/g, ''); // Remove any whitespace
     
     const jwt = `${message}.${signatureBase64}`;
     
