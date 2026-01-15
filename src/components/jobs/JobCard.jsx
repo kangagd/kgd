@@ -228,7 +228,7 @@ export default function JobCard({
               )}
 
               {/* PICKUP CHECKLIST BADGE (only when pickup + has checklist) */}
-              {pickup && checklistStats && (
+              {isPickupJob(job) && checklistStats && (
                 <Badge className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[11px] rounded-md pointer-events-none">
                   Pickup checklist: {checklistStats.done}/{checklistStats.total}
                 </Badge>
