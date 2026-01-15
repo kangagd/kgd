@@ -89,22 +89,42 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const queryClient = useQueryClient();
 
   const { data: allCustomers = [], isLoading: customersLoading } = useQuery({
-    queryKey: ['customers'],
+    queryKey: ["customers"],
     queryFn: async () => {
       try {
-        // Use backend function for better access
-        const response = await base44.functions.invoke('getAllCustomers');
-        return response.data.customers || [];
+        const res = await base44.functions.invoke("getAllCustomers");
+
+        // handle multiple possible response shapes
+        const maybe =
+          res?.data?.customers ??
+          res?.customers ??
+          res?.data ??
+          [];
+
+        // ensure array
+        return Array.isArray(maybe) ? maybe : [];
       } catch (error) {
         // Fallback to direct query
-        return await base44.entities.Customer.filter({ deleted_at: { $exists: false } });
+        const fallback = await base44.entities.Customer.filter({ deleted_at: { $exists: false } });
+        return Array.isArray(fallback) ? fallback : [];
       }
     },
     staleTime: 30000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 
-  const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
+  // ✅ safer filter: only remove deleted customers, and treat "active" loosely
+  const customers = allCustomers.filter((c) => {
+    if (!c) return false;
+    if (c.deleted_at) return false;
+
+    // If your system doesn't use status, don't block results
+    if (c.status == null) return true;
+
+    // Normalize common values
+    const s = String(c.status).toLowerCase().trim();
+    return s === "active" || s === "current" || s === "enabled";
+  });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
@@ -151,7 +171,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     if (projectId) return; // Skip if project-based
     
     if (preselectedCustomerId && customers.length > 0 && !job) {
-      const customer = customers.find(c => c.id === preselectedCustomerId);
+      const customer = customers.find(c => String(c.id) === String(preselectedCustomerId));
       if (customer) {
         setFormData(prev => ({
           ...prev,
@@ -788,6 +808,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
             ) : (
               <div className="space-y-2">
                 <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
+                <div className="text-[12px] text-slate-500 mb-1">
+                  Customers loaded: {allCustomers?.length || 0} • usable: {customers?.length || 0} • loading: {customersLoading ? "yes" : "no"}
+                </div>
                 <div className="flex gap-2">
                   <GlobalCustomerOrgSearch
                     mode="customers"
