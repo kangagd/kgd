@@ -66,13 +66,18 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
 
   /* ---------- messages ---------- */
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ["emailMessages", thread.id],
+    queryKey: ["emailMessages", thread?.id],
     queryFn: async () => {
-      const msgs = await base44.entities.EmailMessage.filter(
-        { thread_id: thread.id },
-        "sent_at"
-      );
-      return msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+      try {
+        const msgs = await base44.entities.EmailMessage.filter(
+          { thread_id: thread?.id },
+          "sent_at"
+        );
+        return msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+      } catch (err) {
+        console.error("EmailDetailView messages fetch failed", { threadId: thread?.id, err });
+        throw err;
+      }
     },
     enabled: !!thread?.id,
     staleTime: 30000,
