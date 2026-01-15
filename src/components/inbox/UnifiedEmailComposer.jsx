@@ -620,137 +620,50 @@ export default function UnifiedEmailComposer({
     <>
       {/* Recipients */}
       <div className="space-y-2">
-        {/* To field with chips */}
-        <div>
-          <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
-            To
-          </label>
-          <div className="flex flex-wrap gap-1 mb-1 p-2 bg-white border border-[#E5E7EB] rounded-lg min-h-[40px]">
-            {toChips.map((email) => (
-              <Badge key={email} variant="secondary" className="flex items-center gap-1">
-                {email}
-                <button
-                  onClick={() => removeChip(toChips, setToChips, email)}
-                  className="ml-1 hover:text-red-600"
-                >
-                  ×
-                </button>
-              </Badge>
-            ))}
-            <input
-              ref={toInputRef}
-              type="text"
-              value={toInput}
-              onChange={(e) => setToInput(e.target.value)}
-              onBlur={() => {
-                if (toInput.trim()) {
-                  addChip(toChips, setToChips, toInput, setToInput);
-                }
-              }}
-              onKeyDown={(e) => {
-                if ([",", ";", "Enter"].includes(e.key)) {
-                  e.preventDefault();
-                  addChip(toChips, setToChips, toInput, setToInput);
-                }
-              }}
-              placeholder="Add recipients... (comma or semicolon separated)"
-              className="flex-1 outline-none text-[14px] min-w-[100px]"
-            />
-          </div>
-          <div className="flex gap-2 mt-1">
-            <button
-              onClick={() => setShowCc(!showCc)}
-              className="text-[12px] text-[#6B7280] hover:text-[#111827]"
-            >
-              {showCc ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />} Cc
-            </button>
-            <button
-              onClick={() => setShowBcc(!showBcc)}
-              className="text-[12px] text-[#6B7280] hover:text-[#111827]"
-            >
-              {showBcc ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />} Bcc
-            </button>
-          </div>
+        {/* To field with autocomplete */}
+        <RecipientAutocomplete
+          chips={toChips}
+          onChipsChange={setToChips}
+          customers={customers}
+          placeholder="Add recipients..."
+          label="To"
+        />
+
+        <div className="flex gap-2 text-[12px]">
+          <button
+            onClick={() => setShowCc(!showCc)}
+            className="text-[#6B7280] hover:text-[#111827]"
+          >
+            {showCc ? <ChevronUp className="w-3 h-3 inline mr-1" /> : <ChevronDown className="w-3 h-3 inline mr-1" />} Cc
+          </button>
+          <button
+            onClick={() => setShowBcc(!showBcc)}
+            className="text-[#6B7280] hover:text-[#111827]"
+          >
+            {showBcc ? <ChevronUp className="w-3 h-3 inline mr-1" /> : <ChevronDown className="w-3 h-3 inline mr-1" />} Bcc
+          </button>
         </div>
 
         {/* Cc field */}
         {showCc && (
-          <div>
-            <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
-              Cc
-            </label>
-            <div className="flex flex-wrap gap-1 p-2 bg-white border border-[#E5E7EB] rounded-lg min-h-[40px]">
-              {ccChips.map((email) => (
-                <Badge key={email} variant="secondary" className="flex items-center gap-1">
-                  {email}
-                  <button
-                    onClick={() => removeChip(ccChips, setCcChips, email)}
-                    className="ml-1 hover:text-red-600"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              ))}
-              <input
-                type="text"
-                value={ccInput}
-                onChange={(e) => setCcInput(e.target.value)}
-                onBlur={() => {
-                  if (ccInput.trim()) {
-                    addChip(ccChips, setCcChips, ccInput, setCcInput);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if ([",", ";", "Enter"].includes(e.key)) {
-                    e.preventDefault();
-                    addChip(ccChips, setCcChips, ccInput, setCcInput);
-                  }
-                }}
-                placeholder="Add Cc recipients... (comma or semicolon separated)"
-                className="flex-1 outline-none text-[14px] min-w-[100px]"
-              />
-            </div>
-          </div>
+          <RecipientAutocomplete
+            chips={ccChips}
+            onChipsChange={setCcChips}
+            customers={customers}
+            placeholder="Add Cc recipients..."
+            label="Cc"
+          />
         )}
 
         {/* Bcc field */}
         {showBcc && (
-          <div>
-            <label className="text-[13px] font-semibold text-[#4B5563] block mb-1">
-              Bcc
-            </label>
-            <div className="flex flex-wrap gap-1 p-2 bg-white border border-[#E5E7EB] rounded-lg min-h-[40px]">
-              {bccChips.map((email) => (
-                <Badge key={email} variant="secondary" className="flex items-center gap-1">
-                  {email}
-                  <button
-                    onClick={() => removeChip(bccChips, setBccChips, email)}
-                    className="ml-1 hover:text-red-600"
-                  >
-                    ×
-                  </button>
-                </Badge>
-              ))}
-              <input
-                type="text"
-                value={bccInput}
-                onChange={(e) => setBccInput(e.target.value)}
-                onBlur={() => {
-                  if (bccInput.trim()) {
-                    addChip(bccChips, setBccChips, bccInput, setBccInput);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if ([",", ";", "Enter"].includes(e.key)) {
-                    e.preventDefault();
-                    addChip(bccChips, setBccChips, bccInput, setBccInput);
-                  }
-                }}
-                placeholder="Add Bcc recipients... (comma or semicolon separated)"
-                className="flex-1 outline-none text-[14px] min-w-[100px]"
-              />
-            </div>
-          </div>
+          <RecipientAutocomplete
+            chips={bccChips}
+            onChipsChange={setBccChips}
+            customers={customers}
+            placeholder="Add Bcc recipients..."
+            label="Bcc"
+          />
         )}
 
         {/* Subject */}
