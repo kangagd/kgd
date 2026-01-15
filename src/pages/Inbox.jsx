@@ -1,9 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-
-/* -------------------------
-   Global sync mutex (prevent concurrent syncs)
------------------------- */
-let syncInFlight = null;
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { QUERY_CONFIG } from "@/components/api/queryConfig";
@@ -67,6 +62,7 @@ const inferThreadDirection = (thread, orgEmails = []) => {
 export default function Inbox() {
   const queryClient = useQueryClient();
   const mountedRef = useRef(true);
+  const syncInFlightRef = useRef(false);
   const [user, setUser] = useState(null);
   const [selectedThreadId, setSelectedThreadId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -90,10 +86,11 @@ export default function Inbox() {
   const [selectedThreadIds, setSelectedThreadIds] = useState(new Set());
   const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
 
-  // Cleanup on unmount to avoid setState warnings
+  // Cleanup on unmount to avoid setState warnings and reset sync lock
   useEffect(() => {
     return () => {
       mountedRef.current = false;
+      syncInFlightRef.current = false;
     };
   }, []);
 
@@ -168,12 +165,12 @@ export default function Inbox() {
     };
   }, [user, queryClient, lastThreadFetchTime]);
 
-  // Sync Gmail inbox + messages (orchestrated with global mutex)
+  // Sync Gmail inbox + messages (orchestrated with component-level mutex)
   const syncGmailInbox = async () => {
-    // Check if sync already in flight (global level)
-    if (syncInFlight) {
-      console.log('[Inbox] Sync already in flight globally');
-      return syncInFlight;
+    // Check if sync already in flight (component-level)
+    if (syncInFlightRef.current) {
+      console.log('[Inbox] Sync already in flight');
+      return;
     }
 
     // Check local state
@@ -189,42 +186,39 @@ export default function Inbox() {
       return;
     }
 
-    // Set sync in progress (local + global)
-    syncInFlight = (async () => {
-      try {
-        if (mountedRef.current) setIsSyncing(true);
-        
-        const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
+    // Set sync in progress
+    syncInFlightRef.current = true;
+    try {
+      if (mountedRef.current) setIsSyncing(true);
+      
+      const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
 
-        // Handle sync lock (already in progress on backend)
-        if (result?.skipped && result?.reason === 'locked') {
-          console.log(`[Inbox] Sync already running, locked until ${result.locked_until}`);
-          if (mountedRef.current) toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
-          return;
-        }
-
-        if (result?.summary) {
-          console.log(
-            `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
-          );
-        }
-
-        if (mountedRef.current) {
-          await refetchThreads();
-          setLastSyncTime(new Date());
-        }
-
-        if (result?.errors?.length) console.warn("Sync completed with errors:", result.errors);
-      } catch (error) {
-        console.error("Sync failed:", error);
-        if (mountedRef.current) toast.error("Failed to sync emails");
-      } finally {
-        if (mountedRef.current) setIsSyncing(false);
-        syncInFlight = null;
+      // Handle sync lock (already in progress on backend)
+      if (result?.skipped && result?.reason === 'locked') {
+        console.log(`[Inbox] Sync already running, locked until ${result.locked_until}`);
+        if (mountedRef.current) toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
+        return;
       }
-    })();
 
-    return syncInFlight;
+      if (result?.summary) {
+        console.log(
+          `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
+        );
+      }
+
+      if (mountedRef.current) {
+        await refetchThreads();
+        setLastSyncTime(new Date());
+      }
+
+      if (result?.errors?.length) console.warn("Sync completed with errors:", result.errors);
+    } catch (error) {
+      console.error("Sync failed:", error);
+      if (mountedRef.current) toast.error("Failed to sync emails");
+    } finally {
+      if (mountedRef.current) setIsSyncing(false);
+      syncInFlightRef.current = false;
+    }
   };
 
   // Auto-sync on mount and when tab becomes visible (with throttle)
