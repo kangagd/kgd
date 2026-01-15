@@ -300,8 +300,8 @@ Deno.serve(async (req) => {
         );
       } else {
         // Fetch limited set and filter client-side for empty bodies
-        messagesToProcess = await base44.asServiceRole.entities.EmailMessage.list(undefined, limit * 3);
-        messagesToProcess = messagesToProcess.filter(m => 
+        const allMessages = await base44.asServiceRole.entities.EmailMessage.list(undefined, limit * 3);
+        messagesToProcess = (allMessages || []).filter(m => 
           (!m.body_html || (typeof m.body_html === 'string' && m.body_html.trim() === '')) &&
           (!m.body_text || (typeof m.body_text === 'string' && m.body_text.trim() === ''))
         ).slice(0, limit);
