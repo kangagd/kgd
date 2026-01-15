@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     }
 
     // Not cached → fetch from Gmail
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlecalendar');
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
 
     // Fetch attachment from Gmail API
     const gmailRes = await fetch(
