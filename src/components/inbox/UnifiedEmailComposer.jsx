@@ -985,6 +985,10 @@ export default function UnifiedEmailComposer({
             <div className="text-[12px] text-amber-800">
               {isSyncing ? (
                 <><strong>⏳ Syncing message context…</strong> you can keep writing.</>
+              ) : selectedMessage?.sync_status === "partial" ? (
+                <><strong>⚠ Message content is incomplete</strong> (partial sync) — reply will use available content. More details may load soon.</>
+              ) : selectedMessage?.sync_status === "failed" ? (
+                <><strong>⚠ Message failed to sync</strong> — reply will use thread headers only.</>
               ) : (
                 <><strong>⚠ Message context not available</strong> — reply will use thread headers only. Thread history may be limited.</>
               )}
