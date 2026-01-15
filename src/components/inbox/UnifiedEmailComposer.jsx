@@ -277,8 +277,14 @@ export default function UnifiedEmailComposer({
     }
 
     // Build and insert signature
-    const signatureHtml = buildSignatureHtml(currentUser.email_signature);
-    if (signatureHtml) {
+    const rawSignature = currentUser.email_signature || "";
+    if (isNonEmptyString(rawSignature)) {
+      const signatureHtml = buildSignatureHtml(rawSignature);
+      console.log("[UnifiedEmailComposer] Signature effect final:", {
+        rawLength: rawSignature.length,
+        wrappedLength: signatureHtml.length,
+        wrappedPreview: signatureHtml.substring(0, 200)
+      });
       setBody(signatureHtml);
     }
 
