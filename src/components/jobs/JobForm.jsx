@@ -775,25 +775,27 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
-                <div className="flex gap-2">
-                  <Select 
-                    value={formData.customer_id} 
-                    onValueChange={handleCustomerChange} 
-                    required
-                    disabled={!!formData.project_id}
-                  >
-                    <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                      <SelectValue placeholder="Select customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
+              <div className="flex gap-2">
+                <Select 
+                  value={formData.customer_id || undefined} 
+                  onValueChange={handleCustomerChange} 
+                  required
+                  disabled={!!formData.project_id}
+                >
+                  <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                    <SelectValue placeholder="Select customer">
+                      {formData.customer_id && customers.find(c => c.id === formData.customer_id)?.name}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map((customer) => (
+                      <SelectItem key={customer.id} value={customer.id}>
+                        {customer.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                   {!formData.project_id && (
                     <Button
                       type="button"
