@@ -641,11 +641,84 @@ export default function UnifiedEmailComposer({
     }
   };
 
+  // Auto-sync effect: Only in reply/forward modes, triggers once per thread per 60s
+  useEffect(() => {
+    // Only auto-sync in reply/forward modes
+    if (!['reply', 'reply_all', 'forward'].includes(mode)) return;
+    if (!thread?.id || !thread?.gmail_thread_id) return;
+    if (messagesLoading) return; // Wait for messages to load
+    
+    // If context is available, upgrade selectedMessage if needed
+    const hasContext = isMessageContextAvailable(messages);
+    if (hasContext) {
+      const best = pickBestContextMessage(messages, mode);
+      if (best && !selectedMessage?.body_html && !selectedMessage?.body_text) {
+        setSelectedMessage(best);
+      }
+      return; // No need to sync
+    }
+    
+    // No context → attempt auto-sync (best-effort, rate-limited, with locking)
+    const tid = thread.id;
+    
+    // Check if sync already in-flight for this thread
+    if (syncInFlightRef.current.has(tid)) return;
+    
+    // Check if we synced recently (within 60s)
+    const lastTs = lastAutoSyncRef.current.get(tid) || 0;
+    if (Date.now() - lastTs < 60000) return;
+    
+    // Proceed with auto-sync
+    lastAutoSyncRef.current.set(tid, Date.now());
+    syncInFlightRef.current.add(tid);
+    setIsSyncing(true);
+    setSyncError(null);
+    
+    base44.functions.invoke('gmailSyncThreadMessages', {
+      gmail_thread_id: thread.gmail_thread_id,
+    })
+      .then(async (res) => {
+        if (!unmountedRef.current && !res.data?.success) {
+          throw new Error(res.data?.error || 'Sync failed');
+        }
+        
+        if (!unmountedRef.current) {
+          showSyncToast(res.data);
+          
+          // Force immediate refresh
+          await queryClient.invalidateQueries({ queryKey: ['emailMessages', tid] });
+          await queryClient.refetchQueries({ queryKey: ['emailMessages', tid] });
+          
+          // Attempt to upgrade selectedMessage with synced content
+          const fresh = queryClient.getQueryData(['emailMessages', tid]) || [];
+          const best = pickBestContextMessage(fresh, mode);
+          if (best && (best.body_html || best.body_text)) {
+            setSelectedMessage(best);
+          } else {
+            setSyncError('Messages synced but body content still unavailable. Header-only reply will be used.');
+          }
+        }
+      })
+      .catch((err) => {
+        if (!unmountedRef.current) {
+          setSyncError(err.message || 'Failed to sync messages');
+          console.error('[UnifiedEmailComposer] Auto-sync error:', err);
+        }
+      })
+      .finally(() => {
+        if (!unmountedRef.current) {
+          syncInFlightRef.current.delete(tid);
+          setIsSyncing(false);
+        }
+      });
+  }, [mode, thread?.id, thread?.gmail_thread_id, messagesLoading, messages, queryClient]);
+
   // Compute valid reply context dynamically (non-sticky)
   const hasValidReplyContext = !!(
     thread?.gmail_thread_id &&
     selectedMessage &&
-    (selectedMessage.gmail_message_id || selectedMessage.message_id)
+    (selectedMessage.gmail_message_id || selectedMessage.message_id) &&
+    isMessageContextAvailable([selectedMessage])
   );
 
   // Keyboard shortcuts
