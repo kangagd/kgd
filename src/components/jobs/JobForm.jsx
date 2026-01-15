@@ -344,27 +344,27 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   };
 
   const handleCustomerChange = (customerId) => {
-    const customer = customers.find(c => c.id === customerId);
-    if (customer) {
-      setFormData({
-        ...formData,
-        customer_id: customerId,
-        customer_name: customer.name,
-        customer_phone: customer.phone || "",
-        customer_email: customer.email || "",
-        customer_type: customer.customer_type || "",
-        address: customer.address_full || customer.address || formData.address,
-        address_full: customer.address_full || customer.address || formData.address_full,
-        address_street: customer.address_street || formData.address_street,
-        address_suburb: customer.address_suburb || formData.address_suburb,
-        address_state: customer.address_state || formData.address_state,
-        address_postcode: customer.address_postcode || formData.address_postcode,
-        address_country: customer.address_country || formData.address_country || "Australia",
-        google_place_id: customer.google_place_id || formData.google_place_id,
-        latitude: customer.latitude || formData.latitude,
-        longitude: customer.longitude || formData.longitude,
-      });
-    }
+    const customer = customers.find(c => String(c.id) === String(customerId));
+    if (!customer) return;
+
+    setFormData(prev => ({
+      ...prev,
+      customer_id: String(customerId),
+      customer_name: customer.name,
+      customer_phone: customer.phone || "",
+      customer_email: customer.email || "",
+      customer_type: customer.customer_type || "",
+      address: customer.address_full || customer.address || prev.address,
+      address_full: customer.address_full || customer.address || prev.address_full,
+      address_street: customer.address_street || prev.address_street,
+      address_suburb: customer.address_suburb || prev.address_suburb,
+      address_state: customer.address_state || prev.address_state,
+      address_postcode: customer.address_postcode || prev.address_postcode,
+      address_country: customer.address_country || prev.address_country || "Australia",
+      google_place_id: customer.google_place_id || prev.google_place_id,
+      latitude: customer.latitude || prev.latitude,
+      longitude: customer.longitude || prev.longitude,
+    }));
   };
 
   const handleProjectChange = (projectId) => {
@@ -775,27 +775,30 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
             ) : (
               <div className="space-y-2">
-              <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
-              <div className="flex gap-2">
-                <Select 
-                  value={formData.customer_id || undefined} 
-                  onValueChange={handleCustomerChange} 
-                  required
-                  disabled={!!formData.project_id}
-                >
-                  <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                    <SelectValue placeholder="Select customer">
-                      {formData.customer_id && customers.find(c => c.id === formData.customer_id)?.name}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
+                <div className="flex gap-2">
+                  {(() => {
+                    const selectedCustomerId = formData.customer_id ? String(formData.customer_id) : "";
+                    return (
+                      <Select
+                        value={selectedCustomerId}
+                        onValueChange={handleCustomerChange}
+                        required
+                        disabled={!!formData.project_id}
+                      >
+                        <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customers.map((customer) => (
+                            <SelectItem key={customer.id} value={String(customer.id)}>
+                              {customer.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()}
                   {!formData.project_id && (
                     <Button
                       type="button"
