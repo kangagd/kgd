@@ -15,6 +15,7 @@ export default function PullToRefresh({ onRefresh, children }) {
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
   const activeTouch = useRef(false);
+  const refreshDebounceRef = useRef(false);
 
   const setPull = (val) => {
     pullDistanceRef.current = val;
@@ -85,12 +86,14 @@ export default function PullToRefresh({ onRefresh, children }) {
 
       const currentPull = pullDistanceRef.current;
 
-      if (currentPull > 60 && !isRefreshingRef.current) {
+      if (currentPull > 100 && !isRefreshingRef.current && !refreshDebounceRef.current) {
         setRefreshing(true);
+        refreshDebounceRef.current = true;
         try {
           await onRefresh?.();
         } finally {
           setRefreshing(false);
+          refreshDebounceRef.current = false;
         }
       }
 
