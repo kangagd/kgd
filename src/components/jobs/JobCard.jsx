@@ -59,7 +59,7 @@ export default function JobCard({
   const freshness = computeSimpleFreshness(job);
 
   const logistics = useMemo(() => isLogisticsJob(job), [job]);
-  const pickup = useMemo(() => isPickupJob(job), [job]);
+  const isPickup = useMemo(() => isPickupJob(job), [job]);
 
   // ----- Checklist (NO extra fetch): use job.checked_items if present -----
   const checklistStats = useMemo(() => {
@@ -228,7 +228,7 @@ export default function JobCard({
               )}
 
               {/* PICKUP CHECKLIST BADGE (only when pickup + has checklist) */}
-              {isPickupJob(job) && checklistStats && (
+              {isPickup && checklistStats && (
                 <Badge className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 text-[11px] rounded-md pointer-events-none">
                   Pickup checklist: {checklistStats.done}/{checklistStats.total}
                 </Badge>
