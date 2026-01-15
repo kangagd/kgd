@@ -285,7 +285,8 @@ Deno.serve(async (req) => {
           htmlBody: htmlBody || body_html,
           inReplyTo,
           references,
-          threadId: thread_id || gmail_thread_id
+          threadId: thread_id || gmail_thread_id,
+          attachments: attachments || []
         });
         encodedMessage = base64UrlEncode(mimeMessage);
       }
