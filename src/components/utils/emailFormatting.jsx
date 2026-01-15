@@ -11,50 +11,64 @@ export function decodeEmailText(input) {
 
   let text = String(input);
 
-  // Most common Gmail/UTF-8 mojibake sequences
+  // Most common Gmail/UTF-8 mojibake sequences - prioritize longer sequences first
   const replacements = [
-    // Smart quotes / apostrophes
-    ['â', '’'],
-    ['â', '‘'],
-    ['â€™', '’'],
-    ['â€˜', '‘'],
+    // Em/en dashes (most common - matches the screenshot issue)
+    ['â€"', '—'], // em dash UTF-8 mojibake (CRITICAL FIX)
+    ['â€"', '–'], // en dash UTF-8 mojibake
+    ['â', '–'],
+    ['â', '—'],
 
-    // Double quotes
-    ['â', '“'],
-    ['â', '”'],
-    ['â€œ', '“'],
-    ['â€�', '”'],
-
-    // Dashes
-    ['â', '–'],
-    ['â', '—'],
-    ['â€"', '—'], // older variant; choose em dash
+    // Smart quotes / apostrophes (UTF-8 sequences)
+    ['â€™', '''],  // right single quotation mark
+    ['â€˜', '''],  // left single quotation mark
+    ['â€œ', '"'],  // left double quotation mark
+    ['â€', '"'],   // right double quotation mark
+    ['â', '''],
+    ['â', '''],
+    ['â', '"'],
+    ['â', '"'],
 
     // Ellipsis / bullets
-    ['â¦', '…'],
     ['â€¦', '…'],
-    ['â¢', '•'],
+    ['â¦', '…'],
     ['â€¢', '•'],
+    ['â¢', '•'],
 
     // Spacing artifacts
     ['Â ', ' '],  // NBSP shown as "Â "
+    ['â¯', ' '],  // narrow NBSP mojibake
     ['&nbsp;', ' '],
     ['Â', ''],
 
     // Misc
     ['â€º', '›'],
     ['â€¹', '‹'],
+    ['â„¢', '™'],
+    ['Â®', '®'],
 
     // Common latin1 double-encoding samples
     ['Ã©', 'é'],
     ['Ã¨', 'è'],
     ['Ã§', 'ç'],
-    ['Ã ', 'à'],
+    ['Ã', 'à'],
+    ['Ã¼', 'ü'],
+    ['Ã¶', 'ö'],
   ];
 
   for (const [bad, good] of replacements) {
     text = text.split(bad).join(good);
   }
+
+  // Normalize Unicode spaces
+  text = text
+    .replace(/\u00A0/g, ' ')  // NBSP
+    .replace(/\u202F/g, ' ')  // Narrow NBSP
+    .replace(/\u2009/g, ' ')  // Thin space
+    .replace(/\u200A/g, ' '); // Hair space
+
+  // Remove invisible characters
+  text = text.replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g, '');
 
   // Decode basic HTML entities (safe)
   // (Browser only; if this runs server-side, skip)
@@ -63,9 +77,6 @@ export function decodeEmailText(input) {
     textarea.innerHTML = text;
     text = textarea.value;
   }
-
-  // Remove zero-width + invisible characters
-  text = text.replace(/[\u200B-\u200D\uFEFF]/g, '');
 
   return text;
 }
@@ -166,6 +177,79 @@ export function parseQuotedReplies(text) {
 }
 
 /**
+ * Convert HTML to plain text while preserving structure (links, lists, etc.)
+ * Used for email display to maintain formatting
+ */
+export function htmlToPlainTextWithFormatting(html) {
+  if (!html) return '';
+
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+
+  let text = '';
+  const walk = (node) => {
+    if (node.nodeType === 3) {
+      // Text node
+      text += node.textContent;
+    } else if (node.nodeType === 1) {
+      // Element node
+      const tag = node.tagName.toLowerCase();
+
+      if (tag === 'br') {
+        text += '\n';
+      } else if (tag === 'p' || tag === 'div') {
+        if (text && !text.endsWith('\n')) text += '\n';
+        node.childNodes.forEach(walk);
+        if (!text.endsWith('\n')) text += '\n';
+      } else if (tag === 'li') {
+        text += '• ';
+        node.childNodes.forEach(walk);
+        text += '\n';
+      } else if (tag === 'ul' || tag === 'ol') {
+        if (text && !text.endsWith('\n')) text += '\n';
+        node.childNodes.forEach(walk);
+      } else if (tag === 'a') {
+        text += node.textContent;
+        const href = node.getAttribute('href');
+        if (href && href !== node.textContent) {
+          text += ` (${href})`;
+        }
+      } else if (tag === 'blockquote') {
+        text += '\n> ';
+        let blockText = '';
+        const blockWalk = (n) => {
+          if (n.nodeType === 3) {
+            blockText += n.textContent;
+          } else if (n.nodeType === 1) {
+            if (n.tagName.toLowerCase() === 'br') {
+              blockText += '\n> ';
+            } else {
+              n.childNodes.forEach(blockWalk);
+            }
+          }
+        };
+        node.childNodes.forEach(blockWalk);
+        text += blockText.replace(/\n/g, '\n> ');
+        text += '\n';
+      } else if (tag === 'table') {
+        // Simple table handling
+        const rows = node.querySelectorAll('tr');
+        rows.forEach((row) => {
+          const cells = row.querySelectorAll('td, th');
+          text += Array.from(cells).map(c => c.textContent.trim()).join(' | ');
+          text += '\n';
+        });
+      } else {
+        node.childNodes.forEach(walk);
+      }
+    }
+  };
+
+  walk(tmp);
+  return text.trim();
+}
+
+/**
  * Format text with proper line breaks and clickable links
  */
 export function formatEmailText(text) {
@@ -173,7 +257,7 @@ export function formatEmailText(text) {
 
   let formatted = text;
 
-  // Convert URLs to clickable links
+  // Convert URLs to clickable links (but not if already in HTML)
   const urlRegex = /(https?:\/\/[^\s<]+)/g;
   formatted = formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">$1</a>');
 
@@ -190,30 +274,19 @@ export function formatEmailText(text) {
 }
 
 /**
- * Strip HTML tags but preserve structure
+ * Strip HTML tags but preserve structure (deprecated - use htmlToPlainTextWithFormatting instead)
  */
 export function stripHtmlButKeepStructure(html) {
   if (!html) return '';
   
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  
-  // Replace block elements with line breaks
-  const blockElements = tmp.querySelectorAll('div, p, br, li, tr');
-  blockElements.forEach(el => {
-    if (el.tagName === 'BR') {
-      el.replaceWith('\n');
-    } else if (el.tagName === 'LI') {
-      el.replaceWith('\n• ' + el.textContent);
-    } else {
-      const text = el.textContent;
-      if (text && text.trim()) {
-        el.replaceWith('\n' + text);
-      }
-    }
-  });
-
-  return tmp.textContent || tmp.innerText || '';
+  try {
+    return htmlToPlainTextWithFormatting(html);
+  } catch (err) {
+    // Fallback to simple text extraction
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  }
 }
 
 /**
