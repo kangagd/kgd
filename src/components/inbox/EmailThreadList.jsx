@@ -226,8 +226,8 @@ export default function EmailThreadList({
                 </>
               )}
 
-              {/* CRITICAL: Use correct field names from EmailThread entity: project_id and linked_job_id */}
-              {(thread.project_id || thread.linked_job_id) && (
+              {/* Linked indicator - show if thread is linked to Project OR Contract */}
+              {(thread.project_id || thread.contract_id) && (
                 <LinkIcon className="w-3 h-3 text-[#4B5563]" />
               )}
             </div>
