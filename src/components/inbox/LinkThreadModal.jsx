@@ -6,7 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
 
-export default function LinkThreadModal({ open, onClose, onLinkProject, onLinkContract }) {
+export default function LinkThreadModal({ 
+  open, 
+  onClose, 
+  onLinkProject, 
+  onLinkContract,
+  onUnlink,
+  currentlyLinkedType,
+  currentlyLinkedTitle
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [linkType, setLinkType] = useState('project'); // 'project' or 'contract'
 
@@ -147,10 +155,21 @@ export default function LinkThreadModal({ open, onClose, onLinkProject, onLinkCo
           )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E7EB]">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
+        <div className="flex justify-between gap-3 pt-4 border-t border-[#E5E7EB]">
+          {onUnlink && currentlyLinkedType && (
+            <Button 
+              variant="outline" 
+              onClick={onUnlink}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              Unlink from {currentlyLinkedType === 'project' ? 'Project' : 'Contract'}
+            </Button>
+          )}
+          <div className="flex gap-3 ml-auto">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
