@@ -2,11 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
  * Fetch an inline attachment from Gmail and upload it, with caching
- * 
+ *
  * Input:
  *   - gmail_message_id: Gmail message ID
  *   - attachment_id: Gmail attachment ID
- * 
+ *
  * Output:
  *   - { success: true, file_url } on success
  *   - { success: false, error } on failure
@@ -16,56 +16,118 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 async function fetchWithRetry(url, options, maxRetries = 3) {
   const delays = [200, 600, 1400];
   let lastError;
-  
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const response = await fetch(url, options);
-      
+
       // 404 is not retryable
-      if (response.status === 404) {
-        return response;
-      }
-      
-      // Retry on 429 (rate limit) and 503 (service unavailable)
+      if (response.status === 404) return response;
+
+      // Retry on 429 / 503
       if ((response.status === 429 || response.status === 503) && attempt < maxRetries - 1) {
         const delay = delays[attempt];
-        console.log(`[gmailGetInlineAttachmentUrl] Rate limited. Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.log(`[gmailGetInlineAttachmentUrl] Retry in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise((r) => setTimeout(r, delay));
         continue;
       }
-      
+
       return response;
     } catch (error) {
       lastError = error;
       if (attempt < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+        await new Promise((r) => setTimeout(r, delays[attempt]));
       }
     }
   }
-  
+
   throw lastError || new Error('Max retries exceeded');
 }
 
 // Helper: safely decode base64url with padding
 function decodeBase64Url(b64url) {
   if (!b64url) throw new Error('No attachment data provided');
-  
-  // Convert base64url to base64 and add padding
+
   let b64 = String(b64url).replace(/-/g, '+').replace(/_/g, '/');
-  // Add padding to make length multiple of 4
-  while (b64.length % 4) {
-    b64 += '=';
+  while (b64.length % 4) b64 += '=';
+
+  const binaryStr = atob(b64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+  return bytes;
+}
+
+// Helper: refresh access token if expired (shared Gmail account pattern)
+async function refreshTokenIfNeeded(user, base44) {
+  if (!user?.gmail_refresh_token) {
+    throw new Error('No gmail_refresh_token available on user');
   }
-  
-  try {
-    const binaryStr = atob(b64);
-    const bytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) {
-      bytes[i] = binaryStr.charCodeAt(i);
+
+  const tokenExpiry = user.gmail_token_expiry ? new Date(user.gmail_token_expiry) : null;
+  const now = new Date();
+  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+  if (!tokenExpiry || tokenExpiry < fiveMinutesFromNow) {
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: Deno.env.get('GMAIL_CLIENT_ID'),
+        client_secret: Deno.env.get('GMAIL_CLIENT_SECRET'),
+        refresh_token: user.gmail_refresh_token,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const txt = await tokenResponse.text().catch(() => '');
+      throw new Error(`Failed to refresh Gmail token: ${tokenResponse.status} ${txt}`);
     }
-    return bytes;
-  } catch (err) {
-    throw new Error(`Failed to decode base64url: ${err.message}`);
+
+    const tokenData = await tokenResponse.json();
+    const expiresAt = new Date(now.getTime() + (tokenData.expires_in || 3600) * 1000);
+
+    await base44.asServiceRole.entities.User.update(user.id, {
+      gmail_access_token: tokenData.access_token,
+      gmail_token_expiry: expiresAt.toISOString(),
+    });
+
+    return tokenData.access_token;
+  }
+
+  if (!user.gmail_access_token) {
+    throw new Error('No gmail_access_token available on user');
+  }
+
+  return user.gmail_access_token;
+}
+
+// Helper: choose Gmail user (caller first, then shared)
+async function getGmailAccessToken(base44, callerUser) {
+  // Prefer caller if they have tokens
+  if (callerUser?.gmail_access_token && callerUser?.gmail_refresh_token) {
+    return await refreshTokenIfNeeded(callerUser, base44);
+  }
+
+  // Fallback to any user with connected Gmail (shared mailbox pattern)
+  const allUsers = await base44.asServiceRole.entities.User.list();
+  const gmailUser = allUsers.find((u) => u.gmail_access_token && u.gmail_refresh_token);
+
+  if (!gmailUser) {
+    throw new Error('Gmail not connected: no user has gmail_access_token + gmail_refresh_token');
+  }
+
+  return await refreshTokenIfNeeded(gmailUser, base44);
+}
+
+// Helper: stringify errors safely (avoid "[object Object]")
+function safeErr(error) {
+  if (typeof error === 'string') return error;
+  if (error?.message && typeof error.message === 'string') return error.message;
+  try {
+    return JSON.stringify(error?.data || error, null, 2);
+  } catch {
+    return 'Unknown error';
   }
 }
 
@@ -73,179 +135,132 @@ Deno.serve(async (req) => {
   let phase = 'start';
   try {
     const base44 = createClientFromRequest(req);
+
     phase = 'auth';
     const user = await base44.auth.me();
-
     if (!user) {
       return Response.json({ success: false, error: 'Unauthorized', phase }, { status: 401 });
     }
 
-    const payload = await req.json();
+    const payload = await req.json().catch(() => ({}));
     const { gmail_message_id, attachment_id } = payload;
 
     if (!gmail_message_id || !attachment_id) {
-      return Response.json({
-        success: false,
-        error: 'Missing gmail_message_id or attachment_id',
-        phase,
-      }, { status: 400 });
+      return Response.json(
+        { success: false, error: 'Missing gmail_message_id or attachment_id', phase: 'validate' },
+        { status: 400 }
+      );
     }
 
-    // Find the EmailMessage record to check if we already have a cached file_url or url
+    // Cache lookup: EmailMessage by gmail_message_id
     phase = 'cache_lookup';
     let emailMessage = null;
     try {
-      const emailMessages = await base44.asServiceRole.entities.EmailMessage.filter({
-        gmail_message_id,
-      });
-      emailMessage = emailMessages[0] || null;
+      const emailMessages = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id });
+      emailMessage = emailMessages?.[0] || null;
     } catch (err) {
-      console.error('[gmailGetInlineAttachmentUrl] Error fetching EmailMessage:', err);
-      // Non-fatal: continue without cache
+      console.error('[gmailGetInlineAttachmentUrl] cache_lookup failed:', err);
     }
 
-    // Check cache: accept file_url OR url (backwards compatibility)
-    if (emailMessage && emailMessage.attachments) {
+    // Cache hit: accept file_url OR legacy url
+    if (emailMessage?.attachments?.length) {
       const cachedAttachment = emailMessage.attachments.find(
-        (att) => att.attachment_id === attachment_id && (att.file_url || att.url)
+        (att) => att?.attachment_id === attachment_id && (att.file_url || att.url)
       );
       if (cachedAttachment) {
-        const cachedUrl = cachedAttachment.file_url || cachedAttachment.url;
-        return Response.json({
-          success: true,
-          file_url: cachedUrl,
-          fromCache: true,
-          phase,
-        });
+        return Response.json(
+          { success: true, file_url: cachedAttachment.file_url || cachedAttachment.url, fromCache: true, phase },
+          { status: 200 }
+        );
       }
     }
 
-    // Not cached → fetch from Gmail
-    phase = 'gmail_fetch';
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
+    // Get Gmail access token (NO connectors.getAccessToken('gmail'))
+    phase = 'get_token';
+    const accessToken = await getGmailAccessToken(base44, user);
 
-    // Fetch attachment from Gmail API with retry logic
+    // Fetch attachment from Gmail
+    phase = 'gmail_fetch';
     const gmailUrl = `https://www.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}/attachments/${attachment_id}`;
     const gmailRes = await fetchWithRetry(gmailUrl, {
       method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    // Handle Gmail errors with specific status codes
     if (gmailRes.status === 404) {
-      return Response.json({
-        success: false,
-        error: 'Attachment not found in Gmail',
-        status: 404,
-        phase,
-      }, { status: 404 });
+      return Response.json(
+        { success: false, error: 'Attachment not found in Gmail', status: 404, phase },
+        { status: 404 }
+      );
     }
-
     if (gmailRes.status === 429) {
-      return Response.json({
-        success: false,
-        error: 'Gmail rate limited',
-        status: 429,
-        phase,
-      }, { status: 503 });
+      return Response.json(
+        { success: false, error: 'Gmail rate limited', status: 429, phase },
+        { status: 503 }
+      );
     }
-
     if (gmailRes.status === 503) {
-      return Response.json({
-        success: false,
-        error: 'Gmail service unavailable',
-        status: 503,
-        phase,
-      }, { status: 503 });
+      return Response.json(
+        { success: false, error: 'Gmail service unavailable', status: 503, phase },
+        { status: 503 }
+      );
     }
-
     if (!gmailRes.ok) {
-      return Response.json({
-        success: false,
-        error: `Gmail API error ${gmailRes.status}`,
-        status: gmailRes.status,
-        phase,
-      }, { status: 502 });
+      const txt = await gmailRes.text().catch(() => '');
+      return Response.json(
+        { success: false, error: `Gmail API error ${gmailRes.status}: ${txt}`, status: gmailRes.status, phase },
+        { status: 502 }
+      );
     }
 
     const attachmentData = await gmailRes.json();
-    if (!attachmentData.data) {
-      return Response.json({
-        success: false,
-        error: 'No attachment data in Gmail response',
-        phase,
-      }, { status: 502 });
+    if (!attachmentData?.data) {
+      return Response.json(
+        { success: false, error: 'No attachment data in Gmail response', phase: 'gmail_parse' },
+        { status: 502 }
+      );
     }
 
-    // Decode base64url safely with padding
+    // Decode
     phase = 'decode';
     const bytes = decodeBase64Url(attachmentData.data);
 
-    // Get attachment metadata for File object
+    // Upload (prefer Blob over File in Deno)
     phase = 'upload';
-    const attachment = emailMessage?.attachments?.find(a => a.attachment_id === attachment_id);
-    const mimeType = attachment?.mime_type || 'application/octet-stream';
-    const filename = attachment?.filename || `inline-${attachment_id}.bin`;
+    const attMeta = emailMessage?.attachments?.find((a) => a?.attachment_id === attachment_id) || null;
+    const mimeType = attMeta?.mime_type || 'application/octet-stream';
 
-    // Upload using Base44 UploadFile integration with File object
-    const file = new File([bytes], filename, { type: mimeType });
-    const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+    const blob = new Blob([bytes], { type: mimeType });
+    const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
 
-    if (!uploadRes.file_url) {
-      return Response.json({
-        success: false,
-        error: 'Failed to upload attachment',
-        phase,
-      }, { status: 500 });
+    if (!uploadRes?.file_url) {
+      return Response.json({ success: false, error: 'Failed to upload attachment', phase }, { status: 500 });
     }
 
     const fileUrl = uploadRes.file_url;
 
-    // Cache the file_url and url in EmailMessage.attachments (backwards compatibility)
+    // Cache write: never overwrite non-empty
     phase = 'cache_write';
-    if (emailMessage && emailMessage.attachments) {
+    if (emailMessage?.attachments?.length) {
       const updated = emailMessage.attachments.map((att) => {
-        if (att.attachment_id === attachment_id) {
-          // Only write if not already cached; never overwrite non-empty values
-          const existingFileUrl = att.file_url || att.url;
-          if (!existingFileUrl) {
-            return { ...att, file_url: fileUrl, url: fileUrl };
-          }
-        }
-        return att;
+        if (att?.attachment_id !== attachment_id) return att;
+
+        const existing = att.file_url || att.url;
+        if (existing) return att; // never overwrite
+
+        return { ...att, file_url: fileUrl, url: fileUrl }; // keep legacy url for backwards compat
       });
 
       try {
-        await base44.asServiceRole.entities.EmailMessage.update(emailMessage.id, {
-          attachments: updated,
-        });
+        await base44.asServiceRole.entities.EmailMessage.update(emailMessage.id, { attachments: updated });
       } catch (err) {
-        console.error('[gmailGetInlineAttachmentUrl] Error updating EmailMessage cache:', err);
-        // Non-fatal; we got the URL, just didn't cache it
+        console.error('[gmailGetInlineAttachmentUrl] cache_write failed:', err);
       }
     }
 
-    return Response.json({
-      success: true,
-      file_url: fileUrl,
-      phase,
-    });
+    return Response.json({ success: true, file_url: fileUrl, phase }, { status: 200 });
   } catch (error) {
     console.error('[gmailGetInlineAttachmentUrl] Error in phase', phase, ':', error);
-    // Extract error message safely
-    let errorMsg = 'Failed to fetch inline attachment';
-    if (error?.message && typeof error.message === 'string') {
-      errorMsg = error.message;
-    } else if (error?.statusText) {
-      errorMsg = `API Error: ${error.statusText}`;
-    } else if (typeof error === 'string') {
-      errorMsg = error;
-    }
-    return Response.json(
-      { success: false, error: errorMsg, phase },
-      { status: 500 }
-    );
+    return Response.json({ success: false, error: safeErr(error), phase }, { status: 500 });
   }
 });
