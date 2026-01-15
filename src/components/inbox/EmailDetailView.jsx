@@ -81,7 +81,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
       }
     },
     enabled: !!thread?.id,
-    staleTime: 30000,
+    staleTime: 0,
   });
 
   /* ---------- sync thread messages ---------- */
@@ -99,8 +99,9 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
 
       if (response.data?.success) {
         showSyncToast(response.data);
-        // Refetch messages and thread
+        // Invalidate and refetch immediately for responsive UX
         await queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
+        await queryClient.refetchQueries({ queryKey: ["emailMessages", thread.id] });
         onThreadUpdate?.();
       } else {
         toast.error('Failed to sync messages');
