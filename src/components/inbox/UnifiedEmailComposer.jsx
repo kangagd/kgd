@@ -293,6 +293,7 @@ export default function UnifiedEmailComposer({
   }, []);
 
   // Single initialization effect: runs ONCE per composer session
+  // GUARDRAIL: Include thread?.id so body reinitializes when switching threads
   useEffect(() => {
     if (!currentUser) return;
     if (didInitBodyRef.current) return; // Already initialized
@@ -312,7 +313,7 @@ export default function UnifiedEmailComposer({
 
     setBody(initialBody);
     didInitBodyRef.current = true;
-  }, [currentUser, existingDraft?.id, mode]);
+  }, [currentUser, existingDraft?.id, mode, thread?.id]);
 
   // Update selectedMessage when message prop changes (but don't overwrite body)
   useEffect(() => {
@@ -633,12 +634,13 @@ export default function UnifiedEmailComposer({
   const totalAttachmentSize = attachments.reduce((sum, att) => sum + (att.size || 0), 0);
   const attachmentSizeWarning = totalAttachmentSize > 20 * 1024 * 1024;
 
-  // Clear attachments when opening fresh compose (drawer variant reuse)
+  // Clear attachments when opening fresh compose or switching threads (drawer variant reuse)
+  // GUARDRAIL: Include thread?.id so attachments clear when switching threads
   useEffect(() => {
-    if (variant === "drawer" && mode === "compose" && open && !existingDraft) {
+    if (variant === "drawer" && open && !existingDraft) {
       setAttachments([]);
     }
-  }, [variant, mode, open, existingDraft]);
+  }, [variant, open, existingDraft, thread?.id]);
 
   // Auto-open attachments on mount
   useEffect(() => {
