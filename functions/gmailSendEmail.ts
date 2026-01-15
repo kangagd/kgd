@@ -239,6 +239,15 @@ Deno.serve(async (req) => {
       contract_id
     } = await req.json();
 
+    // Normalize body fields: use canonical body_html/body_text with backwards-compat
+    const canonicalBodyHtml = body_html ?? htmlBody ?? '';
+    const canonicalBodyText = body_text ?? textBody ?? '';
+    
+    // Soft warning if old field names used without canonical ones
+    if ((htmlBody || textBody) && !body_html && !body_text) {
+      console.warn('[gmailSendEmail] Deprecated: htmlBody/textBody used; prefer body_html/body_text');
+    }
+
     // Get Service Account credentials
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
     const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL');
