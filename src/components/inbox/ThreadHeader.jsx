@@ -170,85 +170,6 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
         </div>
       </div>
 
-      {/* Row 2: Metadata + Controls */}
-
-      {/* Status & Owner Controls */}
-      <div className="flex items-center gap-3 flex-wrap">
-        {/* Close/Reopen Button */}
-        {currentUser && (
-          <Button
-            onClick={handleCloseToggle}
-            disabled={isClosingLoading}
-            className={`flex items-center gap-2 ${
-              isClosed 
-                ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200' 
-                : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
-            }`}
-            variant="outline"
-          >
-            <X className="w-4 h-4" />
-            {isClosed ? 'Reopen' : 'Mark closed'}
-          </Button>
-        )}
-
-        {/* Status Dropdown (only if not closed) */}
-        {!isClosed && (
-          <Select value={thread.status || 'Open'} onValueChange={onStatusChange} disabled={loading}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map(status => (
-                <SelectItem key={status} value={status}>
-                  {status}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {/* Owner Assignment */}
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] font-medium text-[#6B7280]">Assigned to:</span>
-          {thread.assigned_to ? (
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-[#FAE008]/20 flex items-center justify-center border border-[#FAE008]/30">
-                <span className="text-[11px] font-semibold text-[#111827]">
-                   {getInitials(thread.assigned_to_name)}
-                 </span>
-              </div>
-              <select
-                value={thread.assigned_to || ''}
-                onChange={(e) => onAssignChange(e.target.value || null)}
-                className="text-[13px] px-2 py-1 rounded border border-[#E5E7EB] hover:border-[#D1D5DB]"
-                disabled={loading}
-              >
-                <option value="">Unassign</option>
-                {users.map(user => (
-                  <option key={user.id || user.email} value={user.email}>
-                    {user.display_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <select
-              onChange={(e) => onAssignChange(e.target.value || null)}
-              className="text-[13px] px-2 py-1.5 rounded border border-[#E5E7EB] bg-[#F9FAFB] text-[#6B7280] hover:border-[#D1D5DB]"
-              disabled={loading}
-              defaultValue=""
-            >
-              <option value="">Assign to someone...</option>
-              {users.map(user => (
-                <option key={user.id || user.email} value={user.email}>
-                  {user.display_name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-      </div>
-
       {/* Row 2: Status Controls + Metadata */}
       <div className="space-y-3">
         {/* Controls */}
@@ -329,7 +250,7 @@ export default function ThreadHeader({ thread, users = [], onStatusChange, onAss
 
         {/* Metadata */}
         <div className="flex items-center gap-4 text-[11px] text-[#6B7280] pt-2 border-t border-[#F3F4F6]">
-        {thread.message_count && (
+          {thread.message_count && (
           <div className="flex items-center gap-1">
             <Mail className="w-3.5 h-3.5" />
             <span>{thread.message_count} messages</span>
