@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger } from
 "@/components/ui/popover";
+import AddressAutocomplete from "../common/AddressAutocomplete";
 
 export default function EditableField({
   value,
@@ -46,6 +47,9 @@ export default function EditableField({
       if (JSON.stringify(multiSelectValue) !== JSON.stringify(value)) {
         onSave(multiSelectValue);
       }
+    } else if (type === "address") {
+      // editValue should be an object with address fields from AddressAutocomplete
+      onSave(editValue);
     } else {
       if (editValue !== value) {
         onSave(editValue);
@@ -129,6 +133,12 @@ export default function EditableField({
               )}
               </SelectContent>
             </Select> :
+          type === "address" ?
+          <AddressAutocomplete
+            value={typeof editValue === 'string' ? editValue : (editValue?.address_full || editValue?.address || "")}
+            onChange={(addressData) => setEditValue(addressData)}
+            className="h-7 text-xs md:text-sm border-0 focus:ring-0 p-0"
+          /> :
 
           <Input
             ref={inputRef}
