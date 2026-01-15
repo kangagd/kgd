@@ -5,27 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, X } from "lucide-react";
 
 /**
- * GlobalCustomerOrgSearch
+ * GlobalCustomerOrgSearch (Fixed)
  *
- * Drop-in reusable searchable dropdown for Customers and/or Organisations.
- * - Text box search (debounced)
- * - Pre-populated matching results shown in dropdown
- * - Mouse + keyboard selection (↑ ↓ Enter Esc)
- * - Scrollable results list
+ * - Does NOT clear selection on every keystroke.
+ * - Selection clears only when:
+ *   - user hits the X button, OR
+ *   - parent changes `value` to empty, OR
+ *   - user selects a different item.
  *
- * Usage:
- *  <GlobalCustomerOrgSearch
- *    mode="customers" // "orgs" | "both"
- *    customers={customers} // array
- *    orgs={orgs} // array (optional)
- *    value={selectedId} // string
- *    onChange={(item) => { ... }} // item includes { id, name, type, raw }
- *    placeholder="Search customer..."
- *  />
- *
- * Notes:
- * - IDs are normalized to strings.
- * - Provide getLabel/getSubLabel to customize display if needed.
+ * Optional:
+ * - onQueryChange(queryString) lets parent react to typing without clearing selection
  */
 export default function GlobalCustomerOrgSearch({
   mode = "customers", // "customers" | "orgs" | "both"
@@ -33,6 +22,7 @@ export default function GlobalCustomerOrgSearch({
   orgs = [],
   value = "",
   onChange,
+  onQueryChange,
   placeholder = "Search…",
   disabled = false,
   loading = false,
@@ -54,50 +44,50 @@ export default function GlobalCustomerOrgSearch({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // Normalized selected value display
+  // Build all items once per prop change
+  const allItems = useMemo(() => {
+    return buildItems({ mode, customers, orgs, getLabel, getSubLabel, getTokens });
+  }, [mode, customers, orgs, getLabel, getSubLabel, getTokens]);
+
+  // Find selected item from `value`
   const selectedItem = useMemo(() => {
     const v = value ? String(value) : "";
     if (!v) return null;
+    return allItems.find((x) => x.id === v) || null;
+  }, [value, allItems]);
 
-    const all = buildItems({ mode, customers, orgs, getLabel, getSubLabel, getTokens });
-    return all.find((x) => x.id === v) || null;
-  }, [value, mode, customers, orgs, getLabel, getSubLabel, getTokens]);
-
-  // Keep input showing selected label when not actively typing
+  // When dropdown closes, snap query to selected label (or empty)
   useEffect(() => {
-    if (!open && selectedItem) {
-      setQuery(selectedItem.name);
-    }
-    if (!open && !selectedItem && query && value === "") {
-      // if cleared externally
-      setQuery("");
+    if (!open) {
+      if (selectedItem) setQuery(selectedItem.name);
+      else if (!value) setQuery("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selectedItem?.id]);
+  }, [open, selectedItem?.id, value]);
 
-  // Build + filter items
+  // If parent clears the value externally, clear the query too (when not open)
+  useEffect(() => {
+    if (!open && !value && query) setQuery("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  // Filter items based on query
   const items = useMemo(() => {
-    const all = buildItems({ mode, customers, orgs, getLabel, getSubLabel, getTokens });
-
     const q = query.trim().toLowerCase();
+
     if (q.length < minChars) {
-      return all.slice(0, Math.min(all.length, maxResults));
+      return allItems.slice(0, Math.min(allItems.length, maxResults));
     }
 
-    const scored = all
-      .map((it) => ({
-        it,
-        score: scoreMatch(q, it.searchText),
-      }))
+    return allItems
+      .map((it) => ({ it, score: scoreMatch(q, it.searchText) }))
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score || a.it.name.localeCompare(b.it.name))
       .slice(0, maxResults)
       .map((x) => x.it);
+  }, [allItems, query, minChars, maxResults]);
 
-    return scored;
-  }, [mode, customers, orgs, query, minChars, maxResults, getLabel, getSubLabel, getTokens]);
-
-  // Reset activeIndex when items change/open
+  // Reset activeIndex when opening or query changes
   useEffect(() => {
     setActiveIndex(0);
   }, [query, open]);
@@ -106,15 +96,13 @@ export default function GlobalCustomerOrgSearch({
   useEffect(() => {
     const onDocMouseDown = (e) => {
       if (!wrapperRef.current) return;
-      if (!wrapperRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (!wrapperRef.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener("mousedown", onDocMouseDown);
     return () => document.removeEventListener("mousedown", onDocMouseDown);
   }, []);
 
-  // Ensure active item is visible when navigating with keyboard
+  // Ensure active item is visible when navigating
   useEffect(() => {
     if (!open) return;
     const el = listRef.current;
@@ -134,6 +122,7 @@ export default function GlobalCustomerOrgSearch({
     setQuery(item.name);
     setOpen(false);
     onChange?.(item);
+    requestAnimationFrame(() => inputRef.current?.blur?.());
   };
 
   const clearSelection = () => {
@@ -141,7 +130,6 @@ export default function GlobalCustomerOrgSearch({
     setOpen(false);
     setActiveIndex(0);
     onChange?.(null);
-    // keep focus
     requestAnimationFrame(() => inputRef.current?.focus?.());
   };
 
@@ -196,9 +184,8 @@ export default function GlobalCustomerOrgSearch({
             const v = e.target.value;
             setQuery(v);
             setOpen(true);
-
-            // If user manually edits away from selected value, we consider it "no longer selected"
-            if (value) onChange?.(null);
+            onQueryChange?.(v);
+            // ✅ DO NOT clear selection here
           }}
           onKeyDown={onKeyDown}
           aria-autocomplete="list"
@@ -207,7 +194,7 @@ export default function GlobalCustomerOrgSearch({
           role="combobox"
         />
 
-        {(loading || disabled) && (
+        {loading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
           </div>
@@ -233,18 +220,14 @@ export default function GlobalCustomerOrgSearch({
             dropdownClassName
           )}
         >
-          <div
-            ref={listRef}
-            className="max-h-64 overflow-auto py-1"
-            role="listbox"
-            tabIndex={-1}
-          >
+          <div ref={listRef} className="max-h-64 overflow-auto py-1" role="listbox" tabIndex={-1}>
             {items.length === 0 ? (
               <div className="px-3 py-2 text-sm text-slate-500">{emptyText}</div>
             ) : (
               items.map((item, idx) => {
                 const active = idx === activeIndex;
                 const isSelected = value && String(value) === item.id;
+
                 return (
                   <button
                     key={`${item.type}:${item.id}`}
@@ -253,10 +236,7 @@ export default function GlobalCustomerOrgSearch({
                     aria-selected={isSelected}
                     data-idx={idx}
                     onMouseEnter={() => setActiveIndex(idx)}
-                    onMouseDown={(e) => {
-                      // prevents blur before click
-                      e.preventDefault();
-                    }}
+                    onMouseDown={(e) => e.preventDefault()} // prevent blur before click
                     onClick={() => commitSelection(item)}
                     className={cn(
                       "w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-slate-50",
@@ -265,9 +245,7 @@ export default function GlobalCustomerOrgSearch({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="text-sm font-medium text-slate-900 truncate">
-                          {item.name}
-                        </div>
+                        <div className="text-sm font-medium text-slate-900 truncate">{item.name}</div>
                         {showTypeBadge && (
                           <Badge
                             variant="secondary"
@@ -297,10 +275,10 @@ export default function GlobalCustomerOrgSearch({
           </div>
 
           <div className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500 flex items-center justify-between">
+            <span>Use ↑ ↓ to navigate, Enter to select, Esc to close</span>
             <span>
-              Use ↑ ↓ to navigate, Enter to select, Esc to close
+              {items.length} result{items.length === 1 ? "" : "s"}
             </span>
-            <span>{items.length} result{items.length === 1 ? "" : "s"}</span>
           </div>
         </div>
       )}
@@ -308,13 +286,11 @@ export default function GlobalCustomerOrgSearch({
   );
 }
 
-/** Build normalized items with a consistent interface */
 function buildItems({ mode, customers, orgs, getLabel, getSubLabel, getTokens }) {
   const labeler = getLabel || ((x) => x?.name || "");
   const subLabeler =
     getSubLabel ||
     ((x) => {
-      // sensible default
       const bits = [];
       if (x?.email) bits.push(x.email);
       if (x?.phone) bits.push(x.phone);
@@ -368,30 +344,24 @@ function buildItems({ mode, customers, orgs, getLabel, getSubLabel, getTokens })
     });
   }
 
-  // remove empties + dedupe by type:id
   return out
     .filter((x) => x.id && x.name)
     .filter((x, idx, arr) => arr.findIndex((y) => y.type === x.type && y.id === x.id) === idx);
 }
 
-/** Scoring for fuzzy-ish matching */
 function scoreMatch(q, hay) {
   if (!q) return 1;
   if (!hay) return 0;
 
-  // exact prefix wins
   if (hay.startsWith(q)) return 100;
 
-  // word boundary matches
   const words = hay.split(/\s+/);
   for (const w of words) {
     if (w.startsWith(q)) return 80;
   }
 
-  // substring
   if (hay.includes(q)) return 60;
 
-  // loose sequential char match
   let qi = 0;
   for (let i = 0; i < hay.length && qi < q.length; i++) {
     if (hay[i] === q[qi]) qi++;
