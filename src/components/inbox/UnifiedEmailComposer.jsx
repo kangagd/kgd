@@ -31,6 +31,7 @@ import { X, Send, Paperclip, Save, Check, ChevronUp, ChevronDown, User, Loader2 
 import { renderTemplate, buildTemplateContext } from "@/components/utils/templateHelpers";
 import { sanitizeForCompose } from "@/components/utils/emailSanitization";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
+import { inboxKeys } from "@/components/api/queryKeys";
 import SmartComposeHelper, { SmartComposeSuggestionUI } from "./SmartComposeHelper";
 import RecipientAutocomplete from "./RecipientAutocomplete";
 import MergeFieldsHelper from "./MergeFieldsHelper";
@@ -474,7 +475,7 @@ export default function UnifiedEmailComposer({
 
   // Fetch messages (needed for context check and auto-sync)
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['emailMessages', thread?.id],
+    queryKey: inboxKeys.messages(thread?.id),
     queryFn: () => base44.entities.EmailMessage.filter({ thread_id: thread.id }),
     enabled: !!thread?.id,
     staleTime: 30000,
@@ -874,12 +875,12 @@ export default function UnifiedEmailComposer({
           showSyncToast(res.data);
           
           // Force immediate refresh
-          await queryClient.invalidateQueries({ queryKey: ['emailMessages', tid] });
-          await queryClient.refetchQueries({ queryKey: ['emailMessages', tid] });
+          await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(tid) });
+          await queryClient.refetchQueries({ queryKey: inboxKeys.messages(tid) });
           
           // Attempt to upgrade selectedMessage with synced content
-          // BUT: Do NOT update body if user has already started typing
-          const fresh = queryClient.getQueryData(['emailMessages', tid]) || [];
+           // BUT: Do NOT update body if user has already started typing
+           const fresh = queryClient.getQueryData(inboxKeys.messages(tid)) || [];
           const best = pickBestContextMessage(fresh, mode);
           if (best && (best.body_html || best.body_text)) {
             setSelectedMessage(best);
@@ -1147,13 +1148,13 @@ export default function UnifiedEmailComposer({
                       gmail_thread_id: thread.gmail_thread_id,
                     });
                     if (response.data?.success) {
-                       showSyncToast(response.data);
-                       // Invalidate and refetch immediately
-                       await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
-                       await queryClient.refetchQueries({ queryKey: ['emailMessages', thread.id] });
+                        showSyncToast(response.data);
+                        // Invalidate and refetch immediately
+                        await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(thread.id) });
+                        await queryClient.refetchQueries({ queryKey: inboxKeys.messages(thread.id) });
 
-                       // Get latest messages and pick best context
-                       const fresh = queryClient.getQueryData(['emailMessages', thread.id]) || [];
+                        // Get latest messages and pick best context
+                        const fresh = queryClient.getQueryData(inboxKeys.messages(thread.id)) || [];
                        if (fresh.length > 0) {
                          const best = pickBestContextMessage(fresh, mode);
                          if (best && (best.body_html || best.body_text)) {
