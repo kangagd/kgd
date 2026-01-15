@@ -1,8 +1,13 @@
 /**
- * gmailSyncThreadMessages - Sync messages for a single Gmail thread
+ * gmailSyncThreadMessages - Reliable Gmail message sync with robust MIME parsing
  * 
- * Fetches full message details for a specific thread and upserts EmailMessage records.
- * Safe, idempotent operation - can be called multiple times without duplicates.
+ * - Fetches full message payloads (format=full)
+ * - Recursively traverses multipart MIME structures
+ * - Extracts body_html (preferred) or body_text (fallback)
+ * - Stores explicit has_body, sync_status, parse_error, last_synced_at fields
+ * - Idempotent upserts by gmail_message_id
+ * - Updates EmailThread snippet from latest message body
+ * - Retry logic with exponential backoff
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
@@ -11,6 +16,10 @@ const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/gmail.send'
 ];
+
+// ============================================================================
+// JWT & Gmail API Helpers
+// ============================================================================
 
 function base64urlEncode(data) {
   const base64 = btoa(data);
@@ -136,7 +145,7 @@ async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = n
         if ((response.status === 429 || response.status >= 500) && retries < maxRetries - 1) {
           retries++;
           const delay = getBackoffDelay(retries - 1);
-          console.log(`[gmailSyncThreadMessages] Retry ${retries}/${maxRetries} in ${Math.round(delay)}ms`);
+          console.log(`[gmailSyncThreadMessages] Retry ${retries}/${maxRetries} in ${Math.round(delay)}ms (status ${response.status})`);
           await new Promise(resolve => setTimeout(resolve, delay));
           continue;
         }
@@ -149,7 +158,7 @@ async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = n
       if (retries < maxRetries - 1) {
         retries++;
         const delay = getBackoffDelay(retries - 1);
-        console.log(`[gmailSyncThreadMessages] Network error, retry ${retries}/${maxRetries}`);
+        console.log(`[gmailSyncThreadMessages] Network error, retry ${retries}/${maxRetries}: ${error.message}`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
         throw error;
@@ -160,39 +169,125 @@ async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = n
   throw new Error('Failed after max retries');
 }
 
-async function extractBodyParts(part) {
-  const result = { body_html: '', body_text: '' };
-  if (!part) return result;
+// ============================================================================
+// Robust MIME Parsing
+// ============================================================================
+
+function base64urlDecode(base64urlData) {
+  try {
+    // Convert base64url to base64
+    const base64 = base64urlData.replace(/-/g, '+').replace(/_/g, '/');
+    // Decode base64 to UTF-8 string
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  } catch (err) {
+    console.error('[gmailSyncThreadMessages] Base64 decode error:', err.message);
+    return '';
+  }
+}
+
+function htmlToPlainText(html) {
+  if (!html) return '';
+  let text = html;
   
-  // Extract text/html
-  if (part.mimeType === 'text/html' && part.body?.data) {
-    try {
-      result.body_html = decodeURIComponent(escape(atob(part.body.data)));
-    } catch {
-      // ignore
-    }
+  // Replace block elements with newlines
+  text = text.replace(/<\/p>/gi, '\n');
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/div>/gi, '\n');
+  text = text.replace(/<\/blockquote>/gi, '\n');
+  
+  // Remove all tags
+  text = text.replace(/<[^>]*>/g, '');
+  
+  // Decode HTML entities
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  
+  // Normalize whitespace
+  text = text.replace(/\n\s*\n/g, '\n\n');
+  text = text.replace(/[ \t]+/g, ' ');
+  
+  return text.trim();
+}
+
+function extractBodyFromMimeParts(parts, depth = 0) {
+  const result = { body_html: '', body_text: '' };
+  
+  if (!parts || !Array.isArray(parts) || depth > 10) {
+    return result;
   }
 
-  // Extract text/plain
-  if (part.mimeType === 'text/plain' && part.body?.data) {
-    try {
-      result.body_text = decodeURIComponent(escape(atob(part.body.data)));
-    } catch {
-      // ignore
-    }
-  }
+  for (const part of parts) {
+    if (!part) continue;
 
-  // Recurse into multipart
-  if (part.parts && Array.isArray(part.parts)) {
-    for (const subpart of part.parts) {
-      const subResult = await extractBodyParts(subpart);
-      if (subResult.body_html && !result.body_html) result.body_html = subResult.body_html;
-      if (subResult.body_text && !result.body_text) result.body_text = subResult.body_text;
+    // Prefer text/html
+    if (part.mimeType === 'text/html' && part.body?.data && !result.body_html) {
+      result.body_html = base64urlDecode(part.body.data);
+      if (result.body_html && !result.body_text) {
+        result.body_text = htmlToPlainText(result.body_html);
+      }
+    }
+
+    // Fallback to text/plain
+    if (part.mimeType === 'text/plain' && part.body?.data && !result.body_text) {
+      result.body_text = base64urlDecode(part.body.data);
+    }
+
+    // Recurse into multipart (multipart/alternative, multipart/mixed, multipart/related, etc.)
+    if (part.parts && !result.body_html && !result.body_text) {
+      const subResult = extractBodyFromMimeParts(part.parts, depth + 1);
+      if (subResult.body_html) result.body_html = subResult.body_html;
+      if (subResult.body_text) result.body_text = subResult.body_text;
     }
   }
 
   return result;
 }
+
+function extractBodyFromPayload(payload) {
+  const result = { body_html: '', body_text: '' };
+
+  if (!payload) return result;
+
+  // Top-level body data (simple message or wrapped in single part)
+  if (payload.body?.data) {
+    const bodyData = base64urlDecode(payload.body.data);
+    
+    // Check if it looks like HTML or plain text
+    if (bodyData.includes('<html') || bodyData.includes('<body') || bodyData.includes('<p>')) {
+      result.body_html = bodyData;
+      result.body_text = htmlToPlainText(bodyData);
+    } else {
+      result.body_text = bodyData;
+    }
+  }
+
+  // Multipart structure
+  if (payload.parts) {
+    const partResult = extractBodyFromMimeParts(payload.parts);
+    if (partResult.body_html) result.body_html = partResult.body_html;
+    if (partResult.body_text) result.body_text = partResult.body_text;
+  }
+
+  return result;
+}
+
+function deriveSnippet(bodyText, maxLength = 140) {
+  if (!bodyText) return '';
+  let snippet = bodyText.trim();
+  if (snippet.length > maxLength) {
+    snippet = snippet.substring(0, maxLength) + '…';
+  }
+  return snippet;
+}
+
+// ============================================================================
+// Main Handler
+// ============================================================================
 
 Deno.serve(async (req) => {
   try {
@@ -225,10 +320,10 @@ Deno.serve(async (req) => {
     );
 
     if (!threadDetail.messages || threadDetail.messages.length === 0) {
-      return Response.json({ success: true, thread_id: null, message_count: 0 });
+      return Response.json({ success: true, syncedCount: 0, okCount: 0, partialCount: 0, failedCount: 0, failures: [] });
     }
 
-    // Find EmailThread by gmail_thread_id
+    // Find or create EmailThread
     const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
       gmail_thread_id: gmail_thread_id
     });
@@ -237,10 +332,8 @@ Deno.serve(async (req) => {
     if (existingThreads.length > 0) {
       threadId = existingThreads[0].id;
     } else {
-      // Create minimal EmailThread if doesn't exist
-      const firstMsg = threadDetail.messages[0];
+      // Create minimal EmailThread
       const lastMsg = threadDetail.messages[threadDetail.messages.length - 1];
-      
       const lastHeaders = {};
       if (lastMsg.payload?.headers) {
         lastMsg.payload.headers.forEach(h => {
@@ -259,9 +352,19 @@ Deno.serve(async (req) => {
       threadId = newThread.id;
     }
 
-    // Upsert messages
-    let upsertedCount = 0;
+    // Process messages with tracking
+    let syncedCount = 0;
+    let okCount = 0;
+    let partialCount = 0;
+    let failedCount = 0;
+    const failures = [];
+
+    const now = new Date().toISOString();
+
     for (const gmailMsg of threadDetail.messages) {
+      let messageStatus = 'ok';
+      let parseError = null;
+
       try {
         const headers = {};
         if (gmailMsg.payload?.headers) {
@@ -270,47 +373,131 @@ Deno.serve(async (req) => {
           });
         }
 
-        const { body_html, body_text } = await extractBodyParts(gmailMsg.payload);
+        // Extract body with robust MIME parsing
+        let bodyResult = extractBodyFromPayload(gmailMsg.payload);
+        let hasBody = !!(bodyResult.body_html || bodyResult.body_text);
 
+        // Check if message already exists
         const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
           gmail_message_id: gmailMsg.id
         });
 
-        const messageData = {
-          thread_id: threadId,
-          gmail_message_id: gmailMsg.id,
-          gmail_thread_id: gmail_thread_id,
-          from_address: headers['from'] || '',
-          from_name: headers['from'] || '',
-          to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
-          cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
-          subject: headers['subject'] || '',
-          body_html: body_html || '',
-          body_text: body_text || '',
-          sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
-          is_outbound: headers['from']?.includes('kangaroogd.com.au') || false
-        };
-
         if (existingMessages.length > 0) {
+          // Upsert: preserve old body if new parse failed but old one exists
+          const existing = existingMessages[0];
+          if (!hasBody && (existing.body_html || existing.body_text)) {
+            // Parse failed but we have old body
+            messageStatus = 'partial';
+            parseError = 'MIME parse failed; preserving previous body';
+            bodyResult.body_html = existing.body_html;
+            bodyResult.body_text = existing.body_text;
+            hasBody = true;
+          } else if (!hasBody) {
+            // Never had a body
+            messageStatus = 'failed';
+            parseError = 'No readable MIME parts found';
+            failedCount++;
+            failures.push({ gmail_message_id: gmailMsg.id, reason: parseError });
+          }
+
+          const messageData = {
+            thread_id: threadId,
+            gmail_message_id: gmailMsg.id,
+            gmail_thread_id: gmail_thread_id,
+            from_address: headers['from'] || '',
+            from_name: headers['from'] || '',
+            to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
+            cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
+            subject: headers['subject'] || '',
+            body_html: bodyResult.body_html || '',
+            body_text: bodyResult.body_text || '',
+            sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
+            is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
+            has_body: hasBody,
+            sync_status: messageStatus,
+            parse_error: parseError,
+            last_synced_at: now
+          };
+
           await base44.asServiceRole.entities.EmailMessage.update(existingMessages[0].id, messageData);
         } else {
+          // New message
+          if (!hasBody) {
+            messageStatus = 'failed';
+            parseError = 'No readable MIME parts found';
+            failedCount++;
+            failures.push({ gmail_message_id: gmailMsg.id, reason: parseError });
+          }
+
+          const messageData = {
+            thread_id: threadId,
+            gmail_message_id: gmailMsg.id,
+            gmail_thread_id: gmail_thread_id,
+            from_address: headers['from'] || '',
+            from_name: headers['from'] || '',
+            to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
+            cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
+            subject: headers['subject'] || '',
+            body_html: bodyResult.body_html || '',
+            body_text: bodyResult.body_text || '',
+            sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
+            is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
+            has_body: hasBody,
+            sync_status: messageStatus,
+            parse_error: parseError,
+            last_synced_at: now
+          };
+
           await base44.asServiceRole.entities.EmailMessage.create(messageData);
         }
-        upsertedCount++;
+
+        if (messageStatus === 'ok') okCount++;
+        else if (messageStatus === 'partial') partialCount++;
+
+        syncedCount++;
       } catch (err) {
-        console.error(`[gmailSyncThreadMessages] Error processing message ${gmailMsg.id}:`, err);
+        console.error(`[gmailSyncThreadMessages] Error processing message ${gmailMsg.id}:`, err.message);
+        failedCount++;
+        failures.push({ gmail_message_id: gmailMsg.id, reason: err.message });
       }
     }
 
+    // Update thread snippet from latest message
+    try {
+      const latestMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+        thread_id: threadId,
+        has_body: true
+      });
+
+      if (latestMessages.length > 0) {
+        // Sort by sent_at, get latest
+        latestMessages.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
+        const latestMsg = latestMessages[0];
+        const snippet = latestMsg.body_text ? deriveSnippet(latestMsg.body_text) : '';
+
+        await base44.asServiceRole.entities.EmailThread.update(threadId, {
+          snippet: snippet,
+          has_preview: !!snippet
+        });
+      }
+    } catch (err) {
+      console.error('[gmailSyncThreadMessages] Error updating thread snippet:', err.message);
+    }
+
+    console.log(`[gmailSyncThreadMessages] Complete: synced=${syncedCount}, ok=${okCount}, partial=${partialCount}, failed=${failedCount}`);
+
     return Response.json({
       success: true,
-      thread_id: threadId,
-      message_count: upsertedCount
+      syncedCount,
+      okCount,
+      partialCount,
+      failedCount,
+      failures
     });
   } catch (error) {
-    console.error('[gmailSyncThreadMessages] Error:', error);
+    console.error('[gmailSyncThreadMessages] Fatal error:', error.message);
     return Response.json(
-      { error: error.message },
+      { error: error.message, syncedCount: 0, okCount: 0, partialCount: 0, failedCount: 0, failures: [] },
       { status: 500 }
     );
   }
