@@ -184,6 +184,7 @@ Deno.serve(async (req) => {
     const bytes = decodeBase64Url(attachmentData.data);
 
     // Get attachment metadata for File object
+    phase = 'upload';
     const attachment = emailMessage?.attachments?.find(a => a.attachment_id === attachment_id);
     const mimeType = attachment?.mime_type || 'application/octet-stream';
     const filename = attachment?.filename || `inline-${attachment_id}.bin`;
@@ -193,7 +194,11 @@ Deno.serve(async (req) => {
     const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
     if (!uploadRes.file_url) {
-      throw new Error('Failed to upload attachment');
+      return Response.json({
+        success: false,
+        error: 'Failed to upload attachment',
+        phase,
+      }, { status: 500 });
     }
 
     const fileUrl = uploadRes.file_url;
