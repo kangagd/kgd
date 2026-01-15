@@ -352,12 +352,81 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Resolve or create EmailThread for outbound email
+    let resolvedThreadId = thread_id;
+
+    // ============================================================================
+    // NEW BEHAVIOR: Auto-link outbound emails to Project/Contract when no thread_id
+    // ============================================================================
+    if (!resolvedThreadId && result.threadId && (project_id || contract_id)) {
+      try {
+        // Check for existing EmailThread with same gmail_thread_id
+        const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
+          gmail_thread_id: result.threadId
+        });
+
+        if (existingThreads.length > 0) {
+          // Reuse existing thread and update linking if needed (guardrail: never overwrite)
+          resolvedThreadId = existingThreads[0].id;
+          const thread = existingThreads[0];
+          const updateData = {};
+
+          if (contract_id && !thread.contract_id) {
+            updateData.contract_id = contract_id;
+            updateData.linked_to_contract_at = new Date().toISOString();
+            updateData.linked_to_contract_by = user.email;
+          } else if (project_id && !thread.project_id) {
+            // Only link to project if contract not present
+            updateData.project_id = project_id;
+            updateData.linked_to_project_at = new Date().toISOString();
+            updateData.linked_to_project_by = user.email;
+          }
+
+          if (Object.keys(updateData).length > 0) {
+            await base44.asServiceRole.entities.EmailThread.update(resolvedThreadId, updateData);
+            console.log(`[gmailSendEmail] Reused and updated existing thread ${resolvedThreadId} with linking`);
+          } else {
+            console.log(`[gmailSendEmail] Reused existing thread ${resolvedThreadId} (no linking needed)`);
+          }
+        } else {
+          // Create new EmailThread with project/contract linking
+          const newThread = await base44.asServiceRole.entities.EmailThread.create({
+            gmail_thread_id: result.threadId,
+            subject: subject || '(no subject)',
+            from_address: from || user.email,
+            to_addresses: to || [],
+            last_message_date: new Date().toISOString(),
+            lastMessageDirection: 'sent',
+            message_count: 1,
+            // Linking: prefer contract, fallback to project
+            ...(contract_id && { contract_id }),
+            ...(project_id && !contract_id && { project_id }),
+            // Track linking metadata
+            ...(contract_id && {
+              linked_to_contract_at: new Date().toISOString(),
+              linked_to_contract_by: user.email
+            }),
+            ...(project_id && !contract_id && {
+              linked_to_project_at: new Date().toISOString(),
+              linked_to_project_by: user.email
+            })
+          });
+
+          resolvedThreadId = newThread.id;
+          console.log(`[gmailSendEmail] Created new thread ${resolvedThreadId} with ${contract_id ? 'contract' : 'project'} linking`);
+        }
+      } catch (error) {
+        console.error('[gmailSendEmail] Error resolving/creating EmailThread for outbound email:', error.message);
+        // Continue without thread linking (not blocking send)
+      }
+    }
+
     // Create EmailMessage record for sent email
     let emailMessageId = null;
-    if (thread_id) {
+    if (resolvedThreadId) {
       try {
         const createdMessage = await base44.asServiceRole.entities.EmailMessage.create({
-           thread_id,
+           thread_id: resolvedThreadId,
            gmail_message_id: result.id,
            gmail_thread_id: result.threadId || gmail_thread_id,
            from_address: from || user.email,
@@ -375,29 +444,32 @@ Deno.serve(async (req) => {
          });
         emailMessageId = createdMessage.id;
 
-        // Update thread last_message_date + auto-link to Project/Contract if provided
-        const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
-        if (thread) {
-          const updateData = {
-            last_message_date: new Date().toISOString(),
-            lastMessageDirection: 'sent'
-          };
+        // Update thread last_message_date + auto-link to Project/Contract if provided (for existing threads)
+        if (thread_id) {
+          // Only update if we had a pre-existing thread_id (existing behavior)
+          const thread = await base44.asServiceRole.entities.EmailThread.get(resolvedThreadId);
+          if (thread) {
+            const updateData = {
+              last_message_date: new Date().toISOString(),
+              lastMessageDirection: 'sent'
+            };
 
-          // Safe linking: only set if not already linked (GUARDRAIL #1: never overwrite existing non-null link)
-          if (project_id && !thread.project_id) {
-            updateData.project_id = project_id;
-            updateData.linked_to_project_at = new Date().toISOString();
-            updateData.linked_to_project_by = user.email;
-          }
+            // Safe linking: only set if not already linked (GUARDRAIL #1: never overwrite existing non-null link)
+            if (project_id && !thread.project_id) {
+              updateData.project_id = project_id;
+              updateData.linked_to_project_at = new Date().toISOString();
+              updateData.linked_to_project_by = user.email;
+            }
 
-          if (contract_id && !thread.contract_id) {
-            updateData.contract_id = contract_id;
-            updateData.linked_to_contract_at = new Date().toISOString();
-            updateData.linked_to_contract_by = user.email;
-          }
+            if (contract_id && !thread.contract_id) {
+              updateData.contract_id = contract_id;
+              updateData.linked_to_contract_at = new Date().toISOString();
+              updateData.linked_to_contract_by = user.email;
+            }
 
-          if (Object.keys(updateData).length > 2) { // More than just last_message_date and lastMessageDirection
-            await base44.asServiceRole.entities.EmailThread.update(thread_id, updateData);
+            if (Object.keys(updateData).length > 2) { // More than just last_message_date and lastMessageDirection
+              await base44.asServiceRole.entities.EmailThread.update(resolvedThreadId, updateData);
+            }
           }
         }
       } catch (error) {
@@ -407,9 +479,9 @@ Deno.serve(async (req) => {
 
     // Persist attachments to linked Project/Contract (best-effort, non-blocking)
     let attachmentPersistResult = null;
-    if (thread_id && attachments && attachments.length > 0) {
+    if (resolvedThreadId && attachments && attachments.length > 0) {
       try {
-        const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
+        const thread = await base44.asServiceRole.entities.EmailThread.get(resolvedThreadId);
         if (thread) {
           // Determine link target: prefer contract_id, fallback to project_id
           const targetContractId = contract_id || thread.contract_id;
@@ -421,7 +493,7 @@ Deno.serve(async (req) => {
               base44,
               entityType: 'contract',
               entityId: targetContractId,
-              threadId: thread_id,
+              threadId: resolvedThreadId,
               messageId: emailMessageId,
               attachments
             });
@@ -432,7 +504,7 @@ Deno.serve(async (req) => {
               base44,
               entityType: 'project',
               entityId: targetProjectId,
-              threadId: thread_id,
+              threadId: resolvedThreadId,
               messageId: emailMessageId,
               attachments
             });
@@ -449,6 +521,7 @@ Deno.serve(async (req) => {
       success: true,
       gmailMessageId: result.id,
       gmailThreadId: result.threadId,
+      baseThreadId: resolvedThreadId,
       labelIds: result.labelIds,
       attachment_persist: attachmentPersistResult
     });
