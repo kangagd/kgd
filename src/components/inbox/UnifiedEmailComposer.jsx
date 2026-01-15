@@ -196,6 +196,21 @@ function ensureSignature(html, signatureHtml) {
   return html + "<br><br>" + signatureHtml;
 }
 
+// ============================================================================
+// CRITICAL: Thread-Level Isolation (DO NOT REMOVE)
+// ============================================================================
+// This composer is designed to isolate state per thread to prevent drafts,
+// recipients, and message context from bleeding between threads when the user
+// switches threads. The following guarantees MUST be maintained:
+//
+// 1. When thread?.id changes → reset ALL state (body, to/cc/bcc, subject, attachments, selectedMessage)
+// 2. selectedMessage is only set if message.thread_id === thread?.id (reject stale props)
+// 3. initializeRecipientsFromMessage() validates thread ownership before using selectedMessage
+// 4. NEVER add a simple useEffect that sets selectedMessage from message prop unconditionally
+//
+// If these break, drafts from one thread will appear in another thread's composer.
+// ============================================================================
+
 export default function UnifiedEmailComposer({
   // Presentation
   variant = "inline",
