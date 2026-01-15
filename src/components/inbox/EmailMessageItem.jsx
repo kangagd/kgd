@@ -188,15 +188,15 @@ export default function EmailMessageItem({
         // Lazy-load inline image if not yet resolved
         if (cidInfo.gmail_message_id && cidInfo.attachment_id) {
           base44.functions.invoke('gmailGetInlineAttachmentUrl', {
-            gmail_message_id: cidInfo.gmail_message_id,
-            attachment_id: cidInfo.attachment_id,
-          }).then(() => {
-            // Refetch message to get updated attachments with file_url
-            queryClient.invalidateQueries({ queryKey: ["emailMessages", threadId || message.thread_id] });
-          }).catch((err) => {
-            console.error('Failed to load inline image:', err);
-            // Error banner stays visible
-          });
+              gmail_message_id: cidInfo.gmail_message_id,
+              attachment_id: cidInfo.attachment_id,
+            }).then(() => {
+              // Refetch message to get updated attachments with file_url
+              queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
+            }).catch((err) => {
+              console.error('Failed to load inline image:', err);
+              // Error banner stays visible
+            });
         }
       }
     });
