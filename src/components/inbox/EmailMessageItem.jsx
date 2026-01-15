@@ -122,6 +122,7 @@ export default function EmailMessageItem({
   const [showQuoted, setShowQuoted] = useState(false);
   const [inlineImageErrors, setInlineImageErrors] = useState(new Set()); // Track failed image CIDs
   const [isRetryingImages, setIsRetryingImages] = useState(false);
+  const [loadedInlineImages, setLoadedInlineImages] = useState(new Set()); // Track successfully loaded inline images
 
   // Refs to prevent repeated inline image fetch attempts
   const pendingInlineFetchRef = useRef(new Map()); // key: content_id -> { gmail_message_id, attachment_id }
