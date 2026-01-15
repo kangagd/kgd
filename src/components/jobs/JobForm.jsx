@@ -88,9 +88,20 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const queryClient = useQueryClient();
 
-  const { data: allCustomers = [] } = useQuery({
+  const { data: allCustomers = [], isLoading: customersLoading } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.filter({ deleted_at: { $exists: false } }),
+    queryFn: async () => {
+      try {
+        // Use backend function for better access
+        const response = await base44.functions.invoke('getAllCustomers');
+        return response.data.customers || [];
+      } catch (error) {
+        // Fallback to direct query
+        return await base44.entities.Customer.filter({ deleted_at: { $exists: false } });
+      }
+    },
+    staleTime: 30000,
+    refetchOnWindowFocus: false
   });
 
   const customers = allCustomers.filter(c => c.status === 'active' && !c.deleted_at);
@@ -791,6 +802,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     }}
                     placeholder="Search customer..."
                     disabled={!!formData.project_id}
+                    loading={customersLoading}
                     className="flex-1"
                   />
                   {!formData.project_id && (
