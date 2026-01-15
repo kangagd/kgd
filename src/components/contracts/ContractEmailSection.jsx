@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
 import EmailComposer from "../inbox/EmailComposer";
-import LinkEmailThreadModal from "../projects/LinkEmailThreadModal";
+import LinkEmailThreadModalContract from "./LinkEmailThreadModalContract";
 
 export default function ContractEmailSection({ contract, onThreadLinked }) {
   const queryClient = useQueryClient();
@@ -175,7 +175,7 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
         </Button>
 
         {/* Link Thread Modal */}
-        <LinkEmailThreadModal
+        <LinkEmailThreadModalContract
           open={showLinkModal}
           onClose={() => setShowLinkModal(false)}
           contractId={contract.id}
@@ -339,7 +339,7 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
       )}
 
       {/* Link Thread Modal */}
-      <LinkEmailThreadModal
+      <LinkEmailThreadModalContract
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         contractId={contract.id}
