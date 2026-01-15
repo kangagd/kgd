@@ -97,14 +97,16 @@ Deno.serve(async (req) => {
     });
 
     // Parse body
-    let bodyHtml = '';
-    let bodyText = '';
+    let incomingBody = {
+      body_html: '',
+      body_text: ''
+    };
 
     function extractBody(part) {
-      if (part.mimeType === 'text/html' && part.body?.data) {
-        bodyHtml = decodeBase64Url(part.body.data);
-      } else if (part.mimeType === 'text/plain' && part.body?.data) {
-        bodyText = decodeBase64Url(part.body.data);
+      if (part.mimeType === 'text/html' && part.body?.data && !incomingBody.body_html) {
+        incomingBody.body_html = decodeBase64Url(part.body.data);
+      } else if (part.mimeType === 'text/plain' && part.body?.data && !incomingBody.body_text) {
+        incomingBody.body_text = decodeBase64Url(part.body.data);
       } else if (part.parts) {
         part.parts.forEach(extractBody);
       }
@@ -116,18 +118,26 @@ Deno.serve(async (req) => {
       const mimeType = message.payload.mimeType;
       const content = decodeBase64Url(message.payload.body.data);
       if (mimeType === 'text/html') {
-        bodyHtml = content;
+        incomingBody.body_html = content;
       } else {
-        bodyText = content;
+        incomingBody.body_text = content;
       }
     }
+
+    // Coalesce with any existing message (though new imports usually have fresh bodies)
+    const mergedBody = coalesceBody(null, incomingBody);
+    const finalHasBody = hasBodyTruth(mergedBody.body_html, mergedBody.body_text);
+    
+    // Determine sync_status
+    const syncStatus = finalHasBody ? 'ok' : 'partial';
+    const parseError = !finalHasBody ? 'body_missing_in_sent_message' : null;
 
     // Parse recipients
     const toAddresses = headers.to ? parseAddresses(headers.to) : [];
     const ccAddresses = headers.cc ? parseAddresses(headers.cc) : [];
     const bccAddresses = headers.bcc ? parseAddresses(headers.bcc) : [];
 
-    // Create EmailMessage record
+    // Create EmailMessage record with sync metadata
     const emailMessage = await base44.asServiceRole.entities.EmailMessage.create({
       thread_id: threadId,
       gmail_message_id: gmailMessageId,
@@ -138,8 +148,8 @@ Deno.serve(async (req) => {
       cc_addresses: ccAddresses,
       bcc_addresses: bccAddresses,
       subject: headers.subject || '',
-      body_html: bodyHtml,
-      body_text: bodyText || bodyHtml.replace(/<[^>]*>/g, ''),
+      body_html: mergedBody.body_html,
+      body_text: mergedBody.body_text,
       sent_at: new Date(parseInt(message.internalDate)).toISOString(),
       is_outbound: true,
       message_id: headers['message-id'],
@@ -147,7 +157,11 @@ Deno.serve(async (req) => {
       references: headers.references,
       performed_by_user_id: user.id,
       performed_by_user_email: user.email,
-      performed_at: new Date().toISOString()
+      performed_at: new Date().toISOString(),
+      has_body: finalHasBody,
+      sync_status: syncStatus,
+      parse_error: parseError,
+      last_synced_at: new Date().toISOString()
     });
 
     // Update thread last_message_date
