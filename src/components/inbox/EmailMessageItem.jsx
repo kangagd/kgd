@@ -263,6 +263,19 @@ export default function EmailMessageItem({
   useEffect(() => {
     if (!expanded || !message.attachments) return;
 
+    // Also check for inline images without file_url and queue them for fetch
+    const inlineWithoutUrl = message.attachments.filter(
+      (att) => att.is_inline && att.content_id && !att.file_url && !att.url
+    );
+    inlineWithoutUrl.forEach((att) => {
+      if (!pendingInlineFetchRef.current.has(att.content_id)) {
+        pendingInlineFetchRef.current.set(att.content_id, {
+          gmail_message_id: att.gmail_message_id || message.gmail_message_id,
+          attachment_id: att.attachment_id,
+        });
+      }
+    });
+
     const pendingList = Array.from(pendingInlineFetchRef.current.entries());
     if (pendingList.length === 0) return;
 
