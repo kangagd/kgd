@@ -1047,9 +1047,11 @@ export default function UnifiedEmailComposer({
         </div>
 
         <ReactQuill
+          ref={bodyEditorRef}
           theme="snow"
           value={body}
           onChange={(html) => {
+            userHasTypedRef.current = true;
             setBody(html);
             smartCompose.handleTextChange(html.replace(/<[^>]*>/g, ""));
           }}
