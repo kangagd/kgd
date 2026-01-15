@@ -94,66 +94,6 @@ function ensureSignature(html, signatureHtml) {
   return html + "<br><br>" + signatureHtml;
 }
 
-// ============================================================================
-// Signature Marker & Helpers (Private)
-// ============================================================================
-
-const SIGNATURE_MARKER = "<!--kgd_signature-->";
-
-/**
- * Check if a string is non-empty (not null, not "", not whitespace-only)
- */
-function isNonEmptyString(s) {
-  return typeof s === 'string' && s.trim().length > 0;
-}
-
-/**
- * Check if HTML is empty after stripping tags
- */
-function isEmptyHtml(html) {
-  if (!html) return true;
-  const stripped = html.replace(/<[^>]*>/g, '').trim();
-  return stripped.length === 0;
-}
-
-/**
- * Check if message body is empty-ish
- */
-function isEmptyBody(html) {
-  return !isNonEmptyString(html) || isEmptyHtml(html);
-}
-
-/**
- * Build signature HTML with marker
- */
-function buildSignatureHtml(signatureText) {
-  if (!signatureText || !isNonEmptyString(signatureText)) return "";
-  return `${SIGNATURE_MARKER}<div style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${signatureText}</div>`;
-}
-
-/**
- * Ensure signature is inserted deterministically
- * - If html already contains marker → return as-is
- * - If html is empty → return signature only
- * - Otherwise append signature with spacing
- */
-function ensureSignature(html, signatureHtml) {
-  if (!signatureHtml) return html || "";
-  
-  // Already has signature marker
-  if ((html || "").includes(SIGNATURE_MARKER)) {
-    return html;
-  }
-  
-  // Empty body → add signature
-  if (isEmptyBody(html)) {
-    return signatureHtml;
-  }
-  
-  // Append signature with spacing
-  return html + "<br><br>" + signatureHtml;
-}
-
 export default function UnifiedEmailComposer({
   // Presentation
   variant = "inline",
