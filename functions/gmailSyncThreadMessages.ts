@@ -160,33 +160,38 @@ async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = n
   throw new Error('Failed after max retries');
 }
 
-async function extractTextFromPart(part) {
-  if (!part) return '';
+async function extractBodyParts(part) {
+  const result = { body_html: '', body_text: '' };
+  if (!part) return result;
   
-  if (part.mimeType === 'text/plain' && part.body?.data) {
-    try {
-      return decodeURIComponent(escape(atob(part.body.data)));
-    } catch {
-      return '';
-    }
-  }
-
+  // Extract text/html
   if (part.mimeType === 'text/html' && part.body?.data) {
     try {
-      return decodeURIComponent(escape(atob(part.body.data)));
+      result.body_html = decodeURIComponent(escape(atob(part.body.data)));
     } catch {
-      return '';
+      // ignore
     }
   }
 
+  // Extract text/plain
+  if (part.mimeType === 'text/plain' && part.body?.data) {
+    try {
+      result.body_text = decodeURIComponent(escape(atob(part.body.data)));
+    } catch {
+      // ignore
+    }
+  }
+
+  // Recurse into multipart
   if (part.parts && Array.isArray(part.parts)) {
     for (const subpart of part.parts) {
-      const text = await extractTextFromPart(subpart);
-      if (text) return text;
+      const subResult = await extractBodyParts(subpart);
+      if (subResult.body_html && !result.body_html) result.body_html = subResult.body_html;
+      if (subResult.body_text && !result.body_text) result.body_text = subResult.body_text;
     }
   }
 
-  return '';
+  return result;
 }
 
 Deno.serve(async (req) => {
@@ -265,7 +270,7 @@ Deno.serve(async (req) => {
           });
         }
 
-        const bodyText = await extractTextFromPart(gmailMsg.payload);
+        const { body_html, body_text } = await extractBodyParts(gmailMsg.payload);
 
         const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
           gmail_message_id: gmailMsg.id
@@ -280,8 +285,8 @@ Deno.serve(async (req) => {
           to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
           cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
           subject: headers['subject'] || '',
-          body_html: bodyText || '',
-          body_text: bodyText || '',
+          body_html: body_html || '',
+          body_text: body_text || '',
           sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
           is_outbound: headers['from']?.includes('kangaroogd.com.au') || false
         };
