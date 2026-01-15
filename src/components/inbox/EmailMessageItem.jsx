@@ -128,8 +128,10 @@ export default function EmailMessageItem({
   const attemptedInlineFetchRef = useRef(new Set()); // content_ids already attempted for auto fetch
 
   // Check if message has renderable body (actual content, not flags)
-  const hasBody = hasRenderableBody(message);
-  const hasNoBody = !hasBody;
+  // Recalculate on every render to detect new content loads + check sync_status
+  const hasBody = hasRenderableBody(message) && message.sync_status !== 'failed';
+  const isSyncLoading = message.sync_status === 'partial';
+  const hasNoBody = !hasBody && !isSyncLoading;
 
   const handleReSyncMessage = async () => {
     setIsSyncing(true);
