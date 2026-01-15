@@ -745,7 +745,7 @@ export default function UnifiedEmailComposer({
           </div>
         )}
 
-      {/* Reply context guardrail */}
+      {/* Reply context guardrail - only show if no valid context AND sync failed */}
       {(mode === "reply" || mode === "reply_all" || mode === "forward") &&
         !hasValidReplyContext && (
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
@@ -761,30 +761,26 @@ export default function UnifiedEmailComposer({
                   setSyncError(null);
                   try {
                     const response = await base44.functions.invoke('gmailSyncThreadMessages', {
-                      thread_id: thread.id,
+                      gmail_thread_id: thread.gmail_thread_id,
                     });
                     if (response.data?.success) {
                        showSyncToast(response.data);
-                       // Invalidate and refetch queries
+                       // Invalidate and refetch immediately
                        await queryClient.invalidateQueries({ queryKey: ['emailMessages', thread.id] });
-                       await queryClient.invalidateQueries({ queryKey: ['emailThread', thread.id] });
+                       await queryClient.refetchQueries({ queryKey: ['emailMessages', thread.id] });
 
-                       // Refetch to get latest data
-                       const refetchResult = await queryClient.refetchQueries({ queryKey: ['emailMessages', thread.id] });
-                       await queryClient.refetchQueries({ queryKey: ['emailThread', thread.id] });
-
-                       // Update selectedMessage with latest from refetch
-                       const messages = queryClient.getQueryData(['emailMessages', thread.id]);
-                       if (messages && messages.length > 0) {
-                         // Get the most recent message
-                         const latestMsg = messages[messages.length - 1];
-                         if (latestMsg?.body_html || latestMsg?.body_text) {
-                           setSelectedMessage(latestMsg);
+                       // Get latest messages from cache
+                       const messages = queryClient.getQueryData(['emailMessages', thread.id]) || [];
+                       if (messages.length > 0) {
+                         // Find newest message with body
+                         const sortedMsgs = [...messages].sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
+                         const found = sortedMsgs.find(m => m?.body_html || m?.body_text);
+                         if (found) {
+                           setSelectedMessage(found);
+                           // Banner auto-disappears when hasValidReplyContext becomes true
                          } else {
-                           setSyncError('Messages synced, but content is still unavailable. Try running a full sync.');
+                           setSyncError('Messages synced but no retrievable body found.');
                          }
-                       } else {
-                         setSyncError('No messages found after sync.');
                        }
                      } else {
                        setSyncError(response.data?.error || 'Sync failed');
