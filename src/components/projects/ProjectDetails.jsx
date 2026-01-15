@@ -79,7 +79,7 @@ import ActivityTimeline from "./ActivityTimeline";
 import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
-import EmailComposer from "../inbox/EmailComposer";
+
 import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import { QUERY_CONFIG, invalidateProjectData } from "../api/queryConfig";
 
@@ -2044,35 +2044,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="activity" className="mt-3 space-y-4">
-            {composerMode && (
-              <div className="mb-4">
-                <EmailComposer
-                  mode={composerMode}
-                  thread={composerMessage?.thread}
-                  message={composerMessage?.message}
-                  existingDraft={composerMessage?.existingDraft}
-                  onClose={() => {
-                    setComposerMode(null);
-                    setComposerMessage(null);
-                  }}
-                  onSent={async () => {
-                    setComposerMode(null);
-                    setComposerMessage(null);
-                    await queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
-                    await queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
-                    await queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
-                    await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
-                    await queryClient.refetchQueries({ queryKey: ['projectEmailThreads', project.id] });
-                    toast.success('Email sent successfully');
-                  }}
-                  onDraftSaved={() => {
-                    queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
-                  }}
-                  defaultTo={project.customer_email}
-                  projectId={project.id}
-                />
-              </div>
-            )}
             
             {/* Draft Emails Section */}
             {projectDrafts && projectDrafts.length > 0 && (
