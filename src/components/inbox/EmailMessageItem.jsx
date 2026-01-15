@@ -251,7 +251,12 @@ export default function EmailMessageItem({
       setInlineImageErrors(new Set()); // Clear errors on success
       toast.success('Images loaded');
     } catch (err) {
-      const errorMsg = err?.response?.data?.error || err?.message || 'Failed to load images';
+      let errorMsg = 'Failed to load images';
+      if (err?.response?.data?.error && typeof err.response.data.error === 'string' && err.response.data.error !== '[object Object]') {
+        errorMsg = err.response.data.error;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
       console.error('Retry failed for inline images:', err);
       toast.error(errorMsg);
     } finally {
