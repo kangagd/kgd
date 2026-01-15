@@ -287,39 +287,40 @@ Deno.serve(async (req) => {
 
     console.log(`[gmailRehydrate] Starting backfill (limit=${limit}, onlyIfHasBodyFalse=${onlyIfHasBodyFalse})`);
 
-    // Find messages with missing bodies
-    let query = {};
+    // Find messages with missing bodies using efficient queries
+    let messagesToProcess = [];
     
-    if (onlyIfHasBodyFalse) {
-      query.has_body = false;
-    } else {
-      // Find messages where body is empty (will do manual filtering after fetch)
-    }
+    try {
+      if (onlyIfHasBodyFalse) {
+        // Query by has_body flag if supported
+        messagesToProcess = await base44.asServiceRole.entities.EmailMessage.filter(
+          { has_body: false },
+          '-sent_at',
+          limit
+        );
+      } else {
+        // Fetch limited set and filter client-side for empty bodies
+        messagesToProcess = await base44.asServiceRole.entities.EmailMessage.list(undefined, limit * 3);
+        messagesToProcess = messagesToProcess.filter(m => 
+          (!m.body_html || (typeof m.body_html === 'string' && m.body_html.trim() === '')) &&
+          (!m.body_text || (typeof m.body_text === 'string' && m.body_text.trim() === ''))
+        ).slice(0, limit);
+      }
 
-    if (thread_id) {
-      query.thread_id = thread_id;
-    }
-
-    let messagesToProcess = await base44.asServiceRole.entities.EmailMessage.list();
-
-    // Filter if not using has_body flag
-    if (!onlyIfHasBodyFalse) {
-      messagesToProcess = messagesToProcess.filter(m => 
-        (!m.body_html || m.body_html.trim() === '') &&
-        (!m.body_text || m.body_text.trim() === '')
+      // Filter by thread_id or gmail_thread_id if provided
+      if (thread_id) {
+        messagesToProcess = messagesToProcess.filter(m => m.thread_id === thread_id);
+      }
+      if (gmail_thread_id) {
+        messagesToProcess = messagesToProcess.filter(m => m.gmail_thread_id === gmail_thread_id);
+      }
+    } catch (err) {
+      console.error(`[gmailRehydrate] Error fetching messages: ${err.message}`);
+      return Response.json(
+        { error: `Failed to fetch messages: ${err.message}`, rehydratedCount: 0, successCount: 0, failureCount: 0, threadsUpdated: 0, failures: [] },
+        { status: 400 }
       );
     }
-
-    // Filter by thread_id or gmail_thread_id
-    if (thread_id) {
-      messagesToProcess = messagesToProcess.filter(m => m.thread_id === thread_id);
-    }
-    if (gmail_thread_id) {
-      messagesToProcess = messagesToProcess.filter(m => m.gmail_thread_id === gmail_thread_id);
-    }
-
-    // Apply limit
-    messagesToProcess = messagesToProcess.slice(0, limit);
 
     console.log(`[gmailRehydrate] Found ${messagesToProcess.length} messages to process`);
 
