@@ -407,7 +407,7 @@ export default function Inbox() {
     await refetchThreads();
     await refetchDrafts();
     if (selectedThread) {
-      queryClient.invalidateQueries({ queryKey: ["emailThread", selectedThread.id] });
+      queryClient.invalidateQueries({ queryKey: inboxKeys.thread(selectedThread.id) });
     }
   };
 
