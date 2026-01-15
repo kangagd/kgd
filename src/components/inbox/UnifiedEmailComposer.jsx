@@ -462,6 +462,10 @@ export default function UnifiedEmailComposer({
           subject: draftData.subject,
           body_html: draftData.body,
           mode: mode !== "compose" ? mode : "compose",
+          status: "draft",
+          // Link to project/contract if provided
+          ...(linkTarget?.type === "project" && { project_id: linkTarget.id }),
+          ...(linkTarget?.type === "contract" && { contract_id: linkTarget.id }),
         };
 
         if (draftId) {
@@ -478,7 +482,7 @@ export default function UnifiedEmailComposer({
         setIsSavingDraft(false);
       }
     },
-    [draftId, thread?.id, mode, onDraftSaved]
+    [draftId, thread?.id, mode, linkTarget, onDraftSaved]
   );
 
   const debouncedSave = useCallback(
