@@ -373,16 +373,31 @@ export default function UnifiedEmailComposer({
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
-  // Reset body init flag when thread/message context changes (but not when just opening the composer)
+  // GUARDRAIL: Reset ALL state when thread changes (thread-level isolation)
+  // Prevents draft/recipients/subject from previous thread bleeding into new thread
   useEffect(() => {
-    if (existingDraft?.id) {
-      // Fresh draft being loaded, reset init flag
-      didInitBodyRef.current = false;
-    } else if (thread?.id || selectedMessage?.id) {
-      // Switching threads/messages, reset init flag
-      didInitBodyRef.current = false;
+    if (!thread?.id) return; // Don't reset if no thread
+    
+    // Reset body init and type tracking refs
+    didInitBodyRef.current = false;
+    userHasTypedRef.current = false;
+    
+    // Reset all composer fields to clean state when switching threads
+    // UNLESS there's an existingDraft being loaded for this thread
+    if (!existingDraft?.id) {
+      setToChips([]);
+      setCcChips([]);
+      setBccChips([]);
+      setShowCc(false);
+      setShowBcc(false);
+      setSubject("");
+      setBody("");
+      setAttachments([]);
+      setDraftId(null);
+      setSelectedMessage(null);
+      lastSavedSnapshotRef.current = null;
     }
-  }, [thread?.id, selectedMessage?.id, existingDraft?.id]);
+  }, [thread?.id]);
 
 
 
