@@ -11,6 +11,60 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  *   - { success: true, file_url } on success
  *   - { success: false, error } on failure
  */
+
+// Helper: retry Gmail fetch on 429/503 with exponential backoff
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  const delays = [200, 600, 1400];
+  let lastError;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+      
+      // 404 is not retryable
+      if (response.status === 404) {
+        return response;
+      }
+      
+      // Retry on 429 (rate limit) and 503 (service unavailable)
+      if ((response.status === 429 || response.status === 503) && attempt < maxRetries - 1) {
+        const delay = delays[attempt];
+        console.log(`[gmailGetInlineAttachmentUrl] Rate limited. Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      return response;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+      }
+    }
+  }
+  
+  throw lastError || new Error('Max retries exceeded');
+}
+
+// Helper: safely decode base64url
+function decodeBase64Url(b64url) {
+  if (!b64url) throw new Error('No attachment data provided');
+  
+  // Convert base64url to base64
+  const b64 = String(b64url).replace(/-/g, '+').replace(/_/g, '/');
+  
+  try {
+    const binaryStr = atob(b64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+      bytes[i] = binaryStr.charCodeAt(i);
+    }
+    return bytes;
+  } catch (err) {
+    throw new Error(`Failed to decode base64url: ${err.message}`);
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
