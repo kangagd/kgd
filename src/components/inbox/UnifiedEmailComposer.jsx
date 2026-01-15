@@ -319,15 +319,21 @@ export default function UnifiedEmailComposer({
     if (!currentUser) return;
 
     // Priority 1: Use provided draft (restore as-is)
-    if (existingDraft) {
-      setToChips(existingDraft.to_addresses || []);
-      setCcChips(existingDraft.cc_addresses || []);
-      setBccChips(existingDraft.bcc_addresses || []);
-      setShowCc((existingDraft.cc_addresses || []).length > 0);
-      setShowBcc((existingDraft.bcc_addresses || []).length > 0);
-      setSubject(existingDraft.subject || "");
-      setDraftId(existingDraft.id);
-      composeInitializedRef.current = true;
+    if (existingDraft?.id) {
+      // Fetch full draft data from database
+      base44.entities.EmailDraft.get(existingDraft.id).then(fullDraft => {
+        if (unmountedRef.current) return;
+        setToChips(fullDraft.to_addresses || []);
+        setCcChips(fullDraft.cc_addresses || []);
+        setBccChips(fullDraft.bcc_addresses || []);
+        setShowCc((fullDraft.cc_addresses || []).length > 0);
+        setShowBcc((fullDraft.bcc_addresses || []).length > 0);
+        setSubject(fullDraft.subject || "");
+        setDraftId(fullDraft.id);
+        composeInitializedRef.current = true;
+      }).catch(err => {
+        console.error("Failed to fetch draft:", err);
+      });
       return;
     }
 
