@@ -522,13 +522,21 @@ export default function UnifiedEmailComposer({
 
     setIsSending(true);
     try {
+      // Ensure attachments have clean base64 (strip data: prefix)
+      const cleanAttachments = attachments.map(att => ({
+        filename: att.filename,
+        mimeType: att.mimeType,
+        data: att.data && att.data.includes(',') ? att.data.split(',')[1] : att.data,
+        size: att.size
+      }));
+
       const payload = {
         to: toChips,
         cc: ccChips.length > 0 ? ccChips : undefined,
         bcc: bccChips.length > 0 ? bccChips : undefined,
         subject,
         body_html: body,
-        attachments: attachments.length > 0 ? attachments : undefined,
+        attachments: cleanAttachments.length > 0 ? cleanAttachments : undefined,
         thread_id: thread?.id || null,
         gmail_thread_id: thread?.gmail_thread_id || undefined,
 
