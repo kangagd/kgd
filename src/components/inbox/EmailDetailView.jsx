@@ -98,20 +98,20 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
     setIsSyncing(true);
     try {
       const response = await base44.functions.invoke('gmailSyncThreadMessages', {
-        gmail_thread_id: thread.gmail_thread_id,
-      });
+          gmail_thread_id: thread.gmail_thread_id,
+        });
 
-      if (response.data?.success) {
-        showSyncToast(response.data);
-        // Invalidate and refetch messages immediately for responsive UX
-        await queryClient.invalidateQueries({ queryKey: ["emailMessages", thread.id] });
-        await queryClient.refetchQueries({ queryKey: ["emailMessages", thread.id] });
-        // Invalidate threads list to update snippet, message_count, etc.
-        await queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
-        onThreadUpdate?.();
-      } else {
-        toast.error('Failed to sync messages');
-      }
+        if (response.data?.success) {
+          showSyncToast(response.data);
+          // Invalidate and refetch messages immediately for responsive UX
+          await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(thread.id) });
+          await queryClient.refetchQueries({ queryKey: inboxKeys.messages(thread.id) });
+          // Invalidate threads list to update snippet, message_count, etc.
+          await queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
+          onThreadUpdate?.();
+        } else {
+          toast.error('Failed to sync messages');
+        }
     } catch (error) {
       console.error('Error syncing messages:', error);
       toast.error('Error syncing messages');
