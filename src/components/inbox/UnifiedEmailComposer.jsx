@@ -234,6 +234,9 @@ export default function UnifiedEmailComposer({
 
       // Inject signature immediately
       const signatureHtml = buildSignatureHtml(currentUser.email_signature);
+      if (process.env.NODE_ENV !== "production") {
+        console.log(`[Compose Init] Signature: "${currentUser.email_signature?.substring(0, 50)}..." → HTML: "${signatureHtml?.substring(0, 50)}..."`);
+      }
       setBody(signatureHtml || "");
       
       // Default "to" if provided
