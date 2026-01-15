@@ -170,6 +170,61 @@ async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = n
 }
 
 // ============================================================================
+// Body Coalescing & Sync Status Helpers
+// ============================================================================
+
+/**
+ * Check if a string is non-empty (not null, not "", not whitespace-only)
+ */
+function isNonEmptyString(s) {
+  return typeof s === 'string' && s.trim().length > 0;
+}
+
+/**
+ * Check if HTML is empty after stripping tags
+ * Considers "empty" if: null/undefined, whitespace, or tags-only content
+ */
+function isEmptyHtml(html) {
+  if (!html) return true;
+  const stripped = html.replace(/<[^>]*>/g, '').trim();
+  return stripped.length === 0;
+}
+
+/**
+ * Determine if message has usable body content
+ */
+function hasBodyTruth(bodyHtml, bodyText) {
+  return isNonEmptyString(bodyHtml) && !isEmptyHtml(bodyHtml) ||
+         isNonEmptyString(bodyText);
+}
+
+/**
+ * Coalesce incoming and existing bodies, never downgrading
+ * Rule: prefer non-empty incoming; fall back to existing; never overwrite non-empty with empty
+ */
+function coalesceBody(existing, incoming) {
+  const incomingHtmlGood = isNonEmptyString(incoming.body_html) && !isEmptyHtml(incoming.body_html);
+  const existingHtmlGood = isNonEmptyString(existing?.body_html) && !isEmptyHtml(existing.body_html);
+  const incomingTextGood = isNonEmptyString(incoming.body_text);
+  const existingTextGood = isNonEmptyString(existing?.body_text);
+
+  return {
+    body_html: incomingHtmlGood ? incoming.body_html : (existingHtmlGood ? existing.body_html : ''),
+    body_text: incomingTextGood ? incoming.body_text : (existingTextGood ? existing.body_text : '')
+  };
+}
+
+/**
+ * Compute sync_status based on parse result and body availability
+ */
+function computeSyncStatus(incomingResult, parseError) {
+  if (parseError) return 'failed';
+  
+  const hasBody = hasBodyTruth(incomingResult?.body_html, incomingResult?.body_text);
+  return hasBody ? 'ok' : 'partial';
+}
+
+// ============================================================================
 // Robust MIME Parsing
 // ============================================================================
 
@@ -362,7 +417,6 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
 
     for (const gmailMsg of threadDetail.messages) {
-      let messageStatus = 'ok';
       let parseError = null;
 
       try {
@@ -374,85 +428,101 @@ Deno.serve(async (req) => {
         }
 
         // Extract body with robust MIME parsing
-        let bodyResult = extractBodyFromPayload(gmailMsg.payload);
-        let hasBody = !!(bodyResult.body_html || bodyResult.body_text);
+        let incomingResult = extractBodyFromPayload(gmailMsg.payload);
 
         // Check if message already exists
         const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
           gmail_message_id: gmailMsg.id
         });
 
-        if (existingMessages.length > 0) {
-          // Upsert: preserve old body if new parse failed but old one exists
-          const existing = existingMessages[0];
-          if (!hasBody && (existing.body_html || existing.body_text)) {
-            // Parse failed but we have old body
-            messageStatus = 'partial';
-            parseError = 'MIME parse failed; preserving previous body';
-            bodyResult.body_html = existing.body_html;
-            bodyResult.body_text = existing.body_text;
-            hasBody = true;
-          } else if (!hasBody) {
-            // Never had a body
-            messageStatus = 'failed';
-            parseError = 'No readable MIME parts found';
-            failedCount++;
-            failures.push({ gmail_message_id: gmailMsg.id, reason: parseError });
+        const existing = existingMessages[0] || null;
+
+        // Coalesce bodies: never overwrite non-empty with empty
+        const mergedBody = coalesceBody(existing, incomingResult);
+        const finalHasBody = hasBodyTruth(mergedBody.body_html, mergedBody.body_text);
+
+        // Compute sync_status
+        // Rule: if incoming parse succeeded (no error), use computeSyncStatus
+        // Rule: if existing had body and incoming is empty, mark as "partial" (preserve existing)
+        // Rule: never downgrade from existing status
+        let syncStatus = 'ok';
+        if (!incomingResult.body_html && !incomingResult.body_text) {
+          if (existing?.body_html || existing?.body_text) {
+            // Incoming is empty but existing has body: preserve as partial
+            syncStatus = 'partial';
+            parseError = 'body_missing_in_latest_fetch; preserving_previous_body';
+          } else {
+            // Never had body
+            syncStatus = 'failed';
+            parseError = 'body_missing_no_previous_body';
           }
-
-          const messageData = {
-            thread_id: threadId,
-            gmail_message_id: gmailMsg.id,
-            gmail_thread_id: gmail_thread_id,
-            from_address: headers['from'] || '',
-            from_name: headers['from'] || '',
-            to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
-            cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
-            subject: headers['subject'] || '',
-            body_html: bodyResult.body_html || '',
-            body_text: bodyResult.body_text || '',
-            sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
-            is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
-            has_body: hasBody,
-            sync_status: messageStatus,
-            parse_error: parseError,
-            last_synced_at: now
-          };
-
-          await base44.asServiceRole.entities.EmailMessage.update(existingMessages[0].id, messageData);
         } else {
-          // New message
-          if (!hasBody) {
-            messageStatus = 'failed';
-            parseError = 'No readable MIME parts found';
-            failedCount++;
-            failures.push({ gmail_message_id: gmailMsg.id, reason: parseError });
+          syncStatus = finalHasBody ? 'ok' : 'partial';
+        }
+
+        // Never downgrade sync_status
+        if (existing?.sync_status === 'ok' && syncStatus !== 'ok') {
+          syncStatus = existing.sync_status;
+        }
+
+        // Never set has_body to false if it was true
+        const finalHasBodyForRecord = existing?.has_body === true ? true : finalHasBody;
+
+        // Prevent regression: log if we would have overwritten
+        if (existing && mergedBody.body_html !== incomingResult.body_html) {
+          if (incomingResult.body_html === '' && existing.body_html) {
+            console.log(
+              `[gmailSyncThreadMessages] prevented_regression: ${gmailMsg.id} ` +
+              `(preserved existing body_html, incoming was empty)`
+            );
           }
+        }
+        if (existing && mergedBody.body_text !== incomingResult.body_text) {
+          if (incomingResult.body_text === '' && existing.body_text) {
+            console.log(
+              `[gmailSyncThreadMessages] prevented_regression: ${gmailMsg.id} ` +
+              `(preserved existing body_text, incoming was empty)`
+            );
+          }
+        }
 
-          const messageData = {
-            thread_id: threadId,
-            gmail_message_id: gmailMsg.id,
-            gmail_thread_id: gmail_thread_id,
-            from_address: headers['from'] || '',
-            from_name: headers['from'] || '',
-            to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
-            cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
-            subject: headers['subject'] || '',
-            body_html: bodyResult.body_html || '',
-            body_text: bodyResult.body_text || '',
-            sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
-            is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
-            has_body: hasBody,
-            sync_status: messageStatus,
-            parse_error: parseError,
-            last_synced_at: now
-          };
+        const messageData = {
+          thread_id: threadId,
+          gmail_message_id: gmailMsg.id,
+          gmail_thread_id: gmail_thread_id,
+          from_address: headers['from'] || '',
+          from_name: headers['from'] || '',
+          to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
+          cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
+          subject: headers['subject'] || '',
+          body_html: mergedBody.body_html,
+          body_text: mergedBody.body_text,
+          sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
+          is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
+          has_body: finalHasBodyForRecord,
+          sync_status: syncStatus,
+          parse_error: syncStatus === 'ok' ? null : parseError,
+          last_synced_at: now
+        };
 
+        if (existing) {
+          await base44.asServiceRole.entities.EmailMessage.update(existing.id, messageData);
+        } else {
           await base44.asServiceRole.entities.EmailMessage.create(messageData);
         }
 
-        if (messageStatus === 'ok') okCount++;
-        else if (messageStatus === 'partial') partialCount++;
+        // Track counts
+        if (syncStatus === 'ok') okCount++;
+        else if (syncStatus === 'partial') partialCount++;
+        else failedCount++;
+
+        if (syncStatus !== 'ok') {
+          failures.push({ 
+            gmail_message_id: gmailMsg.id, 
+            status: syncStatus,
+            reason: parseError 
+          });
+        }
 
         syncedCount++;
       } catch (err) {
