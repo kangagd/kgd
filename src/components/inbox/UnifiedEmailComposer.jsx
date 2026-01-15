@@ -252,44 +252,7 @@ export default function UnifiedEmailComposer({
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
-  // Step 3: Ensure compose mode auto-inserts signature once
-  useEffect(() => {
-    if (!currentUser || existingDraft || mode !== "compose" || composeInitializedRef.current) {
-      return;
-    }
 
-    // Only proceed if body is truly empty (initial state)
-    if (!isEmptyBody(body)) {
-      composeInitializedRef.current = true;
-      return;
-    }
-
-    // Only proceed if we have a non-empty signature
-    const signatureHtml = buildSignatureHtml(currentUser.email_signature);
-    if (!signatureHtml) {
-      composeInitializedRef.current = true;
-      return;
-    }
-
-    // Insert signature once
-    setBody(signatureHtml);
-    composeInitializedRef.current = true;
-  }, [currentUser, existingDraft, mode]);
-
-  // Drawer-specific: reinitialize signature when drawer opens
-  useEffect(() => {
-    if (variant !== "drawer" || !open || mode !== "compose" || existingDraft) {
-      return;
-    }
-
-    // Drawer is opening in compose mode
-    if (isEmptyBody(body) && currentUser?.email_signature) {
-      const signatureHtml = buildSignatureHtml(currentUser.email_signature);
-      if (signatureHtml) {
-        setBody(signatureHtml);
-      }
-    }
-  }, [open, variant, currentUser]);
 
   const initializeFromMessage = () => {
     const userEmail = currentUser?.email?.toLowerCase();
