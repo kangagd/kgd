@@ -221,7 +221,7 @@ export default function UnifiedEmailComposer({
       return;
     }
 
-    // Priority 2: Fresh compose mode - CLEAR state to prevent prior email persistence
+    // Priority 2: Fresh compose mode - CLEAR state and inject signature
     if (mode === "compose") {
       setToChips([]);
       setCcChips([]);
@@ -229,15 +229,19 @@ export default function UnifiedEmailComposer({
       setShowCc(false);
       setShowBcc(false);
       setSubject("");
-      setBody(""); // Empty body allows signature to inject
       setAttachments([]);
       setDraftId(null);
-      composeInitializedRef.current = false; // Allow signature effect to run
+
+      // Inject signature immediately
+      const signatureHtml = buildSignatureHtml(currentUser.email_signature);
+      setBody(signatureHtml || "");
       
       // Default "to" if provided
       if (defaultTo) {
         setToChips([defaultTo]);
       }
+      
+      composeInitializedRef.current = true;
       return;
     }
 
