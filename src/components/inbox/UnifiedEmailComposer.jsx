@@ -386,11 +386,8 @@ export default function UnifiedEmailComposer({
       const userEmail = currentUser?.email?.toLowerCase();
       const msgToUse = selectedMessage;
 
-      // Determine effective mode (reply, reply_all, or forward)
+      // Use mode as-is (reply/reply_all set directly from Inbox)
       let effectiveMode = mode;
-      if (mode === "reply" && isReplyAll) {
-        effectiveMode = "reply_all";
-      }
 
       // Subject
       if (effectiveMode === "reply" || effectiveMode === "reply_all") {
@@ -416,7 +413,7 @@ export default function UnifiedEmailComposer({
         setCcChips(ccAddrs);
         setShowCc(true);
       }
-    }, [mode, isReplyAll, selectedMessage, currentUser?.email, thread?.subject]);
+    }, [mode, selectedMessage, currentUser?.email, thread?.subject]);
 
 
 
