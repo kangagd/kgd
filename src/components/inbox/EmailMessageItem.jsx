@@ -472,7 +472,14 @@ export default function EmailMessageItem({
                     overflowWrap: "break-word",
                   }}
                 >
-                  {hasNoBody ? (
+                  {isSyncLoading ? (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+                      <RefreshCw className="w-4 h-4 animate-spin text-blue-600" />
+                      <div className="text-[13px] text-blue-900">
+                        Loading content...
+                      </div>
+                    </div>
+                  ) : hasNoBody ? (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center justify-between gap-3">
                       <div className="text-[13px] text-amber-900">
                         Content not available yet
