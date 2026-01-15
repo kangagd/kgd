@@ -114,19 +114,28 @@ Deno.serve(async (req) => {
     // Not cached → fetch from Gmail
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
 
-    // Fetch attachment from Gmail API
-    const gmailRes = await fetch(
-      `https://www.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}/attachments/${attachment_id}`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    // Fetch attachment from Gmail API with retry logic
+    const gmailUrl = `https://www.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}/attachments/${attachment_id}`;
+    const gmailRes = await fetchWithRetry(gmailUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    // Handle 404 (attachment not found)
+    if (gmailRes.status === 404) {
+      return Response.json({
+        success: false,
+        error: 'Attachment not found in Gmail',
+      }, { status: 404 });
+    }
 
     if (!gmailRes.ok) {
-      throw new Error(`Gmail API error: ${gmailRes.status}`);
+      return Response.json({
+        success: false,
+        error: `Gmail API error: ${gmailRes.status} ${gmailRes.statusText}`,
+      }, { status: 502 });
     }
 
     const attachmentData = await gmailRes.json();
@@ -134,17 +143,17 @@ Deno.serve(async (req) => {
       throw new Error('No attachment data in Gmail response');
     }
 
-    // Convert base64 to binary
-    const binaryStr = atob(attachmentData.data);
-    const bytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) {
-      bytes[i] = binaryStr.charCodeAt(i);
-    }
+    // Decode base64url safely
+    const bytes = decodeBase64Url(attachmentData.data);
 
-    // Upload using Base44 UploadFile integration
-    const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({
-      file: bytes,
-    });
+    // Get attachment metadata for File object
+    const attachment = emailMessage?.attachments?.find(a => a.attachment_id === attachment_id);
+    const mimeType = attachment?.mime_type || 'application/octet-stream';
+    const filename = attachment?.filename || `inline-${attachment_id}.bin`;
+
+    // Upload using Base44 UploadFile integration with File object
+    const file = new File([bytes], filename, { type: mimeType });
+    const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
     if (!uploadRes.file_url) {
       throw new Error('Failed to upload attachment');
