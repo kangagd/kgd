@@ -836,7 +836,6 @@ export default function Inbox() {
                     }}
                     onClose={() => setSelectedThreadId(null)}
                     onLinkProject={() => setShowLinkModal(true)}
-                    onLinkJob={() => {}}
                     onUnlinkProject={async () => {
                                        try {
                                          // DEFENSIVE: Clear both project and contract links on unlink
@@ -858,8 +857,7 @@ export default function Inbox() {
                                          toast.error("Failed to unlink thread");
                                        }
                                      }}
-                                     onUnlinkJob={() => {}}
-                    onDelete={async (threadId) => {
+                                     onDelete={async (threadId) => {
                       try {
                         await base44.entities.EmailThread.update(threadId, { is_deleted: true });
                         await refetchThreads();
