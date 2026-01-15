@@ -20,12 +20,12 @@ export function decodeEmailText(input) {
     ['â', '—'],
 
     // Smart quotes / apostrophes (UTF-8 sequences)
-    ['â€™', '''],  // right single quotation mark
-    ['â€˜', '''],  // left single quotation mark
+    ['â€™', "'"],  // right single quotation mark
+    ['â€˜', "'"],  // left single quotation mark
     ['â€œ', '"'],  // left double quotation mark
     ['â€', '"'],   // right double quotation mark
-    ['â', '''],
-    ['â', '''],
+    ['â', "'"],
+    ['â', "'"],
     ['â', '"'],
     ['â', '"'],
 
