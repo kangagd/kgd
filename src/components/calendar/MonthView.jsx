@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { Plus, Clock, Briefcase, AlertTriangle } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 const jobTypeColors = [
   "bg-blue-500", "bg-green-500", "bg-orange-500", 
