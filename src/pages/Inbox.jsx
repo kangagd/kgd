@@ -170,10 +170,18 @@ export default function Inbox() {
       setLastSyncRequestTime(now);
       const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
 
+      // Handle sync lock (already in progress)
+      if (result?.skipped && result?.reason === 'locked') {
+       console.log(`[Inbox] Sync already running, locked until ${result.locked_until}`);
+       toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
+       setIsSyncing(false);
+       return;
+      }
+
       if (result?.summary) {
-        console.log(
-          `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
-        );
+       console.log(
+         `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
+       );
       }
 
       await refetchThreads();
@@ -761,15 +769,27 @@ export default function Inbox() {
                     onLinkProject={() => setShowLinkModal(true)}
                     onLinkJob={() => {}}
                     onUnlinkProject={async () => {
-                      try {
-                        await base44.entities.EmailThread.update(selectedThread.id, { project_id: null });
-                        await refetchThreads();
-                        toast.success("Thread unlinked from project");
-                      } catch {
-                        toast.error("Failed to unlink thread");
-                      }
-                    }}
-                    onUnlinkJob={() => {}}
+                                       try {
+                                         // DEFENSIVE: Clear both project and contract links on unlink
+                                         await base44.entities.EmailThread.update(selectedThread.id, { 
+                                           project_id: null,
+                                           project_number: null,
+                                           project_title: null,
+                                           linked_to_project_at: null,
+                                           linked_to_project_by: null,
+                                           // Defensive clear of contract fields
+                                           contract_id: null,
+                                           contract_name: null,
+                                           contract_status: null,
+                                           contract_type: null
+                                         });
+                                         await refetchThreads();
+                                         toast.success("Thread unlinked from project");
+                                       } catch {
+                                         toast.error("Failed to unlink thread");
+                                       }
+                                     }}
+                                     onUnlinkJob={() => {}}
                     onDelete={async (threadId) => {
                       try {
                         await base44.entities.EmailThread.update(threadId, { is_deleted: true });

@@ -52,7 +52,7 @@ export default function EmailComposerDrawer({
   // Load existing draft if provided
   const { data: existingDraft } = useQuery({
     queryKey: ["draft", existingDraftId],
-    queryFn: () => base44.entities.DraftEmail.get(existingDraftId),
+    queryFn: () => base44.entities.EmailDraft.get(existingDraftId),
     enabled: !!existingDraftId && open,
   });
 
@@ -61,10 +61,10 @@ export default function EmailComposerDrawer({
     queryKey: ["threadDraft", threadId, mode],
     queryFn: async () => {
       if (!threadId || mode === "new") return null;
-      const drafts = await base44.entities.DraftEmail.filter({
-        threadId: threadId,
-        status: { $in: ["draft", "failed"] }
-      }, "-lastSavedAt");
+      const drafts = await base44.entities.EmailDraft.filter({
+        thread_id: threadId,
+        status: 'draft'
+      }, "-updated_date");
       return drafts.length > 0 ? drafts[0] : null;
     },
     enabled: !!threadId && mode !== "new" && open,
@@ -91,26 +91,26 @@ export default function EmailComposerDrawer({
     // Priority 1: Use explicitly provided draft
     if (existingDraft) {
       setDraftId(existingDraft.id);
-      setTo(existingDraft.to || []);
-      setCc(existingDraft.cc || []);
-      setBcc(existingDraft.bcc || []);
+      setTo(existingDraft.to_addresses || []);
+      setCc(existingDraft.cc_addresses || []);
+      setBcc(existingDraft.bcc_addresses || []);
       setSubject(existingDraft.subject || "");
-      setBodyHtml(existingDraft.bodyHtml || "");
-      setShowCc(existingDraft.cc?.length > 0);
-      setShowBcc(existingDraft.bcc?.length > 0);
-      setLastSavedAt(existingDraft.lastSavedAt);
+      setBodyHtml(existingDraft.body_html || "");
+      setShowCc((existingDraft.cc_addresses || []).length > 0);
+      setShowBcc((existingDraft.bcc_addresses || []).length > 0);
+      setLastSavedAt(existingDraft.updated_date);
     }
     // Priority 2: Use existing thread draft if available (prevents duplication)
     else if (existingThreadDraft) {
       setDraftId(existingThreadDraft.id);
-      setTo(existingThreadDraft.to || []);
-      setCc(existingThreadDraft.cc || []);
-      setBcc(existingThreadDraft.bcc || []);
+      setTo(existingThreadDraft.to_addresses || []);
+      setCc(existingThreadDraft.cc_addresses || []);
+      setBcc(existingThreadDraft.bcc_addresses || []);
       setSubject(existingThreadDraft.subject || "");
-      setBodyHtml(existingThreadDraft.bodyHtml || "");
-      setShowCc(existingThreadDraft.cc?.length > 0);
-      setShowBcc(existingThreadDraft.bcc?.length > 0);
-      setLastSavedAt(existingThreadDraft.lastSavedAt);
+      setBodyHtml(existingThreadDraft.body_html || "");
+      setShowCc((existingThreadDraft.cc_addresses || []).length > 0);
+      setShowBcc((existingThreadDraft.bcc_addresses || []).length > 0);
+      setLastSavedAt(existingThreadDraft.updated_date);
     }
     // Priority 3: Create new draft template from thread messages
     else if (threadMessages.length > 0 && mode !== "new") {
@@ -154,63 +154,31 @@ export default function EmailComposerDrawer({
     return () => clearTimeout(autosaveTimer.current);
   }, [to, cc, bcc, subject, bodyHtml, open, user]);
 
-  const saveDraft = async (syncToGmail = false) => {
+  const saveDraft = async () => {
     if (!user) return;
 
     try {
       setIsSaving(true);
+      // STANDARDIZATION: Only use EmailDraft (Option A), no Gmail draft syncing
       const draftData = {
-        threadId: threadId || null,
-        gmail_thread_id: gmail_thread_id || null,
-        linkedEntityType: defaultLinkTarget?.type || "none",
-        linkedEntityId: defaultLinkTarget?.id || null,
-        fromEmail: user.email,
-        to,
-        cc,
-        bcc,
+        thread_id: threadId || null,
+        to_addresses: to,
+        cc_addresses: cc,
+        bcc_addresses: bcc,
         subject,
-        bodyHtml,
-        bodyText: bodyHtml.replace(/<[^>]*>/g, ""), // Strip HTML for text version
-        status: "draft",
-        lastSavedAt: new Date().toISOString(),
-        createdByUserId: user.id,
-        updatedByUserId: user.id,
+        body_html: bodyHtml,
+        mode: mode !== "new" ? mode : "compose"
       };
 
       let savedDraft;
       if (draftId) {
-        savedDraft = await base44.entities.DraftEmail.update(draftId, draftData);
+        await base44.entities.EmailDraft.update(draftId, draftData);
+        setLastSavedAt(new Date().toISOString());
       } else {
-        savedDraft = await base44.entities.DraftEmail.create(draftData);
+        savedDraft = await base44.entities.EmailDraft.create(draftData);
         setDraftId(savedDraft.id);
+        setLastSavedAt(savedDraft.created_date);
       }
-
-      // Optionally sync to Gmail
-      if (syncToGmail) {
-        try {
-          const gmailResult = await base44.functions.invoke("gmailCreateOrUpdateDraft", {
-            draftId: savedDraft.id,
-            gmailDraftId: savedDraft.gmailDraftId,
-            from: user.email,
-            to,
-            cc,
-            bcc,
-            subject,
-            htmlBody: bodyHtml,
-            textBody: bodyHtml.replace(/<[^>]*>/g, ""),
-          });
-
-          if (gmailResult.data?.gmailDraftId) {
-            await base44.entities.DraftEmail.update(savedDraft.id, {
-              gmailDraftId: gmailResult.data.gmailDraftId,
-            });
-          }
-        } catch (error) {
-          console.error("Failed to sync draft to Gmail:", error);
-        }
-      }
-
-      setLastSavedAt(savedDraft.lastSavedAt);
     } catch (error) {
       console.error("Failed to save draft:", error);
     } finally {
@@ -226,12 +194,7 @@ export default function EmailComposerDrawer({
 
       // Save draft locally first if not already saved
       if (!draftId) {
-        await saveDraft(false);
-      }
-
-      // Update draft status to sending
-      if (draftId) {
-        await base44.entities.DraftEmail.update(draftId, { status: "sending" });
+        await saveDraft();
       }
 
       // Get latest message for reply headers
@@ -277,12 +240,11 @@ export default function EmailComposerDrawer({
         }
       }
 
-      // Mark draft as sent and store IDs
+      // Mark draft as sent (archive, don't delete)
       if (draftId) {
-        await base44.entities.DraftEmail.update(draftId, {
+        await base44.entities.EmailDraft.update(draftId, {
           status: "sent",
-          gmailMessageId: result.data.gmailMessageId,
-          gmailThreadId: result.data.gmailThreadId,
+          sent_at: new Date().toISOString()
         });
       }
 
@@ -301,9 +263,9 @@ export default function EmailComposerDrawer({
       
       // Invalidate linked entity messages
       if (defaultLinkTarget?.type === "project" && defaultLinkTarget?.id) {
-        queryClient.invalidateQueries({ queryKey: ["projectMessages", defaultLinkTarget.id] });
-      } else if (defaultLinkTarget?.type === "job" && defaultLinkTarget?.id) {
-        queryClient.invalidateQueries({ queryKey: ["jobMessages", defaultLinkTarget.id] });
+        queryClient.invalidateQueries({ queryKey: ["projectEmailMessages", defaultLinkTarget.id] });
+      } else if (defaultLinkTarget?.type === "contract" && defaultLinkTarget?.id) {
+        queryClient.invalidateQueries({ queryKey: ["contractEmailMessages", defaultLinkTarget.id] });
       }
       
       // Invalidate drafts
@@ -341,7 +303,7 @@ export default function EmailComposerDrawer({
 
   const handleDiscard = async () => {
     if (draftId) {
-      await base44.entities.DraftEmail.delete(draftId);
+      await base44.entities.EmailDraft.delete(draftId);
     }
     handleClose();
   };
@@ -551,7 +513,7 @@ export default function EmailComposerDrawer({
             </Button>
             <Button
               variant="outline"
-              onClick={() => saveDraft(true)}
+              onClick={() => saveDraft()}
               disabled={isSaving || sendMutation.isPending}
             >
               <Save className="w-4 h-4 mr-2" />
