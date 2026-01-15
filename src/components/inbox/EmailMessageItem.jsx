@@ -6,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import AttachmentCard from "./AttachmentCard";
 import { sanitizeInboundText } from "@/components/utils/textSanitizers";
+import { sanitizeEmailHtml } from "@/components/utils/emailSanitization";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,46 +67,7 @@ const splitQuotedHtml = (html) => {
   };
 };
 
-const sanitizeBodyHtml = (html, inlineImages = []) => {
-  if (!html) return html;
 
-  let sanitized = html;
-
-  // Fix encoding issues first
-  sanitized = sanitizeInboundText(sanitized);
-
-  // Remove <style> tags and their content
-  sanitized = sanitized.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
-
-  // Remove <head> tags and their content
-  sanitized = sanitized.replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "");
-
-  // Extract body content if full HTML document
-  const bodyMatch = sanitized.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  if (bodyMatch) {
-    sanitized = bodyMatch[1];
-  }
-
-  // Replace inline image references with actual URLs
-  if (inlineImages && inlineImages.length > 0) {
-    inlineImages.forEach((img) => {
-      if (img.content_id && img.url) {
-        const cidPattern = new RegExp(`cid:${img.content_id}`, "gi");
-        sanitized = sanitized.replace(cidPattern, img.url);
-      }
-    });
-  }
-
-  // Remove dangerous tags and attributes
-  sanitized = sanitized.replace(/<script[^>]*>.*?<\/script>/gi, "");
-  sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, "");
-  sanitized = sanitized.replace(/<object[^>]*>.*?<\/object>/gi, "");
-  sanitized = sanitized.replace(/<embed[^>]*>/gi, "");
-  sanitized = sanitized.replace(/<form[^>]*>.*?<\/form>/gi, "");
-  sanitized = sanitized.replace(/on\w+\s*=\s*["'][^"']*["']/gi, "");
-
-  return sanitized;
-};
 
 // Safe HTML -> text preview without DOM dependency
 const htmlToTextPreview = (html) => {
@@ -399,7 +361,7 @@ export default function EmailMessageItem({
                       {/* Main content */}
                       <div
                         dangerouslySetInnerHTML={{
-                          __html: sanitizeBodyHtml(mainHtml || message.body_html, inlineImages),
+                          __html: sanitizeEmailHtml(mainHtml || message.body_html, "display", inlineImages),
                         }}
                       />
 
@@ -420,7 +382,7 @@ export default function EmailMessageItem({
                             <div className="mt-2 pl-3 border-l border-[#E5E7EB] text-[#374151]">
                               <div
                                 dangerouslySetInnerHTML={{
-                                  __html: sanitizeBodyHtml(quotedHtml, inlineImages),
+                                  __html: sanitizeEmailHtml(quotedHtml, "display", inlineImages),
                                 }}
                               />
                             </div>
