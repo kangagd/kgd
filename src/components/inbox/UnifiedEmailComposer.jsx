@@ -309,22 +309,10 @@ export default function UnifiedEmailComposer({
     didInitBodyRef.current = true;
   }, [currentUser, existingDraft?.id, mode]);
 
-  // Update selectedMessage when message prop changes
+  // Update selectedMessage when message prop changes (but don't overwrite body)
   useEffect(() => {
     setSelectedMessage(message);
   }, [message]);
-
-  // Inject signature once on fresh compose (only when body is empty, not for reply/forward)
-  useEffect(() => {
-    if (mode !== "compose" || !currentUser) return;
-    if (!isEmptyBody(body)) return; // Only inject if body still empty
-    
-    // Check if signature already present (idempotent)
-    if (body.includes('data-email-signature="true"')) return;
-
-    const signatureHtml = buildSignatureHtml(currentUser.email_signature);
-    setBody(signatureHtml);
-  }, [currentUser, mode, body, open]);
 
   // Initialize draft or thread context
   useEffect(() => {
