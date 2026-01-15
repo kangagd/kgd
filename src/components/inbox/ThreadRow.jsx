@@ -325,16 +325,10 @@ export default function ThreadRow({
               </div>
             </div>
 
-            {/* Customer + Job */}
+            {/* Customer */}
             <div className="flex items-center gap-2 text-[12px] text-[#6B7280]">
               {thread?.customer_name && (
                 <span className="truncate">{thread.customer_name}</span>
-              )}
-              {thread?.job_number && !linkingState.isLinked && (
-                <>
-                  <span>•</span>
-                  <span className="truncate">Job #{thread.job_number}</span>
-                </>
               )}
             </div>
 
@@ -370,4 +364,3 @@ export default function ThreadRow({
     </div>
   );
 }
-

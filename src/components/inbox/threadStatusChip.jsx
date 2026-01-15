@@ -24,7 +24,7 @@ export function isThreadPinned(thread) {
 }
 
 export function getThreadLinkChip(thread) {
-  // Use new project_id/job_id fields instead of old linking state
+  // Only support project linking (job linking deprecated)
   if (thread.project_id) {
     return {
       type: 'project',
@@ -33,11 +33,11 @@ export function getThreadLinkChip(thread) {
     };
   }
 
-  if (thread.job_id) {
+  if (thread.contract_id) {
     return {
-      type: 'job',
-      number: thread.job_number,
-      title: thread.job_title
+      type: 'contract',
+      name: thread.contract_name,
+      status: thread.contract_status
     };
   }
 
