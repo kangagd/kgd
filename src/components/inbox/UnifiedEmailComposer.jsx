@@ -414,7 +414,7 @@ export default function UnifiedEmailComposer({
   // Draft auto-save
   const saveDraft = useCallback(
     async (draftData) => {
-      if (!draftData.subject && toChips.length === 0 && !draftData.body) return;
+      if (!draftData.subject && draftData.to.length === 0 && !draftData.body) return;
 
       setIsSavingDraft(true);
       try {
