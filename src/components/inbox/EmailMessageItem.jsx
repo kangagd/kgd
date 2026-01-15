@@ -247,8 +247,11 @@ export default function EmailMessageItem({
       // Refetch to get updated attachments
       await queryClient.invalidateQueries({ queryKey: ["emailMessages", threadId || message.thread_id] });
       setInlineImageErrors(new Set()); // Clear errors on success
+      toast.success('Images loaded');
     } catch (err) {
+      const errorMsg = err?.response?.data?.error || err?.message || 'Failed to load images';
       console.error('Retry failed for inline images:', err);
+      toast.error(errorMsg);
     } finally {
       setIsRetryingImages(false);
     }
