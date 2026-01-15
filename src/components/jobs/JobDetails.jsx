@@ -156,9 +156,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       }
     },
     initialData: initialJob,
-    staleTime: 5000, // 5 seconds - reduce constant refetching
-    refetchOnWindowFocus: false, // Prevent auto-refetch on window focus
-    refetchOnMount: false, // Only refetch when invalidated
+    staleTime: Infinity, // Never auto-refetch - only when explicitly invalidated
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false, // Disable auto-refetch interval
   });
   const [showPriceList, setShowPriceList] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
