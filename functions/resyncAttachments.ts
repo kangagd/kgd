@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
     });
 
     if (threads.length === 0) {
-      return Response.json({ message: 'No email threads linked to projects', saved: 0 });
+      return Response.json({ message: 'No email threads linked to projects', saved: 0, skipped: 0, processed: 0 });
     }
 
     console.log(`Found ${threads.length} threads linked to projects`);
@@ -158,17 +158,19 @@ Deno.serve(async (req) => {
     const accessToken = await refreshTokenIfNeeded(gmailUser, base44);
     
     let totalSaved = 0;
+    let totalSkipped = 0;
+    let totalProcessed = 0;
     const errors = [];
     const projectsUpdated = new Set();
+    const maxAttachmentsToProcess = 100;
+    let attachmentCount = 0;
 
     // Process each thread
     for (const thread of threads) {
       const projectId = thread.project_id;
       if (!projectId) continue;
+      
       try {
-        // Get project data
-        const project = await base44.asServiceRole.entities.Project.get(projectId);
-        
         // Get all messages for this thread
         const messages = await base44.asServiceRole.entities.EmailMessage.filter({ 
           thread_id: thread.id 
@@ -176,6 +178,11 @@ Deno.serve(async (req) => {
 
         // Process each message's attachments
         for (const message of messages) {
+          if (attachmentCount >= maxAttachmentsToProcess) {
+            console.log(`Reached attachment processing limit (${maxAttachmentsToProcess})`);
+            break;
+          }
+          
           if (!message.attachments || message.attachments.length === 0) continue;
 
           // Filter out inline images and logos
@@ -186,65 +193,107 @@ Deno.serve(async (req) => {
           );
 
           for (const attachment of realAttachments) {
+            if (attachmentCount >= maxAttachmentsToProcess) break;
+            
             try {
               const effectiveGmailMessageId = attachment.gmail_message_id || message.gmail_message_id;
               
-              if (!effectiveGmailMessageId || !attachment.attachment_id) {
-                console.warn(`Skipping ${attachment.filename}: missing Gmail IDs`);
+              // Validate required fields before Gmail fetch
+              if (!effectiveGmailMessageId) {
+                console.warn(`Skipping ${attachment.filename}: missing gmail_message_id`);
+                totalSkipped++;
                 continue;
               }
-
-              // Check if already saved
-              const existingImages = project.image_urls || [];
-              const existingDocs = project.other_documents || [];
-              const existingDocUrls = existingDocs.map(doc => typeof doc === 'string' ? doc : doc.url);
-              const allUrls = [...existingImages, ...existingDocUrls];
               
-              if (allUrls.some(url => url && url.includes(attachment.filename))) {
-                console.log(`Skipping ${attachment.filename}: already saved`);
+              if (!attachment.attachment_id) {
+                console.warn(`Skipping ${attachment.filename}: missing attachment_id`);
+                totalSkipped++;
+                continue;
+              }
+              
+              if (!attachment.filename) {
+                console.warn(`Skipping attachment: missing filename`);
+                totalSkipped++;
                 continue;
               }
 
-              // Fetch attachment from Gmail
+              attachmentCount++;
+              totalProcessed++;
+
+              // Refetch project to get latest state
+              const freshProject = await base44.asServiceRole.entities.Project.get(projectId);
+              const existingImages = freshProject.image_urls || [];
+              const existingDocs = freshProject.other_documents || [];
+              
+              // Fetch attachment from Gmail with retry logic
               const gmailUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${effectiveGmailMessageId}/attachments/${attachment.attachment_id}`;
-              const attachmentResponse = await fetch(gmailUrl, {
+              const attachmentResponse = await fetchWithRetry(gmailUrl, {
                 headers: { Authorization: `Bearer ${accessToken}` }
               });
+
+              // Handle 404 gracefully
+              if (attachmentResponse.status === 404) {
+                console.warn(`Skipping ${attachment.filename}: not found in Gmail`);
+                totalSkipped++;
+                continue;
+              }
 
               if (!attachmentResponse.ok) {
                 throw new Error(`Gmail API error: ${attachmentResponse.statusText}`);
               }
 
               const attachmentData = await attachmentResponse.json();
+              
+              if (!attachmentData.data) {
+                throw new Error('No attachment data returned from Gmail');
+              }
+              
               const fileData = Uint8Array.from(atob(attachmentData.data.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
               
-              // Upload to storage
-              const formData = new FormData();
-              const blob = new Blob([fileData], { type: attachment.mime_type || 'application/octet-stream' });
-              formData.append('file', blob, attachment.filename);
+              // Upload to storage using File object (not blob)
+              const file = new File([fileData], attachment.filename, { 
+                type: attachment.mime_type || 'application/octet-stream' 
+              });
 
-              const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+              const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });
               
               if (!uploadResult.file_url) {
                 throw new Error('Upload failed - no URL returned');
               }
 
-              // Categorize and save to project
+              // Categorize and save to project with deduplication
               const isImage = attachment.mime_type?.startsWith('image/');
               
-              // Refetch project to avoid race conditions
-              const freshProject = await base44.asServiceRole.entities.Project.get(projectId);
-              
               if (isImage) {
-                const updatedImages = [...(freshProject.image_urls || []), uploadResult.file_url];
+                // Images: dedupe by exact URL only
+                if (isImageAlreadyExists(uploadResult.file_url, existingImages)) {
+                  console.log(`Skipping ${attachment.filename}: image URL already exists`);
+                  totalSkipped++;
+                  continue;
+                }
+                
+                const updatedImages = [...existingImages, uploadResult.file_url];
                 await base44.asServiceRole.entities.Project.update(projectId, { 
                   image_urls: updatedImages 
                 });
               } else {
-                const updatedDocs = [...(freshProject.other_documents || []), { 
+                // Documents: dedupe by URL and metadata
+                if (isDocumentAlreadyExists(uploadResult.file_url, effectiveGmailMessageId, attachment.attachment_id, existingDocs)) {
+                  console.log(`Skipping ${attachment.filename}: document already exists`);
+                  totalSkipped++;
+                  continue;
+                }
+                
+                const newDoc = {
                   url: uploadResult.file_url, 
-                  name: attachment.filename 
-                }];
+                  name: attachment.filename,
+                  source: {
+                    gmail_message_id: effectiveGmailMessageId,
+                    attachment_id: attachment.attachment_id
+                  }
+                };
+                
+                const updatedDocs = [...existingDocs, newDoc];
                 await base44.asServiceRole.entities.Project.update(projectId, { 
                   other_documents: updatedDocs 
                 });
@@ -259,6 +308,8 @@ Deno.serve(async (req) => {
               errors.push({ file: attachment.filename, error: attachmentError.message });
             }
           }
+          
+          if (attachmentCount >= maxAttachmentsToProcess) break;
         }
       } catch (threadError) {
         console.error(`Error processing thread ${thread.id}:`, threadError);
@@ -266,13 +317,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    const remainingEstimate = attachmentCount >= maxAttachmentsToProcess ? 'run function again' : undefined;
+
     return Response.json({ 
       success: true,
       saved: totalSaved,
+      skipped: totalSkipped,
+      processed: totalProcessed,
       projects_updated: projectsUpdated.size,
       threads_processed: threads.length,
+      remainingEstimate,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Saved ${totalSaved} attachment${totalSaved !== 1 ? 's' : ''} across ${projectsUpdated.size} project${projectsUpdated.size !== 1 ? 's' : ''}`
+      message: `Processed ${totalProcessed} attachment${totalProcessed !== 1 ? 's' : ''}, saved ${totalSaved}, skipped ${totalSkipped} across ${projectsUpdated.size} project${projectsUpdated.size !== 1 ? 's' : ''}`
     });
 
   } catch (error) {
