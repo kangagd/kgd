@@ -125,6 +125,41 @@ export default function ThreadHeader({
     onThreadUpdate?.();
   };
 
+  const handleLinkButtonClick = (e) => {
+    if (!isLinked) {
+      setShowLinkModal(true);
+      return;
+    }
+
+    // Clear any existing timer
+    if (linkClickTimer) clearTimeout(linkClickTimer);
+
+    // Set a timer to detect double-click
+    const timer = setTimeout(() => {
+      // Single click - navigate to project/contract
+      const url = linkedType === 'project' 
+        ? `/?projectId=${thread.project_id}`
+        : `/?contractId=${thread.contract_id}`;
+      window.location.href = url;
+      setLinkClickTimer(null);
+    }, 300);
+
+    setLinkClickTimer(timer);
+  };
+
+  const handleLinkButtonDoubleClick = (e) => {
+    e.preventDefault();
+    // Clear timer to prevent single-click action
+    if (linkClickTimer) clearTimeout(linkClickTimer);
+    setLinkClickTimer(null);
+    
+    // Unlink
+    if (isLinked) {
+      handleUnlink();
+      toast.success('Link removed');
+    }
+  };
+
   return (
     <div className="bg-white border-b border-[#E5E7EB] p-4 space-y-3">
       {/* Row 1: Subject + Action Rail */}
