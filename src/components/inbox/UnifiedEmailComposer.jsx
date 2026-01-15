@@ -244,7 +244,7 @@ export default function UnifiedEmailComposer({
       return;
     }
 
-    // Priority 4: Fresh compose → clear all state
+    // Priority 4: Fresh compose → clear all state and RESET signature flag
     if (mode === "compose") {
       setToChips([]);
       setCcChips([]);
@@ -254,7 +254,7 @@ export default function UnifiedEmailComposer({
       setSubject("");
       setAttachments([]);
       setDraftId(null);
-      // Don't set initialized yet—signature effect will handle body
+      composeInitializedRef.current = false; // Reset for fresh compose
     }
   }, [currentUser, existingDraft, thread, selectedMessage, mode, defaultTo]);
 
