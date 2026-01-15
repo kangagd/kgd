@@ -47,7 +47,7 @@ export default function MergeFieldsHelper({ onInsert }) {
           <ChevronDown className="w-3 h-3" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2 max-h-[400px] overflow-y-auto">
+      <PopoverContent className="w-56 p-2 max-h-[400px] overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="space-y-1">
           <div className="text-[11px] font-semibold text-[#6B7280] px-2 py-1">
             Available fields
