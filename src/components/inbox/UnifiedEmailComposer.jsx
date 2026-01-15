@@ -360,6 +360,14 @@ export default function UnifiedEmailComposer({
     onAcceptSuggestion: (suggestion) => setBody(body + suggestion),
   });
 
+  // Fetch messages (needed for context check and auto-sync)
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ['emailMessages', thread?.id],
+    queryFn: () => base44.entities.EmailMessage.filter({ thread_id: thread.id }),
+    enabled: !!thread?.id,
+    staleTime: 30000,
+  });
+
   // Fetch templates
   const { data: templates = [] } = useQuery({
     queryKey: ["messageTemplates", "email"],
