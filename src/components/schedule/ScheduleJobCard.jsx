@@ -8,6 +8,7 @@ import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
 import EntityLink from "../common/EntityLink";
 import { createPageUrl } from "@/utils";
+import { resolveTechnicianDisplayName } from "../utils/technicianDisplay";
 
 export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjectClick, techniciansLookup = {}, hasActiveCheckIn = false }) {
   return (
