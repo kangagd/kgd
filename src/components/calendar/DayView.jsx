@@ -101,6 +101,16 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
     job.scheduled_date && isSameDay(new Date(job.scheduled_date), currentDate)
   );
 
+  // Filter bookings for this day
+  const dayBookings = bookings.filter(booking => {
+    if (!booking?.start_at) return false;
+    try {
+      return isSameDay(new Date(booking.start_at), currentDate);
+    } catch {
+      return false;
+    }
+  });
+
   // For technicians, filter to only their jobs
   const myJobs = isTechnician 
     ? dayJobs.filter(job => {
