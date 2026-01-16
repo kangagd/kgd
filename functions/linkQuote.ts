@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { project_id, job_id } = normalizeParams(body);
-    const { quoteId, setPrimary = false } = body;
+    const { quoteId } = body;
 
     if (!quoteId) {
       return Response.json({ error: 'quoteId is required' }, { status: 400 });
@@ -55,11 +55,6 @@ Deno.serve(async (req) => {
           updates.quote_ids = oldProject.quote_ids.filter(id => id !== quoteId);
         }
         
-        // Clear primary if this was the primary quote
-        if (oldProject.primary_quote_id === quoteId) {
-          updates.primary_quote_id = null;
-        }
-        
         if (Object.keys(updates).length > 0) {
           await base44.asServiceRole.entities.Project.update(oldProjectId, updates);
         }
@@ -86,10 +81,6 @@ Deno.serve(async (req) => {
         quote_ids: updatedQuoteIds
       };
       
-      if (setPrimary || !project.primary_quote_id) {
-        projectUpdates.primary_quote_id = quoteId;
-      }
-      
       await base44.asServiceRole.entities.Project.update(project_id, projectUpdates);
     }
 
@@ -98,8 +89,7 @@ Deno.serve(async (req) => {
       quote: quote,
       unlinked_from_project: oldProjectId,
       linked_to_project: project_id,
-      linked_to_job: job_id,
-      set_as_primary: setPrimary && project_id
+      linked_to_job: job_id
     });
 
   } catch (error) {
