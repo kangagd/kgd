@@ -7,6 +7,7 @@ import { ProjectStatusBadge, ProjectTypeBadge } from "../common/StatusBadge";
 import FreshnessBadge from "../common/FreshnessBadge";
 import { computeSimpleFreshness } from "../utils/computeFreshness";
 import ReplyStatusBadge from "./ReplyStatusBadge";
+import { getProjectDisplayTitle, getProjectDisplayAddress, getProjectCustomerLabel } from "@/components/projects/projectDisplay";
 
 export default function ProjectModalView({ project, jobCount = 0 }) {
   const handleCall = () => {
@@ -16,7 +17,10 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
   };
 
   const handleNavigate = () => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}`, '_blank');
+    const address = getProjectDisplayAddress(project);
+    if (address) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
+    }
   };
 
   const freshness = computeSimpleFreshness(project);
@@ -37,7 +41,7 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
         </div>
 
         <div className="text-[16px] font-medium text-[#4B5563]">
-          {project.customer_name}
+          {getProjectCustomerLabel(project)}
         </div>
       </div>
 
@@ -46,7 +50,7 @@ export default function ProjectModalView({ project, jobCount = 0 }) {
         <MapPin className="w-5 h-5 text-[#6B7280] flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <div className="text-[12px] text-[#6B7280] font-medium mb-0.5">Address</div>
-          <div className="text-[14px] text-[#111827]">{project.address}</div>
+          <div className="text-[14px] text-[#111827]">{getProjectDisplayAddress(project)}</div>
         </div>
       </div>
 
