@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Camera, Video } from "lucide-react";
+import { Upload, X, Video } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import FilePreviewModal from "../common/FilePreviewModal";
 
