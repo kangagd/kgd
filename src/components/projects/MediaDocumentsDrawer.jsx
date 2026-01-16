@@ -156,45 +156,103 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
               ) : (
                 <div className="space-y-2">
                   {project.quote_url && (
-                    <a 
-                      href={project.quote_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
-                    >
-                      <div className="text-[14px] font-medium text-[#111827]">Quote</div>
-                    </a>
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all group">
+                      <a 
+                        href={project.quote_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex-1 text-[14px] font-medium text-[#111827]"
+                      >
+                        Quote
+                      </a>
+                      {onDeleteDocument && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteDocument('quote_url');
+                          }}
+                          className="ml-2 p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   )}
                   {project.invoice_url && (
-                    <a 
-                      href={project.invoice_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
-                    >
-                      <div className="text-[14px] font-medium text-[#111827]">Invoice</div>
-                    </a>
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all group">
+                      <a 
+                        href={project.invoice_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex-1 text-[14px] font-medium text-[#111827]"
+                      >
+                        Invoice
+                      </a>
+                      {onDeleteDocument && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteDocument('invoice_url');
+                          }}
+                          className="ml-2 p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   )}
                   {project.handover_pdf_url && (
-                    <a 
-                      href={project.handover_pdf_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
-                    >
-                      <div className="text-[14px] font-medium text-[#111827]">Handover Report</div>
-                    </a>
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all group">
+                      <a 
+                        href={project.handover_pdf_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex-1 text-[14px] font-medium text-[#111827]"
+                      >
+                        Handover Report
+                      </a>
+                      {onDeleteDocument && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteDocument('handover_pdf_url');
+                          }}
+                          className="ml-2 p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   )}
                   {project.other_documents?.map((doc, idx) => (
-                    <a 
+                    <div 
                       key={idx}
-                      href={doc.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all"
+                      className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all group"
                     >
-                      <div className="text-[14px] font-medium text-[#111827]">{doc.name || `Document ${idx + 1}`}</div>
-                    </a>
+                      <a 
+                        href={doc.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex-1 text-[14px] font-medium text-[#111827]"
+                      >
+                        {doc.name || `Document ${idx + 1}`}
+                      </a>
+                      {onDeleteDocument && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteDocument('other_documents', idx);
+                          }}
+                          className="ml-2 p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
