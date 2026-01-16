@@ -21,9 +21,14 @@ export default function EntityModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[720px] max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="sticky top-0 z-10 bg-white border-b border-[#E5E7EB] px-6 py-4 flex flex-row items-center justify-between space-y-0">
-          <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-            {title}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+              {title}
+            </h2>
+            {projectName && (
+              <Badge className="bg-blue-100 text-blue-700 border-0">{projectName}</Badge>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {onOpenFullPage && (
               <Button
