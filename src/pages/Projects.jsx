@@ -57,9 +57,6 @@ export default function Projects() {
   const [editingProject, setEditingProject] = useState(null);
   const [modalProject, setModalProject] = useState(null);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
-  const [aiQuery, setAiQuery] = useState("");
-  const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiFilteredProjects, setAiFilteredProjects] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const queryClient = useQueryClient();
 
@@ -311,144 +308,8 @@ export default function Projects() {
     navigate(`${createPageUrl("Projects")}?projectId=${project.id}`);
   }, [navigate]);
 
-  const handleAiSearch = async () => {
-    if (!aiQuery.trim()) {
-      setAiFilteredProjects(null);
-      return;
-    }
-
-    setIsAiSearching(true);
-    try {
-      // Enrich projects with related data
-      const enrichedProjects = projects.map(p => {
-        const projectAttentionItems = allAttentionItems.filter(ai => 
-          ai.root_entity_type === 'project' && sameId(ai.root_entity_id, p.id) && ai.status === 'open'
-        );
-        
-        const projectEmailThreads = allEmailThreads.filter(et => 
-          sameId(et.project_id, p.id)
-        );
-        
-        const projectQuotes = allQuotes.filter(q => 
-          sameId(q.project_id, p.id)
-        );
-
-        const projectInvoices = allXeroInvoices.filter(inv => 
-          sameId(inv.project_id, p.id)
-        );
-
-        const hasUnansweredEmails = projectEmailThreads.some(thread => 
-          thread.last_customer_message_at && 
-          (!thread.last_internal_message_at || 
-           new Date(thread.last_customer_message_at) > new Date(thread.last_internal_message_at))
-        );
-
-        const highPriorityAttentionItems = projectAttentionItems.filter(ai => 
-          ai.severity === 'critical' || ai.severity === 'high'
-        );
-
-        // Calculate actual outstanding amounts from Xero invoices
-        const totalInvoiced = projectInvoices.reduce((sum, inv) => 
-          sum + (inv.total_amount || inv.total || 0), 0
-        );
-        const totalPaid = projectInvoices.reduce((sum, inv) => 
-          sum + (inv.amount_paid || 0), 0
-        );
-        const totalOutstanding = projectInvoices.reduce((sum, inv) => 
-          sum + (inv.amount_due || 0), 0
-        );
-
-        const hasOutstandingPayment = totalOutstanding > 0 || 
-          projectInvoices.some(inv => 
-            (inv.status === 'AUTHORISED' || inv.status === 'OVERDUE') && 
-            (inv.amount_due || 0) > 0
-          );
-
-        // Also check manual payments tracking
-        const manualPaymentsPending = (p.payments || []).some(payment => 
-          payment.payment_status === 'Pending' && (payment.payment_amount || 0) > 0
-        );
-
-        return {
-          id: p.id,
-          title: p.title,
-          customer_name: p.customer_name,
-          status: p.status,
-          financial_status: p.financial_status,
-          project_type: p.project_type,
-          total_project_value: p.total_project_value,
-          total_invoiced: totalInvoiced,
-          total_paid: totalPaid,
-          total_outstanding: totalOutstanding,
-          has_outstanding_payment: hasOutstandingPayment || manualPaymentsPending,
-          invoice_count: projectInvoices.length,
-          has_attention_items: projectAttentionItems.length > 0,
-          attention_items_count: projectAttentionItems.length,
-          high_priority_attention_count: highPriorityAttentionItems.length,
-          has_unanswered_emails: hasUnansweredEmails,
-          email_threads_count: projectEmailThreads.length,
-          quotes_count: projectQuotes.length,
-          latest_quote_status: projectQuotes[0]?.status || null
-        };
-      });
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a smart project filtering assistant. Analyze the user's query and return project IDs that match.
-
-User Query: "${aiQuery}"
-
-CRITICAL FILTERING RULES:
-- "outstanding payments" OR "awaiting payment" OR "unpaid" → has_outstanding_payment is true OR total_outstanding > 0
-- "fully paid" OR "paid in full" → has_outstanding_payment is false AND total_outstanding === 0
-- "unanswered emails" → has_unanswered_emails is true
-- "attention items" OR "high priority" OR "need attention" → has_attention_items is true
-- "warranty" → warranty_status is "Active" OR status is "Warranty"
-- "quotes sent" → latest_quote_status is "Sent" OR status is "Quote Sent"
-- "completed" → status is "Completed"
-
-Each project includes:
-- has_outstanding_payment: true/false (if ANY money is owed)
-- total_outstanding: dollar amount still owed
-- total_invoiced: total amount invoiced
-- total_paid: total amount paid
-- financial_status: text status from manual tracking
-
-Projects data:
-${JSON.stringify(enrichedProjects, null, 2)}
-
-Return ALL project IDs where has_outstanding_payment is true OR total_outstanding > 0 for payment-related queries.`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            matching_project_ids: {
-              type: "array",
-              items: { type: "string" }
-            },
-            explanation: {
-              type: "string"
-            }
-          }
-        }
-      });
-
-      const matchingIds = response.matching_project_ids || [];
-      const filtered = projects.filter(p => matchingIds.includes(p.id));
-      setAiFilteredProjects(filtered);
-      
-      if (filtered.length === 0) {
-        toast.info(`No projects found matching "${aiQuery}"`);
-      }
-    } catch (error) {
-      console.error('AI search error:', error);
-      toast.error('AI search failed');
-    } finally {
-      setIsAiSearching(false);
-    }
-  };
-
   const filteredProjects = useMemo(() => {
-    // If AI filter is active, use that instead
-    const baseProjects = aiFilteredProjects !== null ? aiFilteredProjects : projects;
+    const baseProjects = projects;
     
     return baseProjects
       .filter((project) => {
@@ -487,7 +348,7 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
         }
         return 0;
       });
-  }, [aiFilteredProjects, projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
+  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
         const getJobCount = useCallback((projectId) => {
           return allJobs.filter(j => sameId(j.project_id, projectId)).length;
@@ -596,85 +457,6 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
         </div>
 
         <div className="flex flex-col gap-3 mb-6">
-          {/* AI Search Bar */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#FAE008]" />
-              <Input
-                placeholder="Ask AI to filter projects (e.g., 'show projects with outstanding payments')"
-                value={aiQuery}
-                onChange={(e) => setAiQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAiSearch();
-                  }
-                }}
-                className="pl-9 pr-3 border-2 border-[#FAE008] focus:border-[#111827] focus:ring-2 focus:ring-[#FAE008]/20 transition-all h-11 text-sm rounded-lg w-full font-medium"
-              />
-            </div>
-            <Button
-              onClick={handleAiSearch}
-              disabled={isAiSearching || !aiQuery.trim()}
-              className="bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] font-semibold h-11 px-6"
-            >
-              {isAiSearching ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-[#111827] border-t-transparent rounded-full animate-spin mr-2" />
-                  Searching...
-                </>
-              ) : (
-                'Search'
-              )}
-            </Button>
-            {aiFilteredProjects !== null && (
-              <Button
-                onClick={() => {
-                  setAiFilteredProjects(null);
-                  setAiQuery("");
-                }}
-                variant="outline"
-                className="h-11 px-4"
-              >
-                Clear AI Filter
-              </Button>
-            )}
-          </div>
-
-          {aiFilteredProjects !== null && (
-            <div className="bg-[#FFFEF5] border-2 border-[#FAE008] rounded-lg p-3">
-              <div className="flex items-start gap-2">
-                <Sparkles className="w-4 h-4 text-[#FAE008] mt-0.5 flex-shrink-0" />
-                <p className="text-[13px] text-[#111827] flex-1">
-                  <span className="font-semibold">AI Filter Active:</span> Showing {aiFilteredProjects.length} project{aiFilteredProjects.length !== 1 ? 's' : ''} matching "{aiQuery}"
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Quick Filter Suggestions */}
-          {!aiFilteredProjects && (
-            <div className="flex gap-2 flex-wrap">
-              <span className="text-[12px] text-[#6B7280] self-center">Quick filters:</span>
-              {[
-                'projects with outstanding payments',
-                'projects with attention items',
-                'projects with unanswered emails',
-                'completed projects this month'
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => {
-                    setAiQuery(suggestion);
-                    setTimeout(() => handleAiSearch(), 100);
-                  }}
-                  className="text-[11px] px-2.5 py-1 bg-white border border-[#E5E7EB] rounded-full text-[#6B7280] hover:border-[#FAE008] hover:bg-[#FFFEF5] hover:text-[#111827] transition-colors"
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
-
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
