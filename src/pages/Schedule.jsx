@@ -929,11 +929,11 @@ export default function Schedule() {
                                 {...dragProvided.draggableProps}
                                 {...dragProvided.dragHandleProps}
                                 onClick={() => setModalJob(job)}
-                                className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all ${
+                                className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all border ${
                                   dragSnapshot.isDragging 
                                     ? 'shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
                                     : 'hover:opacity-80'
-                                }`}
+                                } ${!!activeCheckInMap[job.id] ? 'ring-2 ring-blue-500 border-blue-500' : 'border-transparent'}`}
                                 style={{
                                   backgroundColor: dragSnapshot.isDragging 
                                     ? '#FAE008' 
@@ -1377,9 +1377,9 @@ export default function Schedule() {
           </div>
         ) : (
           <>
-            {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
-            {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
-            {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} />}
+            {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} activeCheckInMap={activeCheckInMap} />}
+            {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} activeCheckInMap={activeCheckInMap} />}
+            {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} activeCheckInMap={activeCheckInMap} />}
           </>
         )}
 

@@ -68,7 +68,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [] }) {
+export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], activeCheckInMap = {} }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -400,13 +400,13 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, l
                               return (
                                 <JobHoverCard key={job.id} job={job} onJobClick={onJobClick}>
                                   <div
-                                    draggable
-                                    onDragStart={(e) => handleDragStart(e, job)}
-                                    onDragEnd={handleDragEnd}
-                                    onClick={() => onJobClick(job)}
-                                    className={`${compactMode ? 'p-2' : 'p-2.5'} rounded-lg cursor-move hover:shadow-md transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
-                                      draggedJob?.id === job.id ? 'opacity-50' : ''
-                                    }`}
+                                   draggable
+                                   onDragStart={(e) => handleDragStart(e, job)}
+                                   onDragEnd={handleDragEnd}
+                                   onClick={() => onJobClick(job)}
+                                   className={`${compactMode ? 'p-2' : 'p-2.5'} rounded-lg cursor-move hover:shadow-md transition-all bg-white border ${
+                                     draggedJob?.id === job.id ? 'opacity-50' : ''
+                                   } ${(job.id && activeCheckInMap && activeCheckInMap[job.id]) ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'}`}
                                   >
                                     <div className="space-y-1.5">
                                       <div className={`${compactMode ? 'text-[11px]' : 'text-xs'} font-semibold text-[#111827] leading-tight truncate`}>

@@ -47,7 +47,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [] }) {
+export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], activeCheckInMap = {} }) {
   const [user, setUser] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const compactMode = true;
@@ -192,7 +192,9 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                               e.stopPropagation();
                               onJobClick(job);
                             }}
-                            className={`${compactMode ? 'text-[9px] px-1 py-0.5' : 'text-xs px-1.5 py-1'} rounded cursor-pointer hover:shadow-sm transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008]`}
+                            className={`${compactMode ? 'text-[9px] px-1 py-0.5' : 'text-xs px-1.5 py-1'} rounded cursor-pointer hover:shadow-sm transition-all bg-white border ${
+                              (job.id && activeCheckInMap && activeCheckInMap[job.id]) ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'
+                            }`}
                             title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                           >
                             <div className="space-y-0.5">
