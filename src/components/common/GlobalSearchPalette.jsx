@@ -60,6 +60,12 @@ export default function GlobalSearchPalette({ open, onOpenChange }) {
       case "customer":
         url = `${createPageUrl("Customers")}?customerId=${item.id}`;
         break;
+      case "organisation":
+        url = `${createPageUrl("Organisations")}?organisationId=${item.id}`;
+        break;
+      case "item":
+        url = `${createPageUrl("PriceList")}?itemId=${item.id}`;
+        break;
     }
     if (url) {
       navigate(url);
