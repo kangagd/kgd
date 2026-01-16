@@ -33,8 +33,7 @@ Deno.serve(async (req) => {
         { address_suburb: { $regex: term, $options: 'i' } },
         { job_type: { $regex: term, $options: 'i' } },
         { notes: { $regex: term, $options: 'i' } }
-      ],
-      deleted_at: { $exists: false }
+      ]
     };
 
     if (isTechnician) {
