@@ -1,8 +1,9 @@
 import React, { useState, useRef } from "react";
-import { X, Upload, Download, Trash2 } from "lucide-react";
+import { X, Upload, Download, Trash2, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import RenameDocumentModal from "../common/RenameDocumentModal";
 
 export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos", onUploadPhotos, onUploadDocuments, onDeleteImage, onDeleteDocument }) {
   const [activeTab, setActiveTab] = useState(initialTab);
