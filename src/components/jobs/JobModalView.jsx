@@ -88,9 +88,6 @@ export default function JobModalView({ job, onJobUpdated }) {
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="secondary">#{job.job_number}</Badge>
-            {job.project_name && (
-              <Badge className="bg-blue-100 text-blue-700 border-0">{job.project_name}</Badge>
-            )}
             {job.job_type_name && (
               <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
                 {job.job_type_name}
