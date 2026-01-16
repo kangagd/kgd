@@ -44,7 +44,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
     const updatedDoors = [...data.new_doors];
     updatedDoors[index] = {
       ...updatedDoors[index],
-      [field]: value
+      [field]: value === "" ? undefined : value
     };
     
     const updatedData = {
@@ -63,7 +63,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
       ...updatedDoors[index],
       [parentField]: {
         ...(updatedDoors[index][parentField] || {}),
-        [field]: value
+        [field]: value === "" ? undefined : value
       }
     };
     
@@ -200,8 +200,8 @@ export default function MeasurementsForm({ measurements, onChange }) {
                           <Label>Left H</Label>
                           <Input
                             type="number"
-                            value={door.height_left || ""}
-                            onChange={(e) => updateDoorField(index, 'height_left', parseFloat(e.target.value))}
+                            value={door.height_left ?? ""}
+                            onChange={(e) => updateDoorField(index, 'height_left', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             className={errors.height ? "border-amber-500" : ""}
                           />
                         </div>
@@ -209,8 +209,8 @@ export default function MeasurementsForm({ measurements, onChange }) {
                           <Label>Mid H</Label>
                           <Input
                             type="number"
-                            value={door.height_mid || ""}
-                            onChange={(e) => updateDoorField(index, 'height_mid', parseFloat(e.target.value))}
+                            value={door.height_mid ?? ""}
+                            onChange={(e) => updateDoorField(index, 'height_mid', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             className={errors.height ? "border-amber-500" : ""}
                           />
                         </div>
@@ -218,8 +218,8 @@ export default function MeasurementsForm({ measurements, onChange }) {
                           <Label>Right H</Label>
                           <Input
                             type="number"
-                            value={door.height_right || ""}
-                            onChange={(e) => updateDoorField(index, 'height_right', parseFloat(e.target.value))}
+                            value={door.height_right ?? ""}
+                            onChange={(e) => updateDoorField(index, 'height_right', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             className={errors.height ? "border-amber-500" : ""}
                           />
                         </div>
@@ -239,8 +239,8 @@ export default function MeasurementsForm({ measurements, onChange }) {
                           <Label>Top W</Label>
                           <Input
                             type="number"
-                            value={door.width_top || ""}
-                            onChange={(e) => updateDoorField(index, 'width_top', parseFloat(e.target.value))}
+                            value={door.width_top ?? ""}
+                            onChange={(e) => updateDoorField(index, 'width_top', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             className={errors.width ? "border-amber-500" : ""}
                           />
                         </div>
@@ -248,8 +248,8 @@ export default function MeasurementsForm({ measurements, onChange }) {
                           <Label>Mid W</Label>
                           <Input
                             type="number"
-                            value={door.width_mid || ""}
-                            onChange={(e) => updateDoorField(index, 'width_mid', parseFloat(e.target.value))}
+                            value={door.width_mid ?? ""}
+                            onChange={(e) => updateDoorField(index, 'width_mid', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             className={errors.width ? "border-amber-500" : ""}
                           />
                         </div>
@@ -257,8 +257,8 @@ export default function MeasurementsForm({ measurements, onChange }) {
                           <Label>Bottom W</Label>
                           <Input
                             type="number"
-                            value={door.width_bottom || ""}
-                            onChange={(e) => updateDoorField(index, 'width_bottom', parseFloat(e.target.value))}
+                            value={door.width_bottom ?? ""}
+                            onChange={(e) => updateDoorField(index, 'width_bottom', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             className={errors.width ? "border-amber-500" : ""}
                           />
                         </div>
@@ -277,24 +277,24 @@ export default function MeasurementsForm({ measurements, onChange }) {
                         <Label>Left Sideroom</Label>
                         <Input
                           type="number"
-                          value={door.sideroom_left || ""}
-                          onChange={(e) => updateDoorField(index, 'sideroom_left', parseFloat(e.target.value))}
+                          value={door.sideroom_left ?? ""}
+                          onChange={(e) => updateDoorField(index, 'sideroom_left', e.target.value === "" ? "" : parseFloat(e.target.value))}
                         />
                       </div>
                       <div>
                         <Label>Right Sideroom</Label>
                         <Input
                           type="number"
-                          value={door.sideroom_right || ""}
-                          onChange={(e) => updateDoorField(index, 'sideroom_right', parseFloat(e.target.value))}
+                          value={door.sideroom_right ?? ""}
+                          onChange={(e) => updateDoorField(index, 'sideroom_right', e.target.value === "" ? "" : parseFloat(e.target.value))}
                         />
                       </div>
                       <div>
                         <Label>Headroom</Label>
                         <Input
                           type="number"
-                          value={door.headroom || ""}
-                          onChange={(e) => updateDoorField(index, 'headroom', parseFloat(e.target.value))}
+                          value={door.headroom ?? ""}
+                          onChange={(e) => updateDoorField(index, 'headroom', e.target.value === "" ? "" : parseFloat(e.target.value))}
                         />
                       </div>
                     </div>
@@ -304,29 +304,29 @@ export default function MeasurementsForm({ measurements, onChange }) {
                       <Label className="text-sm font-semibold">Laser Floor</Label>
                       <div className="grid grid-cols-3 gap-4">
                         <div>
-                          <Label className="text-xs">Left Side</Label>
-                          <Input
-                            type="number"
-                            value={door.laser_floor_left || ""}
-                            onChange={(e) => updateDoorField(index, 'laser_floor_left', parseFloat(e.target.value))}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Middle</Label>
-                          <Input
-                            type="number"
-                            value={door.laser_floor_mid || ""}
-                            onChange={(e) => updateDoorField(index, 'laser_floor_mid', parseFloat(e.target.value))}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Right Side</Label>
-                          <Input
-                            type="number"
-                            value={door.laser_floor_right || ""}
-                            onChange={(e) => updateDoorField(index, 'laser_floor_right', parseFloat(e.target.value))}
-                          />
-                        </div>
+                            <Label className="text-xs">Left Side</Label>
+                            <Input
+                              type="number"
+                              value={door.laser_floor_left ?? ""}
+                              onChange={(e) => updateDoorField(index, 'laser_floor_left', e.target.value === "" ? "" : parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Middle</Label>
+                            <Input
+                              type="number"
+                              value={door.laser_floor_mid ?? ""}
+                              onChange={(e) => updateDoorField(index, 'laser_floor_mid', e.target.value === "" ? "" : parseFloat(e.target.value))}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Right Side</Label>
+                            <Input
+                              type="number"
+                              value={door.laser_floor_right ?? ""}
+                              onChange={(e) => updateDoorField(index, 'laser_floor_right', e.target.value === "" ? "" : parseFloat(e.target.value))}
+                            />
+                          </div>
                       </div>
                     </div>
 
@@ -338,24 +338,24 @@ export default function MeasurementsForm({ measurements, onChange }) {
                           <Label className="text-xs">Left Side</Label>
                           <Input
                             type="number"
-                            value={door.laser_top_left || ""}
-                            onChange={(e) => updateDoorField(index, 'laser_top_left', parseFloat(e.target.value))}
+                            value={door.laser_top_left ?? ""}
+                            onChange={(e) => updateDoorField(index, 'laser_top_left', e.target.value === "" ? "" : parseFloat(e.target.value))}
                           />
                         </div>
                         <div>
                           <Label className="text-xs">Middle</Label>
                           <Input
                             type="number"
-                            value={door.laser_top_mid || ""}
-                            onChange={(e) => updateDoorField(index, 'laser_top_mid', parseFloat(e.target.value))}
+                            value={door.laser_top_mid ?? ""}
+                            onChange={(e) => updateDoorField(index, 'laser_top_mid', e.target.value === "" ? "" : parseFloat(e.target.value))}
                           />
                         </div>
                         <div>
                           <Label className="text-xs">Right Side</Label>
                           <Input
                             type="number"
-                            value={door.laser_top_right || ""}
-                            onChange={(e) => updateDoorField(index, 'laser_top_right', parseFloat(e.target.value))}
+                            value={door.laser_top_right ?? ""}
+                            onChange={(e) => updateDoorField(index, 'laser_top_right', e.target.value === "" ? "" : parseFloat(e.target.value))}
                           />
                         </div>
                       </div>
@@ -411,24 +411,24 @@ export default function MeasurementsForm({ measurements, onChange }) {
                             <Label>Height Left Side</Label>
                             <Input
                               type="number"
-                              value={existingDoor.height_left || ""}
-                              onChange={(e) => updateDoorNestedField(index, 'existing_door', 'height_left', parseFloat(e.target.value))}
+                              value={existingDoor.height_left ?? ""}
+                              onChange={(e) => updateDoorNestedField(index, 'existing_door', 'height_left', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             />
                           </div>
                           <div>
                             <Label>Height Right Side</Label>
                             <Input
                               type="number"
-                              value={existingDoor.height_right || ""}
-                              onChange={(e) => updateDoorNestedField(index, 'existing_door', 'height_right', parseFloat(e.target.value))}
+                              value={existingDoor.height_right ?? ""}
+                              onChange={(e) => updateDoorNestedField(index, 'existing_door', 'height_right', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             />
                           </div>
                           <div>
                             <Label>Width</Label>
                             <Input
                               type="number"
-                              value={existingDoor.width || ""}
-                              onChange={(e) => updateDoorNestedField(index, 'existing_door', 'width', parseFloat(e.target.value))}
+                              value={existingDoor.width ?? ""}
+                              onChange={(e) => updateDoorNestedField(index, 'existing_door', 'width', e.target.value === "" ? "" : parseFloat(e.target.value))}
                             />
                           </div>
                         </div>
