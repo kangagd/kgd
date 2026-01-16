@@ -288,13 +288,24 @@ Deno.serve(async (req) => {
                                   data.third_party_trade_id ||
                                   wasLogisticsJob;
             
+            // Address provenance: track if user manually overrides address
+            let updateData = { ...data };
+            const addressFieldsOverridden = ['address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode', 'address_country', 'google_place_id', 'latitude', 'longitude']
+              .some(field => data.hasOwnProperty(field));
+            
+            if (addressFieldsOverridden) {
+              updateData.address_source = 'manual';
+              updateData.address_overridden_at = new Date().toISOString();
+              updateData.address_overridden_by = user.email;
+            }
+
             // GUARDRAIL: Prevent logistics jobs from having customer_name/address manually overridden
             if (isLogisticsJob && (data.customer_name || data.address || data.address_full)) {
                 // Strip out these fields to prevent manual override
-                const { customer_name, address, address_full, ...safeData } = data;
+                const { customer_name, address, address_full, ...safeData } = updateData;
                 job = await base44.asServiceRole.entities.Job.update(id, safeData);
             } else {
-                job = await base44.asServiceRole.entities.Job.update(id, data);
+                job = await base44.asServiceRole.entities.Job.update(id, updateData);
             }
             
             // CRITICAL: If job just became OR is already a logistics job, trigger title and address backfill
