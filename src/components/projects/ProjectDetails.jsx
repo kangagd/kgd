@@ -256,7 +256,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   // Fetch draft emails linked to this project
   const { data: projectDrafts = [] } = useQuery({
-    queryKey: projectKeys.detail(project.id),
+    queryKey: ['projectWithRelations', project.id, 'drafts'],
     queryFn: async () => {
        try {
          const allDrafts = await base44.entities.DraftEmail.list();
