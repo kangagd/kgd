@@ -502,7 +502,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       // If entity exists, use linkXeroInvoice to handle unlinking from old project
       if (invoiceEntityId) {
         await base44.functions.invoke('linkXeroInvoice', {
-          projectId: project.id,
+          project_id: project.id,
           invoiceEntityId: invoiceEntityId
         });
       } else {
@@ -525,12 +525,15 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         });
 
         await base44.functions.invoke('linkXeroInvoice', {
-         projectId: project.id,
+         project_id: project.id,
          invoiceEntityId: newInvoice.id
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      // Invalidate with a small delay to ensure backend has processed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      await queryClient.refetchQueries({ queryKey: ['projectWithRelations', project.id] });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
