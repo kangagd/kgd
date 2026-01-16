@@ -323,7 +323,7 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                         className="flex-1 border-2 font-semibold min-h-[44px]"
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`, '_blank');
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address_full || job.address || '')}`, '_blank');
                         }}
                       >
                         🧭 Navigate
