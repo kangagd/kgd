@@ -27,7 +27,32 @@ const productColors = {
   "Custom Garage Door": "bg-pink-100 text-pink-700"
 };
 
-export default function JobModalView({ job }) {
+export default function JobModalView({ job, onJobUpdated }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({
+    scheduled_date: job.scheduled_date || '',
+    scheduled_time: job.scheduled_time || '',
+    assigned_to: job.assigned_to || []
+  });
+  const [techniciansSearch, setTechniciansSearch] = useState('');
+  const queryClient = useQueryClient();
+
+  const { data: technicians = [] } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    enabled: isEditing
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.functions.invoke('manageJob', { action: 'update', id, data }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Job updated');
+      setIsEditing(false);
+      onJobUpdated?.();
+    }
+  });
+
   const handleCall = () => {
     if (job.customer_phone) {
       window.location.href = `tel:${job.customer_phone}`;
@@ -36,6 +61,13 @@ export default function JobModalView({ job }) {
 
   const handleNavigate = () => {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(job.address)}&travelmode=driving`, '_blank');
+  };
+
+  const handleSave = () => {
+    updateMutation.mutate({
+      id: job.id,
+      data: editData
+    });
   };
 
   return (
