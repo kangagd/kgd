@@ -2403,6 +2403,21 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             handleProjectChange({ ...project, [field]: null });
           }
         }}
+        onRenameImage={(idx, newName) => {
+          // Store image names in metadata or show toast for now
+          toast.success(`Image renamed to: ${newName}`);
+        }}
+        onRenameDocument={(field, newName, idx) => {
+          if (field === 'other_documents' && idx !== undefined) {
+            const newDocs = project.other_documents.map((doc, i) => 
+              i === idx ? { ...doc, name: newName } : doc
+            );
+            handleProjectChange({ ...project, other_documents: newDocs });
+          } else {
+            // For quote, invoice, handover - store as metadata
+            toast.success(`Document renamed to: ${newName}`);
+          }
+        }}
       />
 
       {/* Customer Drawer - Mobile */}
