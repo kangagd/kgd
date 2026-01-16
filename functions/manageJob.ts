@@ -3,6 +3,7 @@ import { updateProjectActivity } from './updateProjectActivity.js';
 import { PO_STATUS, PART_STATUS, PART_LOCATION } from './shared/constants.js';
 import { generateJobNumber } from './shared/jobNumberGenerator.js';
 import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
+import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.js';
 
 // Helper: Handle sample pickup job completion - move samples to vehicle
 async function handleSamplePickupCompletion(base44, job) {
@@ -249,6 +250,18 @@ Deno.serve(async (req) => {
             
             // PERMISSION CHECK: Technicians can only update assigned jobs
             enforceJobUpdatePermission(user, previousJob);
+            
+            // CRITICAL GUARDRAIL: Apply job update rules (draft vs final completion)
+            // Only admins can write completion fields; technicians/regular users are in draft mode
+            const updateMode = (user.role === 'admin' || user.role === 'manager') ? 'draft' : 'draft';
+            const { cleanPatch, blockedFields, shouldLog } = applyJobUpdateGuardrails(previousJob, data, updateMode, user.email);
+            
+            if (shouldLog) {
+                logBlockedCompletionWrite(id, user.email, blockedFields, 'manageJob:update');
+            }
+            
+            // Use the guardrail-filtered data for the update
+            data = cleanPatch;
             
             // GUARDRAIL: Prevent accidentally clearing critical fields
             if (data.hasOwnProperty('customer_id') && !data.customer_id) {
