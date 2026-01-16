@@ -588,8 +588,25 @@ Deno.serve(async (req) => {
             }
         }
 
-        return Response.json({ success: true, job });
-    } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
-    }
-});
+        // LINK VALIDATOR: Check if job has project-format number but missing project_id
+        const warnings = [];
+        if (job && !job.project_id) {
+          const jobNumberStr = String(job.job_number || '');
+          // Format: ####-X indicates project job
+          if (/^\d{4}-[A-Z]$/.test(jobNumberStr)) {
+            const warning = `Job #${job.job_number} has project-format number but project_id is null`;
+            console.warn(`[manageJob] ${warning}`);
+            warnings.push(warning);
+          }
+        }
+
+        const response = { success: true, job };
+        if (warnings.length > 0) {
+          response.warnings = warnings;
+        }
+
+        return Response.json(response);
+        } catch (error) {
+         return Response.json({ error: error.message }, { status: 500 });
+        }
+        });
