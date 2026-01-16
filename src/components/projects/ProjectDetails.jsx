@@ -163,6 +163,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId) => base44.entities.DraftEmail.delete(draftId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.drafts(project.id) });
       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
       toast.success('Draft deleted');
     },
@@ -256,18 +257,18 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   // Fetch draft emails linked to this project
   const { data: projectDrafts = [] } = useQuery({
-    queryKey: ['projectWithRelations', project.id, 'drafts'],
+    queryKey: projectKeys.drafts(project.id),
     queryFn: async () => {
        try {
-         const allDrafts = await base44.entities.DraftEmail.list();
-         const filtered = allDrafts.filter(d => 
-           d.linkedEntityId === project.id && d.linkedEntityType === 'project'
-         );
-         return filtered;
-       } catch (error) {
-         return [];
-       }
-     },
+          const allDrafts = await base44.entities.DraftEmail.list();
+          const filtered = allDrafts.filter(d => 
+            d.linkedEntityId === project.id && d.linkedEntityType === 'project'
+          );
+          return filtered;
+        } catch (error) {
+          return [];
+        }
+      },
     ...QUERY_CONFIG.reference
   });
 
