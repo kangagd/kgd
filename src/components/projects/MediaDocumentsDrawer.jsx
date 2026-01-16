@@ -288,18 +288,33 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                       >
                         {doc.name || `Document ${idx + 1}`}
                       </a>
-                      {onDeleteDocument && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteDocument('other_documents', idx);
-                          }}
-                          className="ml-2 p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <div className="flex gap-1">
+                        {onRenameDocument && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenameTarget({ type: 'other_documents', index: idx, currentName: doc.name || `Document ${idx + 1}` });
+                              setRenameModalOpen(true);
+                            }}
+                            className="p-1.5 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded transition-colors opacity-0 group-hover:opacity-100"
+                            title="Rename"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDeleteDocument && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteDocument('other_documents', idx);
+                            }}
+                            className="p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
