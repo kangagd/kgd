@@ -814,7 +814,6 @@ export default function Layout({ children, currentPageName }) {
           {/* Admin Desktop Sticky Header */}
           {!isTechnician && (
              <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
-                 <GlobalSearchDropdown />
                  <div className="flex items-center gap-1">
                    <button
                      onClick={() => setIsCommandOpen(true)}
