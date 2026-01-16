@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const notifications = notifyUsers.map(user => ({
       user_email: user.email,
       title: event.type === 'create' ? 'Technician Checked In' : 'Technician Checked Out',
-      body: `${data.technician_name || data.technician_email} checked ${event.type === 'create' ? 'in' : 'out'} at ${new Date(data.check_in_time || data.check_out_time).toLocaleString('en-AU')}`,
+      body: `${data.technician_name || data.technician_email} checked ${event.type === 'create' ? 'in' : 'out'} at ${new Date(data.check_in_time || data.check_out_time).toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}`,
       type: 'info',
       related_entity_type: 'CheckInOut',
       related_entity_id: data.id,
