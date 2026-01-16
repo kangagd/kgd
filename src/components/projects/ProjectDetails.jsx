@@ -84,6 +84,7 @@ import PartsTab from "./PartsTab";
 import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
 import { QUERY_CONFIG, invalidateProjectData } from "../api/queryConfig";
+import { projectKeys } from "../api/projectKeys";
 import { assertProjectQueryKeysAreHelperBased } from "../utils/projectKeysAudit";
 
 /**
