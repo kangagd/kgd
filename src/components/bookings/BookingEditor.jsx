@@ -41,7 +41,7 @@ export default function BookingEditor({ open, onClose, booking, defaultDate, def
     queryKey: ["technicians"],
     queryFn: async () => {
       const users = await base44.entities.User.list();
-      return users.filter(u => u.is_field_technician || u.role === 'admin' || u.extended_role === 'manager');
+      return users.filter(u => u.is_field_technician === true);
     },
   });
 
