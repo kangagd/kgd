@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function MeasurementsForm({ measurements, onChange }) {
   const [data, setData] = useState(() => {
@@ -37,6 +38,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
   });
 
   const [activeTab, setActiveTab] = useState("door-0");
+  const [doorToDelete, setDoorToDelete] = useState(null);
 
   const updateDoorField = (index, field, value) => {
     const updatedDoors = [...data.new_doors];
@@ -87,8 +89,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
     setActiveTab(`door-${newIndex}`);
   };
 
-  const removeDoor = (index, e) => {
-    e.stopPropagation();
+  const removeDoor = (index) => {
     if (data.new_doors.length <= 1) return;
 
     const updatedDoors = data.new_doors.filter((_, i) => i !== index);
@@ -101,6 +102,7 @@ export default function MeasurementsForm({ measurements, onChange }) {
     setData(updatedData);
     onChange(updatedData);
     setActiveTab("door-0");
+    setDoorToDelete(null);
   };
 
   // Validation errors for a specific door
@@ -143,8 +145,9 @@ export default function MeasurementsForm({ measurements, onChange }) {
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <>
+      <div className="space-y-6">
+        <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle>Measurements</CardTitle>
@@ -166,7 +169,10 @@ export default function MeasurementsForm({ measurements, onChange }) {
                   <span>Door {index + 1}</span>
                   {data.new_doors.length > 1 && (
                     <div 
-                      onClick={(e) => removeDoor(index, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDoorToDelete(index);
+                      }}
                       className="p-0.5 hover:bg-red-100 rounded-full text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -472,5 +478,26 @@ export default function MeasurementsForm({ measurements, onChange }) {
         </CardContent>
       </Card>
     </div>
+
+    <AlertDialog open={doorToDelete !== null} onOpenChange={() => setDoorToDelete(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Door {doorToDelete !== null ? doorToDelete + 1 : ''}?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently remove all measurements for this door. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => removeDoor(doorToDelete)}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            Delete Door
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }
