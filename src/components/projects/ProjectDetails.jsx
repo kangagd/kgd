@@ -2403,10 +2403,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             updateProjectMutation.mutate({ field, value: null });
           }
         }}
-        onRenameImage={(idx, newName) => {
-          // Store image names in metadata or show toast for now
-          toast.success(`Image renamed to: ${newName}`);
-        }}
         onRenameDocument={(field, newName, idx) => {
           if (field === 'other_documents' && idx !== undefined) {
             const newDocs = project.other_documents.map((doc, i) => 
