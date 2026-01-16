@@ -145,15 +145,18 @@ export default function JobModalView({ job, onJobUpdated }) {
                 <span>{job.scheduled_time}</span>
               </div>
             )}
-            {job.assigned_to && job.assigned_to.length > 0 && job.assigned_to.some(e => e) && (
+            {job.assigned_to && Array.isArray(job.assigned_to) && job.assigned_to.filter(Boolean).length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
                 <TechnicianAvatarGroup
-                  technicians={job.assigned_to.filter(Boolean).map((email, idx) => ({
-                    email,
-                    full_name: job.assigned_to_name?.[idx] || email.replace(/@.*/, ''),
-                    id: email
-                  }))}
+                  technicians={job.assigned_to.filter(Boolean).map((email, idx) => {
+                    const techName = job.assigned_to_name?.[job.assigned_to.indexOf(email)] || email?.split('@')?.[0] || 'Unknown';
+                    return {
+                      email,
+                      full_name: techName,
+                      id: email
+                    };
+                  })}
                   maxDisplay={3}
                   size="sm"
                 />
