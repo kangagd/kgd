@@ -11,8 +11,7 @@ import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/Status
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { DuplicateBadge } from "../common/DuplicateWarningCard";
-import FreshnessBadge from "../common/FreshnessBadge";
-import { computeSimpleFreshness } from "../utils/computeFreshness";
+
 
 /* ------------------ query tuning (anti-rate-limit) ------------------ */
 const Q = {
@@ -55,8 +54,6 @@ export default function JobCard({
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
-
-  const freshness = computeSimpleFreshness(job);
 
   const logistics = useMemo(() => isLogisticsJob(job), [job]);
   const isPickup = useMemo(() => isPickupJob(job), [job]);
@@ -178,7 +175,6 @@ export default function JobCard({
                   #{job.job_number}
                 </Badge>
                 {job.status && <JobStatusBadge value={job.status} className="pointer-events-none" />}
-                <FreshnessBadge {...freshness} className="pointer-events-none" />
                 <DuplicateBadge record={job} size="sm" />
               </div>
             </div>
