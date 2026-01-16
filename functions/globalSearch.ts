@@ -83,7 +83,6 @@ Deno.serve(async (req) => {
     const priceListQuery = {
       $or: [
         { item: { $regex: term, $options: 'i' } },
-        { description: { $regex: term, $options: 'i' } },
         { category: { $regex: term, $options: 'i' } }
       ]
     };
