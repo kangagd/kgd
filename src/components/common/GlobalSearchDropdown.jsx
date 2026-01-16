@@ -9,9 +9,11 @@ import {
   UserCircle, 
   FolderKanban, 
   Loader2,
-  X
+  X,
+  Package,
+  Building2
 } from "lucide-react";
-import { searchAll } from "@/components/api/globalSearch";
+import { base44 } from "@/api/base44Client";
 
 // Custom debounce hook
 function useDebounce(value, delay) {
@@ -31,7 +33,9 @@ export default function GlobalSearchDropdown() {
   const [results, setResults] = useState({
     jobs: [],
     projects: [],
-    customers: []
+    customers: [],
+    organisations: [],
+    priceListItems: []
   });
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -41,17 +45,17 @@ export default function GlobalSearchDropdown() {
   // Search when debounced term changes
   useEffect(() => {
     if (!debouncedSearch || debouncedSearch.length < 2) {
-      setResults({ jobs: [], projects: [], customers: [] });
+      setResults({ jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
       return;
     }
 
     let cancelled = false;
     setIsLoading(true);
 
-    searchAll(debouncedSearch)
-      .then((res) => {
+    base44.functions.invoke('globalSearch', { searchTerm: debouncedSearch })
+      .then((response) => {
         if (cancelled) return;
-        setResults(res);
+        setResults(response.data || { jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
       })
       .catch((err) => {
         const msg = err?.message || err?.toString?.() || "";
@@ -60,9 +64,10 @@ export default function GlobalSearchDropdown() {
           msg.includes("Canceled: Canceled") ||
           msg.includes("Canceled")
         ) {
-          return; // ignore cancellation noise from the editor
+          return;
         }
-        console.error("Global search UI error:", err);
+        console.error("Global search error:", err);
+        setResults({ jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -80,8 +85,8 @@ export default function GlobalSearchDropdown() {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   // Close on escape
@@ -100,13 +105,15 @@ export default function GlobalSearchDropdown() {
     navigate(url);
     setIsOpen(false);
     setSearchTerm("");
-    setResults({ jobs: [], projects: [], customers: [] });
+    setResults({ jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
   };
 
   const totalResults = 
     (results.jobs?.length || 0) + 
     (results.customers?.length || 0) + 
-    (results.projects?.length || 0);
+    (results.projects?.length || 0) +
+    (results.organisations?.length || 0) +
+    (results.priceListItems?.length || 0);
 
   return (
     <div ref={dropdownRef} className="relative flex-1 max-w-md">
@@ -161,6 +168,7 @@ export default function GlobalSearchDropdown() {
                   {results.jobs.slice(0, 5).map(job => (
                     <button
                       key={job.id}
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleNavigate(`${createPageUrl("Jobs")}?jobId=${job.id}`)}
                       className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
                     >
@@ -186,6 +194,7 @@ export default function GlobalSearchDropdown() {
                   {results.projects.slice(0, 5).map(project => (
                     <button
                       key={project.id}
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={() => handleNavigate(`${createPageUrl("Projects")}?projectId=${project.id}`)}
                       className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
                     >
@@ -201,22 +210,65 @@ export default function GlobalSearchDropdown() {
 
               {/* Customers */}
               {results?.customers?.length > 0 && (
-                <div className="px-3 py-2 border-t border-[#E5E7EB]">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280] uppercase mb-2">
-                    <UserCircle className="w-3.5 h-3.5" />
-                    Customers ({results.customers.length})
-                  </div>
-                  {results.customers.slice(0, 5).map(customer => (
-                    <button
-                      key={customer.id}
-                      onClick={() => handleNavigate(`${createPageUrl("Customers")}?customerId=${customer.id}`)}
-                      className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
-                    >
-                      <span className="font-semibold text-sm text-[#111827]">{customer.name}</span>
-                      <p className="text-xs text-[#6B7280] truncate">{customer.email || customer.phone}</p>
-                    </button>
-                  ))}
+              <div className="px-3 py-2 border-t border-[#E5E7EB]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280] uppercase mb-2">
+                  <UserCircle className="w-3.5 h-3.5" />
+                  Customers ({results.customers.length})
                 </div>
+                {results.customers.slice(0, 5).map(customer => (
+                  <button
+                     key={customer.id}
+                     onMouseDown={(e) => e.preventDefault()}
+                     onClick={() => handleNavigate(`${createPageUrl("Customers")}?customerId=${customer.id}`)}
+                     className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+                   >
+                     <span className="font-semibold text-sm text-[#111827]">{customer.name}</span>
+                     <p className="text-xs text-[#6B7280] truncate">{customer.email || customer.phone}</p>
+                   </button>
+                 ))}
+              </div>
+              )}
+
+              {/* Organisations */}
+              {results?.organisations?.length > 0 && (
+              <div className="px-3 py-2 border-t border-[#E5E7EB]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280] uppercase mb-2">
+                  <Building2 className="w-3.5 h-3.5" />
+                  Organisations ({results.organisations.length})
+                </div>
+                {results.organisations.slice(0, 5).map(org => (
+                  <button
+                     key={org.id}
+                     onMouseDown={(e) => e.preventDefault()}
+                     onClick={() => handleNavigate(`${createPageUrl("Organisations")}?organisationId=${org.id}`)}
+                     className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+                   >
+                     <span className="font-semibold text-sm text-[#111827]">{org.name}</span>
+                     <p className="text-xs text-[#6B7280] truncate">{org.email || org.phone}</p>
+                   </button>
+                 ))}
+              </div>
+              )}
+
+              {/* Price List Items */}
+              {results?.priceListItems?.length > 0 && (
+              <div className="px-3 py-2 border-t border-[#E5E7EB]">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#6B7280] uppercase mb-2">
+                  <Package className="w-3.5 h-3.5" />
+                  Items ({results.priceListItems.length})
+                </div>
+                {results.priceListItems.slice(0, 5).map(item => (
+                  <button
+                     key={item.id}
+                     onMouseDown={(e) => e.preventDefault()}
+                     onClick={() => handleNavigate(`${createPageUrl("PriceList")}?itemId=${item.id}`)}
+                     className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+                   >
+                     <span className="font-semibold text-sm text-[#111827]">{item.item}</span>
+                     <p className="text-xs text-[#6B7280] truncate">{item.category} • ${item.price}</p>
+                   </button>
+                 ))}
+              </div>
               )}
             </div>
           )}
