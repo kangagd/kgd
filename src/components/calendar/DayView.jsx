@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { isSameDay, format } from "date-fns";
 import { MapPin, User, AlertCircle, Clock, Briefcase, AlertTriangle, Ban, Calendar } from "lucide-react";
 import { getBookingTypeLabel, getBookingTypeColor } from "@/components/utils/calendarEventHelpers";
-import { isSameDay } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import TechnicianAvatar from "../common/TechnicianAvatar";
