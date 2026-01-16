@@ -238,30 +238,70 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Created');
             }
         } else if (action === 'update') {
-            // GUARDRAIL: Verify job exists
-            if (!id) {
-                return Response.json({ error: 'Job ID is required for update' }, { status: 400 });
-            }
-            
-            previousJob = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
-            if (!previousJob) {
-                return Response.json({ error: 'Job not found' }, { status: 404 });
-            }
-            
-            // PERMISSION CHECK: Technicians can only update assigned jobs
-            enforceJobUpdatePermission(user, previousJob);
-            
-            // CRITICAL GUARDRAIL: Apply job update rules (draft vs final completion)
-            // Only admins can write completion fields; technicians/regular users are in draft mode
-            const updateMode = (user.role === 'admin' || user.role === 'manager') ? 'draft' : 'draft';
-            const { cleanPatch, blockedFields, shouldLog } = applyJobUpdateGuardrails(previousJob, data, updateMode, user.email);
-            
-            if (shouldLog) {
-                logBlockedCompletionWrite(id, user.email, blockedFields, 'manageJob:update');
-            }
-            
-            // Use the guardrail-filtered data for the update
-            data = cleanPatch;
+             // GUARDRAIL: Verify job exists
+             if (!id) {
+                 return Response.json({ error: 'Job ID is required for update' }, { status: 400 });
+             }
+
+             previousJob = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+             if (!previousJob) {
+                 return Response.json({ error: 'Job not found' }, { status: 404 });
+             }
+
+             // PERMISSION CHECK: Technicians can only update assigned jobs
+             enforceJobUpdatePermission(user, previousJob);
+
+             // CRITICAL GUARDRAIL: Apply job update rules (draft vs final completion)
+             // Only admins can write completion fields; technicians/regular users are in draft mode
+             const updateMode = (user.role === 'admin' || user.role === 'manager') ? 'draft' : 'draft';
+             const { cleanPatch, blockedFields, shouldLog } = applyJobUpdateGuardrails(previousJob, data, updateMode, user.email);
+
+             if (shouldLog) {
+                 logBlockedCompletionWrite(id, user.email, blockedFields, 'manageJob:update');
+             }
+
+             // Use the guardrail-filtered data for the update
+             data = cleanPatch;
+
+             // PROJECT CONSISTENCY: If payload includes project_id, ensure it persists and pull cached fields if empty
+             if (data.hasOwnProperty('project_id') && data.project_id) {
+               try {
+                 const project = await base44.asServiceRole.entities.Project.get(data.project_id);
+
+                 // Ensure project_id persists (never overwrite existing non-empty project_id)
+                 if (previousJob.project_id && previousJob.project_id !== data.project_id) {
+                   console.warn(`[manageJob:update] Skipping project_id change for job ${id}: existing=${previousJob.project_id}, new=${data.project_id}`);
+                   data.project_id = previousJob.project_id;
+                 }
+
+                 // Pull project title/number only if job fields are empty
+                 if (!previousJob.project_name && project.title) {
+                   data.project_name = project.title;
+                 }
+                 if (!previousJob.project_number && project.project_number) {
+                   data.project_number = project.project_number;
+                 }
+
+                 // Pull address only if job.address_full is empty AND not being manually overridden
+                 const isAddressBeingOverridden = ['address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode'].some(f => data.hasOwnProperty(f));
+                 if (!previousJob.address_full && !isAddressBeingOverridden && (project.address_full || project.address)) {
+                   data.address_full = project.address_full || project.address;
+                   data.address_street = project.address_street;
+                   data.address_suburb = project.address_suburb;
+                   data.address_state = project.address_state;
+                   data.address_postcode = project.address_postcode;
+                   data.address_country = project.address_country || "Australia";
+                   data.google_place_id = project.google_place_id;
+                   data.latitude = project.latitude;
+                   data.longitude = project.longitude;
+                 }
+               } catch (e) {
+                 console.error(`[manageJob:update] Error pulling project data for project_id=${data.project_id}:`, e.message);
+               }
+             } else if (!data.hasOwnProperty('project_id') && previousJob.project_id) {
+               // Preserve existing project_id on update if not explicitly being changed
+               data.project_id = previousJob.project_id;
+             }
             
             // GUARDRAIL: Prevent accidentally clearing critical fields
             if (data.hasOwnProperty('customer_id') && !data.customer_id) {
