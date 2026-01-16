@@ -191,21 +191,21 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
             onClick={() => setFullscreenImage(null)}
           />
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <div className="relative max-w-4xl max-h-[90vh] flex items-center">
               <img 
                 src={fullscreenImage} 
                 alt="Full view"
-                className="max-w-full max-h-[calc(90vh-60px)] object-contain rounded-lg"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
               />
-              <div className="flex items-center gap-2 mt-4">
+              <div className="absolute top-4 right-4 flex items-center gap-2">
                 <a
                   href={fullscreenImage}
                   download={`image-${fullscreenIndex + 1}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-2 px-4 py-2 bg-white text-[#111827] rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                  className="flex items-center justify-center h-9 w-9 bg-white hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] rounded-lg transition-all"
+                  title="Download"
                 >
                   <Download className="w-4 h-4" />
-                  Download
                 </a>
                 {onDeleteImage && (
                   <button
@@ -214,10 +214,10 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                       onDeleteImage(fullscreenIndex);
                       setFullscreenImage(null);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                    className="flex items-center justify-center h-9 w-9 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all"
+                    title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
                   </button>
                 )}
                 <button
@@ -225,10 +225,10 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                     e.stopPropagation();
                     setFullscreenImage(null);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-white text-[#111827] rounded-lg hover:bg-[#F3F4F6] transition-colors"
+                  className="flex items-center justify-center h-9 w-9 bg-white hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] rounded-lg transition-all"
+                  title="Close"
                 >
                   <X className="w-4 h-4" />
-                  Close
                 </button>
               </div>
             </div>
