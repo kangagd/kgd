@@ -100,7 +100,7 @@ export const QUERY_CONFIG = {
 
   // Project detail lazy load - for tab-based data
   projectDetailLazy: {
-    staleTime: 120000, // 2 minutes
+    staleTime: 300000, // 5 minutes
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
