@@ -140,9 +140,16 @@ export default function JobModalView({ job, onJobUpdated }) {
           </div>
         </div>
 
-        <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-          {normalized.customer_name}
-        </h3>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+            {normalized.customer_name}
+          </h3>
+          {normalized.project_label && (
+            <Badge className="bg-blue-100 text-blue-700 border-0 font-medium text-sm px-2.5 py-0.5 rounded-lg">
+              {normalized.project_label}
+            </Badge>
+          )}
+        </div>
 
         {/* Schedule Info */}
         {!isEditing && normalized.scheduled_date && (
