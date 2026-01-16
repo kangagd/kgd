@@ -161,17 +161,26 @@ Deno.serve(async (req) => {
             }
 
             // Auto-assign job number (skip for logistics jobs)
-            if (!isLogisticsJob) {
-                jobData.job_number = await generateJobNumber(base44, jobData.project_id);
-                if (jobData.project_id) {
-                    const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
-                    jobData.project_number = project.project_number;
-                } else {
-                    jobData.project_number = null;
-                }
-            }
+             if (!isLogisticsJob) {
+                 jobData.job_number = await generateJobNumber(base44, jobData.project_id);
+                 if (jobData.project_id) {
+                     const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
+                     jobData.project_number = project.project_number;
+                 } else {
+                     jobData.project_number = null;
+                 }
+             }
 
-            // Check if this is "Initial Site Visit" job being created from a project at that stage
+             // GUARDRAIL: Enforce project-format jobs must have project_id
+             const jobNumberStr = String(jobData.job_number || '');
+             if (/^\d+-[A-Za-z]$/.test(jobNumberStr) && !jobData.project_id) {
+                 return Response.json({ 
+                     error: 'project_id required for project-format jobs',
+                     code: 'JOB_PROJECT_LINK_REQUIRED'
+                 }, { status: 400 });
+             }
+
+             // Check if this is "Initial Site Visit" job being created from a project at that stage
             if (jobData.project_id && !jobData.job_type_id) {
                 try {
                     const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
