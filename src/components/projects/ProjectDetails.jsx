@@ -1803,17 +1803,36 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
 
             {/* Row 1: Commercial Status + Tasks */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <CommercialStatusCard 
-                project={project}
-                quotes={quotes}
-                invoices={xeroInvoices}
-                onNavigateToTab={(tab) => {
-                  setActiveTab(tab);
-                  setTimeout(() => {
-                    document.getElementById(`tab-${tab}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 100);
-                }}
-              />
+              {/* Enforce quotes is always an array from API response */}
+              {(() => {
+                const safeQuotes =
+                  Array.isArray(projectData?.quotes) ? projectData.quotes :
+                  Array.isArray(quotes) ? quotes :
+                  [];
+                
+                // DEV-ONLY: Verify quotes array shape before render
+                if (typeof import.meta !== "undefined" && import.meta.env?.DEV && activeTab === "overview") {
+                  console.log("[CommercialStatusCard-SafeQuotes] Verified quotes", {
+                    isArray: Array.isArray(safeQuotes),
+                    length: safeQuotes.length,
+                    responseQuotesLength: projectData?.quotes?.length
+                  });
+                }
+
+                return (
+                  <CommercialStatusCard 
+                    project={project}
+                    quotes={safeQuotes}
+                    invoices={xeroInvoices}
+                    onNavigateToTab={(tab) => {
+                      setActiveTab(tab);
+                      setTimeout(() => {
+                        document.getElementById(`tab-${tab}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
+                  />
+                );
+              })()}
               <div id="tasks-compact">
                 <TasksCompactCard 
                   tasks={projectTasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled')}
