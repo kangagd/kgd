@@ -1,6 +1,7 @@
 import React from "react";
 import { X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,8 @@ export default function EntityModal({
   title, 
   children, 
   onOpenFullPage,
-  fullPageLabel = "Open Full Page"
+  fullPageLabel = "Open Full Page",
+  projectName
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
