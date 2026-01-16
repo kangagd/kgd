@@ -57,7 +57,7 @@ const parseTime = (timeString) => {
   return hours + minutes / 60;
 };
 
-export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [] }) {
+export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], activeCheckInMap = {} }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverZone, setDragOverZone] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -417,9 +417,9 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, le
                             draggable
                             onDragStart={(e) => handleDragStart(e, job)}
                             onDragEnd={handleDragEnd}
-                            className={`absolute ${compactMode ? 'top-2 bottom-2' : 'top-3 bottom-3'} rounded-lg ${compactMode ? 'p-2' : 'p-2.5'} cursor-move hover:shadow-md transition-all bg-white border border-[#E5E7EB] hover:border-[#FAE008] ${
+                            className={`absolute ${compactMode ? 'top-2 bottom-2' : 'top-3 bottom-3'} rounded-lg ${compactMode ? 'p-2' : 'p-2.5'} cursor-move hover:shadow-md transition-all bg-white border ${
                               draggedJob?.id === job.id ? 'opacity-50' : ''
-                            }`}
+                            } ${(job.id && activeCheckInMap && activeCheckInMap[job.id]) ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'}`}
                             style={{ left: position.left, width: position.width, minWidth: compactMode ? '120px' : '140px' }}
                             onClick={() => onJobClick(job)}
                           >
