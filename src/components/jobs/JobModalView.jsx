@@ -1,11 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, Phone, Navigation, User, CheckCircle2, Circle } from "lucide-react";
+import { MapPin, Calendar, Clock, Phone, Navigation, User, CheckCircle2, Circle, Edit2, X, Check } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { createPageUrl } from "@/utils";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import { Input } from "@/components/ui/input";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
