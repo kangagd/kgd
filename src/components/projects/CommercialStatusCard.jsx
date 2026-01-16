@@ -27,20 +27,9 @@ export default function CommercialStatusCard({
   const sortedQuotes = useMemo(() => {
     if (!quoteList.length) return [];
     return [...quoteList].sort((a, b) => {
-      const aTime = Math.max(
-        toTs(a?.sent_at),
-        toTs(a?.updated_at),
-        toTs(a?.updated_date),
-        toTs(a?.created_at),
-        toTs(a?.created_date)
-      );
-      const bTime = Math.max(
-        toTs(b?.sent_at),
-        toTs(b?.updated_at),
-        toTs(b?.updated_date),
-        toTs(b?.created_at),
-        toTs(b?.created_date)
-      );
+      // Use most recent activity timestamp in order: accepted → viewed → sent → created
+      const aTime = toTs(a?.accepted_at) || toTs(a?.viewed_at) || toTs(a?.sent_at) || toTs(a?.created_at);
+      const bTime = toTs(b?.accepted_at) || toTs(b?.viewed_at) || toTs(b?.sent_at) || toTs(b?.created_at);
       return bTime - aTime;
     });
   }, [quoteList]);
