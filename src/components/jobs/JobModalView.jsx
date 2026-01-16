@@ -13,6 +13,7 @@ import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { normalizeJob } from "@/components/utils/normalizeJob";
+import { resolveTechnicianDisplayName } from "@/components/utils/technicianDisplay";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
