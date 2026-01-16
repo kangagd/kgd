@@ -59,6 +59,7 @@ export default function TaskDetailModal({
         type: task.type || "Other",
         priority: task.priority || "Medium",
         due_date: task.due_date ? new Date(task.due_date) : null,
+        due_time: task.due_time || "",
         assigned_to_user_id: task.assigned_to_user_id || ""
       });
     }
@@ -185,23 +186,33 @@ export default function TaskDetailModal({
               </Select>
             </div>
 
-            <div>
-              <Label>Due Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {editData.due_date ? format(editData.due_date, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={editData.due_date}
-                    onSelect={(date) => setEditData(prev => ({ ...prev, due_date: date }))}
-                  />
-                </PopoverContent>
-              </Popover>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Due Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {editData.due_date ? format(editData.due_date, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={editData.due_date}
+                      onSelect={(date) => setEditData(prev => ({ ...prev, due_date: date }))}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label>Due Time (optional)</Label>
+                <Input
+                  type="time"
+                  value={editData.due_time}
+                  onChange={(e) => setEditData(prev => ({ ...prev, due_time: e.target.value }))}
+                />
+              </div>
             </div>
 
             <div>
@@ -265,6 +276,7 @@ export default function TaskDetailModal({
                   <CalendarIcon className="w-4 h-4 text-[#6B7280]" />
                   <span className="text-sm">
                     Due: {format(new Date(task.due_date), "PPP")}
+                    {task.due_time && <span className="ml-1">at {task.due_time}</span>}
                   </span>
                 </div>
               )}
