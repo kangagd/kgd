@@ -272,7 +272,12 @@ Deno.serve(async (req) => {
              // Use the guardrail-filtered data for the update
              data = cleanPatch;
 
+             // GUARDRAIL: Detect if address is being explicitly overridden in this update
+             const isAddressBeingOverridden = ['address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode', 'address_country', 'google_place_id', 'latitude', 'longitude']
+               .some(f => data.hasOwnProperty(f));
+
              // PROJECT CONSISTENCY: If payload includes project_id, ensure it persists and pull cached fields if empty
+             // BUT: Skip address sync if job.address_source === 'manual' (user has manually overridden it)
              if (data.hasOwnProperty('project_id') && data.project_id) {
                try {
                  const project = await base44.asServiceRole.entities.Project.get(data.project_id);
@@ -291,9 +296,9 @@ Deno.serve(async (req) => {
                    data.project_number = project.project_number;
                  }
 
-                 // Pull address only if job.address_full is empty AND not being manually overridden
-                 const isAddressBeingOverridden = ['address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode'].some(f => data.hasOwnProperty(f));
-                 if (!previousJob.address_full && !isAddressBeingOverridden && (project.address_full || project.address)) {
+                 // CRITICAL: Only pull address from project if NOT manually overridden
+                 const isManuallyOverridden = previousJob.address_source === 'manual';
+                 if (!isManuallyOverridden && !previousJob.address_full && !isAddressBeingOverridden && (project.address_full || project.address)) {
                    data.address_full = project.address_full || project.address;
                    data.address_street = project.address_street;
                    data.address_suburb = project.address_suburb;
@@ -310,6 +315,11 @@ Deno.serve(async (req) => {
              } else if (!data.hasOwnProperty('project_id') && previousJob.project_id) {
                // Preserve existing project_id on update if not explicitly being changed
                data.project_id = previousJob.project_id;
+             }
+
+             // Preserve address_source if already manual and no address fields are being updated
+             if (previousJob.address_source === 'manual' && !isAddressBeingOverridden) {
+               data.address_source = 'manual';
              }
             
             // GUARDRAIL: Prevent accidentally clearing critical fields
