@@ -47,7 +47,10 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { project_id } = normalizeParams(body);
-    const { xeroInvoiceId, invoiceEntityId } = body;
+    const invoiceEntityId = body.invoiceEntityId || body.invoice_entity_id;
+    
+    // Log for debugging
+    console.log('[linkXeroInvoice] Received:', { project_id, invoiceEntityId, allBody: body });
 
     if (!project_id) {
       return Response.json({ error: 'project_id is required' }, { status: 400 });
@@ -109,13 +112,23 @@ Deno.serve(async (req) => {
 
     // STEP 4: Add invoice to project's xero_invoices array (deduplicate)
     const currentInvoices = project.xero_invoices || [];
-    const updatedInvoices = [...currentInvoices, invoiceEntity.id]
-      .filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+    const invoiceIdStr = String(invoiceEntity.id);
+    
+    // Only add if not already in the array
+    const updatedInvoices = currentInvoices.includes(invoiceIdStr)
+      ? currentInvoices
+      : [...currentInvoices, invoiceIdStr];
 
     const projectUpdates = {
       xero_invoices: updatedInvoices,
       xero_payment_url: invoiceEntity.online_payment_url || invoiceEntity.online_invoice_url || project.xero_payment_url
     };
+
+    console.log('[linkXeroInvoice] Updating project array:', { 
+      project_id, 
+      before: currentInvoices, 
+      after: updatedInvoices 
+    });
 
     await base44.asServiceRole.entities.Project.update(project_id, projectUpdates);
 

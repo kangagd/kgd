@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { project_id, job_id } = normalizeParams(body);
-    const { quoteId } = body;
+    const { project_id, job_id, quote_id } = normalizeParams(body);
+    const quoteId = quote_id || body.quoteId;
 
     if (!quoteId) {
       return Response.json({ error: 'quoteId is required' }, { status: 400 });
@@ -34,12 +34,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Either project_id or job_id is required' }, { status: 400 });
     }
 
+    console.log('[linkQuote] Linking quote:', { quoteId, project_id, job_id });
+
     // Get the quote
     const quote = await base44.asServiceRole.entities.Quote.get(quoteId);
     
     if (!quote) {
       return Response.json({ error: 'Quote not found' }, { status: 404 });
     }
+    
+    console.log('[linkQuote] Found quote:', { id: quote.id, existing_project_id: quote.project_id });
 
     const oldProjectId = quote.project_id;
 
@@ -74,12 +78,22 @@ Deno.serve(async (req) => {
       const project = await base44.asServiceRole.entities.Project.get(project_id);
       
       const currentQuoteIds = project.quote_ids || [];
-      const updatedQuoteIds = [...currentQuoteIds, quoteId]
-        .filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+      const quoteIdStr = String(quoteId);
+      
+      // Only add if not already in the array
+      const updatedQuoteIds = currentQuoteIds.includes(quoteIdStr)
+        ? currentQuoteIds
+        : [...currentQuoteIds, quoteIdStr];
       
       const projectUpdates = {
         quote_ids: updatedQuoteIds
       };
+      
+      console.log('[linkQuote] Updating project array:', { 
+        project_id, 
+        before: currentQuoteIds, 
+        after: updatedQuoteIds 
+      });
       
       await base44.asServiceRole.entities.Project.update(project_id, projectUpdates);
     }
