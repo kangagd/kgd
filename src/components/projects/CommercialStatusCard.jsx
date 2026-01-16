@@ -24,7 +24,7 @@ export default function CommercialStatusCard({ project, quotes = [], invoices = 
     "Draft": "bg-slate-100 text-slate-700",
     "Sent": "bg-blue-100 text-blue-700",
     "Viewed": "bg-purple-100 text-purple-700",
-    "Approved": "bg-green-100 text-green-700",
+    "Accepted": "bg-green-100 text-green-700",
     "Declined": "bg-red-100 text-red-700",
     "Expired": "bg-orange-100 text-orange-700"
   };
