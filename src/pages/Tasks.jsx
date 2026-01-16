@@ -197,10 +197,12 @@ export default function Tasks() {
   /* -------------------- Filtered tasks (LIST logic) -------------------- */
   const filteredTasks = useMemo(() => {
     const filtered = canonicalTasks.filter((task) => {
-      // Status tabs (Cancelled already excluded above)
-      if (statusFilter === "open" && task.status === "Completed") return false;
-      if (statusFilter === "in_progress" && task.status !== "In Progress") return false;
-      if (statusFilter === "completed" && task.status !== "Completed") return false;
+      // Status tabs - ONLY apply in list view, Kanban shows all statuses
+      if (viewMode === "list") {
+        if (statusFilter === "open" && task.status === "Completed") return false;
+        if (statusFilter === "in_progress" && task.status !== "In Progress") return false;
+        if (statusFilter === "completed" && task.status !== "Completed") return false;
+      }
       // "all" shows all non-cancelled, non-archived
 
       // Project filter
