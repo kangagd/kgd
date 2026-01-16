@@ -814,14 +814,10 @@ export default function Layout({ children, currentPageName }) {
           {/* Admin Desktop Sticky Header */}
           {!isTechnician && (
              <div className="hidden lg:flex sticky top-0 z-30 bg-[#ffffff] border-b border-[#E5E7EB] px-6 py-3 items-center justify-between gap-4">
+                 <div className="flex items-center gap-3 flex-1 max-w-md">
+                   <GlobalSearchDropdown />
+                 </div>
                  <div className="flex items-center gap-1">
-                   <button
-                     onClick={() => setIsCommandOpen(true)}
-                     className="p-2 rounded-lg transition-colors text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]"
-                     title="Search (Ctrl+K)"
-                   >
-                     <Search className="w-5 h-5" />
-                   </button>
                    {/* Notifications */}
                    <NotificationBell />
                    {/* Recent Pages Dropdown */}
