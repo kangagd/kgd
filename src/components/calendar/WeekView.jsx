@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
-import { MapPin, AlertCircle, Clock, Briefcase, AlertTriangle, Ban } from "lucide-react";
+import { MapPin, AlertCircle, Clock, Briefcase, AlertTriangle, Ban, Calendar } from "lucide-react";
+import { getBookingTypeLabel, getBookingTypeColor } from "@/components/utils/calendarEventHelpers";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import TechnicianAvatar from "../common/TechnicianAvatar";
@@ -69,7 +70,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
+export default function WeekView({ jobs, bookings = [], currentDate, onJobClick, onBookingClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -468,6 +469,49 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, l
                                 </JobHoverCard>
                               );
                             })}
+
+                            {/* Bookings for this technician on this day */}
+                            {bookings
+                              .filter(booking => {
+                                try {
+                                  return isSameDay(new Date(booking.start_at), day) && 
+                                         booking.assigned_user_emails?.includes(technician.email);
+                                } catch {
+                                  return false;
+                                }
+                              })
+                              .map(booking => (
+                                <div
+                                  key={booking.id}
+                                  onClick={() => onBookingClick?.(booking)}
+                                  className={`${compactMode ? 'p-2' : 'p-2.5'} rounded-lg cursor-pointer bg-blue-50 border border-blue-200 hover:shadow-md transition-all`}
+                                >
+                                  <div className="space-y-1">
+                                    <div className="flex items-center gap-1 text-[10px] font-semibold text-blue-900">
+                                      <Calendar className="w-3 h-3" />
+                                      Booking
+                                    </div>
+                                    <div className={`${compactMode ? 'text-[11px]' : 'text-xs'} font-semibold text-[#111827] leading-tight truncate`}>
+                                      {booking.title}
+                                    </div>
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      <Badge className={getBookingTypeColor(booking.type) + " text-[9px] px-1.5 py-0"}>
+                                        {getBookingTypeLabel(booking.type)}
+                                      </Badge>
+                                      <Badge className="bg-blue-100 text-blue-800 text-[9px] px-1.5 py-0">
+                                        <Clock className="w-2.5 h-2.5 mr-0.5" />
+                                        {new Date(booking.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                      </Badge>
+                                    </div>
+                                    {booking.location && (
+                                      <div className="flex items-start gap-1 text-[10px] text-[#4B5563] truncate">
+                                        <MapPin className="w-2.5 h-2.5 mt-0.5 flex-shrink-0" />
+                                        <span className="truncate">{booking.location}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
                           </div>
                         </div>
                       );

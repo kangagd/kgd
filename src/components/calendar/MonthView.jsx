@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
-import { Plus, Clock, Briefcase, AlertTriangle, Ban } from "lucide-react";
+import { Plus, Clock, Briefcase, AlertTriangle, Ban, Calendar } from "lucide-react";
+import { getBookingTypeLabel, getBookingTypeColor } from "@/components/utils/calendarEventHelpers";
 import { base44 } from "@/api/base44Client";
 import { isTechnicianCheckedIn } from "../domain/checkInHelpers";
 
@@ -48,7 +49,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
+export default function MonthView({ jobs, bookings = [], currentDate, onJobClick, onBookingClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
   const [user, setUser] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const compactMode = true;
@@ -197,15 +198,23 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                   )}
                   
                   {/* Mobile technician: just show count */}
-                  {isTechnician && dayJobs.length > 0 ? (
-                    <div className="lg:hidden flex items-center justify-center h-full">
-                      <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-bold text-xs px-2 py-1 rounded-lg">
-                        {dayJobs.length}
-                      </Badge>
+                  {isTechnician && (dayJobs.length > 0 || dayBookings.length > 0) ? (
+                    <div className="lg:hidden flex items-center justify-center h-full gap-2">
+                      {dayJobs.length > 0 && (
+                        <Badge className="bg-[#FAE008] text-[#111827] hover:bg-[#FAE008] border-0 font-bold text-xs px-2 py-1 rounded-lg">
+                          {dayJobs.length} Jobs
+                        </Badge>
+                      )}
+                      {dayBookings.length > 0 && (
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-0 font-bold text-xs px-2 py-1 rounded-lg">
+                          {dayBookings.length} Bookings
+                        </Badge>
+                      )}
                     </div>
                   ) : (
                     <div className={`space-y-0.5 overflow-y-auto ${compactMode ? 'max-h-[80px]' : ''}`} style={{ maxHeight: compactMode ? '80px' : '110px' }}>
-                      {dayJobs.slice(0, compactMode ? 2 : 3).map(job => {
+                      {/* Jobs */}
+                      {dayJobs.slice(0, compactMode ? 1 : 2).map(job => {
                         const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
                         
                         // Check if ANY assigned technician is checked in (for month view aggregate display)
@@ -260,11 +269,42 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                           </div>
                         );
                       })}
+
+                      {/* Bookings */}
+                      {dayBookings.slice(0, compactMode ? 1 : 1).map(booking => (
+                        <div
+                          key={booking.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onBookingClick?.(booking);
+                          }}
+                          className={`${compactMode ? 'text-[9px] px-1 py-0.5' : 'text-xs px-1.5 py-1'} rounded cursor-pointer hover:shadow-sm transition-all bg-blue-50 border border-blue-200`}
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1 text-[9px] font-semibold text-blue-900">
+                              <Calendar className="w-2.5 h-2.5" />
+                              Booking
+                            </div>
+                            <div className="text-[10px] font-semibold text-[#111827] leading-tight truncate">
+                              {booking.title}
+                            </div>
+                            <div className="flex items-center gap-0.5 flex-wrap">
+                              <Badge className={getBookingTypeColor(booking.type) + " text-[8px] px-1 py-0"}>
+                                {getBookingTypeLabel(booking.type)}
+                              </Badge>
+                              <Badge className="bg-blue-100 text-blue-800 text-[8px] px-1 py-0">
+                                <Clock className="w-2 h-2 mr-0.5" />
+                                {new Date(booking.start_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  {dayJobs.length > (compactMode ? 2 : 3) && !isTechnician && (
+                  {(dayJobs.length + dayBookings.length) > (compactMode ? 2 : 3) && !isTechnician && (
                     <div className={`${compactMode ? 'text-[8px]' : 'text-[9px]'} text-[#6B7280] mt-0.5 text-center font-semibold`}>
-                      +{dayJobs.length - (compactMode ? 2 : 3)}
+                      +{(dayJobs.length + dayBookings.length) - (compactMode ? 2 : 3)} more
                     </div>
                   )}
                 </div>

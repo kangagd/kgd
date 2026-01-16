@@ -3,7 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isSameDay, format } from "date-fns";
-import { MapPin, User, AlertCircle, Clock, Briefcase, AlertTriangle, Ban } from "lucide-react";
+import { MapPin, User, AlertCircle, Clock, Briefcase, AlertTriangle, Ban, Calendar } from "lucide-react";
+import { getBookingTypeLabel, getBookingTypeColor } from "@/components/utils/calendarEventHelpers";
+import { isSameDay } from "date-fns";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import TechnicianAvatar from "../common/TechnicianAvatar";
@@ -58,7 +60,7 @@ const parseTime = (timeString) => {
   return hours + minutes / 60;
 };
 
-export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
+export default function DayView({ jobs, bookings = [], currentDate, onJobClick, onBookingClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverZone, setDragOverZone] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
