@@ -112,6 +112,10 @@ Deno.serve(async (req) => {
       base44.entities.PriceListItem.filter(priceListQuery, null, 30)
     ]);
 
+    console.log('Search term:', term);
+    console.log('Projects found:', projects.length, projects.slice(0, 3));
+    console.log('Jobs found:', jobs.length);
+
     return Response.json({
       jobs,
       customers,
