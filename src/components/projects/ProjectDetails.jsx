@@ -2398,9 +2398,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         onDeleteDocument={(field, idx) => {
           if (field === 'other_documents' && idx !== undefined) {
             const newDocs = project.other_documents.filter((_, i) => i !== idx);
-            handleProjectChange({ ...project, other_documents: newDocs });
+            updateProjectMutation.mutate({ field: 'other_documents', value: newDocs });
           } else {
-            handleProjectChange({ ...project, [field]: null });
+            updateProjectMutation.mutate({ field, value: null });
           }
         }}
         onRenameImage={(idx, newName) => {
@@ -2412,7 +2412,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             const newDocs = project.other_documents.map((doc, i) => 
               i === idx ? { ...doc, name: newName } : doc
             );
-            handleProjectChange({ ...project, other_documents: newDocs });
+            updateProjectMutation.mutate({ field: 'other_documents', value: newDocs });
           } else {
             // For quote, invoice, handover - store as metadata
             toast.success(`Document renamed to: ${newName}`);
