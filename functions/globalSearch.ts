@@ -29,10 +29,7 @@ Deno.serve(async (req) => {
       $or: [
         { job_number: { $regex: term, $options: 'i' } },
         { customer_name: { $regex: term, $options: 'i' } },
-        { address_full: { $regex: term, $options: 'i' } },
-        { address_suburb: { $regex: term, $options: 'i' } },
-        { job_type: { $regex: term, $options: 'i' } },
-        { notes: { $regex: term, $options: 'i' } }
+        { address_suburb: { $regex: term, $options: 'i' } }
       ]
     };
 
