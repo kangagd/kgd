@@ -344,6 +344,43 @@ Deno.serve(async (req) => {
             }
 
             // Removed legacy PO receiving logic - now handled via logistics_outcome
+        } else if (action === 'reset_address_from_project') {
+            // Reset address to project defaults
+            if (!id) {
+                return Response.json({ error: 'Job ID is required' }, { status: 400 });
+            }
+
+            const jobToReset = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+            if (!jobToReset) {
+                return Response.json({ error: 'Job not found' }, { status: 404 });
+            }
+
+            if (!jobToReset.project_id) {
+                return Response.json({ error: 'Job is not linked to a project. Cannot reset address.' }, { status: 400 });
+            }
+
+            const project = await base44.asServiceRole.entities.Project.get(jobToReset.project_id).catch(() => null);
+            if (!project || !project.address_full) {
+                return Response.json({ error: 'Project has no address to restore from.' }, { status: 400 });
+            }
+
+            // Restore address from project
+            job = await base44.asServiceRole.entities.Job.update(id, {
+                address_full: project.address_full || project.address,
+                address_street: project.address_street,
+                address_suburb: project.address_suburb,
+                address_state: project.address_state,
+                address_postcode: project.address_postcode,
+                address_country: project.address_country || 'Australia',
+                google_place_id: project.google_place_id,
+                latitude: project.latitude,
+                longitude: project.longitude,
+                address_source: 'project',
+                address_overridden_at: null,
+                address_overridden_by: null
+            });
+
+            return Response.json({ success: true, job });
         } else if (action === 'delete') {
             // GUARDRAIL: Verify job exists
             if (!id) {
