@@ -201,7 +201,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   // Single batch query to fetch project + all relations in ONE call
   const { data: projectData, isLoading: isProjectLoading } = useQuery({
-    queryKey: ['projectWithRelations', initialProject.id],
+    queryKey: projectKeys.withRelations(initialProject.id),
     queryFn: async () => {
        const response = await base44.functions.invoke('getProjectWithRelations', { 
          project_id: initialProject.id 
@@ -229,7 +229,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   // Fetch draft emails linked to this project
   const { data: projectDrafts = [] } = useQuery({
-    queryKey: ['projectDrafts', project.id],
+    queryKey: projectKeys.detail(project.id),
     queryFn: async () => {
        try {
          const allDrafts = await base44.entities.DraftEmail.list();
@@ -380,17 +380,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
     onSuccess: (data, variables) => {
       // Optimistically update the batch query cache
-      queryClient.setQueryData(['projectWithRelations', project.id], (oldData) => ({
+      queryClient.setQueryData(projectKeys.withRelations(project.id), (oldData) => ({
         ...oldData,
         project: {
           ...oldData.project,
           [variables.field]: variables.value
         }
       }));
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
       // Only invalidate global projects list if the change affects list view (title, status, etc.)
       if (['title', 'status', 'customer_name', 'project_number', 'deleted_at'].includes(variables.field)) {
-        queryClient.invalidateQueries({ queryKey: ['projects'] });
+        queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       }
     }
   });
@@ -399,18 +399,18 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     mutationFn: (fields) => base44.entities.Project.update(project.id, fields),
     onSuccess: (data, fields) => {
       // Optimistically update the batch query cache
-      queryClient.setQueryData(['projectWithRelations', project.id], (oldData) => ({
+      queryClient.setQueryData(projectKeys.withRelations(project.id), (oldData) => ({
         ...oldData,
         project: {
           ...oldData.project,
           ...fields
         }
       }));
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
       // Only invalidate global projects list if critical display fields changed
       const listDisplayFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'updated_date'];
       if (Object.keys(fields).some(f => listDisplayFields.includes(f))) {
-        queryClient.invalidateQueries({ queryKey: ['projects'] });
+        queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       }
     }
   });
@@ -425,10 +425,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-      setShowInvoiceModal(false);
-      toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
-    },
+       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+       setShowInvoiceModal(false);
+       toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
+     },
     onError: (error) => {
        const errorMsg = error?.response?.data?.error || error?.message || 'Unknown error';
        toast.error(`Failed to create invoice: ${errorMsg}`);
@@ -443,11 +443,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-      if (data.voided) {
-        toast.info('Invoice was voided in Xero and removed from the app');
-      }
-    }
+       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+       if (data.voided) {
+         toast.info('Invoice was voided in Xero and removed from the app');
+       }
+     }
   });
 
   const handleLinkExistingInvoice = async (invoice) => {
@@ -506,9 +506,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
       // Invalidate with a small delay to ensure backend has processed
       await new Promise(resolve => setTimeout(resolve, 500));
-      await queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-      await queryClient.refetchQueries({ queryKey: ['projectWithRelations', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      await queryClient.refetchQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
     } catch (error) {
@@ -566,11 +566,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const newJob = createJobResponse.data.job;
 
       // Update batch cache with the new job
-      queryClient.setQueryData(['projectWithRelations', project.id], (oldData) => ({
+      queryClient.setQueryData(projectKeys.withRelations(project.id), (oldData) => ({
         ...oldData,
         jobs: [...(oldData.jobs || []), newJob]
       }));
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
@@ -671,8 +671,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           old_status: oldStage,
           completed_date: project.completed_date || new Date().toISOString().split('T')[0]
         });
-        queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-        queryClient.invalidateQueries({ queryKey: ['projects'] }); // Stage change affects list
+        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+        queryClient.invalidateQueries({ queryKey: projectKeys.list() }); // Stage change affects list
         queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
         toast.success('Project completed and warranty activated');
       } catch (error) {
@@ -799,7 +799,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       const newJob = createJobResponse.data.job;
 
       // Refresh batch data
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
@@ -947,8 +947,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     };
     
     base44.entities.Project.update(project.id, updates).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] }); // Technician names affect list view
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.list() }); // Technician names affect list view
     });
   };
 
@@ -1114,8 +1114,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               customerId={project.customer_id}
               projectId={project.id}
               onCustomerUpdate={(updatedData) => {
-                queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-                queryClient.invalidateQueries({ queryKey: ['projects'] });
+                queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+                queryClient.invalidateQueries({ queryKey: projectKeys.list() });
               }}
             />
 
@@ -1713,22 +1713,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   }}
                   onAddTask={async (taskData) => {
                     await base44.entities.Task.create(taskData);
-                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
                     toast.success('Task created');
                   }}
                   onTaskUpdate={async (taskId, data) => {
                     await base44.entities.Task.update(taskId, data);
-                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
                     toast.success('Task updated');
                   }}
                   onTaskDelete={async (taskId) => {
                     await base44.entities.Task.delete(taskId);
-                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
                     toast.success('Task deleted');
                   }}
                   onTaskStatusChange={async (taskId, status) => {
                     await base44.entities.Task.update(taskId, { status });
-                    queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
                     toast.success('Task status updated');
                   }}
                 />
