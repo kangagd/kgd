@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { normalizeJob } from "@/components/utils/normalizeJob";
 import { resolveTechnicianDisplayName } from "@/components/utils/technicianDisplay";
-import JobBriefCard from "./JobBriefCard";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
@@ -41,22 +40,7 @@ export default function JobModalView({ job, onJobUpdated }) {
     assigned_to: normalized.assigned_to || []
   });
   const [techniciansSearch, setTechniciansSearch] = useState('');
-  const didAutoBriefRef = useRef(false);
   const queryClient = useQueryClient();
-
-  // Auto-generate brief on open (only once)
-  useEffect(() => {
-    if (!didAutoBriefRef.current && job.project_id) {
-      didAutoBriefRef.current = true;
-      base44.functions.invoke('generateJobBrief', { job_id: job.id, mode: 'auto' })
-        .then(res => {
-          if (res.data.success && !res.data.skipped) {
-            queryClient.invalidateQueries({ queryKey: ['jobs'] });
-          }
-        })
-        .catch(err => console.error('Auto-generate brief error:', err));
-    }
-  }, [job.id, job.project_id, queryClient]);
 
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
@@ -103,11 +87,6 @@ export default function JobModalView({ job, onJobUpdated }) {
           job_id: job.id
         }}
       />
-
-      {/* Job Brief Card */}
-      {job.project_id && (
-        <JobBriefCard job={job} onJobUpdated={onJobUpdated} />
-      )}
 
       {/* Header Info */}
       <div className="space-y-3">
