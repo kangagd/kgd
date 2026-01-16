@@ -360,12 +360,10 @@ Deno.serve(async (req) => {
                                   data.third_party_trade_id ||
                                   wasLogisticsJob;
             
-            // Address provenance: track if user manually overrides address
+            // Address provenance: track if user manually overrides address (only on explicit changes)
             let updateData = { ...data };
-            const addressFieldsOverridden = ['address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode', 'address_country', 'google_place_id', 'latitude', 'longitude']
-              .some(field => data.hasOwnProperty(field));
-            
-            if (addressFieldsOverridden) {
+
+            if (isAddressBeingOverridden) {
               updateData.address_source = 'manual';
               updateData.address_overridden_at = new Date().toISOString();
               updateData.address_overridden_by = user.email;
