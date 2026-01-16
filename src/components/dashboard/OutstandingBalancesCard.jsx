@@ -51,14 +51,16 @@ export default function OutstandingBalancesCard() {
       return null;
     }
 
+    // Check if ANY invoice exists (regardless of status)
+    const allProjectInvoices = xeroInvoices.filter(inv => inv.project_id === project.id);
+    
     // Only count unpaid invoices (AUTHORISED status with amount_due > 0)
-    const projectInvoices = xeroInvoices.filter(inv => 
-      inv.project_id === project.id && 
+    const unpaidInvoices = allProjectInvoices.filter(inv => 
       inv.status === 'AUTHORISED' && 
       (inv.amount_due || 0) > 0
     );
     
-    const totalInvoiced = projectInvoices.reduce((sum, inv) => sum + (inv.amount_due || 0), 0);
+    const totalInvoiced = unpaidInvoices.reduce((sum, inv) => sum + (inv.amount_due || 0), 0);
     
     const outstandingBalance = totalInvoiced > 0 
       ? totalInvoiced 
@@ -67,7 +69,7 @@ export default function OutstandingBalancesCard() {
     return {
       ...project,
       outstandingBalance,
-      hasInvoices: projectInvoices.length > 0
+      hasInvoices: allProjectInvoices.length > 0
     };
   }).filter(p => p && p.outstandingBalance > 0)
     .sort((a, b) => b.outstandingBalance - a.outstandingBalance)
