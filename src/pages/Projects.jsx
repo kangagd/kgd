@@ -454,7 +454,9 @@ Return ALL project IDs where has_outstanding_payment is true OR total_outstandin
       .filter((project) => {
         const matchesSearch = 
           project.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-          project.customer_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+          project.customer_name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          project.address_full?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          project.project_number?.toString().includes(debouncedSearchTerm);
         
         const matchesStage = stageFilter === "all" || project.status === stageFilter;
         
