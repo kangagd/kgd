@@ -4,9 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, DollarSign, ChevronRight } from "lucide-react";
 
 export default function CommercialStatusCard({ project, quotes = [], invoices = [], onNavigateToTab }) {
-  // Quote status
-  const primaryQuote = quotes.find(q => q.id === project.primary_quote_id) || quotes[0];
-  const quoteStatus = primaryQuote?.status || "Draft";
+  // Quote status - use primary quote, otherwise latest quote
+  const primaryQuote = quotes.find(q => q.id === project.primary_quote_id);
+  const latestQuote = quotes.length > 0 ? quotes.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0] : null;
+  const selectedQuote = primaryQuote || latestQuote;
+  const quoteStatus = selectedQuote?.status || "Draft";
   
   // Invoice status
   const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.total_amount || 0), 0);
