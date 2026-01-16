@@ -14,7 +14,6 @@ export default function EditableFileUpload({
   emptyText = "No files uploaded"
 }) {
   const fileInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
