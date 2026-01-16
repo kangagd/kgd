@@ -168,18 +168,33 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                       >
                         Quote
                       </a>
-                      {onDeleteDocument && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDeleteDocument('quote_url');
-                          }}
-                          className="ml-2 p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <div className="flex gap-1">
+                        {onRenameDocument && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenameTarget({ type: 'quote_url', currentName: 'Quote' });
+                              setRenameModalOpen(true);
+                            }}
+                            className="p-1.5 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded transition-colors opacity-0 group-hover:opacity-100"
+                            title="Rename"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {onDeleteDocument && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteDocument('quote_url');
+                            }}
+                            className="p-1.5 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                   {project.invoice_url && (
