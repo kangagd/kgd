@@ -643,7 +643,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         });
       }
 
-      invalidateProjectData(queryClient, project.id);
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       toast.success('AI suggestions applied to project');
     } catch (error) {
       toast.error('Failed to apply AI suggestions');
@@ -849,7 +850,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         project_id: project.id 
       });
       const openProjectTasks = tasksToCancel.filter(t => t.status !== "Completed" && t.status !== "Cancelled");
-      
+
       // Cancel all open tasks related to jobs in this project
       const jobIds = jobs.map(j => j.id);
       let jobTasks = [];
@@ -866,8 +867,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         base44.entities.Task.update(task.id, { status: "Cancelled" })
       ));
 
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       
       const cancelledCount = openJobs.length + allOpenTasks.length;
       toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} and ${allOpenTasks.length} task${allOpenTasks.length !== 1 ? 's' : ''} cancelled.`);
@@ -927,7 +928,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           longitude: addressData.longitude
         }
       });
-      invalidateProjectData(queryClient, project.id);
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       toast.success('Address updated and synced to jobs');
     } catch (error) {
       toast.error('Failed to update address');
