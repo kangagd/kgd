@@ -87,6 +87,10 @@ export default function JobModalView({ job, onJobUpdated }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary">#{job.job_number}</Badge>
+            {job.project_name && (
+              <Badge className="bg-blue-100 text-blue-700 border-0">{job.project_name}</Badge>
+            )}
             {job.job_type_name && (
               <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
                 {job.job_type_name}
@@ -109,11 +113,23 @@ export default function JobModalView({ job, onJobUpdated }) {
               </div>
             )}
           </div>
-          {job.status && (
-            <Badge className={`${statusColors[job.status]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
-              {job.status}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {!isEditing && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsEditing(true)}
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
+            )}
+            {job.status && (
+              <Badge className={`${statusColors[job.status]} font-medium px-2.5 py-0.5 rounded-lg border-0`}>
+                {job.status}
+              </Badge>
+            )}
+          </div>
         </div>
 
         <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
