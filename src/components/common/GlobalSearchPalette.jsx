@@ -8,37 +8,38 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
-import { searchAll } from "@/components/api/globalSearch";
 import { createPageUrl } from "@/utils";
-import { Briefcase, FolderKanban, User, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { Briefcase, FolderKanban, User, Loader2, Building2, Package } from "lucide-react";
 
 export default function GlobalSearchPalette({ open, onOpenChange }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState({ jobs: [], projects: [], customers: [] });
+  const [results, setResults] = useState({ jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
       setQuery("");
-      setResults({ jobs: [], projects: [], customers: [] });
+      setResults({ jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
     }
   }, [open]);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (!query || query.length < 2) {
-        setResults({ jobs: [], projects: [], customers: [] });
+        setResults({ jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
         setLoading(false);
         return;
       }
 
       setLoading(true);
       try {
-        const data = await searchAll(query);
-        setResults(data);
+        const response = await base44.functions.invoke('globalSearch', { searchTerm: query });
+        setResults(response.data || { jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
       } catch (err) {
         console.error("Search error:", err);
+        setResults({ jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
       } finally {
         setLoading(false);
       }
@@ -112,12 +113,13 @@ export default function GlobalSearchPalette({ open, onOpenChange }) {
             {results.jobs.length > 0 && (
               <CommandGroup heading="Jobs" className="px-2 text-slate-500">
                 {results.jobs.map((job) => (
-                  <CommandItem
-                    key={job.id}
-                    value={`job-${job.id}-${job.job_number}`}
-                    onSelect={(_value) => handleSelect("job", job)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
-                  >
+                   <CommandItem
+                     key={job.id}
+                     value={`job-${job.id}-${job.job_number}`}
+                     onSelect={(_value) => handleSelect("job", job)}
+                     onMouseDown={(e) => e.preventDefault()}
+                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
+                   >
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-600">
                       <Briefcase className="h-4 w-4" />
                     </div>
@@ -142,12 +144,13 @@ export default function GlobalSearchPalette({ open, onOpenChange }) {
             {results.projects.length > 0 && (
               <CommandGroup heading="Projects" className="px-2 text-slate-500">
                 {results.projects.map((project) => (
-                  <CommandItem
-                    key={project.id}
-                    value={`project-${project.id}-${project.title}`}
-                    onSelect={(_value) => handleSelect("project", project)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
-                  >
+                   <CommandItem
+                     key={project.id}
+                     value={`project-${project.id}-${project.title}`}
+                     onSelect={(_value) => handleSelect("project", project)}
+                     onMouseDown={(e) => e.preventDefault()}
+                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
+                   >
                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-purple-50 text-purple-600">
                       <FolderKanban className="h-4 w-4" />
                     </div>
@@ -170,23 +173,72 @@ export default function GlobalSearchPalette({ open, onOpenChange }) {
             {results.customers.length > 0 && (
               <CommandGroup heading="Customers" className="px-2 text-slate-500">
                 {results.customers.map((customer) => (
-                  <CommandItem
-                    key={customer.id}
-                    value={`customer-${customer.id}-${customer.name}`}
-                    onSelect={(_value) => handleSelect("customer", customer)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
-                  >
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <div className="flex flex-col flex-1 min-w-0">
-                      <span className="font-medium text-slate-900 truncate">{customer.name}</span>
-                      <span className="text-xs text-slate-500 truncate">
-                        {customer.email || customer.phone || "No contact info"}
-                      </span>
-                    </div>
-                  </CommandItem>
-                ))}
+                   <CommandItem
+                     key={customer.id}
+                     value={`customer-${customer.id}-${customer.name}`}
+                     onSelect={(_value) => handleSelect("customer", customer)}
+                     onMouseDown={(e) => e.preventDefault()}
+                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
+                   >
+                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-green-50 text-green-600">
+                       <User className="h-4 w-4" />
+                     </div>
+                     <div className="flex flex-col flex-1 min-w-0">
+                       <span className="font-medium text-slate-900 truncate">{customer.name}</span>
+                       <span className="text-xs text-slate-500 truncate">
+                         {customer.email || customer.phone || "No contact info"}
+                       </span>
+                     </div>
+                   </CommandItem>
+                 ))}
+              </CommandGroup>
+            )}
+
+            {results.organisations.length > 0 && (
+              <CommandGroup heading="Organisations" className="px-2 text-slate-500">
+                {results.organisations.map((org) => (
+                   <CommandItem
+                     key={org.id}
+                     value={`org-${org.id}-${org.name}`}
+                     onSelect={(_value) => handleSelect("organisation", org)}
+                     onMouseDown={(e) => e.preventDefault()}
+                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
+                   >
+                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-purple-50 text-purple-600">
+                       <Building2 className="h-4 w-4" />
+                     </div>
+                     <div className="flex flex-col flex-1 min-w-0">
+                       <span className="font-medium text-slate-900 truncate">{org.name}</span>
+                       <span className="text-xs text-slate-500 truncate">
+                         {org.email || org.phone || "No contact info"}
+                       </span>
+                     </div>
+                   </CommandItem>
+                 ))}
+              </CommandGroup>
+            )}
+
+            {results.priceListItems.length > 0 && (
+              <CommandGroup heading="Inventory Items" className="px-2 text-slate-500">
+                {results.priceListItems.map((item) => (
+                   <CommandItem
+                     key={item.id}
+                     value={`item-${item.id}-${item.item}`}
+                     onSelect={(_value) => handleSelect("item", item)}
+                     onMouseDown={(e) => e.preventDefault()}
+                     className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer hover:bg-slate-50 aria-selected:bg-slate-100 my-1"
+                   >
+                     <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-orange-50 text-orange-600">
+                       <Package className="h-4 w-4" />
+                     </div>
+                     <div className="flex flex-col flex-1 min-w-0">
+                       <span className="font-medium text-slate-900 truncate">{item.item}</span>
+                       <span className="text-xs text-slate-500 truncate">
+                         {item.category} • ${item.price}
+                       </span>
+                     </div>
+                   </CommandItem>
+                 ))}
               </CommandGroup>
             )}
           </CommandList>
