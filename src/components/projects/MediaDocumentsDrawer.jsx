@@ -218,15 +218,13 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                 className="max-w-full max-h-[90vh] object-contain rounded-lg"
               />
               <div className="absolute top-4 right-4 flex items-center gap-2">
-                <a
-                  href={fullscreenImage}
-                  download={`image-${fullscreenIndex + 1}`}
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  onClick={handleDownloadImage}
                   className="flex items-center justify-center h-9 w-9 bg-white hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] rounded-lg transition-all"
                   title="Download"
                 >
                   <Download className="w-4 h-4" />
-                </a>
+                </button>
                 {onDeleteImage && (
                   <button
                     onClick={(e) => {
