@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
 import { format, isSameDay, isSameMonth, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, addWeeks, subWeeks, addMonths, subMonths, addDays, subDays, getDay } from "date-fns";
+import { getNowInAEST, isSameDayAEST } from "../components/utils/timezoneHelpers";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { toast } from "sonner";
 import JobDetails from "../components/jobs/JobDetails";
@@ -247,11 +248,11 @@ export default function Schedule() {
   }, [expandedJobs, viewScope, user, selectedTechnicianEmail]);
 
   const todaysJobs = React.useMemo(() => {
-    const today = new Date();
+    const today = getNowInAEST();
     return scopedJobs.filter(job => {
        if (!job?.scheduled_date) return false;
        try {
-         return isSameDay(parseISO(job.scheduled_date), today);
+         return isSameDayAEST(parseISO(job.scheduled_date), today);
        } catch { return false; }
     }).sort((a, b) => {
        const tA = a.scheduled_time || "00:00";
@@ -405,7 +406,7 @@ export default function Schedule() {
     else setSelectedDate(addMonths(selectedDate, 1));
   }, [view, selectedDate]);
 
-  const handleToday = useCallback(() => setSelectedDate(new Date()), []);
+  const handleToday = useCallback(() => setSelectedDate(getNowInAEST()), []);
 
   // Memoize filter function to avoid recreating on every render
   const getFilteredJobs = useCallback((dateFilter) => {
@@ -558,9 +559,9 @@ export default function Schedule() {
 
   // Render Day View with Drag and Drop (Time Grid)
   const renderDayView = () => {
-    const dayJobs = getFilteredJobs((date) => isSameDay(date, selectedDate));
+    const dayJobs = getFilteredJobs((date) => isSameDayAEST(date, selectedDate));
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    
+
     // Generate time slots (7 AM to 6 PM in 1-hour intervals)
     const timeSlots = [];
     for (let hour = 7; hour <= 18; hour++) {
@@ -1007,8 +1008,8 @@ export default function Schedule() {
     return (
       <div className="space-y-4">
         {weekDays.map(day => {
-          const dayJobs = getFilteredJobs((date) => isSameDay(date, day));
-          const isToday = isSameDay(day, new Date());
+            const dayJobs = getFilteredJobs((date) => isSameDay(date, day));
+            const isToday = isSameDayAEST(day, getNowInAEST());
 
           return (
             <div
