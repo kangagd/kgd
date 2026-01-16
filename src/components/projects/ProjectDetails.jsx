@@ -503,8 +503,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       if (invoiceEntityId) {
         await base44.functions.invoke('linkXeroInvoice', {
           projectId: project.id,
-          invoiceEntityId: invoiceEntityId,
-          setPrimary: !project.primary_xero_invoice_id
+          invoiceEntityId: invoiceEntityId
         });
       } else {
         // Create new entity and link it
@@ -526,9 +525,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         });
 
         await base44.functions.invoke('linkXeroInvoice', {
-          projectId: project.id,
-          invoiceEntityId: newInvoice.id,
-          setPrimary: !project.primary_xero_invoice_id
+         projectId: project.id,
+         invoiceEntityId: newInvoice.id
         });
       }
 
