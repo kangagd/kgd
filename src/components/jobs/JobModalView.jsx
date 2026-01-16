@@ -1,7 +1,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, Calendar, Clock, Phone, Navigation, User } from "lucide-react";
+import { MapPin, Calendar, Clock, Phone, Navigation, User, CheckCircle2, Circle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { createPageUrl } from "@/utils";
@@ -59,6 +59,17 @@ export default function JobModalView({ job }) {
               <Badge className={`${productColors[job.product]} font-medium text-xs px-2.5 py-0.5 rounded-lg border-0`}>
                 {job.product}
               </Badge>
+            )}
+            {job.client_confirmed ? (
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-green-100 text-green-700 text-xs font-medium">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Confirmed
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
+                <Circle className="w-3.5 h-3.5" />
+                Awaiting Confirmation
+              </div>
             )}
           </div>
           {job.status && (
