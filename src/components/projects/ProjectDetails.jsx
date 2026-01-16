@@ -200,18 +200,45 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const canViewFinancials = isAdminOrManager;
 
   // Single batch query to fetch project + all relations in ONE call
-  const { data: projectData, isLoading: isProjectLoading } = useQuery({
-    queryKey: projectKeys.withRelations(initialProject.id),
-    queryFn: async () => {
-       const response = await base44.functions.invoke('getProjectWithRelations', { 
-         project_id: initialProject.id 
-       });
-       return response.data;
-     },
-    staleTime: 5000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
+  // Include flags optimized per tab: Overview loads minimal set, other tabs load as needed
+  const getIncludeFlags = (tab) => {
+    switch(tab) {
+      case 'overview':
+        return { jobs: true, quotes: true, invoices: true, tasks: true, messages: true, contacts: true, trades: true, handovers: false };
+      case 'activity':
+        return { emails: true, messages: true, threads: true };
+      case 'quoting':
+        return { quotes: true };
+      case 'invoices':
+        return { invoices: true };
+      case 'parts':
+        return { parts: true, pos: true };
+      case 'requirements':
+        return { contacts: true, trades: true };
+      case 'financials':
+        return { invoices: true, quotes: true };
+      case 'summary':
+        return { jobs: true, quotes: true, invoices: true, samples: true, handovers: true };
+      case 'warranty':
+        return { jobs: true };
+      default:
+        return { jobs: true, quotes: true, invoices: true, emails: true, pos: true, parts: true, tasks: true, contacts: true, trades: true, messages: true, threads: true, handovers: true, customer: true, organisation: true, samples: true };
+    }
+  };
+
+   const { data: projectData, isLoading: isProjectLoading } = useQuery({
+     queryKey: projectKeys.withRelations(initialProject.id, activeTab),
+     queryFn: async () => {
+        const response = await base44.functions.invoke('getProjectWithRelations', { 
+          project_id: initialProject.id,
+          include: getIncludeFlags(activeTab)
+        });
+        return response.data;
+      },
+     staleTime: 5000,
+     refetchOnWindowFocus: false,
+     refetchOnMount: false,
+   });
 
   const project = projectData?.project || initialProject;
   const jobs = projectData?.jobs || [];
