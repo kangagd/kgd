@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import TechnicianAvatar from "../common/TechnicianAvatar";
 import { isTechnicianCheckedIn } from "../domain/checkInHelpers";
+import { resolveTechnicianDisplayName } from "../utils/technicianDisplay";
 import {
   AlertDialog,
   AlertDialogAction,
