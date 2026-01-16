@@ -25,9 +25,10 @@ export function normalizeJob(job = {}) {
   }
 
   // Build assigned_technicians_display by zipping assigned_to and assigned_to_name
+  // CRITICAL: Use assigned_to only (emails), no fallback to email local-part
   const assigned_technicians_display = assigned_to.map((email, idx) => ({
     email: email || '',
-    name: assigned_to_name[idx] || (email ? email.split('@')[0] : 'Unknown')
+    name: assigned_to_name[idx] || ''
   }));
 
   // Derive project_label
