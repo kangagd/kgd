@@ -5,6 +5,7 @@ import { MapPin, Briefcase, ExternalLink, GripVertical, Truck } from "lucide-rea
 import { JobStatusBadge, JobTypeBadge, ProductTypeBadge } from "../common/StatusBadge";
 import { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { DuplicateDot } from "../common/DuplicateWarningCard";
+import { resolveTechnicianDisplayName } from "../utils/technicianDisplay";
 
 export default function DraggableJobCard({ 
   job, 
