@@ -1109,14 +1109,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     updateJobMutation.mutate({ field: 'image_urls', value: urls });
   };
 
-  const handleQuoteChange = (url) => {
-    updateJobMutation.mutate({ field: 'quote_url', value: url });
-  };
-
-  const handleInvoiceChange = (url) => {
-    updateJobMutation.mutate({ field: 'invoice_url', value: url });
-  };
-
   const handleOtherDocumentsChange = (urls) => {
     updateJobMutation.mutate({ field: 'other_documents', value: urls });
   };
@@ -3211,28 +3203,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       label=""
                       emptyText="Upload media"
                     />
-
-                    <div className="grid md:grid-cols-2 gap-2.5 pt-3 border-t-2">
-                      <EditableFileUpload
-                        files={job.quote_url}
-                        onFilesChange={handleQuoteChange}
-                        accept=".pdf,.doc,.docx"
-                        multiple={false}
-                        icon={FileText}
-                        label="Quote"
-                        emptyText="Upload quote"
-                      />
-
-                      <EditableFileUpload
-                        files={job.invoice_url}
-                        onFilesChange={handleInvoiceChange}
-                        accept=".pdf,.doc,.docx"
-                        multiple={false}
-                        icon={FileText}
-                        label="Invoice"
-                        emptyText="Upload invoice"
-                      />
-                    </div>
 
                     <div className="pt-3 border-t-2">
                       <EditableFileUpload
