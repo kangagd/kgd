@@ -28,8 +28,10 @@ import WeekView from "../components/calendar/WeekView";
 import MonthView from "../components/calendar/MonthView";
 
 import { buildActiveCheckInMap } from "@/components/domain/checkInHelpers";
-import { jobKeys } from "../components/api/queryKeys";
+import { jobKeys, bookingKeys } from "../components/api/queryKeys";
 import { QUERY_CONFIG } from "../components/api/queryConfig";
+import BookingEditor from "../components/bookings/BookingEditor";
+import BookingDetail from "../components/bookings/BookingDetail";
 
 export default function Schedule() {
   const navigate = useNavigate();
@@ -71,6 +73,9 @@ export default function Schedule() {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [activeCheckInMap, setActiveCheckInMap] = useState({});
   const [todaysSectionExpanded, setTodaysSectionExpanded] = useState(isTechnician);
+  const [showBookingEditor, setShowBookingEditor] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [bookingDefaultDate, setBookingDefaultDate] = useState(null);
 
   // User loaded via usePermissions
 
@@ -178,6 +183,16 @@ export default function Schedule() {
   const { data: closedDays = [] } = useQuery({
     queryKey: ['businessClosedDays'],
     queryFn: () => base44.entities.BusinessClosedDay.list('-start_time'),
+    ...QUERY_CONFIG.reference,
+  });
+
+  // Fetch bookings (non-cancelled only)
+  const { data: allBookings = [] } = useQuery({
+    queryKey: bookingKeys.all,
+    queryFn: async () => {
+      const bookings = await base44.entities.CalendarBooking.list('-start_at');
+      return bookings.filter(b => b.status !== 'cancelled');
+    },
     ...QUERY_CONFIG.reference,
   });
 
@@ -1257,6 +1272,17 @@ export default function Schedule() {
               {isAdminOrManager && (
                 <div className="flex items-center gap-2">
                   <Button
+                    onClick={() => {
+                      setBookingDefaultDate(selectedDate);
+                      setSelectedBooking(null);
+                      setShowBookingEditor(true);
+                    }}
+                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                  >
+                    + Booking
+                  </Button>
+                  
+                  <Button
                     variant="outline"
                     size="icon"
                     onClick={() => setShowAvailabilityManager(true)}
@@ -1377,9 +1403,9 @@ export default function Schedule() {
           </div>
         ) : (
           <>
-            {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
-            {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
-            {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
+            {view === "day" && <DayView jobs={getFilteredJobs()} bookings={allBookings} currentDate={selectedDate} onJobClick={setModalJob} onBookingClick={setSelectedBooking} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
+            {view === "week" && <WeekView jobs={getFilteredJobs()} bookings={allBookings} currentDate={selectedDate} onJobClick={setModalJob} onBookingClick={setSelectedBooking} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
+            {view === "month" && <MonthView jobs={getFilteredJobs()} bookings={allBookings} currentDate={selectedDate} onJobClick={setModalJob} onBookingClick={setSelectedBooking} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
           </>
         )}
 
@@ -1440,6 +1466,30 @@ export default function Schedule() {
           onClose={() => setShowAIAssistant(false)}
           selectedDate={selectedDate} 
           onApplySuggestion={() => queryClient.invalidateQueries({ queryKey: jobKeys.all })}
+        />
+
+        {/* Booking Editor Modal */}
+        <BookingEditor
+          open={showBookingEditor}
+          onClose={() => {
+            setShowBookingEditor(false);
+            setSelectedBooking(null);
+            setBookingDefaultDate(null);
+          }}
+          booking={selectedBooking}
+          defaultDate={bookingDefaultDate}
+          defaultUsers={selectedTechnicianEmail === 'me' ? [user?.id] : null}
+          allJobs={expandedJobs}
+          allBookings={allBookings}
+        />
+
+        {/* Booking Detail Drawer */}
+        <BookingDetail
+          open={!!selectedBooking && !showBookingEditor}
+          onClose={() => setSelectedBooking(null)}
+          booking={selectedBooking}
+          allJobs={expandedJobs}
+          allBookings={allBookings}
         />
       </div>
     </div>
