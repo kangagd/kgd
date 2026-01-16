@@ -67,6 +67,7 @@ import ProjectContactsPanel from "./ProjectContactsPanel";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import BackButton from "../common/BackButton";
 import { getProjectFreshnessBadge } from "../utils/freshness";
+import { getProjectDisplayTitle } from "./projectDisplay";
 import DocumentListItem from "./DocumentListItem";
 import AgeBadge from "../common/AgeBadge";
 import LastActivityCard from "./LastActivityCard";
