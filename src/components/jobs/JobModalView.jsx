@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { normalizeJob } from "@/components/utils/normalizeJob";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
@@ -29,12 +30,13 @@ const productColors = {
 };
 
 export default function JobModalView({ job, onJobUpdated }) {
+  const normalized = normalizeJob(job);
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    scheduled_date: job.scheduled_date || '',
-    scheduled_time: job.scheduled_time || '',
-    assigned_to: job.assigned_to || []
+    scheduled_date: normalized.scheduled_date || '',
+    scheduled_time: normalized.scheduled_time || '',
+    assigned_to: normalized.assigned_to || []
   });
   const [techniciansSearch, setTechniciansSearch] = useState('');
   const queryClient = useQueryClient();
@@ -62,7 +64,7 @@ export default function JobModalView({ job, onJobUpdated }) {
   };
 
   const handleNavigate = () => {
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(job.address)}&travelmode=driving`, '_blank');
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(normalized.address_display)}&travelmode=driving`, '_blank');
   };
 
   const handleSave = () => {
@@ -89,12 +91,12 @@ export default function JobModalView({ job, onJobUpdated }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            {job.project_id && job.project_name && (
+            {normalized.project_label && (
               <button
-                onClick={() => navigate(createPageUrl("Projects") + `?projectId=${job.project_id}`)}
+                onClick={() => job.project_id && navigate(createPageUrl("Projects") + `?projectId=${job.project_id}`)}
                 className="bg-[#DDD6FE] text-[#5B21B6] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-[#CDD5FE] transition-colors cursor-pointer"
               >
-                {job.project_name}
+                {normalized.project_label}
               </button>
             )}
             {job.job_type_name && (
@@ -139,36 +141,32 @@ export default function JobModalView({ job, onJobUpdated }) {
         </div>
 
         <h3 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-          {job.customer_name}
+          {normalized.customer_name}
         </h3>
 
         {/* Schedule Info */}
-        {!isEditing && job.scheduled_date && (
+        {!isEditing && normalized.scheduled_date && (
           <div className="flex items-center gap-4 text-[14px] text-[#4B5563] flex-wrap">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-[#6B7280]" />
-              <span>{format(parseISO(job.scheduled_date), 'MMM d, yyyy')}</span>
+              <span>{format(parseISO(normalized.scheduled_date), 'MMM d, yyyy')}</span>
             </div>
-            {job.scheduled_time && (
+            {normalized.scheduled_time && (
               <div className="flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-[#6B7280]" />
-                <span>{job.scheduled_time}</span>
+                <span>{normalized.scheduled_time}</span>
               </div>
             )}
-            {job.assigned_to && Array.isArray(job.assigned_to) && job.assigned_to.filter(Boolean).length > 0 && (
+            {normalized.assigned_technicians_display.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
                 <TechnicianAvatarGroup
-                  technicians={job.assigned_to.filter(Boolean).map((email, idx) => {
-                    const normalizedEmail = email?.toLowerCase().trim();
-                    const techName = job.assigned_to_name?.[idx] || normalizedEmail?.split('@')?.[0] || 'Tech';
-                    return {
-                      email: normalizedEmail,
-                      display_name: techName,
-                      full_name: techName,
-                      id: normalizedEmail
-                    };
-                  })}
+                  technicians={normalized.assigned_technicians_display.map((tech) => ({
+                    email: tech.email,
+                    display_name: tech.name,
+                    full_name: tech.name,
+                    id: tech.email
+                  }))}
                   maxDisplay={3}
                   size="sm"
                 />
@@ -271,13 +269,15 @@ export default function JobModalView({ job, onJobUpdated }) {
       </div>
 
       {/* Address */}
-      <div className="flex items-start gap-2.5 p-3 bg-[#F8F9FA] rounded-lg">
-        <MapPin className="w-5 h-5 text-[#6B7280] flex-shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <div className="text-[12px] text-[#6B7280] font-medium mb-0.5">Address</div>
-          <div className="text-[14px] text-[#111827]">{job.address}</div>
+      {normalized.address_display && (
+        <div className="flex items-start gap-2.5 p-3 bg-[#F8F9FA] rounded-lg">
+          <MapPin className="w-5 h-5 text-[#6B7280] flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[12px] text-[#6B7280] font-medium mb-0.5">Address</div>
+            <div className="text-[14px] text-[#111827]">{normalized.address_display}</div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Contact */}
       {job.customer_phone && (
