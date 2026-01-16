@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -208,8 +207,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [outcome, setOutcome] = useState(job.outcome || "");
   const [logisticsOutcome, setLogisticsOutcome] = useState(job.logistics_outcome || "none");
   const [validationError, setValidationError] = useState("");
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [previousReportData, setPreviousReportData] = useState(null);
+
 
   // Sync measurements state when job data changes
   useEffect(() => {
@@ -2817,64 +2815,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 )}
 
                 <div className="space-y-3">
-                  <div className="flex justify-end gap-2">
-                    {previousReportData && (
-                      <Button
-                        onClick={() => {
-                          setOverview(previousReportData.overview);
-                          setIssuesFound(previousReportData.issuesFound);
-                          setResolution(previousReportData.resolution);
-                          setNextSteps(previousReportData.nextSteps);
-                          setPreviousReportData(null);
-                          toast.success("Report reverted to previous version");
-                        }}
-                        variant="outline"
-                        className="gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 hover:text-slate-800"
-                      >
-                        Revert AI Report
-                      </Button>
-                    )}
-                    <Button
-                      onClick={async () => {
-                        if (!job.image_urls || job.image_urls.length === 0) {
-                          toast.error("Please upload photos first");
-                          return;
-                        }
-                        setIsGeneratingReport(true);
-                        try {
-                          // Save current state before generating
-                          setPreviousReportData({
-                            overview,
-                            issuesFound,
-                            resolution,
-                            nextSteps
-                          });
-                          
-                          const response = await base44.functions.invoke('generateServiceReport', { jobId: job.id });
-                          const data = response.data;
-                          setOverview(data.work_performed || "");
-                          setIssuesFound(data.issues_found || "");
-                          setResolution(data.resolution || "");
-                          setNextSteps(data.next_steps || "");
-                          toast.success("Report generated successfully");
-                        } catch (error) {
-                          toast.error("Failed to generate report");
-                        } finally {
-                          setIsGeneratingReport(false);
-                        }
-                      }}
-                      disabled={isGeneratingReport}
-                      variant="outline"
-                      className="gap-2 border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800"
-                    >
-                      {isGeneratingReport ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-4 h-4" />
-                      )}
-                      {isGeneratingReport ? "Generating Report..." : "Generate AI Report"}
-                    </Button>
-                  </div>
+
 
                   <RichTextField
                     label="Work Performed (Overview) *"
