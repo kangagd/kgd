@@ -137,7 +137,7 @@ export default function JobModalView({ job, onJobUpdated }) {
         </h3>
 
         {/* Schedule Info */}
-        {job.scheduled_date && (
+        {!isEditing && job.scheduled_date && (
           <div className="flex items-center gap-4 text-[14px] text-[#4B5563] flex-wrap">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-[#6B7280]" />
@@ -163,6 +163,98 @@ export default function JobModalView({ job, onJobUpdated }) {
                 />
               </div>
             )}
+          </div>
+        )}
+
+        {/* Edit Mode - Schedule Form */}
+        {isEditing && (
+          <div className="space-y-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-[#111827]">Edit Schedule</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditData({
+                    scheduled_date: job.scheduled_date || '',
+                    scheduled_time: job.scheduled_time || '',
+                    assigned_to: job.assigned_to || []
+                  });
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-[#6B7280] block mb-1">Date</label>
+              <Input
+                type="date"
+                value={editData.scheduled_date}
+                onChange={(e) => setEditData({ ...editData, scheduled_date: e.target.value })}
+                className="h-9"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-[#6B7280] block mb-1">Time</label>
+              <Input
+                type="time"
+                value={editData.scheduled_time}
+                onChange={(e) => setEditData({ ...editData, scheduled_time: e.target.value })}
+                className="h-9"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-[#6B7280] block mb-1">Assigned Technicians</label>
+              <Select
+                value={editData.assigned_to?.[0] || ''}
+                onValueChange={(email) => {
+                  setEditData({ ...editData, assigned_to: [email] });
+                }}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select technician" />
+                </SelectTrigger>
+                <SelectContent>
+                  {technicians.map((tech) => (
+                    <SelectItem key={tech.id} value={tech.email}>
+                      {tech.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={handleSave}
+                disabled={updateMutation.isPending}
+                className="flex-1 h-8 gap-2"
+                size="sm"
+              >
+                <Check className="w-4 h-4" />
+                Save
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsEditing(false);
+                  setEditData({
+                    scheduled_date: job.scheduled_date || '',
+                    scheduled_time: job.scheduled_time || '',
+                    assigned_to: job.assigned_to || []
+                  });
+                }}
+                variant="outline"
+                className="flex-1 h-8"
+                size="sm"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         )}
       </div>
