@@ -445,7 +445,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <PermissionsProvider>
       <div className="min-h-screen flex bg-[#ffffff]">
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors closeButton />
 
         {/* Mobile Overlay - Handles both tech and admin mobile menus */}
         {(isMobileMenuOpen || techMobileMenuOpen) && (
