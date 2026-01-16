@@ -15,17 +15,8 @@ export default function OutstandingBalancesCard() {
   const { data: completedProjects = [], isLoading } = useQuery({
     queryKey: ['projects', 'completed', 'outstanding'],
     queryFn: async () => {
-      const projects = await base44.entities.Project.filter({ status: 'Completed' });
-      return projects.filter(p => 
-        !p.deleted_at && 
-        p.total_project_value > 0 &&
-        (
-          p.financial_status === 'Awaiting Payment' ||
-          p.financial_status === 'Initial Payment Made' ||
-          p.financial_status === 'Second Payment Made' ||
-          !p.financial_status
-        )
-      );
+      const projects = await base44.entities.Project.filter({ status: 'Completed', deleted_at: null });
+      return projects.filter(p => p.total_project_value > 0);
     },
     staleTime: 120000,
     refetchOnWindowFocus: false,
@@ -54,17 +45,32 @@ export default function OutstandingBalancesCard() {
     // Check if ANY invoice exists (regardless of status)
     const allProjectInvoices = xeroInvoices.filter(inv => inv.project_id === project.id);
     
-    // Only count unpaid invoices (AUTHORISED status with amount_due > 0)
+    // Count unpaid invoices (SUBMITTED, AUTHORISED, or OVERDUE status with amount_due > 0)
     const unpaidInvoices = allProjectInvoices.filter(inv => 
-      inv.status === 'AUTHORISED' && 
+      ['SUBMITTED', 'AUTHORISED', 'OVERDUE'].includes(inv.status) && 
       (inv.amount_due || 0) > 0
     );
     
     const totalInvoiced = unpaidInvoices.reduce((sum, inv) => sum + (inv.amount_due || 0), 0);
     
-    const outstandingBalance = totalInvoiced > 0 
-      ? totalInvoiced 
-      : project.total_project_value || 0;
+    // Calculate outstanding balance
+    let outstandingBalance = 0;
+    if (unpaidInvoices.length > 0) {
+      // If there are unpaid invoices, use their total
+      outstandingBalance = totalInvoiced;
+    } else if (
+      allProjectInvoices.length === 0 && // No invoices linked at all
+      (
+        project.financial_status === 'Awaiting Payment' ||
+        project.financial_status === 'Initial Payment Made' ||
+        project.financial_status === 'Second Payment Made' ||
+        !project.financial_status
+      )
+    ) {
+      // If no invoices exist and financial status indicates pending payment, use project value
+      outstandingBalance = project.total_project_value || 0;
+    }
+    // Otherwise (invoices exist but all paid, or financial_status is 'Balance Paid in Full'), balance is 0
 
     return {
       ...project,
