@@ -52,9 +52,7 @@ Deno.serve(async (req) => {
     const customerQuery = {
       $or: [
         { name: { $regex: term, $options: 'i' } },
-        { email: { $regex: term, $options: 'i' } },
         { phone: { $regex: term, $options: 'i' } },
-        { address_full: { $regex: term, $options: 'i' } },
         { address_suburb: { $regex: term, $options: 'i' } }
       ]
     };
