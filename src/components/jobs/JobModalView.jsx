@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, Clock, Phone, Navigation, User, CheckCircle2, Circle, Edit2, X, Check } from "lucide-react";
@@ -28,6 +29,7 @@ const productColors = {
 };
 
 export default function JobModalView({ job, onJobUpdated }) {
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     scheduled_date: job.scheduled_date || '',
@@ -87,10 +89,13 @@ export default function JobModalView({ job, onJobUpdated }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            {job.project_id && job.project_number && (
-              <Badge className="bg-[#DDD6FE] text-[#5B21B6] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
-                Project #{job.project_number}
-              </Badge>
+            {job.project_id && job.project_name && (
+              <button
+                onClick={() => navigate(createPageUrl("Projects") + `?projectId=${job.project_id}`)}
+                className="bg-[#DDD6FE] text-[#5B21B6] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg hover:bg-[#CDD5FE] transition-colors cursor-pointer"
+              >
+                {job.project_name}
+              </button>
             )}
             {job.job_type_name && (
               <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
