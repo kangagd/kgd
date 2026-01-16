@@ -54,6 +54,15 @@ export const inboxKeys = {
   drafts: () => [...inboxKeys.all, 'drafts'],
 };
 
+// Bookings Module
+export const bookingKeys = {
+  all: ['bookings'],
+  lists: () => [...bookingKeys.all, 'list'],
+  list: (range, userIds) => [...bookingKeys.lists(), range, userIds],
+  details: () => [...bookingKeys.all, 'detail'],
+  detail: (id) => [...bookingKeys.details(), id],
+};
+
 /**
  * Invalidation patterns documented here
  * 
