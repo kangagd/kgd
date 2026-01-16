@@ -87,8 +87,7 @@ Deno.serve(async (req) => {
         { phone: { $regex: term, $options: 'i' } },
         { sp_number: { $regex: term, $options: 'i' } },
         { address_full: { $regex: term, $options: 'i' } }
-      ],
-      deleted_at: { $exists: false }
+      ]
     };
 
     const priceListQuery = {
