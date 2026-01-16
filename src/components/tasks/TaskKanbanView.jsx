@@ -4,7 +4,7 @@ import TaskCard from "./TaskCard";
 import { User, Circle, ArrowUpCircle, CheckCircle2, XCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-const STATUS_ORDER = ["Open", "In Progress", "Completed", "Cancelled"];
+const STATUS_ORDER = ["Open", "In Progress", "Completed"];
 
 const STATUS_CONFIG = {
   "Open": { icon: Circle, color: "text-slate-500", bg: "bg-slate-100", borderColor: "border-slate-200" },
@@ -21,6 +21,7 @@ export default function TaskKanbanView({
   onTaskUpdate 
 }) {
   const [collapsedLanes, setCollapsedLanes] = useState({});
+  const [showAllCompleted, setShowAllCompleted] = useState({});
 
   const toggleLane = (userId) => {
     setCollapsedLanes(prev => ({
@@ -242,30 +243,49 @@ export default function TaskKanbanView({
                                 <div className="h-full min-h-[60px] flex items-center justify-center rounded-lg border border-dashed border-[#E5E7EB] bg-white/50">
                                   <span className="text-xs text-[#9CA3AF]">No tasks</span>
                                 </div>
-                              ) : (
-                                statusTasks.map((task, index) => (
-                                  <Draggable key={task.id} draggableId={task.id} index={index}>
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        className={snapshot.isDragging ? 'opacity-90 rotate-1 scale-105' : ''}
-                                      >
-                                        <TaskCard
-                                          task={task}
-                                          onClick={() => onTaskClick(task)}
-                                          showLinkedEntities={true}
-                                          hideAssignee={true}
-                                          hideStatus={true}
-                                          hideCheckbox={true}
-                                          compact
-                                        />
-                                      </div>
-                                    )}
-                                  </Draggable>
-                                ))
-                              )}
+                                ) : (
+                                <>
+                                  {(() => {
+                                    // For completed status, limit to 5 tasks unless "show all" is enabled
+                                    const tasksToShow = status === "Completed" && !showAllCompleted[userId]
+                                      ? statusTasks.slice(0, 5)
+                                      : statusTasks;
+
+                                    return tasksToShow.map((task, index) => (
+                                      <Draggable key={task.id} draggableId={task.id} index={index}>
+                                        {(provided, snapshot) => (
+                                          <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            {...provided.dragHandleProps}
+                                            className={snapshot.isDragging ? 'opacity-90 rotate-1 scale-105' : ''}
+                                          >
+                                            <TaskCard
+                                              task={task}
+                                              onClick={() => onTaskClick(task)}
+                                              showLinkedEntities={true}
+                                              hideAssignee={true}
+                                              hideStatus={true}
+                                              hideCheckbox={true}
+                                              compact
+                                            />
+                                          </div>
+                                        )}
+                                      </Draggable>
+                                    ));
+                                  })()}
+
+                                  {/* View All button for completed column */}
+                                  {status === "Completed" && statusTasks.length > 5 && !showAllCompleted[userId] && (
+                                    <button
+                                      onClick={() => setShowAllCompleted(prev => ({ ...prev, [userId]: true }))}
+                                      className="w-full py-2 px-3 text-xs text-[#6B7280] hover:text-[#111827] hover:bg-white/80 rounded-lg border border-dashed border-[#E5E7EB] transition-colors"
+                                    >
+                                      View all {statusTasks.length} completed
+                                    </button>
+                                  )}
+                                </>
+                                )}
                               {provided.placeholder}
                             </div>
                           )}
