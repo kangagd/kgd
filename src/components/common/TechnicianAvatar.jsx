@@ -35,12 +35,12 @@ export default function TechnicianAvatar({
   }
 
   // Determine color based on technician.id or email
-  const identifier = technician.id || (technician.email ? technician.email.toLowerCase() : "") || technician.full_name || "";
+  const identifier = technician.id || (technician.email ? technician.email.toLowerCase() : "") || "";
   const colorIndex = hashString(identifier) % AVATAR_COLORS.length;
   const backgroundColor = AVATAR_COLORS[colorIndex];
   
-  const displayName = technician.display_name || "";
-  const initials = getInitials(displayName);
+  const displayName = resolveTechnicianDisplayName(technician);
+  const initials = getInitialsFromDisplayName(displayName);
   
   // Size variants
   const sizeClasses = {
