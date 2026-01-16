@@ -39,6 +39,7 @@ import BackButton from "../components/common/BackButton";
 import { useNavigate } from "react-router-dom";
 import { QUERY_CONFIG } from "../components/api/queryConfig";
 import { projectKeys, jobKeys } from "../components/api/queryKeys";
+import { getProjectDisplayTitle, getProjectDisplayAddress, getProjectCustomerLabel } from "../components/projects/projectDisplay";
 
 export default function Projects() {
   const location = useLocation();
@@ -664,7 +665,7 @@ export default function Projects() {
                   {/* Title row */}
                   <div className="mb-3">
                     <div className="flex items-center gap-2 mb-2 pr-40">
-                      <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{project.title}</h3>
+                      <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{getProjectDisplayTitle(project)}</h3>
                       <DuplicateBadge record={project} size="sm" />
                       {hasCustomerIssue(project) && (
                         <span className="inline-flex items-center gap-1" title="Customer information missing">
@@ -700,7 +701,7 @@ export default function Projects() {
                   <div className="flex items-center gap-4 mb-3 text-[#4B5563] flex-wrap">
                     <div className="flex items-center gap-1.5">
                       <User className="w-4 h-4" />
-                      <span className="text-[14px] leading-[1.4]">{project.customer_name}</span>
+                      <span className="text-[14px] leading-[1.4]">{getProjectCustomerLabel(project)}</span>
                     </div>
                     {suburb && (
                       <div className="flex items-center gap-1.5">
@@ -748,7 +749,7 @@ export default function Projects() {
         <EntityModal
           open={!!modalProject}
           onClose={() => setModalProject(null)}
-          title={modalProject?.title || "Project"}
+          title={getProjectDisplayTitle(modalProject)}
           onOpenFullPage={() => handleOpenFullProject(modalProject)}
           fullPageLabel="Open Full Project"
         >
