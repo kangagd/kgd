@@ -202,6 +202,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [previousReportData, setPreviousReportData] = useState(null);
 
+  // Sync measurements state when job data changes
+  useEffect(() => {
+    setMeasurements(job.measurements || null);
+  }, [job.measurements]);
+
   const { data: allJobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
     queryFn: () => base44.entities.JobType.filter({ is_active: true }),
