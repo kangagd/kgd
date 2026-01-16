@@ -3114,15 +3114,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   <h4 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
                     {isLogisticsJob ? 'Documents & Attachments' : 'Photos & Videos'}
                   </h4>
-                  {job.image_urls && job.image_urls.length > 0 && !isLogisticsJob && (
-                    <Link 
-                      to={`${createPageUrl("Photos")}?jobId=${job.id}`}
-                      className="text-[12px] text-[#FAE008] hover:text-[#E5CF07] font-semibold flex items-center gap-1 transition-colors"
-                    >
-                      View in Library
-                      <ExternalLink className="w-3 h-3" />
-                    </Link>
-                  )}
+
                 </div>
 
                 {isLogisticsJob && (
