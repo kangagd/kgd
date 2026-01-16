@@ -258,6 +258,23 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           project_id: initialProject.id,
           include: getIncludeFlags(activeTab)
         });
+
+        // DEV-ONLY: Log API response structure
+        if (typeof import.meta !== "undefined" && import.meta.env?.DEV && activeTab === "overview") {
+          const data = response.data;
+          console.group("[QuotePipeline-API] getProjectWithRelations response");
+          console.log("Response top-level keys:", Object.keys(data || {}));
+          const quoteKeysInResponse = Object.keys(data || {}).filter(k => k.toLowerCase().includes('quote'));
+          if (quoteKeysInResponse.length > 0) {
+            console.log("Quote-related keys in response:", quoteKeysInResponse);
+            quoteKeysInResponse.forEach(key => console.log(`  ${key}:`, data[key]));
+          } else {
+            console.log("⚠️  No quote-related keys found in response");
+          }
+          console.log("data.quotes:", data?.quotes);
+          console.groupEnd();
+        }
+
         return response.data;
       },
      staleTime: 5000,
