@@ -40,7 +40,6 @@ export default function Tasks() {
   const [viewMode, setViewMode] = useState("kanban"); // "list" | "kanban"
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState("open"); // open | in_progress | completed | all
   const [dueFilter, setDueFilter] = useState("all"); // all | overdue | today | this_week
   const [assigneeFilter, setAssigneeFilter] = useState("all"); // all | me | <userId>
   const [projectFilter, setProjectFilter] = useState(searchParams.get("projectId") || "all");
@@ -194,17 +193,9 @@ export default function Tasks() {
     });
   }, [tasks, isTechnician, user?.id]);
 
-  /* -------------------- Filtered tasks (LIST logic) -------------------- */
+  /* -------------------- Filtered tasks -------------------- */
   const filteredTasks = useMemo(() => {
     const filtered = canonicalTasks.filter((task) => {
-      // Status tabs - ONLY apply in list view, Kanban shows all statuses
-      if (viewMode === "list") {
-        if (statusFilter === "open" && task.status === "Completed") return false;
-        if (statusFilter === "in_progress" && task.status !== "In Progress") return false;
-        if (statusFilter === "completed" && task.status !== "Completed") return false;
-      }
-      // "all" shows all non-cancelled, non-archived
-
       // Project filter
       if (projectFilter !== "all" && task.project_id !== projectFilter) return false;
 
@@ -264,7 +255,7 @@ export default function Tasks() {
     }
 
     return filtered;
-  }, [canonicalTasks, statusFilter, projectFilter, dueFilter, assigneeFilter, user?.id]);
+  }, [canonicalTasks, projectFilter, dueFilter, assigneeFilter, user?.id]);
 
   /* -------------------- Completed preview (LIST only) -------------------- */
   const listOpenTasks = useMemo(
@@ -329,17 +320,7 @@ export default function Tasks() {
 
         {/* Filters row */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
-          {/* Status Tabs */}
-          <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); if (v !== "completed") setShowAllCompleted(false); }} className="w-full lg:w-auto">
-            <TabsList className="bg-white w-full lg:w-auto">
-              <TabsTrigger value="open" className="flex-1 lg:flex-initial">Open</TabsTrigger>
-              <TabsTrigger value="in_progress" className="flex-1 lg:flex-initial">In Progress</TabsTrigger>
-              <TabsTrigger value="completed" className="flex-1 lg:flex-initial">Completed</TabsTrigger>
-              <TabsTrigger value="all" className="flex-1 lg:flex-initial">All</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Additional Filters */}
+          {/* Filters */}
           <div className="flex flex-wrap gap-3 flex-1">
             {/* My Tasks Quick Filter */}
             <Button
