@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
-export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos", onUploadPhotos, onUploadDocuments, onDeleteImage }) {
+export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos", onUploadPhotos, onUploadDocuments, onDeleteImage, onDeleteDocument }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [fullscreenImage, setFullscreenImage] = useState(null);
   const [fullscreenIndex, setFullscreenIndex] = useState(null);
