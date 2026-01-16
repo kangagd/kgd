@@ -346,19 +346,6 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                 >
                   <Download className="w-4 h-4" />
                 </button>
-                {onRenameImage && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setRenameTarget({ type: 'image', index: fullscreenIndex, currentName: '' });
-                      setRenameModalOpen(true);
-                    }}
-                    className="flex items-center justify-center h-9 w-9 bg-white hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] rounded-lg transition-all"
-                    title="Rename"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                )}
                 {onDeleteImage && (
                   <button
                     onClick={(e) => {
