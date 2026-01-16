@@ -145,13 +145,13 @@ export default function JobModalView({ job, onJobUpdated }) {
                 <span>{job.scheduled_time}</span>
               </div>
             )}
-            {job.assigned_to && job.assigned_to.length > 0 && (
+            {job.assigned_to && job.assigned_to.length > 0 && job.assigned_to.some(e => e) && (
               <div className="flex items-center gap-2">
                 <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
                 <TechnicianAvatarGroup
-                  technicians={job.assigned_to.map((email, idx) => ({
+                  technicians={job.assigned_to.filter(Boolean).map((email, idx) => ({
                     email,
-                    full_name: job.assigned_to_name?.[idx] || email.split('@')[0],
+                    full_name: job.assigned_to_name?.[idx] || email.replace(/@.*/, ''),
                     id: email
                   }))}
                   maxDisplay={3}
@@ -278,12 +278,12 @@ export default function JobModalView({ job, onJobUpdated }) {
 
 
       {/* Job Info Preview */}
-      {(job.overview || job.notes) && (job.overview || job.notes) !== "<p><br></p>" && (
+      {job.overview && job.overview !== "<p><br></p>" && (
         <div className="p-3 bg-[#FAE008]/10 rounded-lg">
           <div className="text-[12px] text-[#6B7280] font-medium mb-1">Job Info</div>
           <div 
             className="text-[14px] text-[#4B5563] line-clamp-3 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: job.overview || job.notes }}
+            dangerouslySetInnerHTML={{ __html: job.overview }}
           />
         </div>
       )}
