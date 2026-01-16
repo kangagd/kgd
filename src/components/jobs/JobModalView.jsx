@@ -87,7 +87,6 @@ export default function JobModalView({ job, onJobUpdated }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge variant="secondary">#{job.job_number}</Badge>
             {job.job_type_name && (
               <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
                 {job.job_type_name}
@@ -152,7 +151,7 @@ export default function JobModalView({ job, onJobUpdated }) {
                 <TechnicianAvatarGroup
                   technicians={job.assigned_to.map((email, idx) => ({
                     email,
-                    full_name: job.assigned_to_name?.[idx] || email,
+                    full_name: job.assigned_to_name?.[idx] || email.split('@')[0],
                     id: email
                   }))}
                   maxDisplay={3}
@@ -278,10 +277,10 @@ export default function JobModalView({ job, onJobUpdated }) {
 
 
 
-      {/* Description Preview */}
+      {/* Job Info Preview */}
       {(job.overview || job.notes) && (job.overview || job.notes) !== "<p><br></p>" && (
         <div className="p-3 bg-[#FAE008]/10 rounded-lg">
-          <div className="text-[12px] text-[#6B7280] font-medium mb-1">Description</div>
+          <div className="text-[12px] text-[#6B7280] font-medium mb-1">Job Info</div>
           <div 
             className="text-[14px] text-[#4B5563] line-clamp-3 prose prose-sm max-w-none"
             dangerouslySetInnerHTML={{ __html: job.overview || job.notes }}
