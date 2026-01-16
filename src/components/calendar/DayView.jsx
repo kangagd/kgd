@@ -7,6 +7,7 @@ import { MapPin, User, AlertCircle, Clock, Briefcase, AlertTriangle } from "luci
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import TechnicianAvatar from "../common/TechnicianAvatar";
+import { isTechnicianCheckedIn } from "../domain/checkInHelpers";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -410,6 +411,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, le
                         const position = getJobPosition(job);
                         if (!position) return null;
                         const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
+                        const isThisTechCheckedIn = isTechnicianCheckedIn(job.id, technician.email, activeCheckInMap);
                         
                         return (
                           <div
@@ -419,7 +421,7 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, le
                             onDragEnd={handleDragEnd}
                             className={`absolute ${compactMode ? 'top-2 bottom-2' : 'top-3 bottom-3'} rounded-lg ${compactMode ? 'p-2' : 'p-2.5'} cursor-move hover:shadow-md transition-all bg-white border ${
                               draggedJob?.id === job.id ? 'opacity-50' : ''
-                            } ${(job.id && activeCheckInMap && activeCheckInMap[job.id]) ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'}`}
+                            } ${isThisTechCheckedIn ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'}`}
                             style={{ left: position.left, width: position.width, minWidth: compactMode ? '120px' : '140px' }}
                             onClick={() => onJobClick(job)}
                           >

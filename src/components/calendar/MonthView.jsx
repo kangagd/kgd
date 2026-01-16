@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
 import { Plus, Clock, Briefcase, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { isTechnicianCheckedIn } from "../domain/checkInHelpers";
 
 const jobTypeColors = [
   "bg-blue-500", "bg-green-500", "bg-orange-500", 
@@ -185,6 +186,10 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                       {dayJobs.slice(0, compactMode ? 2 : 3).map(job => {
                         const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
                         
+                        // Check if ANY assigned technician is checked in (for month view aggregate display)
+                        const hasAnyCheckIn = job.assigned_to && Array.isArray(job.assigned_to) && 
+                          job.assigned_to.some(techEmail => isTechnicianCheckedIn(job.id, techEmail, activeCheckInMap));
+                        
                         return (
                           <div
                             key={job.id}
@@ -193,7 +198,7 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                               onJobClick(job);
                             }}
                             className={`${compactMode ? 'text-[9px] px-1 py-0.5' : 'text-xs px-1.5 py-1'} rounded cursor-pointer hover:shadow-sm transition-all bg-white border ${
-                              (job.id && activeCheckInMap && activeCheckInMap[job.id]) ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'
+                              hasAnyCheckIn ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'
                             }`}
                             title={`${job.customer_name} - ${job.job_type_name || 'No type'} - ${job.scheduled_time || 'No time'}`}
                           >

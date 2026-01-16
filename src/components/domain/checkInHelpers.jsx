@@ -62,3 +62,24 @@ export const hasActiveCheckIn = (jobId, activeMap) => {
   const checkIns = getActiveCheckInsForJob(jobId, activeMap);
   return checkIns.length > 0;
 };
+
+/**
+ * Checks if a specific technician is checked in to a job.
+ * 
+ * @param {string|number} jobId - The ID of the job
+ * @param {string} technicianEmail - Email of the technician
+ * @param {Object} activeMap - The map returned by buildActiveCheckInMap
+ * @returns {boolean} True if this technician is actively checked in to this job
+ */
+export const isTechnicianCheckedIn = (jobId, technicianEmail, activeMap) => {
+  if (!jobId || !technicianEmail || !activeMap || !activeMap[jobId]) {
+    return false;
+  }
+  
+  const checkIns = activeMap[jobId].checkIns || [];
+  const normalizedEmail = technicianEmail.toLowerCase().trim();
+  
+  return checkIns.some(checkIn => 
+    checkIn.technician_email?.toLowerCase().trim() === normalizedEmail
+  );
+};

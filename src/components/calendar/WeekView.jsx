@@ -7,6 +7,7 @@ import { MapPin, AlertCircle, Clock, Briefcase, AlertTriangle } from "lucide-rea
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import TechnicianAvatar from "../common/TechnicianAvatar";
+import { isTechnicianCheckedIn } from "../domain/checkInHelpers";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -396,17 +397,18 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, l
                           <div className={compactMode ? 'space-y-1' : 'space-y-1.5'}>
                             {jobsInCell.map(job => {
                               const isPriority = job.priority === 'high' || job.outcome === 'return_visit_required';
-                              
+                              const isThisTechCheckedIn = isTechnicianCheckedIn(job.id, technician.email, activeCheckInMap);
+
                               return (
                                 <JobHoverCard key={job.id} job={job} onJobClick={onJobClick}>
                                   <div
-                                   draggable
-                                   onDragStart={(e) => handleDragStart(e, job)}
-                                   onDragEnd={handleDragEnd}
-                                   onClick={() => onJobClick(job)}
-                                   className={`${compactMode ? 'p-2' : 'p-2.5'} rounded-lg cursor-move hover:shadow-md transition-all bg-white border ${
-                                     draggedJob?.id === job.id ? 'opacity-50' : ''
-                                   } ${(job.id && activeCheckInMap && activeCheckInMap[job.id]) ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'}`}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, job)}
+                                    onDragEnd={handleDragEnd}
+                                    onClick={() => onJobClick(job)}
+                                    className={`${compactMode ? 'p-2' : 'p-2.5'} rounded-lg cursor-move hover:shadow-md transition-all bg-white border ${
+                                      draggedJob?.id === job.id ? 'opacity-50' : ''
+                                    } ${isThisTechCheckedIn ? 'ring-2 ring-blue-500 border-blue-500' : 'border-[#E5E7EB] hover:border-[#FAE008]'}`}
                                   >
                                     <div className="space-y-1.5">
                                       <div className={`${compactMode ? 'text-[11px]' : 'text-xs'} font-semibold text-[#111827] leading-tight truncate`}>
