@@ -129,7 +129,7 @@ export default function Dashboard() {
       entity_type: 'job',
       entity_id: job.id,
       job_number: job.job_number,
-      created_date: job.created_date
+      sort_date: job.scheduled_date || job.created_date
     })),
     ...unbookedTrades.map(trade => ({
       id: `trade-${trade.id}`,
@@ -139,10 +139,10 @@ export default function Dashboard() {
       entity_type: 'project',
       entity_id: trade.project_id,
       project_title: trade.project_title,
-      created_date: trade.created_date
+      sort_date: trade.created_date
     }))
   ]
-  .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
+  .sort((a, b) => new Date(a.sort_date) - new Date(b.sort_date))
   .slice(0, 5);
 
   const { data: allPurchaseOrders = [] } = useQuery({
