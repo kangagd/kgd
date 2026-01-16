@@ -1536,7 +1536,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-                {project.title}
+                {getProjectDisplayTitle(project)}
               </h2>
               {project.project_number && (
                 <Badge variant="outline" className="text-[13px] font-semibold px-2.5 py-1">
