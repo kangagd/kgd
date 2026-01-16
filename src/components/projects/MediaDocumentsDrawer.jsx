@@ -398,7 +398,7 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
           if (renameTarget?.type === 'image') {
             onRenameImage?.(renameTarget.index, newName);
           } else if (renameTarget?.type === 'other_documents') {
-            onRenameDocument?.('other_documents', renameTarget.index, newName);
+            onRenameDocument?.('other_documents', newName, renameTarget.index);
           } else if (renameTarget?.type) {
             onRenameDocument?.(renameTarget.type, newName);
           }
