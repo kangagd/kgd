@@ -15,7 +15,8 @@ export default function EntityModal({
   children, 
   onOpenFullPage,
   fullPageLabel = "Open Full Page",
-  projectName
+  projectName,
+  badgeText
 }) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -25,8 +26,8 @@ export default function EntityModal({
             <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
               {title}
             </h2>
-            {projectName && (
-              <Badge className="bg-blue-100 text-blue-700 border-0">{projectName}</Badge>
+            {(badgeText || projectName) && (
+              <Badge className="bg-blue-100 text-blue-700 border-0">{badgeText || projectName}</Badge>
             )}
           </div>
           <div className="flex items-center gap-2">

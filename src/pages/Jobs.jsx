@@ -684,7 +684,7 @@ export default function Jobs() {
             open={true}
             onClose={() => setModalJob(null)}
             title={`Job #${modalJob?.job_number}`}
-            projectName={modalJob?.project_name || modalJob?.project_id}
+            badgeText={modalJob?.project_name || (modalJob?.project_number ? `Project #${modalJob.project_number}` : "")}
             onOpenFullPage={() => handleOpenFullJob(modalJob)}
             fullPageLabel="Open Full Job"
           >

@@ -159,6 +159,7 @@ export default function JobModalView({ job, onJobUpdated }) {
                     const techName = job.assigned_to_name?.[idx] || normalizedEmail?.split('@')?.[0] || 'Tech';
                     return {
                       email: normalizedEmail,
+                      display_name: techName,
                       full_name: techName,
                       id: normalizedEmail
                     };
