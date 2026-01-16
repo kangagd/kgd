@@ -952,6 +952,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   };
 
   const handleOutcomeChange = async (value) => {
+    // GUARDRAIL: Outcome can only be set during final checkout
+    // If not last checked-in technician and outcome is being set, prevent it
+    if (value && !lastTechCheckOut && activeCheckIn) {
+      toast.error("Only the last technician can set the outcome during checkout.");
+      return;
+    }
+    
     setOutcome(value);
     logChange('outcome', job.outcome, value);
     updateJobMutation.mutate({ field: 'outcome', value });
