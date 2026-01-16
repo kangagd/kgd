@@ -32,6 +32,7 @@ export default function TaskFormModal({
     type: "Other",
     priority: "Medium",
     due_date: null,
+    due_time: "",
     assigned_to_user_id: "",
     assigned_to_name: "",
     assigned_to_email: "",
@@ -84,6 +85,7 @@ export default function TaskFormModal({
         type: task.type || "Other",
         priority: task.priority || "Medium",
         due_date: task.due_date ? new Date(task.due_date) : null,
+        due_time: task.due_time || "",
         assigned_to_user_id: task.assigned_to_user_id || "",
         assigned_to_name: task.assigned_to_name || "",
         assigned_to_email: task.assigned_to_email || "",
@@ -117,6 +119,7 @@ export default function TaskFormModal({
         type: "Other",
         priority: "Medium",
         due_date: null,
+        due_time: "",
         assigned_to_user_id: "",
         assigned_to_name: "",
         assigned_to_email: "",
@@ -235,24 +238,34 @@ export default function TaskFormModal({
             </div>
           )}
 
-          {/* Due Date */}
-          <div>
-            <Label>Due Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.due_date ? format(formData.due_date, "PPP") : "Select date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.due_date}
-                  onSelect={(date) => setFormData(prev => ({ ...prev, due_date: date }))}
-                />
-              </PopoverContent>
-            </Popover>
+          {/* Due Date & Time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Due Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.due_date ? format(formData.due_date, "PPP") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.due_date}
+                    onSelect={(date) => setFormData(prev => ({ ...prev, due_date: date }))}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label>Due Time (optional)</Label>
+              <Input
+                type="time"
+                value={formData.due_time}
+                onChange={(e) => setFormData(prev => ({ ...prev, due_time: e.target.value }))}
+              />
+            </div>
           </div>
 
           {/* Assignee */}
