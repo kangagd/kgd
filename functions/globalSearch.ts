@@ -76,10 +76,7 @@ Deno.serve(async (req) => {
     const organisationQuery = {
       $or: [
         { name: { $regex: term, $options: 'i' } },
-        { email: { $regex: term, $options: 'i' } },
-        { phone: { $regex: term, $options: 'i' } },
-        { sp_number: { $regex: term, $options: 'i' } },
-        { address_full: { $regex: term, $options: 'i' } }
+        { phone: { $regex: term, $options: 'i' } }
       ]
     };
 
