@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,14 @@ import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 
+function isLastCheckedInTechnician(checkIns, currentUserEmail) {
+  if (!checkIns || checkIns.length === 0 || !currentUserEmail) return false;
+
+  const activeCheckIns = checkIns.filter(c => !c.check_out_time);
+  const isCurrentUserCheckedIn = activeCheckIns.some(c => c.technician_email?.toLowerCase() === currentUserEmail?.toLowerCase());
+
+  return activeCheckIns.length === 1 && isCurrentUserCheckedIn;
+}
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700 border-slate-200",
@@ -273,6 +282,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
+
+  const lastTechCheckOut = isLastCheckedInTechnician(checkIns, user?.email);
 
   const { data: handoverReports = [] } = useQuery({
     queryKey: ["handover-reports", job.id],
@@ -573,8 +584,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
       }
 
-      // Only validate fields if this is a real visit and NOT a logistics job
-      if (!isMistake && !isLogisticsJob) {
+      // Last technician check-out requires outcome
+      if (lastTechCheckOut && !outcome) {
+          throw new Error("Please select an outcome before checking out.");
+      }
+
+      // Only validate fields if this is a real visit, not a logistics job, and it's the last tech checking out
+      if (!isMistake && !isLogisticsJob && lastTechCheckOut) {
         if (!overview || !nextSteps || !communicationWithClient || !outcome) {
           throw new Error("Please fill in all Site Visit fields before checking out.");
         }
@@ -2903,7 +2919,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                   <div>
                     <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
-                    <Select value={outcome} onValueChange={handleOutcomeChange}>
+                    <Select 
+                      value={outcome} 
+                      onValueChange={handleOutcomeChange}
+                      disabled={!lastTechCheckOut && activeCheckIn}
+                    >
                       <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
                         <SelectValue placeholder="Select outcome" />
                       </SelectTrigger>
@@ -2915,6 +2935,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
                       </SelectContent>
                     </Select>
+                    {!lastTechCheckOut && activeCheckIn && (
+                        <p className="text-xs text-slate-500 mt-1">Outcome can be selected by the last technician checking out.</p>
+                    )}
                   </div>
 
                   {validationError && (
