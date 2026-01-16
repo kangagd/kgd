@@ -65,7 +65,7 @@ export default function TechnicianAvatar({
         ${className}
       `}
       style={{ backgroundColor }}
-      title={technician.display_name}
+      title={displayName}
     >
       {initials}
     </div>
