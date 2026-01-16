@@ -99,7 +99,11 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                   {project.image_urls.map((url, idx) => {
                     const isVideo = url.match(/\.(mp4|mov|avi|webm|mkv)$/i);
                     return (
-                      <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-[#E5E7EB] hover:border-[#FAE008] transition-colors cursor-pointer group">
+                      <div 
+                        key={idx} 
+                        className="relative aspect-square rounded-lg overflow-hidden border border-[#E5E7EB] hover:border-[#FAE008] transition-colors cursor-pointer group"
+                        onClick={() => !isVideo && setFullscreenImage(url) && setFullscreenIndex(idx)}
+                      >
                         {isVideo ? (
                           <video 
                             src={url} 
