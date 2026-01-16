@@ -70,9 +70,7 @@ Deno.serve(async (req) => {
         { address_full: { $regex: term, $options: 'i' } },
         { address_suburb: { $regex: term, $options: 'i' } },
         { description: { $regex: term, $options: 'i' } }
-      ],
-      deleted_at: { $exists: false },
-      status: { $ne: 'Lost' }
+      ]
     };
 
     if (filters?.status && filters.status !== 'all') {
