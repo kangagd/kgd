@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const { project_id } = normalizeParams(body);
-    const { xeroInvoiceId, invoiceEntityId, setPrimary = false } = body;
+    const { xeroInvoiceId, invoiceEntityId } = body;
 
     if (!project_id) {
       return Response.json({ error: 'project_id is required' }, { status: 400 });
@@ -86,11 +86,6 @@ Deno.serve(async (req) => {
           updates.xero_invoices = oldProject.xero_invoices.filter(id => id !== invoiceEntity.id);
         }
         
-        // Clear primary if this was the primary invoice
-        if (oldProject.primary_xero_invoice_id === invoiceEntity.id) {
-          updates.primary_xero_invoice_id = null;
-        }
-        
         // Apply updates if any
         if (Object.keys(updates).length > 0) {
           await base44.asServiceRole.entities.Project.update(oldProjectId, updates);
@@ -122,19 +117,13 @@ Deno.serve(async (req) => {
       xero_payment_url: invoiceEntity.online_payment_url || invoiceEntity.online_invoice_url || project.xero_payment_url
     };
 
-    // STEP 5: Optionally set as primary
-    if (setPrimary || !project.primary_xero_invoice_id) {
-      projectUpdates.primary_xero_invoice_id = invoiceEntity.id;
-    }
-
     await base44.asServiceRole.entities.Project.update(project_id, projectUpdates);
 
     return Response.json({
       success: true,
       invoice: invoiceEntity,
       unlinked_from_project: oldProjectId,
-      linked_to_project: project_id,
-      set_as_primary: setPrimary || !project.primary_xero_invoice_id
+      linked_to_project: project_id
     });
 
   } catch (error) {
