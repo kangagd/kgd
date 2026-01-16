@@ -679,16 +679,18 @@ export default function Jobs() {
           </div>
         )}
 
-        <EntityModal
-          open={!!modalJob}
-          onClose={() => setModalJob(null)}
-          title={`Job #${modalJob?.job_number}`}
-          projectName={modalJob?.project_name}
-          onOpenFullPage={() => handleOpenFullJob(modalJob)}
-          fullPageLabel="Open Full Job"
-        >
-          {modalJob && <JobModalView job={modalJob} />}
-        </EntityModal>
+        {modalJob && (
+          <EntityModal
+            open={true}
+            onClose={() => setModalJob(null)}
+            title={`Job #${modalJob?.job_number}`}
+            projectName={modalJob?.project_name || modalJob?.project_id}
+            onOpenFullPage={() => handleOpenFullJob(modalJob)}
+            fullPageLabel="Open Full Job"
+          >
+            <JobModalView job={modalJob} />
+          </EntityModal>
+        )}
         </div>
         </div>
         );
