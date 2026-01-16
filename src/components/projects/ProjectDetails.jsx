@@ -163,7 +163,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId) => base44.entities.DraftEmail.delete(draftId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projectWithRelations', project.id] });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
       toast.success('Draft deleted');
     },
     onError: () => {
@@ -407,16 +407,21 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
     onSuccess: (data, variables) => {
       // Optimistically update the batch query cache
-      queryClient.setQueryData(projectKeys.withRelations(project.id), (oldData) => ({
+      queryClient.setQueryData(projectKeys.withRelations(project.id, activeTab), (oldData) => ({
         ...oldData,
         project: {
           ...oldData.project,
           [variables.field]: variables.value
         }
       }));
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      // Invalidate both current tab and "all" for cross-tab fields
+      const crossTabFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode'];
+      if (crossTabFields.includes(variables.field)) {
+        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+      }
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
       // Only invalidate global projects list if the change affects list view (title, status, etc.)
-      if (['title', 'status', 'customer_name', 'project_number', 'deleted_at'].includes(variables.field)) {
+      if (crossTabFields.includes(variables.field)) {
         queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       }
     }
@@ -426,17 +431,21 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     mutationFn: (fields) => base44.entities.Project.update(project.id, fields),
     onSuccess: (data, fields) => {
       // Optimistically update the batch query cache
-      queryClient.setQueryData(projectKeys.withRelations(project.id), (oldData) => ({
+      queryClient.setQueryData(projectKeys.withRelations(project.id, activeTab), (oldData) => ({
         ...oldData,
         project: {
           ...oldData.project,
           ...fields
         }
       }));
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      // Invalidate both current tab and "all" for cross-tab fields
+      const crossTabFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'updated_date', 'address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode'];
+      if (Object.keys(fields).some(f => crossTabFields.includes(f))) {
+        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+      }
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
       // Only invalidate global projects list if critical display fields changed
-      const listDisplayFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'updated_date'];
-      if (Object.keys(fields).some(f => listDisplayFields.includes(f))) {
+      if (Object.keys(fields).some(f => crossTabFields.includes(f))) {
         queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       }
     }
@@ -452,7 +461,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
+       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
        setShowInvoiceModal(false);
        toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
      },
@@ -470,7 +480,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
+       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
        if (data.voided) {
          toast.info('Invoice was voided in Xero and removed from the app');
        }
@@ -533,8 +544,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
       // Invalidate with a small delay to ensure backend has processed
       await new Promise(resolve => setTimeout(resolve, 500));
-      await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
-      await queryClient.refetchQueries({ queryKey: projectKeys.withRelations(project.id) });
+      await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
+      await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+      await queryClient.refetchQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
       queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
@@ -593,11 +605,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       const newJob = createJobResponse.data.job;
 
       // Update batch cache with the new job
-      queryClient.setQueryData(projectKeys.withRelations(project.id), (oldData) => ({
+      queryClient.setQueryData(projectKeys.withRelations(project.id, activeTab), (oldData) => ({
         ...oldData,
         jobs: [...(oldData.jobs || []), newJob]
       }));
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "overview") });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
@@ -670,7 +683,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
       queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       toast.success('AI suggestions applied to project');
     } catch (error) {
@@ -699,7 +713,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           old_status: oldStage,
           completed_date: project.completed_date || new Date().toISOString().split('T')[0]
         });
-        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
         queryClient.invalidateQueries({ queryKey: projectKeys.list() }); // Stage change affects list
         queryClient.invalidateQueries({ queryKey: ['maintenanceReminders', project.id] });
         toast.success('Project completed and warranty activated');
@@ -827,7 +842,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       const newJob = createJobResponse.data.job;
 
       // Refresh batch data
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "overview") });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
@@ -894,9 +910,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         base44.entities.Task.update(task.id, { status: "Cancelled" })
       ));
 
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
       queryClient.invalidateQueries({ queryKey: projectKeys.list() });
-      
+
       const cancelledCount = openJobs.length + allOpenTasks.length;
       toast.success(`Project marked as lost. ${openJobs.length} job${openJobs.length !== 1 ? 's' : ''} and ${allOpenTasks.length} task${allOpenTasks.length !== 1 ? 's' : ''} cancelled.`);
       setShowLostModal(false);
@@ -955,7 +972,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           longitude: addressData.longitude
         }
       });
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
       queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       toast.success('Address updated and synced to jobs');
     } catch (error) {
@@ -976,7 +994,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
     };
     
     base44.entities.Project.update(project.id, updates).then(() => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
       queryClient.invalidateQueries({ queryKey: projectKeys.list() }); // Technician names affect list view
     });
   };
@@ -1143,8 +1162,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               customerId={project.customer_id}
               projectId={project.id}
               onCustomerUpdate={(updatedData) => {
-                queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
-                queryClient.invalidateQueries({ queryKey: projectKeys.list() });
+              queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+              queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+              queryClient.invalidateQueries({ queryKey: projectKeys.list() });
               }}
             />
 
@@ -1312,7 +1332,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   });
                   
                   if (response.data.success && response.data.pdf_url) {
-                    invalidateProjectData(queryClient, project.id);
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "summary") });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
                     toast.success('Handover report generated successfully');
                     window.open(response.data.pdf_url, '_blank');
                   }
@@ -1742,22 +1763,26 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   }}
                   onAddTask={async (taskData) => {
                     await base44.entities.Task.create(taskData);
-                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "overview") });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
                     toast.success('Task created');
                   }}
                   onTaskUpdate={async (taskId, data) => {
                     await base44.entities.Task.update(taskId, data);
-                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "overview") });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
                     toast.success('Task updated');
                   }}
                   onTaskDelete={async (taskId) => {
                     await base44.entities.Task.delete(taskId);
-                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "overview") });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
                     toast.success('Task deleted');
                   }}
                   onTaskStatusChange={async (taskId, status) => {
                     await base44.entities.Task.update(taskId, { status });
-                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id) });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "overview") });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
                     toast.success('Task status updated');
                   }}
                 />
@@ -2062,15 +2087,13 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   onSent={async () => {
                     setComposerMode(null);
                     setComposerMessage(null);
-                    await queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
-                    await queryClient.invalidateQueries({ queryKey: ['projectEmails', project.id] });
-                    await queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
-                    await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
-                    await queryClient.refetchQueries({ queryKey: ['projectEmailThreads', project.id] });
+                    await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "activity") });
+                    await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+                    await queryClient.refetchQueries({ queryKey: projectKeys.withRelations(project.id, "activity") });
                     toast.success('Email sent successfully');
                   }}
                   onDraftSaved={() => {
-                    queryClient.invalidateQueries({ queryKey: ['projectEmailDrafts'] });
+                    queryClient.invalidateQueries({ queryKey: projectKeys.detail(project.id) });
                   }}
                   defaultTo={project.customer_email}
                   linkTarget={{ type: 'project', id: project.id }}
@@ -2443,7 +2466,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                     customerId={project.customer_id}
                     projectId={project.id}
                     onCustomerUpdate={(updatedData) => {
-                      invalidateProjectData(queryClient, project.id);
+                      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+                      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+                      queryClient.invalidateQueries({ queryKey: projectKeys.list() });
                     }}
                   />
 
