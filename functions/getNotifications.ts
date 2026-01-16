@@ -9,11 +9,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { limit = 50 } = await req.json().catch(() => ({}));
+    const { limit = 50, only_unread = false } = await req.json().catch(() => ({}));
+
+    // Build filter query
+    const filterQuery = { user_email: user.email };
+    if (only_unread) {
+      filterQuery.is_read = false;
+    }
 
     // Fetch user's notifications
     const notifications = await base44.entities.Notification.filter(
-      { user_email: user.email },
+      filterQuery,
       '-created_date',
       limit
     );
