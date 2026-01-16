@@ -1,4 +1,5 @@
 import React from "react";
+import { resolveTechnicianDisplayName, getInitialsFromDisplayName } from "../utils/technicianDisplay";
 
 // Fixed color palette
 const AVATAR_COLORS = [
@@ -21,16 +22,6 @@ const hashString = (str) => {
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash);
-};
-
-// Get initials from name
-const getInitials = (name) => {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) {
-    return parts[0].substring(0, 2).toUpperCase();
-  }
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
 export default function TechnicianAvatar({ 
