@@ -34,13 +34,19 @@ export default function TechnicianAvatar({
     return null;
   }
 
+  // GUARD: Ensure we have minimal required data for display
+  const displayName = resolveTechnicianDisplayName(technician);
+  const initials = getInitialsFromDisplayName(displayName);
+  
+  // If both are missing, show placeholder instead of "?"
+  if (!displayName && initials === '?') {
+    return null;
+  }
+
   // Determine color based on technician.id or email
   const identifier = technician.id || (technician.email ? technician.email.toLowerCase() : "") || "";
   const colorIndex = hashString(identifier) % AVATAR_COLORS.length;
   const backgroundColor = AVATAR_COLORS[colorIndex];
-  
-  const displayName = resolveTechnicianDisplayName(technician);
-  const initials = getInitialsFromDisplayName(displayName);
   
   // Size variants
   const sizeClasses = {
