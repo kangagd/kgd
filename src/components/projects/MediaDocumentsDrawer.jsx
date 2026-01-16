@@ -1,11 +1,13 @@
 import React, { useState, useRef } from "react";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
-export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos", onUploadPhotos, onUploadDocuments }) {
+export default function MediaDocumentsDrawer({ open, onClose, project, initialTab = "photos", onUploadPhotos, onUploadDocuments, onDeleteImage }) {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [fullscreenIndex, setFullscreenIndex] = useState(null);
   const photoInputRef = useRef(null);
   const docInputRef = useRef(null);
 
