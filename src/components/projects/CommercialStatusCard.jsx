@@ -83,7 +83,7 @@ export default function CommercialStatusCard({ project, quotes = [], invoices = 
         )}
 
         {/* Invoice Status */}
-        {invoices.length > 0 && (
+        {invoices.length > 0 ? (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -98,26 +98,19 @@ export default function CommercialStatusCard({ project, quotes = [], invoices = 
               </div>
               
               <div className="space-y-1.5 ml-6">
-                <div className="flex items-center justify-between text-[13px]">
-                  <span className="text-[#6B7280]">Deposit Paid</span>
-                  <Badge variant={depositPaid || fullyPaid ? "default" : "secondary"} className={depositPaid || fullyPaid ? "bg-green-100 text-green-700" : ""}>
-                    {depositPaid || fullyPaid ? "Yes" : "No"}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between text-[13px]">
-                  <span className="text-[#6B7280]">Balance Outstanding</span>
-                  <Badge variant={balanceDue > 0 ? "default" : "secondary"} className={balanceDue > 0 ? "bg-orange-100 text-orange-700" : "bg-green-100 text-green-700"}>
-                    {balanceDue > 0 ? "Yes" : "No"}
-                  </Badge>
-                </div>
+                {invoices.map((inv) => (
+                  <div key={inv.id} className="flex items-center justify-between text-[13px]">
+                    <span className="text-[#6B7280]">#{inv.xero_invoice_number || 'N/A'}</span>
+                    <Badge className={inv.status === 'PAID' ? 'bg-green-100 text-green-700' : inv.status === 'OVERDUE' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}>
+                      {inv.status}
+                    </Badge>
+                  </div>
+                ))}
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#6B7280] mt-1" />
           </button>
-        )}
-
-        {invoices.length === 0 && (
+        ) : (
           <button
             onClick={(e) => {
               e.stopPropagation();
