@@ -486,6 +486,48 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                           </div>
                         );
                       })}
+
+                      {/* Render bookings for this technician */}
+                      {dayBookings
+                        .filter(booking => booking.assigned_user_emails?.includes(technician.email))
+                        .map(booking => {
+                          const startTime = new Date(booking.start_at);
+                          const endTime = new Date(booking.end_at);
+                          const startHourDecimal = startTime.getHours() + startTime.getMinutes() / 60;
+                          const endHourDecimal = endTime.getHours() + endTime.getMinutes() / 60;
+                          const duration = endHourDecimal - startHourDecimal;
+                          
+                          const leftPosition = ((startHourDecimal - startHour) / (endHour - startHour + 1)) * 100;
+                          const width = (duration / (endHour - startHour + 1)) * 100;
+                          
+                          return (
+                            <div
+                              key={booking.id}
+                              className={`absolute ${compactMode ? 'top-2 bottom-2' : 'top-3 bottom-3'} rounded-lg ${compactMode ? 'p-2' : 'p-2.5'} cursor-pointer hover:shadow-md transition-all bg-blue-50 border-2 border-blue-300`}
+                              style={{ left: `${leftPosition}%`, width: `${width}%`, minWidth: compactMode ? '100px' : '120px' }}
+                              onClick={() => onBookingClick?.(booking)}
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1 text-[10px] font-semibold text-blue-900">
+                                  <Calendar className="w-3 h-3" />
+                                  Booking
+                                </div>
+                                <div className={`${compactMode ? 'text-[11px]' : 'text-xs'} font-semibold text-[#111827] leading-tight truncate`}>
+                                  {booking.title}
+                                </div>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <Badge className={getBookingTypeColor(booking.type) + " text-[9px] px-1.5 py-0"}>
+                                    {getBookingTypeLabel(booking.type)}
+                                  </Badge>
+                                  <Badge className="bg-blue-100 text-blue-800 text-[9px] px-1.5 py-0">
+                                    <Clock className="w-2.5 h-2.5 mr-0.5" />
+                                    {startTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 );
