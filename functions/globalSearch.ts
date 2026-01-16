@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
 
     const projectQuery = {
       $or: [
+        { project_number: { $regex: term, $options: 'i' } },
         { title: { $regex: term, $options: 'i' } },
         { customer_name: { $regex: term, $options: 'i' } },
         { address_full: { $regex: term, $options: 'i' } },
