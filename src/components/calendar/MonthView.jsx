@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
-import { Plus, Clock, Briefcase, AlertTriangle } from "lucide-react";
+import { Plus, Clock, Briefcase, AlertTriangle, Ban } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { isTechnicianCheckedIn } from "../domain/checkInHelpers";
 
@@ -48,7 +48,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], activeCheckInMap = {} }) {
+export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
   const [user, setUser] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const compactMode = true;
@@ -127,6 +127,17 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                 }
               });
 
+              // Check if business is closed on this day
+              const dayClosedDays = closedDays.filter(closedDay => {
+                try {
+                  const closedStart = new Date(closedDay.start_time);
+                  const closedEnd = new Date(closedDay.end_time);
+                  return day >= closedStart && day <= closedEnd;
+                } catch {
+                  return false;
+                }
+              });
+
               return (
                 <div
                   key={day.toISOString()}
@@ -169,6 +180,17 @@ export default function MonthView({ jobs, currentDate, onJobClick, onQuickBook, 
                       {dayLeaves.slice(0, 2).map(leave => (
                         <div key={leave.id} className="text-[9px] p-0.5 mb-0.5 rounded bg-gray-200 border-l-2 border-gray-500 truncate">
                           🚫 {leave.technician_name?.split(' ')[0]}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Business Closed Day indicators */}
+                  {dayClosedDays.length > 0 && (
+                    <div className="mb-0.5">
+                      {dayClosedDays.map(closedDay => (
+                        <div key={closedDay.id} className="text-[9px] p-0.5 mb-0.5 rounded bg-red-100 border-l-2 border-red-500 truncate flex items-center gap-0.5">
+                          <Ban className="w-2.5 h-2.5 flex-shrink-0"/> <span className="truncate">{closedDay.name}</span>
                         </div>
                       ))}
                     </div>

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
-import { MapPin, AlertCircle, Clock, Briefcase, AlertTriangle } from "lucide-react";
+import { MapPin, AlertCircle, Clock, Briefcase, AlertTriangle, Ban } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import TechnicianAvatar from "../common/TechnicianAvatar";
@@ -69,7 +69,7 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
-export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], activeCheckInMap = {} }) {
+export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverCell, setDragOverCell] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -379,19 +379,39 @@ export default function WeekView({ jobs, currentDate, onJobClick, onQuickBook, l
                         }
                       });
 
+                      // Check if business is closed on this day
+                      const isBusinessClosed = closedDays.some(closedDay => {
+                        try {
+                          const closedStart = new Date(closedDay.start_time);
+                          const closedEnd = new Date(closedDay.end_time);
+                          return day >= closedStart && day <= closedEnd;
+                        } catch {
+                          return false;
+                        }
+                      });
+
+                      const showOverlay = isOnLeave || isBusinessClosed;
+
                       return (
                         <div
                           key={day.toISOString()}
                           className={`${compactMode ? 'p-1.5' : 'p-2'} border-r border-[#E5E7EB] transition-all overflow-y-auto ${
-                            isOnLeave ? 'bg-gray-200' : isDragOver ? 'bg-[#16A34A]/5 border-[#16A34A]' : isToday ? 'bg-[#FAE008]/5' : ''
+                            showOverlay ? 'bg-gray-200' : isDragOver ? 'bg-[#16A34A]/5 border-[#16A34A]' : isToday ? 'bg-[#FAE008]/5' : ''
                           }`}
                           onDragOver={(e) => handleDragOver(e, day, technician.email)}
                           onDragLeave={handleDragLeave}
                           onDrop={(e) => handleDrop(e, day, technician.email)}
                         >
-                          {isOnLeave && (
-                            <div className="text-xs text-gray-700 font-medium mb-2 text-center">
-                              🚫 Unavailable
+                          {showOverlay && (
+                            <div className="text-xs font-medium mb-2 text-center space-y-1">
+                              {isOnLeave && (
+                                <div className="text-gray-700">🚫 Unavailable</div>
+                              )}
+                              {isBusinessClosed && (
+                                <div className="text-red-700 flex items-center justify-center gap-1">
+                                  <Ban className="w-3 h-3"/> Closed
+                                </div>
+                              )}
                             </div>
                           )}
                           <div className={compactMode ? 'space-y-1' : 'space-y-1.5'}>

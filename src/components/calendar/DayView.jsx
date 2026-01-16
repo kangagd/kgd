@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isSameDay, format } from "date-fns";
-import { MapPin, User, AlertCircle, Clock, Briefcase, AlertTriangle } from "lucide-react";
+import { MapPin, User, AlertCircle, Clock, Briefcase, AlertTriangle, Ban } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import TechnicianAvatar from "../common/TechnicianAvatar";
@@ -58,7 +58,7 @@ const parseTime = (timeString) => {
   return hours + minutes / 60;
 };
 
-export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], activeCheckInMap = {} }) {
+export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, leaves = [], closedDays = [], activeCheckInMap = {} }) {
   const [draggedJob, setDraggedJob] = useState(null);
   const [dragOverZone, setDragOverZone] = useState(null);
   const [pendingUpdate, setPendingUpdate] = useState(null);
@@ -367,6 +367,19 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, le
                   }
                 });
 
+                // Check if business is closed on this day
+                const isBusinessClosed = closedDays.some(closedDay => {
+                  try {
+                    const closedStart = new Date(closedDay.start_time);
+                    const closedEnd = new Date(closedDay.end_time);
+                    return currentDate >= closedStart && currentDate <= closedEnd;
+                  } catch {
+                    return false;
+                  }
+                });
+
+                const showOverlay = techLeave || isBusinessClosed;
+
                 return (
                   <div key={technician.id} className="flex border-b border-[#E5E7EB] hover:bg-[#F8F9FA]/50 transition-colors">
                     <div className={`${compactMode ? 'w-32' : 'w-40'} flex-shrink-0 ${compactMode ? 'p-2' : 'p-3'} border-r border-[#E5E7EB] flex items-center gap-2`}>
@@ -378,14 +391,23 @@ export default function DayView({ jobs, currentDate, onJobClick, onQuickBook, le
                         {technician.display_name || technician.full_name}
                       </span>
                     </div>
-                    <div className={`flex-1 relative ${compactMode ? 'h-32' : 'h-36'} ${techLeave ? 'bg-gray-200/50' : ''}`}>
-                      {techLeave ? (
+                    <div className={`flex-1 relative ${compactMode ? 'h-32' : 'h-36'} ${showOverlay ? 'bg-gray-200/50' : ''}`}>
+                      {showOverlay ? (
                         <div className="absolute inset-0 flex items-center justify-center bg-gray-300/80 z-10">
                           <div className="text-center px-2">
-                            <div className="text-xs font-bold text-gray-700">🚫 Unavailable</div>
-                            <div className="text-[10px] text-gray-600 capitalize">{techLeave.leave_type}</div>
-                            {techLeave.reason && (
-                              <div className="text-[9px] text-gray-600 mt-0.5">{techLeave.reason}</div>
+                            {techLeave && (
+                              <>
+                                <div className="text-xs font-bold text-gray-700">🚫 {techLeave.technician_name} Unavailable</div>
+                                <div className="text-[10px] text-gray-600 capitalize">{techLeave.leave_type}</div>
+                                {techLeave.reason && (
+                                  <div className="text-[9px] text-gray-600 mt-0.5">{techLeave.reason}</div>
+                                )}
+                              </>
+                            )}
+                            {isBusinessClosed && (
+                              <div className="text-xs font-bold text-red-700 flex items-center justify-center gap-1 mt-1">
+                                <Ban className="w-3 h-3"/> Business Closed
+                              </div>
                             )}
                           </div>
                         </div>

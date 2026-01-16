@@ -1377,9 +1377,9 @@ export default function Schedule() {
           </div>
         ) : (
           <>
-            {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} activeCheckInMap={activeCheckInMap} />}
-            {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} activeCheckInMap={activeCheckInMap} />}
-            {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} activeCheckInMap={activeCheckInMap} />}
+            {view === "day" && <DayView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
+            {view === "week" && <WeekView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
+            {view === "month" && <MonthView jobs={getFilteredJobs()} currentDate={selectedDate} onJobClick={setModalJob} leaves={leaves} closedDays={closedDays} activeCheckInMap={activeCheckInMap} />}
           </>
         )}
 
