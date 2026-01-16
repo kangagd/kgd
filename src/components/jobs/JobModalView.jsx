@@ -237,7 +237,7 @@ export default function JobModalView({ job, onJobUpdated }) {
                 <SelectContent>
                   {technicians.map((tech) => (
                     <SelectItem key={tech.id} value={tech.email}>
-                      {tech.full_name}
+                      {resolveTechnicianDisplayName(tech)}
                     </SelectItem>
                   ))}
                 </SelectContent>
