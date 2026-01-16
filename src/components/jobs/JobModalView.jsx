@@ -281,21 +281,13 @@ export default function JobModalView({ job, onJobUpdated }) {
 
 
 
-      {/* Project Link */}
-      {job.project_name && (
-        <div className="p-3 bg-[#FAE008]/10 rounded-lg border border-[#FAE008]/30">
-          <div className="text-[12px] text-[#6B7280] font-medium mb-1">Part of Project</div>
-          <div className="text-[14px] font-semibold text-[#111827]">{job.project_name}</div>
-        </div>
-      )}
-
-      {/* Notes Preview */}
-      {job.notes && job.notes !== "<p><br></p>" && (
+      {/* Description Preview */}
+      {(job.overview || job.notes) && (job.overview || job.notes) !== "<p><br></p>" && (
         <div className="p-3 bg-[#FAE008]/10 rounded-lg">
-          <div className="text-[12px] text-[#6B7280] font-medium mb-1">Notes</div>
+          <div className="text-[12px] text-[#6B7280] font-medium mb-1">Description</div>
           <div 
             className="text-[14px] text-[#4B5563] line-clamp-3 prose prose-sm max-w-none"
-            dangerouslySetInnerHTML={{ __html: job.notes }}
+            dangerouslySetInnerHTML={{ __html: job.overview || job.notes }}
           />
         </div>
       )}
