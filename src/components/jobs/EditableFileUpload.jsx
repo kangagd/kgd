@@ -157,35 +157,20 @@ export default function EditableFileUpload({
             </>
           )}
           {(!isSelectionMode || !multiple) && (
-            <>
-              {accept.includes('image') && (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => cameraInputRef.current?.click()}
-                  disabled={uploading}
-                  className="h-7 text-xs"
-                >
-                  <Camera className="w-3 h-3 mr-1" />
-                  <span className="hidden md:inline">Camera</span>
-                </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="h-7 text-xs"
+            >
+              {uploading ? (
+                <>Uploading...</>
+              ) : (
+                <><Upload className="w-3 h-3 mr-1" />{multiple ? 'Add Photos' : 'Upload'}</>
               )}
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="h-7 text-xs"
-              >
-                {uploading ? (
-                  <>Uploading...</>
-                ) : (
-                  <><Upload className="w-3 h-3 mr-1" />{multiple ? 'Add' : 'Upload'}</>
-                )}
-              </Button>
-            </>
+            </Button>
           )}
         </div>
         <input
