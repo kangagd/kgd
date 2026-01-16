@@ -279,6 +279,40 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const handoverReports = projectData?.handoverReports || [];
   const customer = projectData?.customer || null;
 
+  // DEV-ONLY: Diagnostic logging for quote pipeline
+  useEffect(() => {
+    if (typeof import.meta !== "undefined" && import.meta.env?.DEV && activeTab === "overview") {
+      console.group("[QuotePipeline-Overview] Diagnostics");
+      console.log("project.id:", project?.id);
+      console.log("project keys:", Object.keys(project || {}));
+      
+      // Check for quote fields at project level
+      const quoteFieldGuesses = ['quotes', 'project_quotes', 'projectQuotes', 'quote_ids'];
+      const foundQuoteFields = quoteFieldGuesses.filter(key => key in (project || {}));
+      if (foundQuoteFields.length > 0) {
+        console.log("Found quote fields on project:", foundQuoteFields);
+        foundQuoteFields.forEach(key => console.log(`  ${key}:`, project[key]));
+      }
+      
+      // Check projectData keys
+      console.log("projectData top-level keys:", Object.keys(projectData || {}));
+      const quoteKeysInData = Object.keys(projectData || {}).filter(k => k.toLowerCase().includes('quote'));
+      if (quoteKeysInData.length > 0) {
+        console.log("Quote-related keys in projectData:", quoteKeysInData);
+        quoteKeysInData.forEach(key => console.log(`  projectData.${key}:`, projectData[key]));
+      }
+      
+      // Log the actual quotes passed to CommercialStatusCard
+      console.log("quotes (array) passed to CommercialStatusCard:", {
+        isArray: Array.isArray(quotes),
+        length: quotes?.length || 0,
+        value: quotes
+      });
+      console.groupEnd();
+    }
+  }, [project?.id, activeTab, quotes, projectData]);
+
+
   // Fetch draft emails linked to this project
   const { data: projectDrafts = [] } = useQuery({
     queryKey: projectKeys.drafts(project.id),
