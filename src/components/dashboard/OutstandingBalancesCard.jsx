@@ -46,7 +46,18 @@ export default function OutstandingBalancesCard() {
 
   // Calculate outstanding balance for each project
   const projectsWithBalance = completedProjects.map(project => {
-    const projectInvoices = xeroInvoices.filter(inv => inv.project_id === project.id);
+    // Skip if financial status indicates full payment
+    if (project.financial_status === 'Balance Paid in Full' || project.financial_status === 'Written Off' || project.financial_status === 'Cancelled') {
+      return null;
+    }
+
+    // Only count unpaid invoices (AUTHORISED status with amount_due > 0)
+    const projectInvoices = xeroInvoices.filter(inv => 
+      inv.project_id === project.id && 
+      inv.status === 'AUTHORISED' && 
+      (inv.amount_due || 0) > 0
+    );
+    
     const totalInvoiced = projectInvoices.reduce((sum, inv) => sum + (inv.amount_due || 0), 0);
     
     const outstandingBalance = totalInvoiced > 0 
@@ -58,7 +69,7 @@ export default function OutstandingBalancesCard() {
       outstandingBalance,
       hasInvoices: projectInvoices.length > 0
     };
-  }).filter(p => p.outstandingBalance > 0)
+  }).filter(p => p && p.outstandingBalance > 0)
     .sort((a, b) => b.outstandingBalance - a.outstandingBalance)
     .slice(0, 5);
 
