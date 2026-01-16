@@ -160,7 +160,7 @@ export const QUERY_KEYS = {
 // invalidates: detail + list (used on save)
 export const invalidateProjectDetail = (queryClient, projectId) => {
   queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
-  queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+  queryClient.invalidateQueries({ queryKey: projectKeys.list() });
 };
 
 // Pattern 2: Job creation/deletion
@@ -173,7 +173,7 @@ export const invalidateJobList = (queryClient) => {
 // invalidates: detail + all nested data
 export const invalidateProjectData = (queryClient, projectId) => {
   queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
-  queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+  queryClient.invalidateQueries({ queryKey: projectKeys.list() });
   queryClient.invalidateQueries({ queryKey: projectKeys.purchaseOrders(projectId) });
   queryClient.invalidateQueries({ queryKey: projectKeys.parts(projectId) });
   queryClient.invalidateQueries({ queryKey: projectKeys.emails(projectId) });
