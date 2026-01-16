@@ -59,16 +59,16 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Cannot check in to deleted job' }, { status: 400 });
         }
         
-        // GUARDRAIL: Prevent duplicate check-ins
+        // GUARDRAIL: Prevent duplicate check-ins to same job
         const existingCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
             job_id: jobId,
             technician_email: user.email
         });
-        const activeCheckIn = existingCheckIns.find(c => !c.check_out_time);
-        if (activeCheckIn) {
+        const activeCheckInThisJob = existingCheckIns.find(c => !c.check_out_time);
+        if (activeCheckInThisJob) {
             return Response.json({ 
                 error: 'You already have an active check-in for this job',
-                existing_check_in_id: activeCheckIn.id
+                existing_check_in_id: activeCheckInThisJob.id
             }, { status: 400 });
         }
 
@@ -113,14 +113,38 @@ Deno.serve(async (req) => {
             console.error("Failed to create CheckInOut entity (user scope):", e);
             // Fallback to service role if user scope fails
              try {
-                 console.log("Retrying with service role...");
-                 checkIn = await base44.asServiceRole.entities.CheckInOut.create(checkInData);
-             } catch (serviceError) {
+                  console.log("Retrying with service role...");
+                  checkIn = await base44.asServiceRole.entities.CheckInOut.create(checkInData);
+              } catch (serviceError) {
                 console.error("Failed to create CheckInOut entity (service role):", serviceError);
                 return Response.json({ 
                     error: `Failed to create check-in record. DB Error: ${serviceError.message || JSON.stringify(serviceError)}` 
                 }, { status: 500 });
-             }
+              }
+        }
+
+        // Check if technician now has multiple active check-ins
+        try {
+            const allActiveCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({
+                technician_email: user.email
+            });
+            const multipleActive = allActiveCheckIns.filter(c => !c.check_out_time);
+
+            if (multipleActive.length > 1) {
+                // Create warning notification for technician
+                await base44.asServiceRole.entities.Notification.create({
+                    user_email: user.email,
+                    title: 'Multiple Active Check-Ins',
+                    body: `You are now checked in to ${multipleActive.length} jobs. Remember to check out when you leave each site.`,
+                    type: 'warning',
+                    related_entity_type: 'CheckInOut',
+                    related_entity_id: checkIn.id,
+                    is_read: false
+                });
+            }
+        } catch (e) {
+            console.error("Failed to check for multiple check-ins or create notification:", e);
+            // Non-critical, don't fail the check-in
         }
 
         // 7. Update Job Status (Optional)
