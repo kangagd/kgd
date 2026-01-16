@@ -197,7 +197,7 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
     const technician = technicians.find(t => t.email === technicianEmail);
     if (technicianIndex === -1 && technician) {
       newAssignedTo = [technicianEmail];
-      newAssignedToName = [technician.display_name || technician.full_name];
+      newAssignedToName = [resolveTechnicianDisplayName(technician)];
     }
 
     const oldTech = assignedToName.length > 0 ? assignedToName[0] : 'Unassigned';
