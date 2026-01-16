@@ -400,7 +400,7 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                         size={compactMode ? "sm" : "md"}
                       />
                       <span className={`${compactMode ? 'text-xs' : 'text-sm'} font-bold text-[#111827] truncate`}>
-                        {technician.display_name || technician.full_name}
+                        {resolveTechnicianDisplayName(technician)}
                       </span>
                     </div>
                     <div className={`flex-1 relative ${compactMode ? 'h-32' : 'h-36'} ${showOverlay ? 'bg-gray-200/50' : ''}`}>
