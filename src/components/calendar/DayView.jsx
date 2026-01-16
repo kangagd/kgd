@@ -479,10 +479,10 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                                 </Badge>
                               </div>
 
-                              {!compactMode && (
+                              {!compactMode && job.address_full && (
                                 <div className="flex items-start gap-1 text-[10px] text-[#4B5563] truncate">
                                   <MapPin className="w-2.5 h-2.5 mt-0.5 flex-shrink-0" />
-                                  <span className="truncate">{job.address}</span>
+                                  <span className="truncate">{job.address_full}</span>
                                 </div>
                               )}
 
