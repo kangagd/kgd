@@ -87,6 +87,11 @@ export default function JobModalView({ job, onJobUpdated }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
+            {job.project_id && job.project_number && (
+              <Badge className="bg-[#DDD6FE] text-[#5B21B6] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
+                Project #{job.project_number}
+              </Badge>
+            )}
             {job.job_type_name && (
               <Badge className="bg-[#EDE9FE] text-[#6D28D9] border-0 font-medium text-xs px-2.5 py-0.5 rounded-lg">
                 {job.job_type_name}
@@ -150,11 +155,12 @@ export default function JobModalView({ job, onJobUpdated }) {
                 <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
                 <TechnicianAvatarGroup
                   technicians={job.assigned_to.filter(Boolean).map((email, idx) => {
-                    const techName = job.assigned_to_name?.[job.assigned_to.indexOf(email)] || email?.split('@')?.[0] || 'Unknown';
+                    const normalizedEmail = email?.toLowerCase().trim();
+                    const techName = job.assigned_to_name?.[idx] || normalizedEmail?.split('@')?.[0] || 'Tech';
                     return {
-                      email,
+                      email: normalizedEmail,
                       full_name: techName,
-                      id: email
+                      id: normalizedEmail
                     };
                   })}
                   maxDisplay={3}
