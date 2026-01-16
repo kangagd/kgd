@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { devLog } from "@/components/utils/devLog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { sameId } from "@/components/utils/id";
@@ -202,45 +203,22 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: projectData, isLoading: isProjectLoading } = useQuery({
     queryKey: ['projectWithRelations', initialProject.id],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getProjectWithRelations', { 
-        project_id: initialProject.id 
-      });
-      console.log('[ProjectDetails Query] Raw response:', response);
-      console.log('[ProjectDetails Query] response.data:', response.data);
-      console.log('[ProjectDetails Query] response.data.xeroInvoices:', response.data?.xeroInvoices);
-      console.log('[ProjectDetails Query] xeroInvoices count:', response.data?.xeroInvoices?.length);
-      console.log('[ProjectDetails Query] About to return:', response.data);
-      return response.data;
-    },
+       const response = await base44.functions.invoke('getProjectWithRelations', { 
+         project_id: initialProject.id 
+       });
+       return response.data;
+     },
     staleTime: 5000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
 
-  console.log('[ProjectDetails] projectData received:', projectData);
-  console.log('[ProjectDetails] projectData?.xeroInvoices:', projectData?.xeroInvoices);
-  
   const project = projectData?.project || initialProject;
   const jobs = projectData?.jobs || [];
   const quotes = projectData?.quotes || [];
   const xeroInvoices = projectData?.xeroInvoices || [];
   const parts = projectData?.parts || [];
   const purchaseOrders = projectData?.purchaseOrders || [];
-  
-  console.log('[ProjectDetails] Extracted xeroInvoices:', xeroInvoices);
-  
-  // DEBUG: Log invoice data
-  useEffect(() => {
-    console.log('[ProjectDetails] xeroInvoices from projectData:', {
-      count: xeroInvoices.length,
-      invoices: xeroInvoices.map(inv => ({
-        id: inv.id,
-        number: inv.xero_invoice_number,
-        project_id: inv.project_id,
-        matches: sameId(inv.project_id, project.id)
-      }))
-    });
-  }, [xeroInvoices, project.id]);
   const projectContacts = projectData?.projectContacts || [];
   const tradeRequirements = projectData?.tradeRequirements || [];
   const projectTasks = projectData?.projectTasks || [];
@@ -253,19 +231,16 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: projectDrafts = [] } = useQuery({
     queryKey: ['projectDrafts', project.id],
     queryFn: async () => {
-      try {
-        const allDrafts = await base44.entities.DraftEmail.list();
-        console.log('[ProjectDrafts Query] All drafts:', allDrafts);
-        const filtered = allDrafts.filter(d => 
-          d.linkedEntityId === project.id && d.linkedEntityType === 'project'
-        );
-        console.log('[ProjectDrafts Query] Filtered for project:', filtered);
-        return filtered;
-      } catch (error) {
-        console.error('[ProjectDrafts Query] Error:', error);
-        return [];
-      }
-    },
+       try {
+         const allDrafts = await base44.entities.DraftEmail.list();
+         const filtered = allDrafts.filter(d => 
+           d.linkedEntityId === project.id && d.linkedEntityType === 'project'
+         );
+         return filtered;
+       } catch (error) {
+         return [];
+       }
+     },
     ...QUERY_CONFIG.reference
   });
 
@@ -455,10 +430,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
     },
     onError: (error) => {
-      console.error('Invoice creation error:', error);
-      const errorMsg = error?.response?.data?.error || error?.message || 'Unknown error';
-      toast.error(`Failed to create invoice: ${errorMsg}`);
-    }
+       const errorMsg = error?.response?.data?.error || error?.message || 'Unknown error';
+       toast.error(`Failed to create invoice: ${errorMsg}`);
+     }
   });
 
   const syncProjectInvoiceMutation = useMutation({
@@ -601,10 +575,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
       toast.success(`Job created successfully`);
-    } catch (error) {
+      } catch (error) {
       toast.error('Failed to create job');
-      console.error('Job creation error:', error);
-    }
+      }
   };
 
   const handleJobClick = (jobId) => {
@@ -2149,11 +2122,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           </TabsContent>
 
           <TabsContent value="invoices" className="mt-3">
-            {console.log('[ProjectDetails Invoices Tab] Rendering with:', {
-              xeroInvoicesLength: xeroInvoices.length,
-              xeroInvoices: xeroInvoices,
-              projectDataXeroInvoices: projectData?.xeroInvoices
-            })}
             <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
               <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
