@@ -85,6 +85,22 @@ import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
 import { QUERY_CONFIG, invalidateProjectData } from "../api/queryConfig";
 
+/**
+ * Conditionally invalidate project tab cache to avoid unnecessary refetches.
+ * Always invalidates the specific tab; optionally invalidates "all" for cross-tab mutations.
+ * 
+ * @param {Object} queryClient - React Query client
+ * @param {string} projectId - Project ID
+ * @param {string} tab - Tab name (e.g., "invoices", "parts", "overview")
+ * @param {boolean} alsoInvalidateAll - If true, also invalidate "all" tab (for cross-tab mutations like invoice/quote changes that affect CommercialStatusCard)
+ */
+function invalidateProjectTab(queryClient, projectId, tab, { alsoInvalidateAll = false } = {}) {
+  queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(projectId, tab) });
+  if (alsoInvalidateAll) {
+    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(projectId, "all") });
+  }
+}
+
 const statusColors = {
   "Lead": "bg-slate-100 text-slate-700",
   "Initial Site Visit": "bg-blue-100 text-blue-700",
@@ -462,8 +478,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
-       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+       invalidateProjectTab(queryClient, project.id, "invoices", { alsoInvalidateAll: true });
        setShowInvoiceModal(false);
        toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
      },
@@ -481,12 +496,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       return response.data;
     },
     onSuccess: (data) => {
-       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
-       queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+       invalidateProjectTab(queryClient, project.id, "invoices", { alsoInvalidateAll: true });
        if (data.voided) {
-         toast.info('Invoice was voided in Xero and removed from the app');
-       }
-     }
+          toast.info('Invoice was voided in Xero and removed from the app');
+        }
+      }
   });
 
   const handleLinkExistingInvoice = async (invoice) => {
@@ -545,8 +559,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
       // Invalidate with a small delay to ensure backend has processed
       await new Promise(resolve => setTimeout(resolve, 500));
-      await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
-      await queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+      invalidateProjectTab(queryClient, project.id, "invoices", { alsoInvalidateAll: true });
       await queryClient.refetchQueries({ queryKey: projectKeys.withRelations(project.id, "invoices") });
       queryClient.invalidateQueries({ queryKey: projectKeys.list() });
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
