@@ -1764,7 +1764,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Row 2: What's Next / Latest Activity */}
             <Card className="border border-[#E5E7EB] shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-[16px] font-semibold text-[#111827]">What's Next</CardTitle>
+                <CardTitle className="text-[16px] font-semibold text-[#111827]">Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
                 <ActivityTimeline 
