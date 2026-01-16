@@ -2395,6 +2395,14 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
           const newUrls = project.image_urls.filter((_, i) => i !== idx);
           handleImagesChange(newUrls);
         }}
+        onDeleteDocument={(field, idx) => {
+          if (field === 'other_documents' && idx !== undefined) {
+            const newDocs = project.other_documents.filter((_, i) => i !== idx);
+            handleProjectChange({ ...project, other_documents: newDocs });
+          } else {
+            handleProjectChange({ ...project, [field]: null });
+          }
+        }}
       />
 
       {/* Customer Drawer - Mobile */}
