@@ -233,10 +233,9 @@ export default function JobCard({
 
             {job.assigned_to && job.assigned_to.length > 0 && (
               <TechnicianAvatarGroup
-                technicians={job.assigned_to.map((email, idx) => ({
+                technicians={job.assigned_to.map((email) => ({
                   email,
-                  display_name: job.assigned_to_name?.[idx] || email,
-                  full_name: job.assigned_to_name?.[idx] || email,
+                  display_name: undefined,
                   id: email
                 }))}
                 maxDisplay={3}
