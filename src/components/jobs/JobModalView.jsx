@@ -169,12 +169,17 @@ export default function JobModalView({ job, onJobUpdated }) {
               <div className="flex items-center gap-2">
                 <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
                 <div className="flex items-center gap-1 text-xs text-[#4B5563]">
-                  {normalized.assigned_to.map((email, idx) => (
-                    <span key={email || idx}>
-                      {normalized.assigned_to_name?.[idx] || email.split('@')[0]}
-                      {idx < normalized.assigned_to.length - 1 ? ', ' : ''}
-                    </span>
-                  ))}
+                  {technicians.map((tech, idx) => {
+                    const email = normalized.assigned_to[idx];
+                    if (!email) return null;
+                    const displayName = resolveTechnicianDisplayName(tech);
+                    return (
+                      <span key={email}>
+                        {displayName}
+                        {idx < normalized.assigned_to.length - 1 ? ', ' : ''}
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             )}
