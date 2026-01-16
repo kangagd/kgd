@@ -25,6 +25,26 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
     }
   };
 
+  const handleDownloadImage = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const response = await fetch(fullscreenImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `image-${fullscreenIndex + 1}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download image');
+    }
+  };
+
   if (!open) return null;
 
   return (
