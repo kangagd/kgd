@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -241,22 +244,53 @@ export default function BookingEditor({ open, onClose, booking, defaultDate, def
             </div>
 
             <div>
-              <Label>Assign to *</Label>
-              <Select
-                value={formData.assigned_user_ids[0] || ""}
-                onValueChange={(value) => setFormData({ ...formData, assigned_user_ids: [value] })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {technicians.map((tech) => (
-                    <SelectItem key={tech.id} value={tech.id}>
-                      {tech.display_name || tech.full_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Assign to * (select one or more)</Label>
+              {formData.assigned_user_ids.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {formData.assigned_user_ids.map(userId => {
+                    const tech = technicians.find(t => t.id === userId);
+                    if (!tech) return null;
+                    return (
+                      <Badge key={userId} variant="secondary" className="gap-1">
+                        {tech.display_name || tech.full_name}
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ 
+                            ...formData, 
+                            assigned_user_ids: formData.assigned_user_ids.filter(id => id !== userId) 
+                          })}
+                          className="ml-1 hover:text-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="border rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+                {technicians.map((tech) => (
+                  <label key={tech.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
+                    <Checkbox
+                      checked={formData.assigned_user_ids.includes(tech.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setFormData({ 
+                            ...formData, 
+                            assigned_user_ids: [...formData.assigned_user_ids, tech.id] 
+                          });
+                        } else {
+                          setFormData({ 
+                            ...formData, 
+                            assigned_user_ids: formData.assigned_user_ids.filter(id => id !== tech.id) 
+                          });
+                        }
+                      }}
+                    />
+                    <span className="text-sm">{tech.display_name || tech.full_name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div>
