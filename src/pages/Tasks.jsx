@@ -37,7 +37,7 @@ export default function Tasks() {
   const [user, setUser] = useState(null);
 
   // View
-  const [viewMode, setViewMode] = useState("list"); // "list" | "kanban"
+  const [viewMode, setViewMode] = useState("kanban"); // "list" | "kanban"
 
   // Filters
   const [statusFilter, setStatusFilter] = useState("open"); // open | in_progress | completed | all
@@ -339,6 +339,16 @@ export default function Tasks() {
 
           {/* Additional Filters */}
           <div className="flex flex-wrap gap-3 flex-1">
+            {/* My Tasks Quick Filter */}
+            <Button
+              variant={assigneeFilter === "me" ? "default" : "outline"}
+              onClick={() => setAssigneeFilter(assigneeFilter === "me" ? "all" : "me")}
+              className={assigneeFilter === "me" ? "bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]" : ""}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              My Tasks
+            </Button>
+
             <Select value={dueFilter} onValueChange={setDueFilter}>
               <SelectTrigger className="w-full lg:w-[150px]">
                 <SelectValue placeholder="Due date" />
