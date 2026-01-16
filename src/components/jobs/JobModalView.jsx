@@ -165,19 +165,17 @@ export default function JobModalView({ job, onJobUpdated }) {
                 <span>{normalized.scheduled_time}</span>
               </div>
             )}
-            {normalized.assigned_technicians_display.length > 0 && (
+            {normalized.assigned_to && normalized.assigned_to.length > 0 && (
               <div className="flex items-center gap-2">
                 <span className="text-[12px] text-[#6B7280] font-medium">Assigned to:</span>
-                <TechnicianAvatarGroup
-                  technicians={normalized.assigned_technicians_display.map((tech) => ({
-                    email: tech.email,
-                    display_name: tech.name,
-                    full_name: tech.name,
-                    id: tech.email
-                  }))}
-                  maxDisplay={3}
-                  size="sm"
-                />
+                <div className="flex items-center gap-1 text-xs text-[#4B5563]">
+                  {normalized.assigned_to.map((email, idx) => (
+                    <span key={email || idx}>
+                      {normalized.assigned_to_name?.[idx] || email.split('@')[0]}
+                      {idx < normalized.assigned_to.length - 1 ? ', ' : ''}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
