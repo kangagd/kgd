@@ -106,8 +106,14 @@ Deno.serve(async (req) => {
     const invoice = result.Invoices[0];
     console.log(`[createInvoiceFromProject] Created invoice in Xero: ${invoice.InvoiceID}`);
 
-    // STEP 2: Create XeroInvoice record in database (now safe—Xero API succeeded)
-    const xeroInvoice = await base44.asServiceRole.entities.XeroInvoice.create({
+    // STEP 2: Create or update XeroInvoice record in database
+    // GUARDRAIL: Check if batch sync already created this invoice to prevent ghost links
+    const existingInvoices = await base44.asServiceRole.entities.XeroInvoice.filter({
+      xero_invoice_id: invoice.InvoiceID
+    });
+
+    let xeroInvoice;
+    const invoiceData = {
       xero_invoice_id: invoice.InvoiceID,
       xero_invoice_number: invoice.InvoiceNumber,
       project_id: project.id,
@@ -126,8 +132,20 @@ Deno.serve(async (req) => {
       online_payment_url: invoice.OnlineInvoiceUrl || null,
       reference: `Project #${project.project_number} - ${project.title}`,
       raw_payload: invoice
-    });
-    console.log(`[createInvoiceFromProject] Created XeroInvoice record: ${xeroInvoice.id}`);
+    };
+
+    if (existingInvoices.length > 0) {
+      // Update existing record with project_id (fixes ghost link if batch sync created it)
+      xeroInvoice = await base44.asServiceRole.entities.XeroInvoice.update(
+        existingInvoices[0].id,
+        invoiceData
+      );
+      console.log(`[createInvoiceFromProject] Updated existing XeroInvoice record: ${xeroInvoice.id}`);
+    } else {
+      // Create new record
+      xeroInvoice = await base44.asServiceRole.entities.XeroInvoice.create(invoiceData);
+      console.log(`[createInvoiceFromProject] Created XeroInvoice record: ${xeroInvoice.id}`);
+    }
 
     // STEP 3: Link invoice to project (non-critical; if fails, invoice exists in Xero)
     try {
