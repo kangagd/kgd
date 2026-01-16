@@ -2391,6 +2391,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         initialTab={mediaDrawerTab}
         onUploadPhotos={(e) => handleFileUpload(e, 'image')}
         onUploadDocuments={(e) => handleFileUpload(e, 'other')}
+        onDeleteImage={(idx) => {
+          const newUrls = project.image_urls.filter((_, i) => i !== idx);
+          handleImagesChange(newUrls);
+        }}
       />
 
       {/* Customer Drawer - Mobile */}
