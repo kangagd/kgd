@@ -84,6 +84,7 @@ import PartsTab from "./PartsTab";
 import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
 import { QUERY_CONFIG, invalidateProjectData } from "../api/queryConfig";
+import { assertProjectQueryKeysAreHelperBased } from "../utils/projectKeysAudit";
 
 /**
  * Conditionally invalidate project tab cache to avoid unnecessary refetches.
@@ -202,6 +203,11 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       }
     };
     loadUser();
+    
+    // Dev-only audit: detect hardcoded query keys that bypass helpers
+    if (typeof import.meta !== "undefined" && import.meta.env?.DEV) {
+      assertProjectQueryKeysAreHelperBased(projectKeys, initialProject.id);
+    }
   }, []);
 
   // Permission checks
