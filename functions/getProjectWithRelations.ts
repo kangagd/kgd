@@ -57,38 +57,70 @@ Deno.serve(async (req) => {
         return [];
       }),
       (async () => {
-        const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
-        if (!proj?.quote_ids || proj.quote_ids.length === 0) {
+        try {
+          // CANONICAL: Try filter by project_id first
+          let quotes = await base44.asServiceRole.entities.Quote.filter({ 
+            project_id, 
+            deleted_at: { $exists: false } 
+          }).catch(err => {
+            console.error('[getProjectWithRelations] Failed to filter quotes by project_id:', err);
+            return [];
+          });
+
+          // FALLBACK: If no quotes found via filter, try project's quote_ids array
+          if (!quotes || quotes.length === 0) {
+            const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
+            if (proj?.quote_ids && proj.quote_ids.length > 0) {
+              console.log(`[getProjectWithRelations] No quotes via filter, falling back to ${proj.quote_ids.length} quote IDs from project`);
+              const quotePromises = proj.quote_ids.map(id => 
+                base44.asServiceRole.entities.Quote.get(id).catch(err => {
+                  console.error(`[getProjectWithRelations] Failed to fetch quote ${id}:`, err);
+                  return null;
+                })
+              );
+              const fetchedQuotes = await Promise.all(quotePromises);
+              quotes = fetchedQuotes.filter(q => q !== null && !q.deleted_at);
+            }
+          }
+
+          return Array.isArray(quotes) ? quotes : [];
+        } catch (err) {
+          console.error('[getProjectWithRelations] Failed to fetch quotes:', err);
           return [];
         }
-        // Fetch quotes using project's quote_ids array (source of truth)
-        const quotePromises = proj.quote_ids.map(id => 
-          base44.asServiceRole.entities.Quote.get(id).catch(err => {
-            console.error(`[getProjectWithRelations] Failed to fetch quote ${id}:`, err);
-            return null;
-          })
-        );
-        const quotes = await Promise.all(quotePromises);
-        return quotes.filter(q => q !== null);
       })(),
       (async () => {
-        const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
-        if (!proj?.xero_invoices || proj.xero_invoices.length === 0) {
-          console.log(`[getProjectWithRelations] No xero_invoices in project array`);
+        try {
+          // CANONICAL: Try filter by project_id first
+          let invoices = await base44.asServiceRole.entities.XeroInvoice.filter({ 
+            project_id, 
+            deleted_at: { $exists: false } 
+          }).catch(err => {
+            console.error('[getProjectWithRelations] Failed to filter invoices by project_id:', err);
+            return [];
+          });
+
+          // FALLBACK: If no invoices found via filter, try project's xero_invoices array
+          if (!invoices || invoices.length === 0) {
+            const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
+            if (proj?.xero_invoices && proj.xero_invoices.length > 0) {
+              console.log(`[getProjectWithRelations] No invoices via filter, falling back to ${proj.xero_invoices.length} invoice IDs from project`);
+              const invoicePromises = proj.xero_invoices.map(id => 
+                base44.asServiceRole.entities.XeroInvoice.get(id).catch(err => {
+                  console.error(`[getProjectWithRelations] Failed to fetch invoice ${id}:`, err);
+                  return null;
+                })
+              );
+              const fetchedInvoices = await Promise.all(invoicePromises);
+              invoices = fetchedInvoices.filter(inv => inv !== null && !inv.deleted_at);
+            }
+          }
+
+          return Array.isArray(invoices) ? invoices : [];
+        } catch (err) {
+          console.error('[getProjectWithRelations] Failed to fetch invoices:', err);
           return [];
         }
-        console.log(`[getProjectWithRelations] Fetching ${proj.xero_invoices.length} invoices from project.xero_invoices array`);
-        // Fetch invoices using project's xero_invoices array (source of truth)
-        const invoicePromises = proj.xero_invoices.map(id => 
-          base44.asServiceRole.entities.XeroInvoice.get(id).catch(err => {
-            console.error(`[getProjectWithRelations] Failed to fetch invoice ${id}:`, err);
-            return null;
-          })
-        );
-        const invoices = await Promise.all(invoicePromises);
-        const validInvoices = invoices.filter(inv => inv !== null);
-        console.log(`[getProjectWithRelations] Successfully fetched ${validInvoices.length} invoices`);
-        return validInvoices;
       })(),
       base44.asServiceRole.entities.Part.filter({ project_id }).catch(err => {
         console.error('[getProjectWithRelations] Failed to fetch parts:', err);
