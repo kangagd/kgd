@@ -145,6 +145,9 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
   }
 
   const getJobPosition = (job) => {
+    // GUARD: Never render job without required fields
+    if (!job || !job.scheduled_time) return null;
+    
     const jobTime = parseTime(job.scheduled_time);
     if (jobTime === null) return null;
     
