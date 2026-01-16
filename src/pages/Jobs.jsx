@@ -683,6 +683,7 @@ export default function Jobs() {
           open={!!modalJob}
           onClose={() => setModalJob(null)}
           title={`Job #${modalJob?.job_number}`}
+          projectName={modalJob?.project_name}
           onOpenFullPage={() => handleOpenFullJob(modalJob)}
           fullPageLabel="Open Full Job"
         >
