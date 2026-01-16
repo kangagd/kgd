@@ -15,13 +15,14 @@ Deno.serve(async (req) => {
         if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
 
         const isAdminOrManager = user.role === 'admin' || user.role === 'manager';
-        const isTechnician = user.is_field_technician === true; 
+        const isTechnician = user.is_field_technician === true;
 
+        // Admin, manager, and technicians can read all jobs
         if (isAdminOrManager || isTechnician) {
             return Response.json(job);
         }
 
-        // For technicians and other users, check permissions manually
+        // For non-tech users, check permissions manually
         const userEmail = user.email.toLowerCase().trim();
         let hasAccess = false;
 
@@ -41,22 +42,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Access denied' }, { status: 403 });
         }
 
-        // Auto-sync address from project if missing
-        if (!job.address_full || !job.address_full.trim()) {
-            try {
-                await base44.asServiceRole.functions.invoke('syncJobAddressFromProject', {
-                    job_id: jobId
-                });
-                // Fetch updated job
-                const updatedJob = await base44.asServiceRole.entities.Job.get(jobId);
-                return Response.json(updatedJob);
-            } catch (syncError) {
-                console.error('Address sync failed:', syncError);
-                // Still return job even if sync fails
-                return Response.json(job);
-            }
-        }
-
+        // Return job unchanged—no mutations
         return Response.json(job);
 
     } catch (error) {
