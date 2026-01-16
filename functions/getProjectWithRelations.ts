@@ -1,6 +1,74 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { filterRestrictedFields } from './shared/permissionHelpers.js';
 
+// Sanitize sensitive fields from objects to prevent token/credential leakage
+const SENSITIVE_FIELD_PATTERNS = [
+  'token',
+  'refresh_token',
+  'access_token',
+  'password',
+  'secret',
+  'api_key',
+  'apikey',
+  'gmail_access_token',
+  'gmail_refresh_token',
+  'xero_access_token',
+  'xero_refresh_token',
+  'oauth_token',
+  'bearer_token'
+];
+
+const isSensitiveField = (fieldName) => {
+  const lowerField = fieldName.toLowerCase();
+  return SENSITIVE_FIELD_PATTERNS.some(pattern => 
+    lowerField.includes(pattern)
+  );
+};
+
+const sanitizeObject = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item));
+  }
+
+  const sanitized = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (isSensitiveField(key)) {
+      // Skip sensitive fields
+      continue;
+    }
+    // Recursively sanitize nested objects
+    if (value && typeof value === 'object') {
+      sanitized[key] = sanitizeObject(value);
+    } else {
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+};
+
+const sanitizeProjectRelations = (payload) => {
+  return {
+    project: sanitizeObject(payload.project),
+    jobs: sanitizeObject(payload.jobs),
+    quotes: sanitizeObject(payload.quotes),
+    xeroInvoices: sanitizeObject(payload.xeroInvoices),
+    parts: sanitizeObject(payload.parts),
+    purchaseOrders: sanitizeObject(payload.purchaseOrders),
+    projectContacts: sanitizeObject(payload.projectContacts),
+    tradeRequirements: sanitizeObject(payload.tradeRequirements),
+    projectTasks: sanitizeObject(payload.projectTasks),
+    projectMessages: sanitizeObject(payload.projectMessages),
+    projectEmails: sanitizeObject(payload.projectEmails),
+    emailThreads: sanitizeObject(payload.emailThreads),
+    handoverReports: sanitizeObject(payload.handoverReports),
+    customer: sanitizeObject(payload.customer),
+    organisation: sanitizeObject(payload.organisation),
+    samples: sanitizeObject(payload.samples)
+  };
+};
+
 Deno.serve(async (req) => {
   try {
     // CRITICAL: Validate request method
@@ -231,8 +299,8 @@ Deno.serve(async (req) => {
     // Filter restricted fields before returning
     const filteredProject = filterRestrictedFields(user, 'Project', project);
     
-    // CRITICAL: Always return valid structure with fallback arrays
-    return Response.json({
+    // CRITICAL: Build response payload
+    const payload = {
       project: filteredProject,
       jobs: jobs || [],
       quotes: quotes || [],
@@ -249,7 +317,12 @@ Deno.serve(async (req) => {
       customer: customer || null,
       organisation: organisation || null,
       samples: samples || []
-    });
+    };
+
+    // CRITICAL: Sanitize sensitive fields before returning to frontend
+    const sanitizedPayload = sanitizeProjectRelations(payload);
+    
+    return Response.json(sanitizedPayload);
 
   } catch (error) {
     console.error('[getProjectWithRelations] CRITICAL ERROR:', error);
