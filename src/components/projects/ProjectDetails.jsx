@@ -1719,7 +1719,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               />
               <div id="tasks-compact">
                 <TasksCompactCard 
-                  tasks={projectTasks}
+                  tasks={projectTasks.filter(t => t.status !== 'Completed' && t.status !== 'Cancelled')}
                   entityType="project"
                   entityId={project.id}
                   entityName={project.title}
