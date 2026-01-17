@@ -296,6 +296,7 @@ export default function Inbox() {
 
   // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
+    console.time('[Inbox] Filter & sort threads');
     let result = (threads || [])
       .filter((t) => !t.is_deleted)
       .map((t) => ({
@@ -335,23 +336,20 @@ export default function Inbox() {
       result = result.filter((t) => !t.project_id && !t.contract_id && t.userStatus !== "closed");
     }
 
-    // Sorting:
-    // 1) Pinned first (newest pin first)
-    // 2) Unread next
-    // 3) Newest by last_message_date
-    const sortFunction = (a, b) => {
+    // Sorting: pinned > unread > by date
+    result.sort((a, b) => {
       const aPinned = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
       const bPinned = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
       if (aPinned !== bPinned) return bPinned - aPinned;
-
       if (a.isUnread !== b.isUnread) return a.isUnread ? -1 : 1;
-
       const aTime = a.last_message_date ? new Date(a.last_message_date).getTime() : 0;
       const bTime = b.last_message_date ? new Date(b.last_message_date).getTime() : 0;
       return bTime - aTime;
-    };
+    });
 
-    return result.sort(sortFunction);
+    console.timeEnd('[Inbox] Filter & sort threads');
+    console.log(`[Inbox] Filtered to ${result.length} threads`);
+    return result;
   }, [threads, searchTerm, activeFilters, user?.email, orgEmails]);
 
   const selectedThread = useMemo(() => {
