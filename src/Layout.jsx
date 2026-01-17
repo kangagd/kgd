@@ -796,7 +796,7 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#ffffff] relative w-full max-w-full overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col min-w-0 bg-[#ffffff] relative w-full max-w-full overflow-hidden">
 
            {/* Tech Header */}
           {isTechnician && (
