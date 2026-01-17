@@ -339,9 +339,7 @@ export default function PriceList() {
                 });
 
               return (
-                <div key={item.id} className="space-y-2">
-                  <SkuStockView skuId={item.id} itemName={item.item} />
-                  <PriceListCard
+                <PriceListCard key={item.id}
                     key={`card-${item.id}`}
                     item={item}
                     isAdmin={canEditPriceList}
@@ -355,7 +353,6 @@ export default function PriceList() {
                     locations={inventoryLocations}
                     canViewCosts={isAdminOrManager}
                   />
-                </div>
               );
             })}
           </div>
