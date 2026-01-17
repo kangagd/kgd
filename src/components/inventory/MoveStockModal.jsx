@@ -124,15 +124,15 @@ export default function MoveStockModal({ isOpen, onClose, item, onSuccess }) {
                   <SelectValue placeholder="Select source location" />
                 </SelectTrigger>
                 <SelectContent>
-                  {locations.map((loc) => {
-                    const stock = getLocationStock(loc.id);
-                    return (
-                      <SelectItem key={loc.id} value={loc.id} disabled={stock === 0}>
-                        {loc.name} ({stock} in stock)
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
+                   {locations.map((loc) => {
+                     const stock = getLocationStock(loc.id);
+                     return (
+                       <SelectItem key={loc.id} value={loc.id}>
+                         {loc.name} ({stock} in stock)
+                       </SelectItem>
+                     );
+                   })}
+                 </SelectContent>
               </Select>
               {fromLocationId && (
                 <p className="text-[12px] text-[#6B7280]">
