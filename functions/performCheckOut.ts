@@ -90,7 +90,47 @@ Deno.serve(async (req) => {
         // If not the last technician, just check them out without completing the job
         if (!isLastTechnician) {
             if (currentUserCheckIn) {
-                await base44.asServiceRole.entities.CheckInOut.update(currentUserCheckIn.id, { check_out_time: new Date().toISOString() });
+                const checkOutTime = new Date().toISOString();
+                await base44.asServiceRole.entities.CheckInOut.update(currentUserCheckIn.id, { check_out_time: checkOutTime });
+                
+                // Update Visit: mark this technician's check-in event as checked out
+                try {
+                    const visits = await base44.asServiceRole.entities.Visit.filter({ 
+                        job_id: jobId, 
+                        completed_at: { $exists: false } 
+                    });
+                    
+                    if (visits.length > 0) {
+                        const visit = visits[0];
+                        const checkInEvents = visit.check_in_events || [];
+                        
+                        const activeEventIndex = checkInEvents.findIndex(
+                            e => e.technician_email === user.email && !e.checked_out_at
+                        );
+                        
+                        if (activeEventIndex !== -1) {
+                            const updatedEvents = [...checkInEvents];
+                            updatedEvents[activeEventIndex] = {
+                                ...updatedEvents[activeEventIndex],
+                                checked_out_at: checkOutTime
+                            };
+                            
+                            const updatedTechnicians = (visit.checked_in_technicians || []).filter(email => email !== user.email);
+                            const updatedNames = (visit.checked_in_names || []).filter((name, idx) => 
+                                (visit.checked_in_technicians || [])[idx] !== user.email
+                            );
+                            
+                            await base44.asServiceRole.entities.Visit.update(visit.id, {
+                                checked_in_technicians: updatedTechnicians,
+                                checked_in_names: updatedNames,
+                                check_in_events: updatedEvents
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to update visit on check-out (non-critical):", e);
+                }
+                
                 return Response.json({ success: true, status: 'checked_out', message: 'You have been checked out. Job remains in progress.' });
             }
             return Response.json({ error: 'You are not checked in to this job' }, { status: 400 });
@@ -121,7 +161,51 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.Job.update(jobId, completionData);
 
         // Check out the last technician
-        await base44.asServiceRole.entities.CheckInOut.update(currentUserCheckIn.id, { check_out_time: new Date().toISOString() });
+        const checkOutTime = new Date().toISOString();
+        await base44.asServiceRole.entities.CheckInOut.update(currentUserCheckIn.id, { check_out_time: checkOutTime });
+        
+        // Update Visit: mark as completed (last technician checking out)
+        try {
+            const visits = await base44.asServiceRole.entities.Visit.filter({ 
+                job_id: jobId, 
+                completed_at: { $exists: false } 
+            });
+            
+            if (visits.length > 0) {
+                const visit = visits[0];
+                const checkInEvents = visit.check_in_events || [];
+                
+                const activeEventIndex = checkInEvents.findIndex(
+                    e => e.technician_email === user.email && !e.checked_out_at
+                );
+                
+                if (activeEventIndex !== -1) {
+                    const updatedEvents = [...checkInEvents];
+                    updatedEvents[activeEventIndex] = {
+                        ...updatedEvents[activeEventIndex],
+                        checked_out_at: checkOutTime
+                    };
+                    
+                    await base44.asServiceRole.entities.Visit.update(visit.id, {
+                        checked_in_technicians: [],
+                        checked_in_names: [],
+                        check_in_events: updatedEvents,
+                        work_performed: overview || visit.work_performed,
+                        issues_found: issuesFound || visit.issues_found,
+                        resolution: resolution || visit.resolution,
+                        measurements: measurements || visit.measurements,
+                        photos: imageUrls || visit.photos,
+                        next_steps: nextSteps || visit.next_steps,
+                        outcome: outcome,
+                        completed_at: checkOutTime,
+                        completed_by_email: user.email,
+                        completed_by_name: user.display_name || user.full_name || user.email
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to complete visit (non-critical):", e);
+        }
 
         // Post-completion actions
         if (job.project_id) {
