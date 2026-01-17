@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     // Process each item being received
     let allItemsFullyReceived = true;
     let totalItemsReceived = 0;
+    const skippedLines = [];
 
     for (const receiveItem of items) {
       const poLine = poLines.find(l => l.id === receiveItem.po_line_id);
@@ -35,6 +36,15 @@ Deno.serve(async (req) => {
 
       const qtyReceived = receiveItem.qty_received || 0;
       if (qtyReceived <= 0) continue;
+
+      // Validate price_list_item_id exists (Bug #6 hardening)
+      if (!poLine.price_list_item_id) {
+        skippedLines.push({
+          po_line_id: receiveItem.po_line_id,
+          reason: 'Missing price_list_item_id; cannot receive into inventory'
+        });
+        continue;
+      }
 
       // Update PO line qty_received
       const newQtyReceived = (poLine.qty_received || 0) + qtyReceived;
@@ -47,7 +57,7 @@ Deno.serve(async (req) => {
       // Create StockMovement record (standardized schema)
       const locName = (await base44.asServiceRole.entities.InventoryLocation.get(location_id))?.name || '';
       await base44.asServiceRole.entities.StockMovement.create({
-        price_list_item_id: poLine.price_list_item_id || null,
+        price_list_item_id: poLine.price_list_item_id,
         item_name: poLine.item_name || 'Unknown Item',
         quantity: qtyReceived,
         to_location_id: location_id,
@@ -62,28 +72,26 @@ Deno.serve(async (req) => {
       });
 
       // Upsert InventoryQuantity (add to on-hand)
-      if (poLine.price_list_item_id) {
-        const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
-          price_list_item_id: poLine.price_list_item_id,
-          location_id: location_id
+      const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
+        price_list_item_id: poLine.price_list_item_id,
+        location_id: location_id
+      });
+
+      const currentQty = existing[0]?.quantity || 0;
+      const newQty = currentQty + qtyReceived;
+
+      if (existing[0]) {
+        await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
+          quantity: newQty
         });
-
-        const currentQty = existing[0]?.quantity || 0;
-        const newQty = currentQty + qtyReceived;
-
-        if (existing[0]) {
-          await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
-            quantity: newQty
-          });
-        } else {
-          await base44.asServiceRole.entities.InventoryQuantity.create({
-            price_list_item_id: poLine.price_list_item_id,
-            location_id: location_id,
-            quantity: newQty,
-            item_name: poLine.item_name,
-            location_name: (await base44.asServiceRole.entities.InventoryLocation.get(location_id))?.name || ''
-          });
-        }
+      } else {
+        await base44.asServiceRole.entities.InventoryQuantity.create({
+          price_list_item_id: poLine.price_list_item_id,
+          location_id: location_id,
+          quantity: newQty,
+          item_name: poLine.item_name,
+          location_name: (await base44.asServiceRole.entities.InventoryLocation.get(location_id))?.name || ''
+        });
       }
 
       // Check if line is fully received
@@ -119,10 +127,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Determine success status
+    const hasFailed = totalItemsReceived === 0 && skippedLines.length > 0;
+    const hasWarnings = skippedLines.length > 0;
+
     return Response.json({
-      success: true,
+      success: !hasFailed,
       items_received: totalItemsReceived,
-      message: `Received ${totalItemsReceived} item(s)`
+      skipped_items: skippedLines.length,
+      skipped_lines: skippedLines,
+      message: hasFailed 
+        ? `Failed to receive any items` 
+        : `Received ${totalItemsReceived} item(s)${hasWarnings ? ` (${skippedLines.length} skipped)` : ''}`
     });
   } catch (error) {
     console.error('Receive PO items error:', error);
