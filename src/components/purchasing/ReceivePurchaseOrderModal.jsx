@@ -55,25 +55,16 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
       const now = new Date().toISOString();
       let locationId = purchaseOrder.delivery_location_id || null;
       
-      // Ensure we have a valid location - default to main warehouse if missing
+      // Ensure we have a valid location - default to first active warehouse if missing
       if (!locationId) {
-        const warehouseLocations = await base44.entities.InventoryLocation.filter({
-          name: "866 Bourke St Warehouse"
-        });
-        
-        if (warehouseLocations.length > 0) {
-          locationId = warehouseLocations[0].id;
-        } else {
-          // Fallback to any warehouse if main one not found
-          const anyWarehouse = await base44.entities.InventoryLocation.filter({ type: "Warehouse" });
-          if (anyWarehouse.length > 0) {
-            locationId = anyWarehouse[0].id;
-          }
+        const allLocations = await base44.entities.InventoryLocation.filter({});
+        const { getDefaultWarehouseLocation } = await import("@/components/utils/inventoryLocationUtils");
+        const warehouse = getDefaultWarehouseLocation(allLocations);
+
+        if (!warehouse) {
+          throw new Error("No active warehouse location configured. Please create a warehouse location.");
         }
-        
-        if (!locationId) {
-          throw new Error("No delivery location or warehouse location configured. Please set a delivery location.");
-        }
+        locationId = warehouse.id;
       }
       
       // Process each line via backend function
