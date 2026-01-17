@@ -22,8 +22,8 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
       .reduce((sum, q) => sum + (q.quantity || 0), 0);
   }, [stockByLocation, locations]);
 
-  // Tracked inventory: track_inventory === true AND in_inventory === true
-  const isTrackedInventory = item.track_inventory === true && item.in_inventory === true;
+  // Tracked inventory: track_inventory NOT explicitly disabled
+  const isTrackedInventory = item.track_inventory !== false;
 
   if (item.is_active === false && !isAdmin) return null;
 
