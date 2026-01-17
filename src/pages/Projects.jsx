@@ -390,15 +390,15 @@ export default function Projects() {
   }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
         const getJobCount = useCallback((projectId) => {
-          return allJobs.filter(j => sameId(j.project_id, projectId)).length;
-        }, [allJobs]);
+          return (indexes.jobsByProjectId.get(projectId) || []).length;
+        }, [indexes]);
 
         const getNextJob = useCallback((projectId) => {
-          const projectJobs = allJobs.filter(j => sameId(j.project_id, projectId) && j.scheduled_date);
-        const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
-        if (futureJobs.length === 0) return null;
-        return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
-        }, [allJobs]);
+          const projectJobs = (indexes.jobsByProjectId.get(projectId) || []).filter(j => j.scheduled_date);
+          const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
+          if (futureJobs.length === 0) return null;
+          return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
+        }, [indexes]);
 
         const extractSuburb = useCallback((address) => {
         if (!address) return null;
