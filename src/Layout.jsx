@@ -486,7 +486,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <PermissionsProvider>
       {showEnvBanner && <EnvironmentBanner />}
-      <div className="min-h-screen flex bg-[#ffffff]">
+      <div className="h-screen flex overflow-hidden bg-[#ffffff]">
         <Toaster position="top-right" richColors closeButton />
 
         {/* Mobile Overlay - Handles both tech and admin mobile menus */}
