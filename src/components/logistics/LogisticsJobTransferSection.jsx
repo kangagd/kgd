@@ -166,7 +166,6 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
             onClick={() => setShowTransferModal(true)}
             variant="outline"
             className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
-            disabled={!sourceLocation || !destinationLocation}
           >
             Link Inventory Transfer (Admin)
           </Button>
