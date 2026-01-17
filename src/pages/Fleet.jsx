@@ -144,23 +144,6 @@ export default function Fleet() {
         </div>
         <div className="flex gap-2">
           <Button 
-            variant="outline"
-            onClick={handleSyncStockTemplates}
-            disabled={isSyncing}
-          >
-            <Package className="w-4 h-4 mr-2" />
-            {isSyncing ? "Syncing..." : "Sync Stock Templates"}
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleFillAllVehicles}
-            disabled={isFilling}
-            className="border-green-300 hover:bg-green-50 text-green-700"
-          >
-            <Battery className="w-4 h-4 mr-2" />
-            {isFilling ? "Filling..." : "Fill All Vehicles"}
-          </Button>
-          <Button 
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold"
             onClick={() => setShowCreateModal(true)}
           >
