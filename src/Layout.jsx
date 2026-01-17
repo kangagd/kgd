@@ -765,9 +765,9 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#ffffff] relative w-full max-w-full">
-          
-          {/* Tech Header */}
+        <div className="flex-1 flex flex-col min-w-0 bg-[#ffffff] relative w-full max-w-full overflow-hidden">
+
+           {/* Tech Header */}
           {isTechnician && (
              <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
                 <div className="flex flex-col gap-2 min-h-[44px]">
