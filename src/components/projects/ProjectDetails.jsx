@@ -1901,6 +1901,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Row 3: Unified Visits Timeline */}
             <VisitsTimeline visits={jobs} projectId={project.id} />
 
+            {/* Deprecated: Initial Visit component removed - now unified in VisitsTimeline above */}
+
             {/* Row 4: Jobs List */}
             <Card className="border border-[#E5E7EB] shadow-sm">
               <CardHeader className="pb-3 flex flex-row items-center justify-between">
