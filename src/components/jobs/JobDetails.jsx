@@ -200,6 +200,21 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   }, [job.id, job.purchase_order_id, queryClient]);
 
+  // Fetch active Visit when feature flag is enabled
+  const { data: activeVisits = [] } = useQuery({
+    queryKey: ['activeVisits', job.id],
+    queryFn: () => base44.entities.Visit.filter({ 
+      job_id: job.id, 
+      completed_at: { $exists: false } 
+    }),
+    enabled: visitsEnabled,
+    staleTime: 10000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const activeVisit = activeVisits.length > 0 ? activeVisits[0] : null;
+
   const [user, setUser] = useState(null);
   
   // VISIT MODEL FEATURE FLAG: Source execution data from Visit or Job
@@ -311,21 +326,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
-
-  // Fetch active Visit when feature flag is enabled
-  const { data: activeVisits = [] } = useQuery({
-    queryKey: ['activeVisits', job.id],
-    queryFn: () => base44.entities.Visit.filter({ 
-      job_id: job.id, 
-      completed_at: { $exists: false } 
-    }),
-    enabled: visitsEnabled,
-    staleTime: 10000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-  });
-
-  const activeVisit = activeVisits.length > 0 ? activeVisits[0] : null;
 
   const lastTechCheckOut = isLastCheckedInTechnician(checkIns, user?.email);
 
