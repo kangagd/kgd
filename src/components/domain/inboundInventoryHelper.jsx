@@ -44,7 +44,8 @@ export async function calculateInboundQty(skuId) {
 
 /**
  * Calculate on-hand quantity for a specific SKU
- * On Hand = SUM(InventoryQuantity.quantity) for all physical locations (warehouse + vehicle)
+ * On Hand = SUM(InventoryQuantity.quantity) for physical available locations ONLY (warehouse + vehicle)
+ * Does NOT include loading_bay, in_transit, supplier, or inactive locations
  * 
  * @param {string} skuId - PriceListItem ID
  * @returns {Promise<number>} On-hand quantity
@@ -53,10 +54,11 @@ export async function calculateOnHandQty(skuId) {
   if (!skuId) return 0;
 
   try {
-    // Get physical inventory locations (warehouse, vehicle, etc. - NOT pending/on-order)
-    const physicalLocations = await base44.entities.InventoryLocation.filter({
-      type: { $in: ['warehouse', 'vehicle', 'loading_bay'] }
-    });
+    const { isPhysicalAvailableLocation } = await import('@/components/utils/inventoryLocationUtils');
+    
+    // Get ALL locations and filter to only physical available ones
+    const allLocations = await base44.entities.InventoryLocation.filter({});
+    const physicalLocations = allLocations.filter(isPhysicalAvailableLocation);
 
     if (physicalLocations.length === 0) return 0;
 

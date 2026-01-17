@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/tooltip";
 import { recordStockMovement } from "@/components/utils/stockHelpers";
 import { toast } from "sonner";
+import { getPhysicalAvailableLocations } from "@/components/utils/inventoryLocationUtils";
 
 export default function StockAdjustmentModal({ item, open, onClose, vehicles = [], locations = [] }) {
   const [fromLocation, setFromLocation] = useState("");
@@ -26,11 +27,14 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
   const queryClient = useQueryClient();
   const { can } = usePermissions();
 
-  // Combine all locations from inventory system + vehicles
-  const allLocations = [
-    ...locations,
-    ...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' }))
-  ];
+  // Only show physical available locations (warehouse + vehicles)
+  const allLocations = useMemo(() => {
+    const combined = [
+      ...locations,
+      ...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' }))
+    ];
+    return getPhysicalAvailableLocations(combined);
+  }, [locations, vehicles]);
 
   const adjustStockMutation = useMutation({
     mutationFn: async (data) => {
