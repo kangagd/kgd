@@ -60,6 +60,19 @@ export default function TransferStockModal({ open, onOpenChange, vehicleId, isTe
     enabled: open && !!vehicleId
   });
 
+  // Fetch current stock quantities for all items at warehouse
+  const { data: allWarehouseQties = [] } = useQuery({
+    queryKey: ['warehouseQuantities', locationData.warehouseLoc?.id],
+    queryFn: async () => {
+      if (!locationData.warehouseLoc) return [];
+      
+      return await base44.entities.InventoryQuantity.filter({
+        location_id: locationData.warehouseLoc.id
+      });
+    },
+    enabled: !!locationData.warehouseLoc
+  });
+
   // Fetch current stock quantities for selected item
   const { data: quantities = {} } = useQuery({
     queryKey: ['itemQuantities', selectedItemId, locationData.vehicleLoc?.id, locationData.warehouseLoc?.id],
@@ -227,11 +240,18 @@ export default function TransferStockModal({ open, onOpenChange, vehicleId, isTe
                 <SelectValue placeholder="Select item" />
               </SelectTrigger>
               <SelectContent className="max-h-64">
-                {priceListItems.map(item => (
+                {priceListItems
+                  .map(item => {
+                    const warehouseQty = allWarehouseQties.find(q => q.price_list_item_id === item.id)?.quantity || 0;
+                    return { ...item, warehouseQty };
+                  })
+                  .filter(item => item.warehouseQty > 0)
+                  .map(item => (
                   <SelectItem key={item.id} value={item.id}>
                     <div className="flex items-center gap-2">
                       <span>{item.item}</span>
                       {item.sku && <span className="text-xs text-gray-500">({item.sku})</span>}
+                      <span className="text-xs text-green-600 font-medium">In stock: {item.warehouseQty}</span>
                     </div>
                   </SelectItem>
                 ))}
