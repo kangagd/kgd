@@ -143,7 +143,7 @@ export default function Inbox() {
       return result;
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
     refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
     onSuccess: (newThreads) => {
