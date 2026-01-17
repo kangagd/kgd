@@ -121,9 +121,9 @@ export default function Fleet() {
 
   const filteredVehicles = vehicles.filter(v => {
     const matchesStatus = filterStatus === "all" || v.status === filterStatus;
-    const matchesSearch = v.name.toLowerCase().includes(search.toLowerCase()) || 
-                          v.registration_plate?.toLowerCase().includes(search.toLowerCase()) ||
-                          v.assigned_user_name?.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = (v.name || '').toLowerCase().includes(search.toLowerCase()) || 
+                          (v.registration_plate || '').toLowerCase().includes(search.toLowerCase()) ||
+                          (v.assigned_user_name || '').toLowerCase().includes(search.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
