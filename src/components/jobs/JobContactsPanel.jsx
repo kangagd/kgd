@@ -199,18 +199,18 @@ export default function JobContactsPanel({ job, inline = false }) {
                   className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
                 >
                   <div className="space-y-1 min-w-0 flex-1">
-                    <div className="font-medium text-gray-900 flex items-center gap-2">
-                      <span className="truncate">{c.name || "Unnamed contact"}</span>
-                      {c.role && (
-                        <span className="rounded-md bg-[#FAE008]/20 border border-[#FAE008]/30 px-1.5 py-0.5 text-[10px] font-medium text-[#854D0E] flex-shrink-0">
-                          {c.role}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-gray-500 flex items-center gap-2 flex-wrap">
-                      {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{c.email}</span></span>}
-                      {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 flex-shrink-0" /> {c.phone}</span>}
-                    </div>
+                  <div className="font-medium text-gray-900 flex items-center gap-2">
+                    <span className="truncate">{c.name || "Unnamed contact"}</span>
+                    {c.role && (
+                      <span className="rounded-md bg-[#FAE008]/20 border border-[#FAE008]/30 px-1.5 py-0.5 text-[10px] font-medium text-[#854D0E] flex-shrink-0">
+                        {c.role}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-gray-500 flex items-center gap-2 flex-wrap">
+                    {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{c.email}</span></span>}
+                    {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 flex-shrink-0" /> {c.phone}</span>}
+                  </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <Button 
