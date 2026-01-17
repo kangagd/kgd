@@ -1,5 +1,29 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { decodeBase64UrlToBytes } from './shared/base64UrlDecoder.ts';
+
+// Decode Base64URL to Uint8Array with proper padding handling
+function decodeBase64UrlToBytes(base64Url: string): Uint8Array {
+  if (!base64Url) {
+    throw new Error('Empty Base64URL string');
+  }
+
+  let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  
+  const padLength = base64.length % 4;
+  if (padLength > 0) {
+    base64 += '='.repeat(4 - padLength);
+  }
+
+  try {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  } catch (error) {
+    throw new Error(`Base64URL decoding failed: ${error.message}`);
+  }
+}
 
 async function refreshTokenIfNeeded(user, base44) {
   const expiry = user.gmail_token_expiry ? new Date(user.gmail_token_expiry) : new Date(0);
