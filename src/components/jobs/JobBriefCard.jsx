@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+import RichTextField from "../common/RichTextField";
 import { Sparkles, Edit, Save, X, RefreshCw, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
@@ -24,7 +24,6 @@ export default function JobBriefCard({ job, onRefresh }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
   const didAutoBriefRef = useRef(false);
-  const textareaRef = useRef(null);
 
   // Auto-generate on mount if needed
   useEffect(() => {
@@ -61,7 +60,6 @@ export default function JobBriefCard({ job, onRefresh }) {
   const handleEdit = () => {
     setEditedBrief(job.job_brief || "");
     setIsEditing(true);
-    setTimeout(() => textareaRef.current?.focus(), 100);
   };
 
   const handleSave = async () => {
@@ -176,12 +174,10 @@ export default function JobBriefCard({ job, onRefresh }) {
         <CardContent className="p-4">
           {isEditing ? (
             <div className="space-y-3">
-              <Textarea
-                ref={textareaRef}
+              <RichTextField
                 value={editedBrief}
-                onChange={(e) => setEditedBrief(e.target.value)}
+                onChange={setEditedBrief}
                 placeholder="Enter job brief for technician..."
-                className="min-h-[200px] font-mono text-[13px]"
               />
               <div className="flex items-center gap-2">
                 <Button
@@ -202,11 +198,10 @@ export default function JobBriefCard({ job, onRefresh }) {
               </div>
             </div>
           ) : hasContent ? (
-            <div className="prose prose-sm max-w-none">
-              <pre className="whitespace-pre-wrap font-sans text-[14px] text-[#111827] leading-relaxed">
-                {job.job_brief}
-              </pre>
-            </div>
+            <div 
+              className="prose prose-sm max-w-none text-[14px] text-[#111827] leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: job.job_brief }}
+            />
           ) : (
             <div className="text-center py-8 text-[14px] text-[#9CA3AF]">
               No job brief yet. Click Regenerate to create one.
