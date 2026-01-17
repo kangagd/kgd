@@ -272,6 +272,20 @@ Deno.serve(async (req) => {
              // Use the guardrail-filtered data for the update
              data = cleanPatch;
 
+             // VISIT MODEL GUARDRAIL: If job has visits, legacy execution fields become read-only
+             const visits = await base44.asServiceRole.entities.Visit.filter({ job_id: id });
+             if (visits.length > 0) {
+                 const legacyExecutionFields = ['work_performed', 'completion_notes', 'measurements', 'outcome', 'photos'];
+                 const attemptedLegacyWrites = legacyExecutionFields.filter(field => data.hasOwnProperty(field));
+                 
+                 if (attemptedLegacyWrites.length > 0) {
+                     console.warn(`[manageJob] Blocked legacy field writes for job ${id} (has ${visits.length} visit(s)): ${attemptedLegacyWrites.join(', ')}`);
+                     
+                     // Remove legacy fields from update
+                     attemptedLegacyWrites.forEach(field => delete data[field]);
+                 }
+             }
+
              // GUARDRAIL: Detect if address is being explicitly overridden in this update
              const isAddressBeingOverridden = ['address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode', 'address_country', 'google_place_id', 'latitude', 'longitude']
                .some(f => data.hasOwnProperty(f));
