@@ -53,7 +53,7 @@ import JobModalView from "../jobs/JobModalView";
 import TasksPanel from "../tasks/TasksPanel";
 import ProjectEmailSection from "./ProjectEmailSection";
 import QuotesSection from "../quotes/QuotesSection";
-import ProjectVisitsModule from "./ProjectVisitsModule";
+import InitialVisitSummary from "./InitialVisitSummary";
 import JobVisitSummary from "../jobs/JobVisitSummary";
 import ExpandableJobCard from "./ExpandableJobCard";
 import MarkAsLostModal from "./MarkAsLostModal";
