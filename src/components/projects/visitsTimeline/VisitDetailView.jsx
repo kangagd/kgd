@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
+import ReactMarkdown from 'react-markdown';
 
 const normalizeDoors = (measurements) => {
   if (!measurements) return [];
@@ -16,6 +20,7 @@ const normalizeDoors = (measurements) => {
 };
 
 export default function VisitDetailView({ visit }) {
+  const navigate = useNavigate();
   const [expandedSections, setExpandedSections] = useState({
     summary: true,
     measurements: true,
@@ -59,8 +64,10 @@ export default function VisitDetailView({ visit }) {
                 </div>
               )}
               {visit.overview && (
-                <div>
-                  <p className="text-sm text-[#111827]">{visit.overview}</p>
+                <div className="text-sm text-[#111827] prose prose-sm max-w-none">
+                  <ReactMarkdown>
+                    {visit.overview}
+                  </ReactMarkdown>
                 </div>
               )}
               {visit.completion_notes && (

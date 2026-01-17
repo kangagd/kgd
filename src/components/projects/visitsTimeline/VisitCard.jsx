@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Calendar, Users, Clock, ChevronDown, ChevronUp, Camera, Package, Ruler } from 'lucide-react';
+import { Calendar, Users, Clock, ChevronDown, ChevronUp, Camera, Package, Ruler, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import VisitDetailView from './VisitDetailView';
 
 export default function VisitCard({ visit, index, isLatest }) {
+  const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const durationHours = visit.expected_duration ? `${visit.expected_duration}h` : null;
@@ -82,6 +85,18 @@ export default function VisitCard({ visit, index, isLatest }) {
                 {partsLinked && (
                   <Package className="w-4 h-4 text-[#F59E0B]" title="Parts linked" />
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(createPageUrl("Jobs") + `?jobId=${visit.id}`);
+                  }}
+                  className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6]"
+                  title="Open job"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
                 {isExpanded ? (
                   <ChevronUp className="w-4 h-4 text-[#6B7280]" />
                 ) : (
