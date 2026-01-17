@@ -2376,8 +2376,36 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     isAdmin={isAdmin}
                   />
 
+                  {/* Sample Outcome Selector - Only for sample_pickup jobs */}
+                  {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose === 'sample_pickup' && (
+                    <Card className="border border-purple-200 shadow-sm rounded-lg bg-purple-50">
+                      <CardHeader className="bg-purple-50 px-4 py-3 border-b border-purple-200">
+                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
+                          Sample Outcome
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
+                          Where should samples go after pickup?
+                        </Label>
+                        <Select value={job.sample_outcome || 'return_to_storage'} onValueChange={(val) => {
+                          // Store sample_outcome on job when selected
+                          updateJobMutation.mutate({ field: 'sample_outcome', value: val });
+                        }}>
+                          <SelectTrigger className="h-11 text-sm border-2 border-purple-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                            <SelectValue placeholder="Select outcome" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="return_to_storage">Return to Storage</SelectItem>
+                            <SelectItem value="move_to_vehicle">Move to Vehicle</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Logistics Outcome Selector */}
-                  {!activeCheckIn && job.status !== 'Completed' && (
+                  {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose !== 'sample_pickup' && (
                     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                       <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                         <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
