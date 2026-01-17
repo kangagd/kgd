@@ -105,6 +105,8 @@ export default function Projects() {
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: jobKeys.all,
     queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
     onError: (error) => {
       if (error?.response?.status === 429) {
@@ -114,61 +116,42 @@ export default function Projects() {
   });
 
   const { data: allParts = [] } = useQuery({
-    queryKey: ['allParts'],
+    queryKey: ['parts', 'all'],
     queryFn: () => base44.entities.Part.list(),
-    ...QUERY_CONFIG.reference,
-    onError: (error) => {
-      if (error?.response?.status === 429) {
-        toast.error('Rate limit hit – slowing down');
-      }
-    }
-  });
-
-  const { data: priceListItems = [] } = useQuery({
-    queryKey: ['priceListItems'],
-    queryFn: () => base44.entities.PriceListItem.list(),
-    ...QUERY_CONFIG.reference,
-  });
-
-  const { data: inventoryQuantities = [] } = useQuery({
-    queryKey: ['inventoryQuantities'],
-    queryFn: () => base44.entities.InventoryQuantity.list(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
   });
 
   const { data: allTradeRequirements = [] } = useQuery({
-    queryKey: ['allTradeRequirements'],
+    queryKey: ['tradeRequirements', 'all'],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
   });
 
   const { data: allPurchaseOrders = [] } = useQuery({
-    queryKey: ['allPurchaseOrders'],
+    queryKey: ['purchaseOrders', 'all'],
     queryFn: () => base44.entities.PurchaseOrder.list(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
   });
 
   const { data: allAttentionItems = [] } = useQuery({
-    queryKey: ['allAttentionItems'],
+    queryKey: ['attentionItems', 'all'],
     queryFn: () => base44.entities.AttentionItem.list(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
   });
 
   const { data: allEmailThreads = [] } = useQuery({
-    queryKey: ['allEmailThreads'],
+    queryKey: ['emailThreads', 'all'],
     queryFn: () => base44.entities.EmailThread.list(),
-    ...QUERY_CONFIG.reference,
-  });
-
-  const { data: allQuotes = [] } = useQuery({
-    queryKey: ['allQuotes'],
-    queryFn: () => base44.entities.Quote.list(),
-    ...QUERY_CONFIG.reference,
-  });
-
-  const { data: allXeroInvoices = [] } = useQuery({
-    queryKey: ['allXeroInvoices'],
-    queryFn: () => base44.entities.XeroInvoice.list(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
   });
 
