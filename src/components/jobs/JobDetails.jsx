@@ -66,6 +66,8 @@ import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import JobBriefCard from "./JobBriefCard";
 import VisitScopeSection from "./VisitScopeSection";
+import VisitRequirementsPanel from "./VisitRequirementsPanel";
+import ProjectRequirementsPanel from "./ProjectRequirementsPanel";
 import { isFeatureEnabled } from "../domain/featureFlags";
 import { isJobV2Enabled, shouldHideLegacySections, hasVisitExecution, detectLegacyFields, warnJobV2Drift } from "./jobModelRules";
 
@@ -201,20 +203,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   }, [job.id, job.purchase_order_id, queryClient]);
 
-  // Fetch active Visit when feature flag is enabled
-  const { data: activeVisits = [] } = useQuery({
-    queryKey: ['activeVisits', job.id],
-    queryFn: () => base44.entities.Visit.filter({ 
-      job_id: job.id, 
-      completed_at: { $exists: false } 
-    }),
-    enabled: visitsEnabled,
+  // Fetch ALL visits for this job
+  const { data: allVisits = [] } = useQuery({
+    queryKey: ['visits', job.id],
+    queryFn: () => base44.entities.Visit.filter({ job_id: job.id }),
     staleTime: 10000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
 
-  const activeVisit = activeVisits.length > 0 ? activeVisits[0] : null;
+  // Determine active visit (draft, open, in_progress)
+  const activeVisit = allVisits.find(v => 
+    v.status === 'draft' || v.status === 'open' || v.status === 'in_progress'
+  ) || null;
+
+  // Legacy compatibility: also check completed_at
+  const legacyActiveVisits = allVisits.filter(v => !v.completed_at);
+  const activeVisitCompat = activeVisit || (legacyActiveVisits.length > 0 ? legacyActiveVisits[0] : null);
 
   const [user, setUser] = useState(null);
   
@@ -1858,8 +1863,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
 
-              {/* Visit Scope Section - Replaces old Parts & Requirements */}
-              {!isLogisticsJob && <VisitScopeSection job={job} />}
+              {/* Dual-mode Requirements UI */}
+              {!isLogisticsJob && (
+                <VisitRequirementsPanel
+                  job={job}
+                  activeVisit={activeVisit}
+                  project={linkedProject}
+                  projectParts={enrichedProjectParts}
+                  projectTrades={projectTradeReqs}
+                  isLoading={isProjectLoading}
+                />
+              )}
 
               {/* Legacy Parts & Requirements Section - REMOVED */}
               {false && !isLogisticsJob && (() => {
