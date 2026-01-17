@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PackagePlus, Pencil, Trash2, ChevronDown, AlertCircle, Package, ArrowRightLeft } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import StockByLocationView from "@/components/inventory/StockByLocationView";
+import StockSummaryLine from "@/components/pricelist/StockSummaryLine";
 
 export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, onMoveStock, inventorySummary, stockByLocation, locations, canViewCosts }) {
   // Derive on-hand stock from InventoryQuantity only
@@ -76,93 +77,51 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
               </div>
             </div>
 
-            {/* Stock Info Row */}
-            <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 text-[13px] text-[#4B5563] leading-[1.4] flex-wrap">
-              {(item.track_inventory !== false && item.in_inventory !== false) ? (
-                <>
-                  {stockByLocation && stockByLocation.length > 0 ? (
-                    <>
-                      {stockByLocation.map((qty, idx) => {
-                        const locationName = qty.location_name;
-                        return (
-                          <span key={idx}>
-                            {locationName}: <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
-                              {qty.quantity}
-                            </span>
-                          </span>
-                        );
-                      })}
-                      <span className="text-[#6B7280]">• Min: {item.min_stock_level}</span>
-                    </>
-                  ) : (
-                   <>
-                     <span className="text-slate-400 italic">No stock in system</span>
-                   </>
-                  )}
-                </>
-              ) : (
-                <span className="text-slate-400 italic">Non-stock item</span>
-              )}
+            {/* Stock Summary Line - Minimal, muted */}
+            <div className="pt-1">
+              <StockSummaryLine skuId={item.id} trackInventory={item.track_inventory} />
             </div>
 
-              {/* Quick Action Buttons */}
-              <div className="flex items-center gap-1">
-                {isAdmin && (
-                   <Button
-                     size="icon"
-                     variant="ghost"
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       onStockAdjust(item);
-                     }}
-                     className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
-                     title="Correct Stock (Admin Only)"
-                   >
-                     <PackagePlus className="w-4 h-4" />
-                   </Button>
-                 )}
-                {isAdmin && (
-                  <>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(item);
-                      }}
-                      className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
-                      title="Edit"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(item.id);
-                      }}
-                      className="h-8 w-8 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </>
-                )}
+            {/* Admin Quick Actions - Only price edit and delete */}
+            {isAdmin && (
+              <div className="flex items-center justify-end gap-1 pt-2">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                  className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
+                  title="Edit"
+                >
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item.id);
+                  }}
+                  className="h-8 w-8 text-[#6B7280] hover:text-red-600 hover:bg-red-50 rounded-lg"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
-            </div>
+            )}
 
             {/* Expandable Details */}
-            {(item.description || item.notes || stockByLocation?.length > 0) && (
+            {(item.description || item.notes || (item.track_inventory !== false && stockByLocation?.length > 0)) && (
               <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#111827] transition-colors group w-full pt-2 border-t border-[#E5E7EB]">
-                <span>Details & Stock Locations</span>
+                <span>Stock details</span>
                 <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
               </CollapsibleTrigger>
             )}
           </div>
 
-          {(item.description || item.notes || stockByLocation?.length > 0) && (
+          {(item.description || item.notes || (item.track_inventory !== false && stockByLocation?.length > 0)) && (
             <CollapsibleContent className="pt-3">
               <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-3">
                 {item.description && (
@@ -177,13 +136,48 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                     <p className="text-[14px] text-[#4B5563] leading-[1.4] italic">{item.notes}</p>
                   </div>
                 )}
-                {stockByLocation?.length > 0 && (
-                  <div className="pt-2 border-t border-[#E5E7EB]">
-                    <StockByLocationView 
-                      quantities={stockByLocation} 
-                      locations={locations}
-                      onMoveStock={onMoveStock ? () => onMoveStock(item) : null}
-                    />
+                {item.track_inventory !== false && stockByLocation?.length > 0 && (
+                  <div className="pt-2 border-t border-[#E5E7EB] space-y-3">
+                    <div>
+                      <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-2">Stock by location</div>
+                      <div className="space-y-1">
+                        {stockByLocation.map((qty, idx) => (
+                          <div key={idx} className="flex justify-between text-[13px] text-[#4B5563]">
+                            <span>{qty.location_name}</span>
+                            <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
+                              {qty.quantity}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    {/* Stock Actions - Admin only, visible in expanded view */}
+                    {(isAdmin || canModifyStock) && (
+                      <div className="pt-2 border-t border-[#E5E7EB] flex gap-2 flex-wrap">
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStockAdjust(item);
+                            }}
+                            className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
+                          >
+                            Adjust stock (admin)
+                          </button>
+                        )}
+                        {onMoveStock && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMoveStock(item);
+                            }}
+                            className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
+                          >
+                            Transfer
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
                 {!item.in_inventory && (
