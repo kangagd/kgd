@@ -16,7 +16,9 @@ export default function VisitCard({ visit, index, isLatest }) {
   const technicianNames = visit.assigned_to_name || [];
   const photoCount = visit.image_urls?.length || 0;
   const hasMeasurements = visit.measurements && (
-    visit.measurements.new_doors?.length > 0 || visit.measurements.new_door
+    visit.measurements.new_doors?.length > 0 || 
+    visit.measurements.new_door ||
+    ['left_h', 'mid_h', 'right_h', 'top_w', 'mid_w', 'bottom_w', 'opening_width', 'opening_height'].some(field => visit.measurements[field])
   );
   const partsLinked = visit.linked_logistics_jobs?.length > 0 || false;
 

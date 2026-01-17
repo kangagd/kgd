@@ -10,12 +10,44 @@ import DOMPurify from 'dompurify';
 
 const normalizeDoors = (measurements) => {
   if (!measurements) return [];
+  
+  // Check for new_doors array (future format)
   if (Array.isArray(measurements.new_doors) && measurements.new_doors.length > 0) {
     return measurements.new_doors;
   }
+  
+  // Check for single new_door object (future format)
   if (measurements.new_door) {
     return [measurements.new_door];
   }
+  
+  // Check for legacy flat format (current data structure)
+  // If it has measurement fields, treat the entire measurements object as a door
+  const hasMeasurementFields = [
+    'left_h', 'mid_h', 'right_h',
+    'top_w', 'mid_w', 'bottom_w',
+    'left_sideroom', 'right_sideroom', 'headroom',
+    'opening_width', 'opening_height',
+    'sideroom_left', 'sideroom_right',
+    'type', 'material', 'additional_info'
+  ].some(field => measurements[field] !== undefined && measurements[field] !== null);
+  
+  if (hasMeasurementFields) {
+    // Map legacy flat format to door object structure
+    return [{
+      opening_width: measurements.mid_w || measurements.opening_width,
+      opening_height: measurements.mid_h || measurements.opening_height,
+      headroom: measurements.headroom,
+      sideroom_left: measurements.left_sideroom || measurements.sideroom_left,
+      sideroom_right: measurements.right_sideroom || measurements.sideroom_right,
+      type: measurements.type,
+      material: measurements.material,
+      additional_info: measurements.additional_info,
+      // Include the full measurements object for display
+      _fullMeasurements: measurements
+    }];
+  }
+  
   return [];
 };
 
@@ -100,30 +132,45 @@ export default function VisitDetailView({ visit }) {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="px-4 py-3 border-t border-[#E5E7EB] bg-[#FAFBFC] space-y-3">
-                {doors.map((door, idx) => (
-                  <div key={idx} className="border border-[#E5E7EB] rounded-lg p-3 bg-white">
-                    <h5 className="font-medium text-[#111827] text-xs mb-2">
-                      {doors.length === 1 ? 'Door' : `Door ${idx + 1}`}
-                    </h5>
-                    <div className="space-y-1 text-xs text-[#4B5563]">
-                      {(door.opening_width && door.opening_width !== '0') || (door.opening_height && door.opening_height !== '0') ? (
-                        <div>Opening: {door.opening_width && door.opening_width !== '0' ? door.opening_width : '?'} × {door.opening_height && door.opening_height !== '0' ? door.opening_height : '?'}</div>
-                      ) : null}
-                      {door.headroom && door.headroom !== '0' && <div>Headroom: {door.headroom}</div>}
-                      {door.sideroom_left && door.sideroom_left !== '0' && <div>Sideroom (L): {door.sideroom_left}</div>}
-                      {door.sideroom_right && door.sideroom_right !== '0' && <div>Sideroom (R): {door.sideroom_right}</div>}
-                      {door.backroom && door.backroom !== '0' && <div>Backroom: {door.backroom}</div>}
-                      {door.type && <div>Type: {door.type}</div>}
-                      {door.material && <div>Material: {door.material}</div>}
-                      {door.existing_door_removal && (
-                        <div className="text-[#D97706]">⚠️ Existing door removal required</div>
-                      )}
-                      {door.additional_info && (
-                        <div className="italic text-[#6B7280]">{door.additional_info}</div>
-                      )}
+                {doors.map((door, idx) => {
+                  const m = door._fullMeasurements || door;
+                  return (
+                    <div key={idx} className="border border-[#E5E7EB] rounded-lg p-3 bg-white">
+                      <h5 className="font-medium text-[#111827] text-xs mb-2">
+                        {doors.length === 1 ? 'Door' : `Door ${idx + 1}`}
+                      </h5>
+                      <div className="space-y-1 text-xs text-[#4B5563]">
+                        {/* Multi-point measurements (legacy format) */}
+                        {(m.left_h || m.mid_h || m.right_h) && (
+                          <div className="font-medium text-[#111827]">Heights: L {m.left_h} / M {m.mid_h} / R {m.right_h}</div>
+                        )}
+                        {(m.top_w || m.mid_w || m.bottom_w) && (
+                          <div className="font-medium text-[#111827]">Widths: T {m.top_w} / M {m.mid_w} / B {m.bottom_w}</div>
+                        )}
+                        {(m.left_sideroom || m.right_sideroom) && (
+                          <div>Siderooms: L {m.left_sideroom} / R {m.right_sideroom}</div>
+                        )}
+                        {m.headroom && <div>Headroom: {m.headroom}</div>}
+                        
+                        {/* Simple measurements (normalized format) */}
+                        {(m.opening_width && m.opening_width !== '0' && !m.mid_w) || (m.opening_height && m.opening_height !== '0' && !m.mid_h) ? (
+                          <div>Opening: {m.opening_width && m.opening_width !== '0' ? m.opening_width : '?'} × {m.opening_height && m.opening_height !== '0' ? m.opening_height : '?'}</div>
+                        ) : null}
+                        {m.sideroom_left && m.sideroom_left !== '0' && <div>Sideroom (L): {m.sideroom_left}</div>}
+                        {m.sideroom_right && m.sideroom_right !== '0' && <div>Sideroom (R): {m.sideroom_right}</div>}
+                        {m.backroom && m.backroom !== '0' && <div>Backroom: {m.backroom}</div>}
+                        {m.type && <div>Type: {m.type}</div>}
+                        {m.material && <div>Material: {m.material}</div>}
+                        {m.existing_door_removal && (
+                          <div className="text-[#D97706]">⚠️ Existing door removal required</div>
+                        )}
+                        {m.additional_info && (
+                          <div className="italic text-[#6B7280]">{m.additional_info}</div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {visit.measurements?.notes && (
                   <div className="text-xs text-[#4B5563] italic border-t border-[#E5E7EB] pt-2">
                     {visit.measurements.notes}
