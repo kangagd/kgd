@@ -475,7 +475,7 @@ export default function Schedule() {
     if (!result.destination) return;
     
     const { draggableId, destination } = result;
-    const job = expandedJobs.find(j => j.id === draggableId || `${j.id}-visit-${j._visitIndex}` === draggableId);
+    const job = jobsWithVisits.find(j => j.id === draggableId || `${j.id}-visit-${j._visitIndex}` === draggableId);
     if (!job) return;
     
     // Parse destination ID to get new date/time

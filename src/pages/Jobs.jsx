@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -121,7 +121,7 @@ export default function Jobs() {
     ...QUERY_CONFIG.paginated,
   });
 
-  const allJobsData = useMemo(() => jobsPages?.pages.flatMap(page => page.data?.jobs ?? []).flat() ?? [], [jobsPages]);
+  const allJobsData = useMemo(() => jobsPages?.pages.flatMap(page => page.data?.jobs ?? []) ?? [], [jobsPages]);
 
   const jobs = allJobsData;
 
