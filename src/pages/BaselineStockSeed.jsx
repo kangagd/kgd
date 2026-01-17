@@ -25,7 +25,6 @@ export default function BaselineStockSeed() {
   const [filterEmpty, setFilterEmpty] = useState(false);
   const [skuSearch, setSkuSearch] = useState('');
   const [expandedVehicles, setExpandedVehicles] = useState({});
-  const [showAllSkus, setShowAllSkus] = useState(false);
   const queryClient = useQueryClient();
 
   // Load user
@@ -106,12 +105,9 @@ export default function BaselineStockSeed() {
     // Only run when queries are done loading
     if (!isLoadingInventory && warehouseLocation && vehicleLocations.length > 0) {
       const bySkuMap = {};
-      const skuIdsInInventory = new Set();
 
-      // Load existing inventory quantities
       currentQuantities.forEach(qty => {
         const skuId = qty.price_list_item_id;
-        skuIdsInInventory.add(skuId);
         if (!bySkuMap[skuId]) {
           bySkuMap[skuId] = {
             price_list_item_id: skuId,
@@ -125,19 +121,6 @@ export default function BaselineStockSeed() {
           counted: currentVal
         };
       });
-
-      // If showAllSkus, add all other SKUs with 0 counts everywhere
-      if (showAllSkus && skus.length > 0) {
-        skus.forEach(sku => {
-          if (!bySkuMap[sku.id]) {
-            bySkuMap[sku.id] = {
-              price_list_item_id: sku.id,
-              item_name: sku.item,
-              quantities: {}
-            };
-          }
-        });
-      }
 
       // Initialize empty locations for each SKU
       Object.values(bySkuMap).forEach(row => {
@@ -153,7 +136,7 @@ export default function BaselineStockSeed() {
 
       setSeedRows(Object.values(bySkuMap));
     }
-  }, [currentQuantities, warehouseLocation, vehicleLocations, skuById, isLoadingInventory, skus, showAllSkus]);
+  }, [currentQuantities, warehouseLocation, vehicleLocations, skuById, isLoadingInventory]);
 
   // Filter displayed rows
   const displayedRows = useMemo(() => {
@@ -355,31 +338,21 @@ export default function BaselineStockSeed() {
       <div className="space-y-4">
         {/* Summary Card */}
         <Card>
-          <CardContent className="p-4 flex items-center justify-between text-sm gap-4 flex-wrap">
+          <CardContent className="p-4 flex items-center justify-between text-sm">
             <div>
               <span className="font-semibold text-gray-900">{displayedRows.length}</span>
               <span className="text-gray-600 ml-1">SKUs loaded</span>
             </div>
-            <div className="flex items-center gap-4">
-              {seedRows.length > 0 && (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <Checkbox
-                    id="filter-empty"
-                    checked={filterEmpty}
-                    onCheckedChange={setFilterEmpty}
-                  />
-                  <span className="text-gray-700 text-sm">Hide empty rows</span>
-                </label>
-              )}
+            {seedRows.length > 0 && (
               <label className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
-                  id="show-all-skus"
-                  checked={showAllSkus}
-                  onCheckedChange={setShowAllSkus}
+                  id="filter-empty"
+                  checked={filterEmpty}
+                  onCheckedChange={setFilterEmpty}
                 />
-                <span className="text-gray-700 text-sm">Show all SKUs</span>
+                <span className="text-gray-700">Hide empty rows</span>
               </label>
-            </div>
+            )}
           </CardContent>
         </Card>
 
