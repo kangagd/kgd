@@ -15,7 +15,8 @@ Deno.serve(async (req) => {
       fromLocationId, 
       toLocationId, 
       quantity, 
-      movementType = 'transfer',
+      movementType = null,
+      source = null,
       jobId = null,
       notes = null 
     } = body;
@@ -24,8 +25,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    // Validate movement type
-    if (movementType === 'transfer' && (!fromLocationId || !toLocationId)) {
+    // Accept both 'source' (new) and 'movementType' (legacy) params
+    let finalSource = source || movementType || 'transfer';
+    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage'];
+    if (!validSources.includes(finalSource)) {
+      finalSource = 'transfer'; // Coerce invalid values to transfer
+    }
+
+    // Validate transfer requires both locations
+    if (finalSource === 'transfer' && (!fromLocationId || !toLocationId)) {
       return Response.json({ error: 'Transfer requires both from and to locations' }, { status: 400 });
     }
 
@@ -103,7 +111,7 @@ Deno.serve(async (req) => {
       to_location_id: toLocationId || null,
       to_location_name: toLocation?.name || null,
       quantity: quantity,
-      source: movementType,
+      source: finalSource,
       performed_by_user_email: user.email,
       performed_by_user_name: user.full_name || user.display_name || user.email,
       performed_at: new Date().toISOString(),
