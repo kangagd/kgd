@@ -366,7 +366,6 @@ export default function PriceList() {
         item={adjustingStock}
         open={!!adjustingStock}
         onClose={() => setAdjustingStock(null)}
-        vehicles={vehicles}
         locations={inventoryLocations}
       />
 
