@@ -108,20 +108,20 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
 
               {/* Quick Action Buttons */}
               <div className="flex items-center gap-1">
-                {canModifyStock && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onStockAdjust(item);
-                    }}
-                    className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
-                    title="Adjust Stock"
-                  >
-                    <PackagePlus className="w-4 h-4" />
-                  </Button>
-                )}
+                {isAdmin && (
+                   <Button
+                     size="icon"
+                     variant="ghost"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       onStockAdjust(item);
+                     }}
+                     className="h-8 w-8 text-[#6B7280] hover:text-[#111827] hover:bg-[#F3F4F6] rounded-lg"
+                     title="Correct Stock (Admin Only)"
+                   >
+                     <PackagePlus className="w-4 h-4" />
+                   </Button>
+                 )}
                 {isAdmin && (
                   <>
                     <Button
