@@ -347,7 +347,12 @@ export default function Layout({ children, currentPageName }) {
   }, [location.pathname]);
   
   useEffect(() => {
-    const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+        forceUnlockBodyScroll();
+      }
+    };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
     }, [isMobileMenuOpen]);
