@@ -343,9 +343,10 @@ export default function Projects() {
   }, [navigate]);
 
   const filteredProjects = useMemo(() => {
+    console.time('[Projects] Filter & sort');
     const baseProjects = projects;
     
-    return baseProjects
+    const filtered = baseProjects
       .filter((project) => {
         const matchesSearch = 
           project.title?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
@@ -355,7 +356,7 @@ export default function Projects() {
         
         const matchesStage = stageFilter === "all" || project.status === stageFilter;
         
-        const projectParts = allParts.filter(p => sameId(p.project_id, project.id));
+        const projectParts = indexes.partsByProjectId.get(project.id) || [];
         const matchesPartsStatus = partsStatusFilter === "all" || 
           projectParts.some(p => p.status === partsStatusFilter);
         
@@ -382,7 +383,10 @@ export default function Projects() {
         }
         return 0;
       });
-  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
+    
+    console.timeEnd('[Projects] Filter & sort');
+    return filtered;
+  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
 
         const getJobCount = useCallback((projectId) => {
           return (indexes.jobsByProjectId.get(projectId) || []).length;
