@@ -1,33 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Helper: Check if job is V2 enabled
-const isJobV2Enabled = (job) => {
-  const CUTOFF_DATE = new Date('2026-01-16T00:00:00Z');
-  const jobCreated = job.created_date ? new Date(job.created_date) : null;
-  
+// AUTHORITATIVE DEFINITION: V2 EXECUTION (must match analyzeModelDrift.js)
+const isV2Execution = (job, jobVisits) => {
   if (job.job_model_version === 'v2') return true;
-  if (job.job_model_version === 'v1') return false;
   if (job.visit_count && job.visit_count > 0) return true;
-  if (jobCreated && jobCreated >= CUTOFF_DATE) return true;
-  
+  if (jobVisits && jobVisits.length > 0) return true;
   return false;
-};
-
-// Helper: Detect legacy fields
-const detectLegacyFields = (job) => {
-  const legacyFields = [];
-  const fieldsToCheck = [
-    'overview', 'next_steps', 'communication_with_client', 
-    'pricing_provided', 'additional_info', 'completion_notes'
-  ];
-  
-  for (const field of fieldsToCheck) {
-    if (job[field]) {
-      legacyFields.push(field);
-    }
-  }
-  
-  return legacyFields;
 };
 
 Deno.serve(async (req) => {
@@ -71,15 +49,15 @@ Deno.serve(async (req) => {
     const proposedFixes = []; // For dry run mode
 
     for (const job of jobs) {
-      const isV2 = isJobV2Enabled(job);
-      if (!isV2) continue; // Only fix V2 jobs
-      
-      const legacyFields = detectLegacyFields(job);
       const jobVisits = visitsByJobId[job.id] || [];
+      const isV2Exec = isV2Execution(job, jobVisits);
+      
+      if (!isV2Exec) continue; // Only fix V2 execution jobs
+      
       let jobNeedsFix = false;
       const jobFixes = [];
 
-      // Fix Type 1: Sync visit_count with actual Visit records
+      // ONLY FIXABLE DRIFT: Sync visit_count with actual Visit records
       if (jobVisits.length > 0 && job.visit_count !== jobVisits.length) {
         jobNeedsFix = true;
         jobFixes.push(`visit_count: ${job.visit_count || 0} → ${jobVisits.length}`);
@@ -90,8 +68,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fix Type 2: Mark as v2 explicitly if not already
-      if (!job.job_model_version || job.job_model_version !== 'v2') {
+      // SAFE FIX: Mark as v2 explicitly if visits exist but not marked
+      if (jobVisits.length > 0 && job.job_model_version !== 'v2') {
         jobNeedsFix = true;
         jobFixes.push(`job_model_version: ${job.job_model_version || 'null'} → v2`);
         if (!dry_run) {
@@ -101,18 +79,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fix Type 3: Clear legacy fields if visits exist (data should be in Visit records)
-      if (legacyFields.length > 0 && jobVisits.length > 0) {
-        jobNeedsFix = true;
-        jobFixes.push(`Clear ${legacyFields.length} legacy fields: ${legacyFields.join(', ')}`);
-        if (!dry_run) {
-          const clearData = {};
-          legacyFields.forEach(field => {
-            clearData[field] = null;
-          });
-          await base44.asServiceRole.entities.Job.update(job.id, clearData);
-        }
-      }
+      // GUARDRAIL: Do NOT clear legacy fields - migration not implemented
+      // This would be data loss without proper Visit migration
 
       if (jobNeedsFix) {
         fixedCount++;

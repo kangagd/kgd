@@ -201,17 +201,22 @@ export default function ModelHealth() {
 
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-[12px] text-[#6B7280] mb-1">V2 Enabled Jobs</div>
-                  <div className="text-[28px] font-bold text-blue-600">{driftData.v2_enabled_count || 0}</div>
+                  <div className="text-[12px] text-[#6B7280] mb-1">V2 Execution Jobs</div>
+                  <div className="text-[28px] font-bold text-blue-600">{driftData.v2_execution_count || 0}</div>
                 </CardContent>
               </Card>
 
-              <Card className={driftData.drift_issues_count > 0 ? 'border-2 border-red-200' : 'border-2 border-green-200'}>
+              <Card className={driftData.fixable_drift_count > 0 ? 'border-2 border-amber-200' : 'border-2 border-green-200'}>
                 <CardContent className="p-4">
-                  <div className="text-[12px] text-[#6B7280] mb-1">Drift Issues Found</div>
-                  <div className={`text-[28px] font-bold ${driftData.drift_issues_count > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {driftData.drift_issues_count || 0}
+                  <div className="text-[12px] text-[#6B7280] mb-1">Fixable Drift</div>
+                  <div className={`text-[28px] font-bold ${driftData.fixable_drift_count > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                    {driftData.fixable_drift_count || 0}
                   </div>
+                  {driftData.legacy_info_count > 0 && (
+                    <div className="text-[11px] text-[#9CA3AF] mt-1">
+                      +{driftData.legacy_info_count} v1 legacy (info only)
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -226,13 +231,15 @@ export default function ModelHealth() {
             </div>
 
             {/* Action Buttons */}
-            {driftData.drift_issues_count > 0 && (
+            {(driftData.fixable_drift_count > 0 || driftData.drift_issues_count > 0) && (
               <Card className="border-2 border-blue-200 bg-blue-50">
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
                       <div className="text-sm font-semibold text-blue-900 mb-1">Dry Run Analysis</div>
-                      <div className="text-xs text-blue-700 mb-3">Read-only simulation - always available</div>
+                      <div className="text-xs text-blue-700 mb-3">
+                        Read-only simulation • No writes • Always available
+                      </div>
                       <Button
                         onClick={() => handleAction('dry_run')}
                         disabled={dryRunMutation.isPending}
@@ -248,14 +255,16 @@ export default function ModelHealth() {
                       </Button>
                     </div>
                     
-                    <div className="flex-1 border-l border-blue-200 pl-4">
+                    <div className="flex-1 sm:border-l border-blue-200 sm:pl-4">
                       <div className="text-sm font-semibold text-blue-900 mb-1">Commit Fixes</div>
                       <div className="text-xs text-blue-700 mb-3">
-                        {isModelHealthEnabled ? 'Writes data - requires confirmation' : 'Requires FEATURE_MODEL_HEALTH_FIXES flag'}
+                        {isModelHealthEnabled 
+                          ? `Writes data • ${driftData.fixable_drift_count || 0} fixable issues` 
+                          : 'Blocked: Enable FEATURE_MODEL_HEALTH_FIXES'}
                       </div>
                       <Button
                         onClick={() => handleAction('commit')}
-                        disabled={commitFixMutation.isPending || !isModelHealthEnabled}
+                        disabled={commitFixMutation.isPending || !isModelHealthEnabled || (driftData.fixable_drift_count === 0)}
                         className="gap-2 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto disabled:opacity-50"
                       >
                         {commitFixMutation.isPending ? (
@@ -265,6 +274,11 @@ export default function ModelHealth() {
                         )}
                         Commit Fixes
                       </Button>
+                      {!isModelHealthEnabled && (
+                        <div className="text-[10px] text-amber-700 mt-1">
+                          Set FEATURE_MODEL_HEALTH_FIXES = true to enable
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -274,25 +288,52 @@ export default function ModelHealth() {
             {/* Drift Issues by Type */}
             {driftData.issues_by_type && Object.keys(driftData.issues_by_type).length > 0 && (
               <div className="space-y-4">
-                <h2 className="text-[22px] font-semibold text-[#111827]">Drift Issues by Type</h2>
+                <h2 className="text-[22px] font-semibold text-[#111827]">Issues by Type</h2>
                 
-                {Object.entries(driftData.issues_by_type).map(([issueType, issueData]) => (
-                  <Card key={issueType} className="border-2 border-red-200">
-                    <CardHeader className="bg-red-50 border-b border-red-100">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-[18px] font-semibold text-red-800 flex items-center gap-2">
-                          <AlertTriangle className="w-5 h-5" />
-                          {issueType.replace(/_/g, ' ').toUpperCase()}
-                        </CardTitle>
-                        <Badge className="bg-red-600 text-white text-[14px] font-bold px-3 py-1">
-                          {issueData.count}
-                        </Badge>
-                      </div>
-                    </CardHeader>
+                {Object.entries(driftData.issues_by_type).map(([issueType, issueData]) => {
+                  const severityConfig = {
+                    error: { border: 'border-red-200', bg: 'bg-red-50', text: 'text-red-800', badgeBg: 'bg-red-600' },
+                    warn: { border: 'border-amber-200', bg: 'bg-amber-50', text: 'text-amber-800', badgeBg: 'bg-amber-600' },
+                    info: { border: 'border-blue-200', bg: 'bg-blue-50', text: 'text-blue-800', badgeBg: 'bg-blue-600' }
+                  };
+                  const config = severityConfig[issueData.severity] || severityConfig.error;
+                  
+                  return (
+                    <Card key={issueType} className={`border-2 ${config.border}`}>
+                      <CardHeader className={`${config.bg} border-b border-${issueData.severity === 'error' ? 'red' : issueData.severity === 'warn' ? 'amber' : 'blue'}-100`}>
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <CardTitle className={`text-[18px] font-semibold ${config.text} flex items-center gap-2`}>
+                            {issueData.severity === 'info' ? <CheckCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                            {issueType.replace(/_/g, ' ').toUpperCase()}
+                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            <Badge className={`${config.badgeBg} text-white text-[14px] font-bold px-3 py-1`}>
+                              {issueData.count}
+                            </Badge>
+                            {issueData.fixable === false && (
+                              <Badge className="bg-slate-600 text-white text-[11px] px-2 py-0.5">
+                                {issueData.severity === 'info' ? 'INFO ONLY' : 'NOT FIXABLE'}
+                              </Badge>
+                            )}
+                            {issueData.fixable === true && (
+                              <Badge className="bg-green-600 text-white text-[11px] px-2 py-0.5">
+                                FIXABLE
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
                     <CardContent className="p-4">
-                      {issueData.description && (
-                        <p className="text-sm text-[#6B7280] mb-4">{issueData.description}</p>
-                      )}
+                      <div className="mb-4 space-y-2">
+                        {issueData.description && (
+                          <p className="text-sm text-[#6B7280]">{issueData.description}</p>
+                        )}
+                        {issueData.fix_blocked_reason && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800">
+                            <strong>Fix blocked:</strong> {issueData.fix_blocked_reason.replace(/_/g, ' ')}
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Sample Jobs */}
                       {issueData.sample_jobs && issueData.sample_jobs.length > 0 && (
@@ -311,9 +352,16 @@ export default function ModelHealth() {
                                     </div>
                                     <div className="text-xs text-[#9CA3AF] space-y-0.5">
                                       <div>Visit Count: {job.visit_count || 0}</div>
+                                      {job.actual_visits !== undefined && (
+                                        <div>Actual Visits: {job.actual_visits}</div>
+                                      )}
                                       <div>Model Version: {job.job_model_version || 'v1'}</div>
                                       <div>Status: {job.status}</div>
-                                      {job.issue_details && <div className="text-red-600 font-medium mt-1">{job.issue_details}</div>}
+                                      {job.issue_details && (
+                                        <div className={`font-medium mt-1 ${issueData.severity === 'info' ? 'text-blue-600' : 'text-red-600'}`}>
+                                          {job.issue_details}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                   <Link
@@ -331,7 +379,8 @@ export default function ModelHealth() {
                       )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -422,12 +471,15 @@ export default function ModelHealth() {
                   <p>This will analyze what would be fixed <strong>without making any changes</strong> to the database.</p>
                   <p className="text-green-700 font-medium">✓ Read-only operation - Safe to run anytime</p>
                   <p className="text-green-700 font-medium">✓ No writes to Job, Visit, or any entity</p>
+                  <p className="text-green-700 font-medium">✓ Works even when FEATURE_MODEL_HEALTH_FIXES is disabled</p>
                 </>
               ) : (
                 <>
-                  <p>This will <strong>permanently modify</strong> up to {driftData?.drift_issues_count || 0} job(s) and Visit records.</p>
+                  <p>This will <strong>permanently modify</strong> up to {driftData?.fixable_drift_count || 0} job(s).</p>
+                  <p className="text-blue-700 font-medium">• Only applies safe fixes (visit_count sync, version markers)</p>
                   <p className="text-red-700 font-medium">⚠ Database writes will occur</p>
                   <p className="text-amber-700 font-medium">⚠ Review dry run results first</p>
+                  <p className="text-amber-700 font-medium">⚠ Requires FEATURE_MODEL_HEALTH_FIXES enabled</p>
                 </>
               )}
             </AlertDialogDescription>
