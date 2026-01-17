@@ -2350,6 +2350,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </div>
                   )}
 
+                  {/* Logistics Transfer Section */}
+                  <LogisticsJobTransferSection 
+                    job={job}
+                    sourceLocation={sourceLocation}
+                    destinationLocation={destinationLocation}
+                    isAdmin={isAdmin}
+                  />
+
                   {/* Logistics Outcome Selector */}
                   {!activeCheckIn && job.status !== 'Completed' && (
                     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
