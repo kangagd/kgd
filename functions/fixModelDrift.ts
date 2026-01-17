@@ -2,8 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // AUTHORITATIVE DEFINITION: V2 EXECUTION (must match analyzeModelDrift.js)
 const isV2Execution = (job, jobVisits) => {
-  if (job.job_model_version === 'v2') return true;
-  if (job.visit_count && job.visit_count > 0) return true;
+  if (job?.job_model_version === 'v2') return true;
+  if (typeof job?.visit_count === 'number' && job.visit_count > 0) return true;
   if (jobVisits && jobVisits.length > 0) return true;
   return false;
 };
@@ -32,17 +32,18 @@ Deno.serve(async (req) => {
     }
 
     // Fetch all non-deleted jobs
-    const jobs = await base44.asServiceRole.entities.Job.filter({ 
-      deleted_at: { $exists: false } 
-    });
+    const jobsAll = await base44.asServiceRole.entities.Job.list();
+    const jobs = (jobsAll || []).filter(j => !j?.deleted_at);
 
     // Fetch all visits
-    const visits = await base44.asServiceRole.entities.Visit.list();
+    const visitsAll = await base44.asServiceRole.entities.Visit.list();
+    const visits = visitsAll || [];
     const visitsByJobId = {};
-    visits.forEach(v => {
+    for (const v of visits) {
+      if (!v?.job_id) continue;
       if (!visitsByJobId[v.job_id]) visitsByJobId[v.job_id] = [];
       visitsByJobId[v.job_id].push(v);
-    });
+    }
 
     let fixedCount = 0;
     const fixLog = [];
@@ -112,6 +113,6 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Fix model drift error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error?.message || 'Unknown error' }, { status: 500 });
   }
 });
