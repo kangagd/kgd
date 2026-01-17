@@ -40,6 +40,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'templateId is required' }, { status: 400 });
     }
 
+    // GUARDRAIL: Ensure project_id is present when creating quote
+    if (!project_id) {
+      console.error('[createPandaDocQuote] GUARDRAIL: Rejecting quote creation without project_id');
+      return Response.json({ 
+        error: 'Quotes must be created from within a project. Please open the project first.' 
+      }, { status: 400 });
+    }
+
     // Load Project or Job
     let project = null;
     let job = null;
