@@ -79,7 +79,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
 
             {/* Stock Summary Line - Minimal, muted */}
             <div className="pt-1">
-              <StockSummaryLine skuId={item.id} trackInventory={item.track_inventory} />
+              <StockSummaryLine onHand={onHandTotal} inbound={inventorySummary?.inbound || 0} trackInventory={item.track_inventory} />
             </div>
 
             {/* Admin Quick Actions - Only price edit and delete */}
