@@ -103,76 +103,34 @@ export default function Jobs() {
     };
   }, []);
 
-  const [allJobsData, setAllJobsData] = useState([]);
-  const [jobsCursor, setJobsCursor] = useState(null);
-  const [hasMoreJobs, setHasMoreJobs] = useState(true);
 
-  const { data: jobsPage, isLoading, refetch, isFetching } = useQuery({
-    queryKey: [...jobKeys.allJobs(), jobsCursor],
-    queryFn: async () => {
-      try {
-        if (!jobsCursor) {
-          const response = await base44.functions.invoke('getMyJobs');
-          const allJobs = response.data || [];
-          const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
-          
-          activeJobs.sort((a, b) => {
-            const dateA = a.updated_date || a.created_date || '';
-            const dateB = b.updated_date || b.created_date || '';
-            return dateB.localeCompare(dateA);
-          });
-          
-          const limited = activeJobs.slice(0, 50);
-          return {
-            data: limited,
-            nextCursor: activeJobs.length > 50 ? 'page-2' : null
-          };
-        } else {
-          const response = await base44.functions.invoke('getMyJobs');
-          const allJobs = response.data || [];
-          const activeJobs = allJobs.filter(job => !job.deleted_at && job.status !== "Cancelled");
-          
-          activeJobs.sort((a, b) => {
-            const dateA = a.updated_date || a.created_date || '';
-            const dateB = b.updated_date || b.created_date || '';
-            return dateB.localeCompare(dateA);
-          });
-          
-          const pageNum = parseInt(jobsCursor.split('-')[1]) || 2;
-          const offset = (pageNum - 1) * 50;
-          const limited = activeJobs.slice(offset, offset + 50);
-          
-          return {
-            data: limited,
-            nextCursor: activeJobs.length > offset + 50 ? `page-${pageNum + 1}` : null
-          };
-        }
-      } catch (error) {
-        return { data: [], nextCursor: null };
-      }
-    },
-    ...QUERY_CONFIG.reference,
+
+  const {
+    data: jobsPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useInfiniteQuery({
+    queryKey: jobKeys.paginated(),
+    queryFn: ({ pageParam = null }) => base44.functions.invoke('getMyJobs', { cursor: pageParam, limit: 50 }),
+    getNextPageParam: (lastPage) => lastPage.data.nextCursor,
+    initialPageParam: null,
+    ...QUERY_CONFIG.paginated,
   });
 
-  // Accumulate jobs data
-  useEffect(() => {
-    if (jobsPage) {
-      if (!jobsCursor) {
-        // First page - replace all
-        setAllJobsData(jobsPage.data || []);
-      } else {
-        // Subsequent pages - append
-        setAllJobsData(prev => [...prev, ...(jobsPage.data || [])]);
-      }
-      setHasMoreJobs(!!jobsPage.nextCursor);
-    }
-  }, [jobsPage, jobsCursor]);
+  const allJobsData = useMemo(() => jobsPages?.pages.flatMap(page => page.data.jobs) ?? [], [jobsPages]);
+
+
+  const allJobsData = useMemo(() => jobsPages?.pages.flatMap(page => page.data.jobs) ?? [], [jobsPages]);
 
   const jobs = allJobsData;
 
   const handleLoadMore = () => {
-    if (jobsPage?.nextCursor && !isFetching) {
-      setJobsCursor(jobsPage.nextCursor);
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
   };
 
@@ -666,15 +624,15 @@ export default function Jobs() {
           />
         )}
 
-        {hasMoreJobs && !isLoading && (
+        {hasNextPage && (
           <div className="flex justify-center mt-6">
             <Button
-              onClick={handleLoadMore}
-              disabled={isFetching}
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
               variant="outline"
               className="min-w-[200px]"
             >
-              {isFetching ? "Loading..." : "Load More"}
+              {isFetchingNextPage ? "Loading more..." : "Load More"}
             </Button>
           </div>
         )}

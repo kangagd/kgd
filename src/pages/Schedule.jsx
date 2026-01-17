@@ -113,51 +113,31 @@ export default function Schedule() {
   const { data: allJobs = [], isLoading } = useQuery({
     queryKey: jobKeys.all,
     queryFn: async () => {
-      // Use backend function for robust permission handling
-      const response = await base44.functions.invoke('getMyJobs');
-      const jobs = response.data || [];
-      // Sort manually since backend function might not sort
-      return jobs.sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''));
+      const response = await base44.functions.invoke('getMyJobs', { limit: 1000 }); // Fetch more jobs for calendar view
+      return response.data?.jobs || [];
     },
+    ...QUERY_CONFIG.reference,
   });
 
-  // Expand jobs with scheduled_visits into separate entries for the schedule
-  const expandedJobs = useMemo(() => {
-    const expanded = [];
-    
-    allJobs.forEach(job => {
-      // Add the primary visit (Visit 1)
-      if (job.scheduled_date) {
-        expanded.push({
+  const jobsWithVisits = useMemo(() => {
+    return allJobs.map(job => {
+      const visits = (job.scheduled_visits || [])
+        .map((visit, index) => ({
           ...job,
-          _isExpandedVisit: false,
-          _visitIndex: 0,
-          _visitId: null
-        });
+          ...visit,
+          scheduled_date: visit.date,
+          scheduled_time: visit.time,
+          _isExpandedVisit: true,
+          _visitId: visit.id || `visit-${index}`,
+          id: `${job.id}-visit-${index}`
+        }));
+
+      // Include the main job if it has a scheduled date
+      if (job.scheduled_date) {
+        return [job, ...visits];
       }
-      
-      // Add additional visits
-      if (job.scheduled_visits && Array.isArray(job.scheduled_visits)) {
-        job.scheduled_visits.forEach((visit, index) => {
-          if (visit.date) {
-            expanded.push({
-              ...job,
-              scheduled_date: visit.date,
-              scheduled_time: visit.time || job.scheduled_time,
-              expected_duration: visit.duration || job.expected_duration,
-              assigned_to: visit.assigned_to || job.assigned_to,
-              assigned_to_name: visit.assigned_to_name || job.assigned_to_name,
-              _isExpandedVisit: true,
-              _visitIndex: index + 1,
-              _visitId: visit.id,
-              _originalVisit: visit
-            });
-          }
-        });
-      }
-    });
-    
-    return expanded;
+      return visits;
+    }).flat();
   }, [allJobs]);
 
   const { data: technicians = [] } = useQuery({
@@ -214,38 +194,32 @@ export default function Schedule() {
     return map;
   }, [technicians]);
 
-  const { checkConflicts } = useScheduleConflicts(expandedJobs, leaves, closedDays);
+  const { checkConflicts } = useScheduleConflicts(jobsWithVisits, leaves, closedDays);
 
   // Filter jobs by scope (Mine vs All)
   // Memoized to avoid re-filtering on every render
   const scopedJobs = useMemo(() => {
-    if (!expandedJobs) return [];
-    if (viewScope === "all") return expandedJobs;
-
-    // Determine target email
-    let targetEmail = null;
-    if (selectedTechnicianEmail === "me") {
-      targetEmail = user?.email;
-    } else if (selectedTechnicianEmail === "all") {
-      return expandedJobs;
-    } else {
-      targetEmail = selectedTechnicianEmail;
+    if (viewScope === "all" && selectedTechnicianEmail === "all") {
+      return jobsWithVisits;
     }
 
-    if (!targetEmail) return expandedJobs;
-
+    let targetEmail = selectedTechnicianEmail;
+    if (selectedTechnicianEmail === "me") {
+      targetEmail = user?.email;
+    }
+    
+    if (!targetEmail) return jobsWithVisits;
+    
     const targetEmailLower = targetEmail.toLowerCase().trim();
 
-    return expandedJobs.filter((job) => {
-      if (!job) return false;
-      const assigned = job.assigned_to; 
-      
+    return jobsWithVisits.filter((job) => {
+      const assigned = job.assigned_to;
       if (Array.isArray(assigned)) {
         return assigned.some(email => email?.toLowerCase().trim() === targetEmailLower);
       }
-      return assigned?.toLowerCase().trim() === targetEmailLower;
+      return typeof assigned === 'string' && assigned.toLowerCase().trim() === targetEmailLower;
     });
-  }, [expandedJobs, viewScope, user, selectedTechnicianEmail]);
+  }, [jobsWithVisits, viewScope, selectedTechnicianEmail, user?.email]);
 
   const todaysJobs = React.useMemo(() => {
     const today = getNowInAEST();
