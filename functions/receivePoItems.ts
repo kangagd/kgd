@@ -44,19 +44,21 @@ Deno.serve(async (req) => {
         qty_received: newQtyReceived
       });
 
-      // Create StockMovement record
+      // Create StockMovement record (standardized schema)
+      const locName = (await base44.asServiceRole.entities.InventoryLocation.get(location_id))?.name || '';
       await base44.asServiceRole.entities.StockMovement.create({
-        sku_id: poLine.price_list_item_id || null,
+        price_list_item_id: poLine.price_list_item_id || null,
         item_name: poLine.item_name || 'Unknown Item',
         quantity: qtyReceived,
         to_location_id: location_id,
-        to_location_name: (await base44.asServiceRole.entities.InventoryLocation.get(location_id))?.name || '',
-        performed_by_user_id: user.id,
+        to_location_name: locName,
         performed_by_user_email: user.email,
-        performed_by_user_name: user.full_name || user.display_name,
+        performed_by_user_name: user.full_name || user.display_name || user.email,
         performed_at: receive_date_time,
         source: 'po_receipt',
-        notes: notes ? `PO ${po.po_reference}: ${notes}` : `Received from PO ${po.po_reference}`
+        reference_type: 'purchase_order',
+        reference_id: po_id,
+        notes: notes ? `PO ${po.po_number || po.id}: ${notes}` : `Received from PO ${po.po_number || po.id}`
       });
 
       // Upsert InventoryQuantity (add to on-hand)
