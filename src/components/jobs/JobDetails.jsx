@@ -67,6 +67,7 @@ import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import JobBriefCard from "./JobBriefCard";
 import VisitScopeSection from "./VisitScopeSection";
 import { isFeatureEnabled } from "../domain/featureFlags";
+import { isJobV2Enabled, shouldHideLegacySections, hasVisitExecution, detectLegacyFields, warnJobV2Drift } from "./jobModelRules";
 
 function isLastCheckedInTechnician(checkIns, currentUserEmail) {
   if (!checkIns || checkIns.length === 0 || !currentUserEmail) return false;
@@ -686,6 +687,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const updateJobMutation = useMutation({
     mutationFn: async ({ field, value }) => {
+      // DRIFT DETECTOR: Warn if updating legacy fields in V2 mode
+      const payload = { [field]: value };
+      const legacyFields = detectLegacyFields(payload);
+      if (legacyFields.length > 0 && isJobV2Enabled(job)) {
+        warnJobV2Drift('Legacy field mutation in V2 job', {
+          jobId: job.id,
+          field,
+          legacyFields,
+          jobModelVersion: job.job_model_version,
+          visitCount: job.visit_count
+        });
+      }
+      
       const res = await base44.functions.invoke('manageJob', { action: 'update', id: job.id, data: { [field]: value } });
       return res.data.job;
     },
@@ -2557,17 +2571,35 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               )}
             </TabsContent>
 
-            {!isLogisticsJob && (
-              <TabsContent value="visit" className="space-y-3 mt-2">
-                {/* Feature Flag Notice */}
-                {visitsEnabled && (
-                  <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-3 mb-4">
-                    <div className="flex items-center gap-2 text-purple-700">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="text-sm font-semibold">Visit Model Enabled: Data sourced from Visit records</span>
+            {!isLogisticsJob && (() => {
+              // DRIFT DETECTOR: Warn if legacy sections render when they shouldn't
+              const shouldHide = shouldHideLegacySections(job);
+              const isV2Enabled = isJobV2Enabled(job);
+              const hasVisits = hasVisitExecution(job, activeVisits);
+              
+              // Check for drift: V2 enabled + should hide legacy BUT legacy sections still render
+              if (isV2Enabled && shouldHide && !visitsEnabled) {
+                warnJobV2Drift('Legacy sections rendered while V2 enabled', {
+                  jobId: job.id,
+                  visitCount: job.visit_count,
+                  jobModelVersion: job.job_model_version,
+                  hasActiveVisit: !!activeVisit,
+                  visitsEnabled,
+                  shouldHide
+                });
+              }
+              
+              return (
+                <TabsContent value="visit" className="space-y-3 mt-2">
+                  {/* Feature Flag Notice */}
+                  {visitsEnabled && (
+                    <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-3 mb-4">
+                      <div className="flex items-center gap-2 text-purple-700">
+                        <AlertCircle className="w-4 h-4" />
+                        <span className="text-sm font-semibold">Visit Model Enabled: Data sourced from Visit records</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Prior Job Summaries from Project */}
                 {priorProjectJobSummaries.length > 0 && (
