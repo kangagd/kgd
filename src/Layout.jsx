@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useQuery } from "@tanstack/react-query";
+import { forceUnlockBodyScroll } from "@/components/utils/scrollLockManager";
 import { 
     Calendar, 
     Briefcase, 
@@ -172,6 +173,9 @@ export default function Layout({ children, currentPageName }) {
   const touchStartX = useRef(0);
 
   useEffect(() => {
+    // Safety cleanup: ensure scroll is never locked on mount
+    forceUnlockBodyScroll();
+    
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
@@ -186,6 +190,30 @@ export default function Layout({ children, currentPageName }) {
       }
     };
     loadUser();
+
+    // Global scroll unlock guardrails
+    const handleWindowFocus = () => forceUnlockBodyScroll();
+    const handleVisibilityChange = () => {
+      if (!document.hidden) forceUnlockBodyScroll();
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') forceUnlockBodyScroll();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Dev-only debug access
+    if (import.meta?.env?.DEV) {
+      window.__kgdForceUnlockScroll = forceUnlockBodyScroll;
+    }
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // GUARDRAIL: Use React Query for active check-ins to ensure cache consistency
@@ -336,10 +364,19 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => { localStorage.setItem('moreMenuOpen', isMoreMenuOpen); }, [isMoreMenuOpen]);
 
   // Close mobile menu on route change or ESC key
-  useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
+  useEffect(() => { 
+    setIsMobileMenuOpen(false);
+    // Safety cleanup on route change
+    forceUnlockBodyScroll();
+  }, [location.pathname]);
   
   useEffect(() => {
-    const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+        forceUnlockBodyScroll();
+      }
+    };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
     }, [isMobileMenuOpen]);
@@ -444,10 +481,12 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = () => base44.auth.logout();
   const handleRefresh = () => window.location.reload();
 
+  const showEnvBanner = user?.role === 'admin' && (import.meta?.env?.MODE !== 'production');
+
   return (
     <PermissionsProvider>
-      <EnvironmentBanner />
-      <div className="min-h-screen flex bg-[#ffffff]">
+      {showEnvBanner && <EnvironmentBanner />}
+      <div className="h-screen flex overflow-hidden bg-[#ffffff]">
         <Toaster position="top-right" richColors closeButton />
 
         {/* Mobile Overlay - Handles both tech and admin mobile menus */}
@@ -757,9 +796,9 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#ffffff] relative w-full max-w-full overflow-x-hidden">
-          
-          {/* Tech Header */}
+        <div className="flex-1 min-h-0 flex flex-col min-w-0 bg-[#ffffff] relative w-full max-w-full overflow-hidden">
+
+           {/* Tech Header */}
           {isTechnician && (
              <header className="bg-white border-b border-[#E5E7EB] px-4 py-3 sticky top-0 z-50 shadow-sm safe-area-top">
                 <div className="flex flex-col gap-2 min-h-[44px]">
@@ -891,20 +930,23 @@ export default function Layout({ children, currentPageName }) {
              </div>
           )}
 
-          {/* Consolidated Main Wrapper */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative w-full max-w-full">
-            <XeroConnectionBanner />
-            <PullToRefresh onRefresh={handleRefresh}>
-              <div className="relative">
-                {activeCheckIn && (
-                  <ActiveCheckInBanner 
-                    checkIns={activeCheckIn}
-                  />
-                )}
-                {children}
-              </div>
-            </PullToRefresh>
-          </main>
+         {/* Consolidated Main Wrapper */}
+<main
+  id="app-scroll"
+  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-6 bg-[#ffffff] relative w-full max-w-full"
+  style={{ WebkitOverflowScrolling: "touch" }}
+>
+  <XeroConnectionBanner />
+
+  {/* PullToRefresh must NOT be a scroll container */}
+  <PullToRefresh onRefresh={handleRefresh} scrollContainerId="app-scroll">
+    <div className="relative">
+      {activeCheckIn && <ActiveCheckInBanner checkIns={activeCheckIn} />}
+      {children}
+    </div>
+  </PullToRefresh>
+</main>
+
 
           {/* Tech Test Mode Button */}
           {isTechnician && user && user.email === 'admin@kangaroogd.com.au' && (
