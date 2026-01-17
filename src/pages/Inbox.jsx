@@ -21,6 +21,7 @@ import InboxFilterBar from "@/components/inbox/InboxFilterBar";
 
 import EmailDetailView from "@/components/inbox/EmailDetailView";
 import LinkThreadModal from "@/components/inbox/LinkThreadModal";
+import CreateProjectFromEmailModal from "@/components/inbox/CreateProjectFromEmailModal";
 import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal";
 import DraftsList from "@/components/inbox/DraftsList";
 import UnifiedEmailComposer from "@/components/inbox/UnifiedEmailComposer";
