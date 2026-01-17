@@ -388,18 +388,34 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Created');
             }
         } else if (action === 'update') {
-             // GUARDRAIL: Verify job exists
-             if (!id) {
-                 return Response.json({ error: 'Job ID is required for update' }, { status: 400 });
-             }
+              // GUARDRAIL: Verify job exists
+              if (!id) {
+                  return Response.json({ error: 'Job ID is required for update' }, { status: 400 });
+              }
 
-             previousJob = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
-             if (!previousJob) {
-                 return Response.json({ error: 'Job not found' }, { status: 404 });
-             }
+              previousJob = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+              if (!previousJob) {
+                  return Response.json({ error: 'Job not found' }, { status: 404 });
+              }
 
-             // PERMISSION CHECK: Technicians can only update assigned jobs
-             enforceJobUpdatePermission(user, previousJob);
+              // PERMISSION CHECK: Technicians can only update assigned jobs
+              enforceJobUpdatePermission(user, previousJob);
+
+              // LOGISTICS JOB RULE: Logistics jobs do NOT require customer confirmation
+              // Detect if this is a logistics job
+              let isCurrentLogisticsJob = false;
+              if (previousJob.job_type_id) {
+                  try {
+                      const jobType = await base44.asServiceRole.entities.JobType.get(previousJob.job_type_id);
+                      isCurrentLogisticsJob = jobType?.is_logistics === true;
+                  } catch (e) {}
+              }
+              isCurrentLogisticsJob = isCurrentLogisticsJob || previousJob.is_logistics_job === true || previousJob.purchase_order_id || previousJob.vehicle_id || previousJob.third_party_trade_id;
+
+              // If this is a logistics job, force client_confirmed to true (skip requirement)
+              if (isCurrentLogisticsJob && data.hasOwnProperty('client_confirmed') === false) {
+                  data.client_confirmed = true;
+              }
 
              // CRITICAL GUARDRAIL: Apply job update rules (draft vs final completion)
              // Only admins can write completion fields; technicians/regular users are in draft mode
