@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { ArrowRight, AlertCircle } from 'lucide-react';
+import { getPhysicalAvailableLocations } from '@/components/utils/inventoryLocationUtils';
 
 export default function StockTransferModal({ open, onClose, item }) {
   const queryClient = useQueryClient();
@@ -27,12 +28,18 @@ export default function StockTransferModal({ open, onClose, item }) {
   const [quantity, setQuantity] = useState('');
   const [reason, setReason] = useState('');
 
-  const { data: locations = [] } = useQuery({
+  const { data: allLocations = [] } = useQuery({
     queryKey: ['inventoryLocations'],
     queryFn: () => base44.entities.InventoryLocation.filter({}, '-name'),
     staleTime: 60000,
     enabled: open
   });
+
+  // Only show physical available locations (warehouse + vehicles)
+  const locations = useMemo(() => 
+    getPhysicalAvailableLocations(allLocations),
+    [allLocations]
+  );
 
   const { data: quantities = [] } = useQuery({
     queryKey: ['inventoryQuantities'],

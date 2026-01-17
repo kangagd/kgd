@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { ArrowRight, Loader2, Package } from "lucide-react";
+import { getPhysicalAvailableLocations, normalizeLocationType } from "@/components/utils/inventoryLocationUtils";
 
 export default function MoveStockModal({ isOpen, onClose, item, onSuccess }) {
   const [locations, setLocations] = useState([]);
@@ -28,11 +29,13 @@ export default function MoveStockModal({ isOpen, onClose, item, onSuccess }) {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [locationsData, quantitiesData] = await Promise.all([
+      const [allLocations, quantitiesData] = await Promise.all([
         base44.entities.InventoryLocation.filter({ is_active: true }),
         base44.entities.InventoryQuantity.filter({ price_list_item_id: item.id })
       ]);
-      setLocations(locationsData);
+      // Only show physical available locations (warehouse + vehicles)
+      const physicalLocs = getPhysicalAvailableLocations(allLocations);
+      setLocations(physicalLocs);
       setQuantities(quantitiesData);
     } catch (error) {
       console.error('Failed to load data:', error);

@@ -61,14 +61,17 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Receive location not found' }, { status: 404 });
       }
     } else {
-      // Default to warehouse loading bay
-      const defaultLocation = await base44.asServiceRole.entities.InventoryLocation.filter({
-        type: 'loading_bay'
-      });
-      if (defaultLocation.length === 0) {
-        return Response.json({ error: 'No loading bay location configured' }, { status: 400 });
+      // Default to first active warehouse
+      const allLocations = await base44.asServiceRole.entities.InventoryLocation.filter({});
+      const warehouseLocs = allLocations.filter(loc => 
+        (loc.is_active !== false) && 
+        String(loc.type || '').toLowerCase() === 'warehouse'
+      );
+      
+      if (warehouseLocs.length === 0) {
+        return Response.json({ error: 'No active warehouse location configured' }, { status: 400 });
       }
-      receiveLocation = defaultLocation[0];
+      receiveLocation = warehouseLocs[0];
       receiveToLocationId = receiveLocation.id;
     }
 
