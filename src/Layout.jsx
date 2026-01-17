@@ -447,7 +447,7 @@ export default function Layout({ children, currentPageName }) {
   return (
     <PermissionsProvider>
       <EnvironmentBanner />
-      <div className="min-h-screen flex bg-[#ffffff]">
+      <div className="h-screen flex bg-[#ffffff] overflow-hidden">
         <Toaster position="top-right" richColors closeButton />
 
         {/* Mobile Overlay - Handles both tech and admin mobile menus */}
@@ -757,7 +757,7 @@ export default function Layout({ children, currentPageName }) {
         )}
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#ffffff] relative w-full max-w-full overflow-x-hidden">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 bg-[#ffffff] relative w-full max-w-full overflow-hidden">
           
           {/* Tech Header */}
           {isTechnician && (
@@ -892,18 +892,16 @@ export default function Layout({ children, currentPageName }) {
           )}
 
           {/* Consolidated Main Wrapper */}
-          <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative w-full max-w-full">
+          <main id="app-scroll" className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-24 bg-[#ffffff] relative w-full max-w-full">
             <XeroConnectionBanner />
-            <PullToRefresh onRefresh={handleRefresh}>
-              <div className="relative">
-                {activeCheckIn && (
-                  <ActiveCheckInBanner 
-                    checkIns={activeCheckIn}
-                  />
-                )}
-                {children}
-              </div>
-            </PullToRefresh>
+            <div className="relative">
+              {activeCheckIn && (
+                 <ActiveCheckInBanner 
+                   checkIns={activeCheckIn}
+                 />
+              )}
+              {children}
+            </div>
           </main>
 
           {/* Tech Test Mode Button */}

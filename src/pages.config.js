@@ -8,6 +8,7 @@ import EmailTemplates from './pages/EmailTemplates';
 import Fleet from './pages/Fleet';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
+import Jobs from './pages/Jobs';
 import Logistics from './pages/Logistics';
 import ModelHealth from './pages/ModelHealth';
 import MyVehicle from './pages/MyVehicle';
@@ -17,10 +18,12 @@ import OutstandingBalances from './pages/OutstandingBalances';
 import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
 import Photos from './pages/Photos';
 import PriceList from './pages/PriceList';
+import Projects from './pages/Projects';
 import PurchaseOrders from './pages/PurchaseOrders';
 import Reports from './pages/Reports';
 import RoleSettings from './pages/RoleSettings';
 import SamplesLibrary from './pages/SamplesLibrary';
+import Schedule from './pages/Schedule';
 import Suppliers from './pages/Suppliers';
 import SupplyLogistics from './pages/SupplyLogistics';
 import Tasks from './pages/Tasks';
@@ -28,9 +31,6 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
-import Jobs from './pages/Jobs';
-import Projects from './pages/Projects';
-import Schedule from './pages/Schedule';
 import __Layout from './Layout.jsx';
 
 
@@ -45,6 +45,7 @@ export const PAGES = {
     "Fleet": Fleet,
     "Home": Home,
     "Inbox": Inbox,
+    "Jobs": Jobs,
     "Logistics": Logistics,
     "ModelHealth": ModelHealth,
     "MyVehicle": MyVehicle,
@@ -54,10 +55,12 @@ export const PAGES = {
     "PartsHardwareAdmin": PartsHardwareAdmin,
     "Photos": Photos,
     "PriceList": PriceList,
+    "Projects": Projects,
     "PurchaseOrders": PurchaseOrders,
     "Reports": Reports,
     "RoleSettings": RoleSettings,
     "SamplesLibrary": SamplesLibrary,
+    "Schedule": Schedule,
     "Suppliers": Suppliers,
     "SupplyLogistics": SupplyLogistics,
     "Tasks": Tasks,
@@ -65,9 +68,6 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
-    "Jobs": Jobs,
-    "Projects": Projects,
-    "Schedule": Schedule,
 }
 
 export const pagesConfig = {
