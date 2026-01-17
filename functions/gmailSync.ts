@@ -165,10 +165,15 @@ Deno.serve(async (req) => {
         // Use Gmail's threadId to group messages into threads
         const gmailThreadId = detail.threadId;
         
-        // Check if thread already exists by Gmail thread ID
-        let existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
-          gmail_thread_id: gmailThreadId
-        });
+        // GUARDRAIL: For Wix enquiries, skip Gmail threadId matching - force separate Base44 thread per message
+        let existingThreads = [];
+        
+        if (!isWix) {
+          // Check if thread already exists by Gmail thread ID (only for non-Wix)
+          existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
+            gmail_thread_id: gmailThreadId
+          });
+        }
         
         // If no match, try In-Reply-To header (explicit reply reference)
         if (existingThreads.length === 0 && inReplyTo) {
