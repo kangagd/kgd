@@ -931,7 +931,7 @@ export default function Layout({ children, currentPageName }) {
           )}
 
           {/* Consolidated Main Wrapper */}
-           <main className="flex-1 overflow-y-auto overflow-x-hidden pb-6 bg-[#ffffff] relative w-full max-w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
+           <main className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-hidden pb-6 bg-[#ffffff] relative w-full max-w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
             <XeroConnectionBanner />
             <PullToRefresh onRefresh={handleRefresh}>
               <div className="relative">
