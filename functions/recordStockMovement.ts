@@ -107,25 +107,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create audit ledger entry (StockMovement) - new schema
+    // Create audit ledger entry (StockMovement) - canonical schema
     await base44.asServiceRole.entities.StockMovement.create({
-      sku_id: priceListItemId,
+      price_list_item_id: priceListItemId,
       item_name: item.item,
       quantity: quantity,
       from_location_id: fromLocationId,
       from_location_name: fromLocation?.name || null,
       to_location_id: toLocationId,
       to_location_name: toLocation?.name || null,
-      performed_by_user_id: user.id,
       performed_by_user_email: user.email,
-      performed_by_user_name: user.full_name || user.display_name,
+      performed_by_user_name: user.full_name || user.display_name || user.email,
       performed_at: new Date().toISOString(),
       source: movementType,
-      notes: notes || null,
-      job_id: jobId,
-      project_id: projectId || null,
       reference_type: reference_type || null,
-      reference_id: reference_id || null
+      reference_id: reference_id || null,
+      notes: notes || null
     });
 
     return Response.json({
