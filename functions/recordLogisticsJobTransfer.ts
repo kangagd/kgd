@@ -1,0 +1,120 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (user?.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
+    const { job_id, source_location_id, destination_location_id, items, notes } = await req.json();
+
+    if (!job_id || !source_location_id || !destination_location_id || !items || items.length === 0) {
+      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Fetch job details
+    const job = await base44.asServiceRole.entities.Job.get(job_id);
+    if (!job) {
+      return Response.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    // Fetch locations
+    const sourceLocation = await base44.asServiceRole.entities.InventoryLocation.get(source_location_id);
+    const destLocation = await base44.asServiceRole.entities.InventoryLocation.get(destination_location_id);
+
+    if (!sourceLocation || !destLocation) {
+      return Response.json({ error: 'Location not found' }, { status: 404 });
+    }
+
+    // Process each item
+    let itemsTransferred = 0;
+    const batchId = `logistics_job_${job_id}_${Date.now()}`;
+    const stockMovementIds = [];
+
+    for (const item of items) {
+      const { price_list_item_id, quantity } = item;
+
+      // Validate source has stock
+      const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
+        price_list_item_id,
+        location_id: source_location_id
+      });
+
+      const currentQty = sourceQty[0]?.quantity || 0;
+      if (currentQty < quantity) {
+        return Response.json({
+          error: `Insufficient stock at ${sourceLocation.name}. Available: ${currentQty}, Requested: ${quantity}`
+        }, { status: 400 });
+      }
+
+      // Get item name
+      const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
+      const itemName = priceItem?.item || 'Unknown Item';
+
+      // Deduct from source
+      await base44.asServiceRole.entities.InventoryQuantity.update(sourceQty[0].id, {
+        quantity: currentQty - quantity
+      });
+
+      // Add to destination
+      const destQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
+        price_list_item_id,
+        location_id: destination_location_id
+      });
+
+      if (destQty[0]) {
+        await base44.asServiceRole.entities.InventoryQuantity.update(destQty[0].id, {
+          quantity: (destQty[0].quantity || 0) + quantity
+        });
+      } else {
+        await base44.asServiceRole.entities.InventoryQuantity.create({
+          price_list_item_id,
+          location_id: destination_location_id,
+          quantity: quantity,
+          item_name: itemName,
+          location_name: destLocation.name
+        });
+      }
+
+      // Create StockMovement record
+      const movement = await base44.asServiceRole.entities.StockMovement.create({
+        sku_id: price_list_item_id,
+        item_name: itemName,
+        quantity: quantity,
+        from_location_id: source_location_id,
+        from_location_name: sourceLocation.name,
+        to_location_id: destination_location_id,
+        to_location_name: destLocation.name,
+        performed_by_user_id: user.id,
+        performed_by_user_email: user.email,
+        performed_by_user_name: user.full_name || user.display_name,
+        performed_at: new Date().toISOString(),
+        source: 'logistics_job',
+        notes: notes ? `Job #${job.job_number}: ${notes}` : `Transferred via Logistics Job #${job.job_number}`
+      });
+
+      stockMovementIds.push(movement.id);
+      itemsTransferred++;
+    }
+
+    // Update job status
+    await base44.asServiceRole.entities.Job.update(job_id, {
+      stock_transfer_status: 'completed',
+      linked_stock_movement_batch_id: batchId
+    });
+
+    return Response.json({
+      success: true,
+      items_transferred: itemsTransferred,
+      batch_id: batchId,
+      stock_movement_ids: stockMovementIds,
+      message: `Transferred ${itemsTransferred} item(s) from ${sourceLocation.name} to ${destLocation.name}`
+    });
+  } catch (error) {
+    console.error('Record transfer error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
