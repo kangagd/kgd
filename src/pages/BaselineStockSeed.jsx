@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle2, Plus, Trash2, Loader2, Search } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Plus, Trash2, Loader2, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPhysicalAvailableLocations } from '@/components/utils/inventoryLocationUtils';
 
@@ -21,8 +21,11 @@ export default function BaselineStockSeed() {
   const [confirmChecked, setConfirmChecked] = useState(false);
   const [allowOverride, setAllowOverride] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
-  const [mode, setMode] = useState('exact'); // 'exact' | 'delta'
+  const [mode, setMode] = useState('exact');
   const [filterEmpty, setFilterEmpty] = useState(false);
+  const [skuSearch, setSkuSearch] = useState('');
+  const [expandedVehicles, setExpandedVehicles] = useState({});
+  const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const queryClient = useQueryClient();
 
   // Load user
@@ -73,12 +76,20 @@ export default function BaselineStockSeed() {
     return locations.filter(l => String(l.type || '').toLowerCase() === 'vehicle');
   }, [locations]);
 
-  // Fetch SKUs
+  // Fetch SKUs with name mapping
   const { data: skus = [] } = useQuery({
     queryKey: ['price-list-items-for-baseline'],
     queryFn: () => base44.entities.PriceListItem.list('item'),
     staleTime: 60000,
   });
+
+  const skuById = useMemo(() => {
+    const map = {};
+    skus.forEach(sku => {
+      map[sku.id] = sku.item;
+    });
+    return map;
+  }, [skus]);
 
   // Fetch current InventoryQuantity (new ledger only)
   const { data: currentQuantities = [] } = useQuery({
@@ -89,20 +100,22 @@ export default function BaselineStockSeed() {
 
   // Auto-populate seedRows from existing InventoryQuantities on load
   React.useEffect(() => {
-    if (currentQuantities.length > 0 && seedRows.length === 0) {
+    if (warehouseLocation && vehicleLocations.length > 0) {
       const bySkuMap = {};
 
       currentQuantities.forEach(qty => {
-        if (!bySkuMap[qty.price_list_item_id]) {
-          bySkuMap[qty.price_list_item_id] = {
-            price_list_item_id: qty.price_list_item_id,
-            item_name: qty.item_name || 'Unknown',
+        const skuId = qty.price_list_item_id;
+        if (!bySkuMap[skuId]) {
+          bySkuMap[skuId] = {
+            price_list_item_id: skuId,
+            item_name: skuById[skuId] || qty.item_name || 'Unknown',
             quantities: {}
           };
         }
-        bySkuMap[qty.price_list_item_id].quantities[qty.location_id] = {
-          current: qty.quantity || 0,
-          counted: qty.quantity || 0
+        const currentVal = qty.quantity ?? qty.qty ?? 0;
+        bySkuMap[skuId].quantities[qty.location_id] = {
+          current: currentVal,
+          counted: currentVal
         };
       });
 
@@ -119,8 +132,9 @@ export default function BaselineStockSeed() {
       });
 
       setSeedRows(Object.values(bySkuMap));
+      setIsLoadingInventory(false);
     }
-  }, [currentQuantities, warehouseLocation, vehicleLocations, seedRows.length]);
+  }, [currentQuantities, warehouseLocation, vehicleLocations, skuById]);
 
   // Filter displayed rows
   const displayedRows = useMemo(() => {
@@ -142,9 +156,8 @@ export default function BaselineStockSeed() {
   const hasExecuted = existingRuns.length > 0;
   const lastRun = existingRuns[existingRuns.length - 1];
 
-  // Add empty SKU row for new SKUs
+  // Add new SKU row for manual entry
   const addNewSkuRow = (sku) => {
-    // Check if already added
     if (seedRows.find(r => r.price_list_item_id === sku.id)) {
       toast.error('SKU already added');
       return;
@@ -156,7 +169,6 @@ export default function BaselineStockSeed() {
       quantities: {}
     };
 
-    // Initialize all locations with 0
     if (warehouseLocation) {
       newRow.quantities[warehouseLocation.id] = { current: 0, counted: 0 };
     }
@@ -165,6 +177,7 @@ export default function BaselineStockSeed() {
     });
 
     setSeedRows([...seedRows, newRow]);
+    setSkuSearch('');
   };
 
   // Update counted value
@@ -182,26 +195,42 @@ export default function BaselineStockSeed() {
     setSeedRows(seedRows.filter((_, i) => i !== rowIdx));
   };
 
-  // Execute seed
+  // Filter SKUs by search
+  const filteredSkus = useMemo(() => {
+    if (!skuSearch) return [];
+    return skus.filter(s =>
+      s.item?.toLowerCase().includes(skuSearch.toLowerCase()) ||
+      s.sku?.toLowerCase().includes(skuSearch.toLowerCase())
+    ).slice(0, 20);
+  }, [skus, skuSearch]);
+
+  // Build only changed entries for submission
   const seedMutation = useMutation({
     mutationFn: async () => {
-      const seedData = seedRows.map(row => ({
-        price_list_item_id: row.price_list_item_id,
-        item_name: row.item_name,
-        locations: Object.entries(row.quantities)
-          .map(([locId, qty]) => {
+      const changes = [];
+      
+      seedRows.forEach(row => {
+        Object.entries(row.quantities).forEach(([locId, qty]) => {
+          if (qty.current !== qty.counted) {
             const loc = locations.find(l => l.id === locId);
-            return {
+            changes.push({
+              price_list_item_id: row.price_list_item_id,
+              item_name: row.item_name,
               location_id: locId,
               location_name: loc?.name || 'Unknown',
               current: qty.current,
               counted: qty.counted
-            };
-          })
-      }));
+            });
+          }
+        });
+      });
+
+      if (changes.length === 0) {
+        throw new Error('No changes to apply');
+      }
 
       const response = await base44.functions.invoke('seedBaselineStock', {
-        seedData,
+        seedData: changes,
         allowRerun: hasExecuted && allowOverride,
         overrideReason: hasExecuted && allowOverride ? overrideReason : undefined
       });
@@ -212,17 +241,26 @@ export default function BaselineStockSeed() {
       return response.data;
     },
     onSuccess: (data) => {
+      // Comprehensive query invalidations
       queryClient.invalidateQueries({ queryKey: ['baseline-seed-runs'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-quantities-for-baseline'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-quantities'] });
-      queryClient.invalidateQueries({ queryKey: ['vehicleStock'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-by-location'] });
       queryClient.invalidateQueries({ queryKey: ['warehouse-inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['warehouse-inventory-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['my-vehicle-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['vehicle-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['price-list-items-for-baseline'] });
       queryClient.invalidateQueries({ queryKey: ['priceListItems'] });
+      queryClient.invalidateQueries({ queryKey: ['stock-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['last-movement'] });
 
-      toast.success('Baseline stock seeded successfully');
+      toast.success(`Baseline stock seeded successfully (${data.summary?.changesApplied || 0} changes)`);
       setSeedRows([]);
       setConfirmChecked(false);
       setAllowOverride(false);
       setOverrideReason('');
+      setSkuSearch('');
     },
     onError: (error) => {
       toast.error(error.message || 'Seeding failed');
@@ -338,6 +376,45 @@ export default function BaselineStockSeed() {
           </CardContent>
         </Card>
 
+        {/* SKU Search (if empty or adding new) */}
+        {(seedRows.length === 0 || true) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Add SKUs</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="sku-search">Search SKU</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    id="sku-search"
+                    placeholder="Item name or SKU..."
+                    value={skuSearch}
+                    onChange={(e) => setSkuSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {skuSearch && filteredSkus.length > 0 && (
+                <div className="border rounded-lg max-h-48 overflow-y-auto">
+                  {filteredSkus.map(sku => (
+                    <button
+                      key={sku.id}
+                      onClick={() => addNewSkuRow(sku)}
+                      className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b last:border-0 transition-colors"
+                    >
+                      <div className="font-medium text-sm text-gray-900">{sku.item}</div>
+                      {sku.sku && <div className="text-xs text-gray-500">SKU: {sku.sku}</div>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stocktake Table */}
         <Card>
           <CardHeader>
@@ -345,11 +422,108 @@ export default function BaselineStockSeed() {
             <p className="text-xs text-gray-500 mt-2">Edit counts as needed. Current values prefilled from inventory ledger.</p>
           </CardHeader>
           <CardContent>
-            {seedRows.length === 0 ? (
+            {isLoadingInventory ? (
               <p className="text-sm text-gray-500 italic">Loading existing inventory...</p>
+            ) : seedRows.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-500 mb-3">No inventory data loaded. Search and add SKUs above.</p>
+              </div>
             ) : displayedRows.length === 0 ? (
               <p className="text-sm text-gray-500 italic">All rows are empty. Uncheck "Hide empty rows" to see all.</p>
+            ) : vehicleLocations.length > 5 ? (
+              /* Expandable vehicle view for large vehicle fleets */
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {displayedRows.map((row, idx) => {
+                  const actualIdx = seedRows.findIndex(r => r.price_list_item_id === row.price_list_item_id);
+                  const isExpanded = expandedVehicles[row.price_list_item_id];
+                  return (
+                    <div key={idx} className="p-3 border rounded-lg bg-gray-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="font-semibold text-sm text-gray-900 flex-1">{row.item_name}</div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeRow(actualIdx)}
+                          className="h-6 w-6 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+
+                      {/* Warehouse inline */}
+                      {warehouseLocation && (
+                        <div className="grid grid-cols-12 gap-2 items-center text-xs bg-white p-2 rounded">
+                          <div className="col-span-4 font-medium text-gray-700">{warehouseLocation.name}</div>
+                          <div className="col-span-2 text-gray-600">
+                            <span className="text-xs">Cur: {row.quantities[warehouseLocation.id]?.current || 0}</span>
+                          </div>
+                          <div className="col-span-3">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={row.quantities[warehouseLocation.id]?.counted || 0}
+                              onChange={(e) => updateCounted(actualIdx, warehouseLocation.id, e.target.value)}
+                              placeholder="Cnt"
+                              className="h-6 text-xs text-center"
+                            />
+                          </div>
+                          <div className="col-span-3 text-gray-500 text-center">
+                            {row.quantities[warehouseLocation.id]?.current !== row.quantities[warehouseLocation.id]?.counted && (
+                              <span className="font-semibold text-orange-600">
+                                {(row.quantities[warehouseLocation.id]?.counted || 0) - (row.quantities[warehouseLocation.id]?.current || 0)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Vehicles expand toggle */}
+                      <button
+                        onClick={() => setExpandedVehicles({
+                          ...expandedVehicles,
+                          [row.price_list_item_id]: !isExpanded
+                        })}
+                        className="w-full flex items-center gap-2 px-2 py-1 text-xs text-gray-600 hover:bg-white rounded transition-colors"
+                      >
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        <span>Vehicles ({vehicleLocations.length})</span>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="space-y-1">
+                          {vehicleLocations.map(v => (
+                            <div key={v.id} className="grid grid-cols-12 gap-2 items-center text-xs bg-white p-2 rounded">
+                              <div className="col-span-4 font-medium text-gray-700 text-xs">{v.name}</div>
+                              <div className="col-span-2 text-gray-600">
+                                <span className="text-xs">Cur: {row.quantities[v.id]?.current || 0}</span>
+                              </div>
+                              <div className="col-span-3">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={row.quantities[v.id]?.counted || 0}
+                                  onChange={(e) => updateCounted(actualIdx, v.id, e.target.value)}
+                                  placeholder="Cnt"
+                                  className="h-6 text-xs text-center"
+                                />
+                              </div>
+                              <div className="col-span-3 text-gray-500 text-center">
+                                {row.quantities[v.id]?.current !== row.quantities[v.id]?.counted && (
+                                  <span className="font-semibold text-orange-600">
+                                    {(row.quantities[v.id]?.counted || 0) - (row.quantities[v.id]?.current || 0)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
+              /* Standard table for ≤5 vehicles */
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
@@ -358,13 +532,13 @@ export default function BaselineStockSeed() {
                       {warehouseLocation && (
                         <th className="text-center font-semibold text-gray-700 p-2">
                           <div>{warehouseLocation.name}</div>
-                          <div className="text-gray-500 font-normal">Current → Counted</div>
+                          <div className="text-gray-500 font-normal">Cur → Cnt</div>
                         </th>
                       )}
                       {vehicleLocations.map(v => (
                         <th key={v.id} className="text-center font-semibold text-gray-700 p-2">
                           <div>{v.name}</div>
-                          <div className="text-gray-500 font-normal">Current → Counted</div>
+                          <div className="text-gray-500 font-normal">Cur → Cnt</div>
                         </th>
                       ))}
                       <th className="text-center font-semibold text-gray-700 p-2 w-12"></th>
