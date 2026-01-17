@@ -804,6 +804,34 @@ export default function Projects() {
             queryClient.invalidateQueries({ queryKey: projectKeys.all });
           }}
         />
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E5E7EB]">
+          <div className="text-sm text-[#6B7280]">
+            Showing {(pageNum - 1) * pageSize + 1} – {Math.min(pageNum * pageSize, filteredProjects.length)} of {filteredProjects.length} projects
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setPageNum(Math.max(1, pageNum - 1))}
+              disabled={pageNum === 1}
+              className="h-9"
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-1 px-3 text-sm">
+              Page {pageNum} of {Math.ceil(filteredProjects.length / pageSize)}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setPageNum(pageNum + 1)}
+              disabled={pageNum >= Math.ceil(filteredProjects.length / pageSize)}
+              className="h-9"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
