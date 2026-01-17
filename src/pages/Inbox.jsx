@@ -893,6 +893,23 @@ export default function Inbox() {
         </div>
       </div>
 
+      {/* Create project from email modal */}
+      {selectedThread && (
+        <CreateProjectFromEmailModal
+          open={showCreateProjectModal}
+          onClose={() => {
+            setShowCreateProjectModal(false);
+            setSelectedMessageForProject(null);
+          }}
+          thread={selectedThread}
+          emailMessage={selectedMessageForProject}
+          onSuccess={(projectId) => {
+            refetchThreads();
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+          }}
+        />
+      )}
+
       {/* Link thread modal */}
       {selectedThread && (
         <LinkThreadModal
