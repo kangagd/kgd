@@ -10,12 +10,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Guard 2: Preview only
-    const functionsVersion = req.headers.get('Base44-Functions-Version');
-    if (functionsVersion !== 'preview') {
+    // Guard 2: Preview only (check origin URL for "preview" subdomain)
+    const originUrl = req.headers.get('origin') || req.headers.get('referer') || '';
+    const isPreview = originUrl.includes('preview-sandbox') || originUrl.includes('preview');
+    if (!isPreview) {
       return Response.json({ 
         error: 'Refusing to run outside preview environment',
-        received_version: functionsVersion 
+        origin: originUrl 
       }, { status: 400 });
     }
 
