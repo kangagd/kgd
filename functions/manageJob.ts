@@ -41,63 +41,137 @@ async function handleSamplePickupCompletion(base44, job) {
 
 // Helper: Create StockMovement records for completed logistics job
 async function createStockMovementsForLogisticsJob(base44, job, user) {
-    try {
-        // Fetch parts linked to this logistics job
-        const parts = await base44.asServiceRole.entities.Part.filter({
-            purchase_order_id: job.purchase_order_id
-        });
-
-        if (parts.length === 0) return;
-
-        // Determine movement based on logistics_purpose
-        let fromLocationId = null, fromVehicleId = null;
-        let toLocationId = null, toVehicleId = null;
-        let fromLocationName = null, toLocationName = null;
-
-        switch (job.logistics_purpose) {
-            case 'po_delivery_to_loading_bay':
-                toLocationName = 'Loading Bay';
-                break;
-            case 'move_to_storage':
-                fromLocationName = 'Loading Bay';
-                toLocationName = 'Warehouse Storage';
-                break;
-            case 'supplier_pickup':
-                toVehicleId = job.vehicle_id;
-                toLocationName = 'Vehicle';
-                break;
-            case 'material_pickup_for_install':
-                toVehicleId = job.vehicle_id;
-                toLocationName = 'Vehicle';
-                break;
-        }
-
-        // Create StockMovement for each part
-        for (const part of parts) {
-            await base44.asServiceRole.entities.StockMovement.create({
-                job_id: job.id,
-                project_id: job.project_id,
-                purchase_order_id: job.purchase_order_id,
-                part_id: part.id,
-                sku_id: part.price_list_item_id,
-                item_name: part.item_name,
-                quantity: part.quantity_required || 1,
-                from_location_id: fromLocationId,
-                from_location_name: fromLocationName,
-                from_vehicle_id: fromVehicleId,
-                to_location_id: toLocationId,
-                to_location_name: toLocationName,
-                to_vehicle_id: toVehicleId,
-                performed_by_user_id: user.id,
-                performed_by_user_email: user.email,
-                performed_by_user_name: user.full_name || user.display_name,
-                performed_at: new Date().toISOString(),
-                source: 'logistics_job_completion'
-            });
-        }
-    } catch (error) {
-        console.error('Error creating stock movements:', error);
+    // IDEMPOTENCY: Abort if StockMovement already exists for this job
+    const existingMovements = await base44.asServiceRole.entities.StockMovement.filter({
+        job_id: job.id,
+        source: 'logistics_job_completion'
+    });
+    if (existingMovements.length > 0) {
+        console.log(`[StockMovement] Job ${job.id} already has movements - skipping`);
+        return;
     }
+
+    // VALIDATION: Require logistics_purpose
+    if (!job.logistics_purpose) {
+        console.error(`[StockMovement] Job ${job.id} missing logistics_purpose - aborting`);
+        return;
+    }
+
+    // VALIDATION: Require origin OR destination
+    if (!job.origin_address && !job.destination_address) {
+        console.error(`[StockMovement] Job ${job.id} missing origin/destination - aborting`);
+        return;
+    }
+
+    // Fetch parts linked to this logistics job
+    const parts = await base44.asServiceRole.entities.Part.filter({
+        purchase_order_id: job.purchase_order_id
+    });
+
+    if (parts.length === 0) {
+        console.log(`[StockMovement] Job ${job.id} has no parts - skipping`);
+        return;
+    }
+
+    // DETERMINISTIC RULES: Map logistics_purpose → from/to
+    let fromLocationId = null, fromVehicleId = null, fromLocationName = null;
+    let toLocationId = null, toVehicleId = null, toLocationName = null;
+
+    // Fetch loading bay and storage locations
+    const locations = await base44.asServiceRole.entities.InventoryLocation.list();
+    const loadingBayLocation = locations.find(l => l.name === 'Loading Bay' || l.location_type === 'loading_bay');
+    const storageLocation = locations.find(l => l.name === 'Warehouse Storage' || l.location_type === 'warehouse');
+
+    switch (job.logistics_purpose) {
+        case 'supplier_pickup':
+            // Supplier → Vehicle
+            toVehicleId = job.vehicle_id;
+            if (!toVehicleId) {
+                console.error(`[StockMovement] supplier_pickup requires vehicle_id`);
+                return;
+            }
+            toLocationName = 'Vehicle';
+            break;
+
+        case 'po_delivery_to_loading_bay':
+            // Supplier → Loading Bay
+            toLocationId = loadingBayLocation?.id || null;
+            toLocationName = 'Loading Bay';
+            break;
+
+        case 'move_to_storage':
+            // Loading Bay → Storage
+            fromLocationId = loadingBayLocation?.id || null;
+            fromLocationName = 'Loading Bay';
+            toLocationId = storageLocation?.id || null;
+            toLocationName = 'Warehouse Storage';
+            break;
+
+        case 'material_pickup_for_install':
+            // Storage → Vehicle
+            fromLocationId = storageLocation?.id || null;
+            fromLocationName = 'Warehouse Storage';
+            toVehicleId = job.vehicle_id;
+            if (!toVehicleId) {
+                console.error(`[StockMovement] material_pickup_for_install requires vehicle_id`);
+                return;
+            }
+            toLocationName = 'Vehicle';
+            break;
+
+        case 'sample_dropoff':
+            // Storage → Client Site (external)
+            fromLocationId = storageLocation?.id || null;
+            fromLocationName = 'Warehouse Storage';
+            toLocationName = 'Client Site';
+            break;
+
+        case 'sample_pickup':
+            // Client Site → Storage
+            fromLocationName = 'Client Site';
+            toLocationId = storageLocation?.id || null;
+            toLocationName = 'Warehouse Storage';
+            break;
+
+        default:
+            console.error(`[StockMovement] Unknown logistics_purpose: ${job.logistics_purpose}`);
+            return;
+    }
+
+    // Create StockMovement for each part
+    for (const part of parts) {
+        const quantity = part.quantity_required || 1;
+        
+        // VALIDATION: Quantity must be > 0
+        if (quantity <= 0) {
+            console.error(`[StockMovement] Invalid quantity for part ${part.id}`);
+            continue;
+        }
+
+        await base44.asServiceRole.entities.StockMovement.create({
+            job_id: job.id,
+            project_id: job.project_id,
+            purchase_order_id: job.purchase_order_id,
+            part_id: part.id,
+            sku_id: part.price_list_item_id,
+            item_name: part.item_name || 'Unknown Item',
+            quantity,
+            from_location_id: fromLocationId,
+            from_location_name: fromLocationName,
+            from_vehicle_id: fromVehicleId,
+            to_location_id: toLocationId,
+            to_location_name: toLocationName,
+            to_vehicle_id: toVehicleId,
+            performed_by_user_id: user.id,
+            performed_by_user_email: user.email,
+            performed_by_user_name: user.full_name || user.display_name,
+            performed_at: new Date().toISOString(),
+            source: 'logistics_job_completion',
+            notes: `Logistics job: ${job.logistics_purpose}`
+        });
+    }
+
+    console.log(`[StockMovement] Created ${parts.length} movement(s) for job ${job.id}`);
 }
 
 // Helper: Handle logistics job completion - update PO and Parts based on outcome
