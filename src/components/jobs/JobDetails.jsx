@@ -2571,35 +2571,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               )}
             </TabsContent>
 
-            {!isLogisticsJob && (() => {
-              // DRIFT DETECTOR: Warn if legacy sections render when they shouldn't
-              const shouldHide = shouldHideLegacySections(job);
-              const isV2Enabled = isJobV2Enabled(job);
-              const hasVisits = hasVisitExecution(job, activeVisits);
-              
-              // Check for drift: V2 enabled + should hide legacy BUT legacy sections still render
-              if (isV2Enabled && shouldHide && !visitsEnabled) {
-                warnJobV2Drift('Legacy sections rendered while V2 enabled', {
-                  jobId: job.id,
-                  visitCount: job.visit_count,
-                  jobModelVersion: job.job_model_version,
-                  hasActiveVisit: !!activeVisit,
-                  visitsEnabled,
-                  shouldHide
-                });
-              }
-              
-              return (
-                <TabsContent value="visit" className="space-y-3 mt-2">
-                  {/* Feature Flag Notice */}
-                  {visitsEnabled && (
-                    <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-3 mb-4">
-                      <div className="flex items-center gap-2 text-purple-700">
-                        <AlertCircle className="w-4 h-4" />
-                        <span className="text-sm font-semibold">Visit Model Enabled: Data sourced from Visit records</span>
-                      </div>
+            {!isLogisticsJob && (
+              <TabsContent value="visit" className="space-y-3 mt-2">
+                {/* Feature Flag Notice */}
+                {visitsEnabled && (
+                  <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-3 mb-4">
+                    <div className="flex items-center gap-2 text-purple-700">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Visit Model Enabled: Data sourced from Visit records</span>
                     </div>
-                  )}
+                  </div>
+                )}
 
                 {/* Prior Job Summaries from Project */}
                 {priorProjectJobSummaries.length > 0 && (
