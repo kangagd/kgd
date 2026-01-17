@@ -147,9 +147,31 @@ Deno.serve(async (req) => {
             // Non-critical, don't fail the check-in
         }
 
-        // 6.5. Ensure active Visit exists (silent background creation)
+        // 6.5. Ensure active Visit exists and check technician in (silent background creation)
         try {
-            await base44.asServiceRole.functions.invoke('ensureActiveVisit', { job_id: jobId });
+            const { data: visitResult } = await base44.asServiceRole.functions.invoke('ensureActiveVisit', { job_id: jobId });
+            
+            if (visitResult?.visit) {
+                const visit = visitResult.visit;
+                
+                // Check if already checked in to this visit
+                const alreadyCheckedIn = (visit.checked_in_technicians || []).includes(user.email);
+                
+                if (!alreadyCheckedIn) {
+                    const checkInEvent = {
+                        technician_email: user.email,
+                        technician_name: user.display_name || user.full_name || user.email,
+                        checked_in_at: checkInTime,
+                        checked_out_at: null
+                    };
+                    
+                    await base44.asServiceRole.entities.Visit.update(visit.id, {
+                        checked_in_technicians: [...(visit.checked_in_technicians || []), user.email],
+                        checked_in_names: [...(visit.checked_in_names || []), user.display_name || user.full_name || user.email],
+                        check_in_events: [...(visit.check_in_events || []), checkInEvent]
+                    });
+                }
+            }
         } catch (e) {
             console.error("Failed to ensure active visit (non-critical):", e);
             // Don't block check-in if this fails
