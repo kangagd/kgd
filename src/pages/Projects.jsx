@@ -647,7 +647,7 @@ export default function Projects() {
         )}
 
         <div className="grid gap-4">
-          {filteredProjects.map((project) => {
+          {filteredProjects.slice((pageNum - 1) * pageSize, pageNum * pageSize).map((project) => {
             const jobCount = getJobCount(project.id);
             const nextJob = getNextJob(project.id);
             const suburb = extractSuburb(project.address);
