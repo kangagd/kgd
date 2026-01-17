@@ -34,6 +34,7 @@ import { getNormalizedPartStatus, PART_STATUS } from "../domain/partConfig";
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
 import JobVisitSummary from "./JobVisitSummary";
+import LogisticsJobTransferSection from "../logistics/LogisticsJobTransferSection";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
