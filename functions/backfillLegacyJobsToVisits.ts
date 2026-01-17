@@ -191,20 +191,56 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Missing Job or Visit entity" }, { status: 500 });
     }
 
-    // Load candidate jobs
-    let jobs = [];
-    if (Array.isArray(jobIds) && jobIds.length) {
-      for (const id of jobIds.slice(0, limit)) {
-        const j = await Job.get(id).catch(() => null);
-        if (j && !j.deleted_at) jobs.push(j);
-      }
-    } else {
-      const filterObj = {
-        deleted_at: { $exists: false },
-        ...(onlyCompleted ? { status: "Completed" } : {}),
-      };
-      jobs = (await listAll(Job, filterObj)).slice(0, limit);
+    // Load candidate jobs (robust against Base44 filter quirks)
+let jobs = [];
+
+const normaliseStatus = (s) => (s || "").toString().trim().toLowerCase();
+const isCompletedStatus = (s) => {
+  const v = normaliseStatus(s);
+  return v === "completed" || v === "complete" || v === "done" || v === "paid"; // conservative aliases
+};
+
+const isNotDeleted = (j) => !j?.deleted_at; // works if null/undefined/empty
+
+if (Array.isArray(jobIds) && jobIds.length) {
+  for (const id of jobIds.slice(0, limit)) {
+    const j = await Job.get(id).catch(() => null);
+    if (j && isNotDeleted(j)) jobs.push(j);
+  }
+} else {
+  // Try server-side filter first (best)
+  let serverJobs = [];
+  try {
+    // Avoid $exists: false (often unreliable). Prefer null/empty check.
+    serverJobs = await listAll(Job, { deleted_at: null });
+  } catch (e1) {
+    try {
+      // Some backends treat undefined same as null
+      serverJobs = await listAll(Job, {});
+    } catch (e2) {
+      serverJobs = [];
     }
+  }
+
+  // If server-side produced nothing, fall back to list() and filter client-side
+  if (!serverJobs || serverJobs.length === 0) {
+    const res = await Job.list().catch(() => []);
+    serverJobs = normaliseRecords(res);
+  }
+
+  // Enforce not-deleted + completed (optional)
+  jobs = serverJobs.filter(j => isNotDeleted(j));
+  if (onlyCompleted) jobs = jobs.filter(j => isCompletedStatus(j.status));
+
+  jobs = jobs.slice(0, limit);
+}
+
+// Add debug
+report.debug = report.debug || {};
+report.debug.onlyCompleted = onlyCompleted;
+report.debug.limit = limit;
+report.debug.total_jobs_after_filters = jobs.length;
+
 
     // Group visits by job
     const visits = await listAll(Visit, { deleted_at: { $exists: false } }).catch(() => []);
