@@ -31,14 +31,14 @@ Deno.serve(async (req) => {
     // ============================================
     // 1. CREATE WAREHOUSE LOCATION
     // ============================================
-    const warehouseLocations = await base44.asServiceRole.entities.InventoryLocation.filter({
+    const warehouseLocations = await base44.entities.InventoryLocation.filter({
       type: 'warehouse',
       name: 'Main Warehouse (Waterloo)'
     });
 
     let warehouseLocation;
     if (warehouseLocations.length === 0) {
-      warehouseLocation = await base44.asServiceRole.entities.InventoryLocation.create({
+      warehouseLocation = await base44.entities.InventoryLocation.create({
         type: 'warehouse',
         name: 'Main Warehouse (Waterloo)',
         is_active: true
@@ -63,10 +63,10 @@ Deno.serve(async (req) => {
 
     for (const name of vehicleNames) {
       // Find or create vehicle
-      const existingVehicles = await base44.asServiceRole.entities.Vehicle.filter({ name });
+      const existingVehicles = await base44.entities.Vehicle.filter({ name });
       let vehicle;
       if (existingVehicles.length === 0) {
-        vehicle = await base44.asServiceRole.entities.Vehicle.create({ name });
+        vehicle = await base44.entities.Vehicle.create({ name });
         result.created.vehicles += 1;
       } else {
         vehicle = existingVehicles[0];
@@ -75,13 +75,13 @@ Deno.serve(async (req) => {
       vehicleIds.push(vehicle.id);
 
       // Find or create vehicle location
-      const existingVehicleLocations = await base44.asServiceRole.entities.InventoryLocation.filter({
+      const existingVehicleLocations = await base44.entities.InventoryLocation.filter({
         type: 'vehicle',
         vehicle_id: vehicle.id
       });
       let vehicleLocation;
       if (existingVehicleLocations.length === 0) {
-        vehicleLocation = await base44.asServiceRole.entities.InventoryLocation.create({
+        vehicleLocation = await base44.entities.InventoryLocation.create({
           type: 'vehicle',
           vehicle_id: vehicle.id,
           name: `${name} (Vehicle Stock)`,
