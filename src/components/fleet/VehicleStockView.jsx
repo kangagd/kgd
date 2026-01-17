@@ -9,58 +9,62 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
 export default function VehicleStockView({ vehicleId }) {
-  // Fetch all stock movements for this vehicle
-  const { data: movements = [], isLoading } = useQuery({
-    queryKey: ['stockMovements', vehicleId],
-    queryFn: async () => {
-      const allMovements = await base44.entities.StockMovement.list();
-      return allMovements.filter(m => 
-        m.to_vehicle_id === vehicleId || m.from_vehicle_id === vehicleId
-      );
-    }
-  });
+   // Fetch vehicle's InventoryLocation
+   const { data: vehicleLocation, isLoading: isLocationLoading } = useQuery({
+     queryKey: ['vehicleLocation', vehicleId],
+     queryFn: async () => {
+       const locations = await base44.entities.InventoryLocation.filter({
+         type: 'vehicle',
+         vehicle_id: vehicleId
+       });
+       return locations[0] || null;
+     },
+     enabled: !!vehicleId
+   });
 
-  // Compute current stock by SKU
-  const stockByItem = useMemo(() => {
-    const items = new Map();
+   // Fetch inventory quantities for this vehicle location
+   const { data: quantities = [], isLoading: isQuantitiesLoading } = useQuery({
+     queryKey: ['vehicleInventoryQuantities', vehicleLocation?.id],
+     queryFn: async () => {
+       if (!vehicleLocation?.id) return [];
+       const qty = await base44.entities.InventoryQuantity.filter({
+         location_id: vehicleLocation.id
+       });
+       return qty;
+     },
+     enabled: !!vehicleLocation?.id
+   });
 
-    for (const movement of movements) {
-      const key = movement.sku_id || movement.part_id || movement.item_name;
-      if (!key) continue;
+   // Fetch price list items to get names and details
+   const { data: priceListItems = [] } = useQuery({
+     queryKey: ['priceListItems'],
+     queryFn: () => base44.entities.PriceListItem.list('item')
+   });
 
-      if (!items.has(key)) {
-        items.set(key, {
-          sku_id: movement.sku_id,
-          part_id: movement.part_id,
-          item_name: movement.item_name,
-          quantity: 0,
-          lastMovement: null,
-          lastJob: null
-        });
-      }
+   const itemMap = useMemo(() => {
+     return priceListItems.reduce((acc, item) => {
+       acc[item.id] = item;
+       return acc;
+     }, {});
+   }, [priceListItems]);
 
-      const item = items.get(key);
+   // Transform InventoryQuantity to stock view
+   const stockByItem = useMemo(() => {
+     return quantities
+       .map(q => {
+         const item = itemMap[q.price_list_item_id];
+         return {
+           id: q.id,
+           price_list_item_id: q.price_list_item_id,
+           item_name: q.item_name || item?.item || 'Unknown Item',
+           quantity: Number(q.quantity ?? q.qty ?? 0),
+           category: item?.category || 'Stock'
+         };
+       })
+       .filter(item => item.quantity > 0);
+   }, [quantities, itemMap]);
 
-      // Add if moving TO this vehicle
-      if (movement.to_vehicle_id === vehicleId) {
-        item.quantity += movement.quantity;
-      }
-
-      // Subtract if moving FROM this vehicle
-      if (movement.from_vehicle_id === vehicleId) {
-        item.quantity -= movement.quantity;
-      }
-
-      // Track last movement
-      if (!item.lastMovement || new Date(movement.performed_at) > new Date(item.lastMovement)) {
-        item.lastMovement = movement.performed_at;
-        item.lastJob = movement.job_id;
-      }
-    }
-
-    // Filter out items with zero quantity
-    return Array.from(items.values()).filter(item => item.quantity > 0);
-  }, [movements, vehicleId]);
+   const isLoading = isLocationLoading || isQuantitiesLoading;
 
   if (isLoading) {
     return (
@@ -70,21 +74,39 @@ export default function VehicleStockView({ vehicleId }) {
     );
   }
 
+  if (!vehicleLocation && !isLocationLoading) {
+     return (
+       <Card className="border-red-200 bg-red-50">
+         <CardContent className="pt-6">
+           <div className="flex items-start gap-3">
+             <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+             <div>
+               <h3 className="font-semibold text-red-900 mb-1">Vehicle Inventory Location Missing</h3>
+               <p className="text-sm text-red-700">
+                 This vehicle doesn't have an InventoryLocation configured. Run the 'Ensure Vehicle Locations' admin tool to fix this.
+               </p>
+             </div>
+           </div>
+         </CardContent>
+       </Card>
+     );
+   }
+
   if (stockByItem.length === 0) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Package className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Stock in Vehicle</h3>
-            <p className="text-sm text-muted-foreground max-w-md">
-              This vehicle has no current stock. Stock will appear here when logistics jobs move items into this vehicle.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+     return (
+       <Card>
+         <CardContent className="pt-6">
+           <div className="flex flex-col items-center justify-center py-12 text-center">
+             <Package className="w-12 h-12 text-muted-foreground mb-4" />
+             <h3 className="text-lg font-semibold mb-2">No Stock in Vehicle</h3>
+             <p className="text-sm text-muted-foreground max-w-md">
+               This vehicle has no current stock. Stock will appear here when items are transferred from the warehouse into this vehicle.
+             </p>
+           </div>
+         </CardContent>
+       </Card>
+     );
+   }
 
   return (
     <div className="space-y-4">
