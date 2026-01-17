@@ -22,8 +22,7 @@ export default function BaselineStockSeed() {
   const [allowOverride, setAllowOverride] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
   const [mode, setMode] = useState('exact'); // 'exact' | 'delta'
-  const [skuSearch, setSkuSearch] = useState('');
-  const [selectedSku, setSelectedSku] = useState(null);
+  const [filterEmpty, setFilterEmpty] = useState(false);
   const queryClient = useQueryClient();
 
   // Load user
@@ -88,14 +87,50 @@ export default function BaselineStockSeed() {
     staleTime: 30000,
   });
 
-  // Filter SKUs by search
-  const filteredSkus = useMemo(() => {
-    if (!skuSearch) return skus.slice(0, 20);
-    return skus.filter(s =>
-      s.item?.toLowerCase().includes(skuSearch.toLowerCase()) ||
-      s.sku?.toLowerCase().includes(skuSearch.toLowerCase())
-    ).slice(0, 20);
-  }, [skus, skuSearch]);
+  // Auto-populate seedRows from existing InventoryQuantities on load
+  React.useEffect(() => {
+    if (currentQuantities.length > 0 && seedRows.length === 0) {
+      const bySkuMap = {};
+
+      currentQuantities.forEach(qty => {
+        if (!bySkuMap[qty.price_list_item_id]) {
+          bySkuMap[qty.price_list_item_id] = {
+            price_list_item_id: qty.price_list_item_id,
+            item_name: qty.item_name || 'Unknown',
+            quantities: {}
+          };
+        }
+        bySkuMap[qty.price_list_item_id].quantities[qty.location_id] = {
+          current: qty.quantity || 0,
+          counted: qty.quantity || 0
+        };
+      });
+
+      // Initialize empty locations for each SKU
+      Object.values(bySkuMap).forEach(row => {
+        if (warehouseLocation && !row.quantities[warehouseLocation.id]) {
+          row.quantities[warehouseLocation.id] = { current: 0, counted: 0 };
+        }
+        vehicleLocations.forEach(v => {
+          if (!row.quantities[v.id]) {
+            row.quantities[v.id] = { current: 0, counted: 0 };
+          }
+        });
+      });
+
+      setSeedRows(Object.values(bySkuMap));
+    }
+  }, [currentQuantities, warehouseLocation, vehicleLocations, seedRows.length]);
+
+  // Filter displayed rows
+  const displayedRows = useMemo(() => {
+    if (filterEmpty) {
+      return seedRows.filter(row =>
+        Object.values(row.quantities).some(q => q.counted > 0)
+      );
+    }
+    return seedRows;
+  }, [seedRows, filterEmpty]);
 
   // Check if baseline already executed
   const { data: existingRuns = [] } = useQuery({
@@ -107,38 +142,29 @@ export default function BaselineStockSeed() {
   const hasExecuted = existingRuns.length > 0;
   const lastRun = existingRuns[existingRuns.length - 1];
 
-  // Add SKU row with prefilled current values from InventoryQuantity
-  const addSkuRow = (sku) => {
+  // Add empty SKU row for new SKUs
+  const addNewSkuRow = (sku) => {
+    // Check if already added
+    if (seedRows.find(r => r.price_list_item_id === sku.id)) {
+      toast.error('SKU already added');
+      return;
+    }
+
     const newRow = {
       price_list_item_id: sku.id,
       item_name: sku.item,
       quantities: {}
     };
 
-    // Prefill all locations with current InventoryQuantity values
+    // Initialize all locations with 0
     if (warehouseLocation) {
-      const current = currentQuantities.find(
-        q => q.price_list_item_id === sku.id && q.location_id === warehouseLocation.id
-      );
-      newRow.quantities[warehouseLocation.id] = {
-        current: current?.quantity || 0,
-        counted: current?.quantity || 0
-      };
+      newRow.quantities[warehouseLocation.id] = { current: 0, counted: 0 };
     }
-
     vehicleLocations.forEach(v => {
-      const current = currentQuantities.find(
-        q => q.price_list_item_id === sku.id && q.location_id === v.id
-      );
-      newRow.quantities[v.id] = {
-        current: current?.quantity || 0,
-        counted: current?.quantity || 0
-      };
+      newRow.quantities[v.id] = { current: 0, counted: 0 };
     });
 
     setSeedRows([...seedRows, newRow]);
-    setSelectedSku(null);
-    setSkuSearch('');
   };
 
   // Update counted value
@@ -269,192 +295,144 @@ export default function BaselineStockSeed() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Locations Summary */}
+      <div className="space-y-4">
+        {/* Summary Card */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Locations</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {warehouseLocation && (
-              <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                <div className="font-semibold text-sm text-blue-900">
-                  📦 {warehouseLocation.name}
-                </div>
-                <div className="text-xs text-blue-700 mt-1">Primary Warehouse</div>
-              </div>
-            )}
+          <CardContent className="p-4 flex items-center justify-between text-sm">
             <div>
-              <div className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                Vehicles ({vehicleLocations.length})
-              </div>
-              <div className="space-y-1">
-                {vehicleLocations.map(v => (
-                  <div key={v.id} className="text-sm text-gray-700 px-2 py-1 bg-gray-50 rounded border border-gray-200">
-                    🚗 {v.name}
-                  </div>
-                ))}
-              </div>
+              <span className="font-semibold text-gray-900">{displayedRows.length}</span>
+              <span className="text-gray-600 ml-1">SKUs loaded</span>
             </div>
+            {seedRows.length > 0 && (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  id="filter-empty"
+                  checked={filterEmpty}
+                  onCheckedChange={setFilterEmpty}
+                />
+                <span className="text-gray-700">Hide empty rows</span>
+              </label>
+            )}
           </CardContent>
         </Card>
 
-        {/* SKU Entry + Table */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Mode Selector */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Mode</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="radio"
-                  value="exact"
-                  checked={mode === 'exact'}
-                  onChange={(e) => setMode(e.target.value)}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-gray-700">
-                  <strong>Set Exact Counts (Baseline)</strong>
-                  <div className="text-xs text-gray-500">Replace current values with stocktake counts</div>
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer opacity-50">
-                <input
-                  type="radio"
-                  value="delta"
-                  checked={mode === 'delta'}
-                  onChange={(e) => setMode(e.target.value)}
-                  disabled
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-gray-700">
-                  <strong>Adjust by Delta</strong>
-                  <div className="text-xs text-gray-500">Coming soon</div>
-                </span>
-              </label>
-            </CardContent>
-          </Card>
+        {/* Mode Selector */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Mode</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="radio"
+                value="exact"
+                checked={mode === 'exact'}
+                onChange={(e) => setMode(e.target.value)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-gray-700">
+                <strong>Set Exact Counts (Baseline)</strong>
+                <div className="text-xs text-gray-500">Replace current values with stocktake counts</div>
+              </span>
+            </label>
+          </CardContent>
+        </Card>
 
-          {/* SKU Search & Add */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Add SKUs</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="sku-search">Search SKU</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    id="sku-search"
-                    placeholder="Item name or SKU..."
-                    value={skuSearch}
-                    onChange={(e) => setSkuSearch(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
+        {/* Stocktake Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Stocktake Data</CardTitle>
+            <p className="text-xs text-gray-500 mt-2">Edit counts as needed. Current values prefilled from inventory ledger.</p>
+          </CardHeader>
+          <CardContent>
+            {seedRows.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">Loading existing inventory...</p>
+            ) : displayedRows.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">All rows are empty. Uncheck "Hide empty rows" to see all.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-300 bg-gray-50">
+                      <th className="text-left font-semibold text-gray-700 p-2">SKU / Item</th>
+                      {warehouseLocation && (
+                        <th className="text-center font-semibold text-gray-700 p-2">
+                          <div>{warehouseLocation.name}</div>
+                          <div className="text-gray-500 font-normal">Current → Counted</div>
+                        </th>
+                      )}
+                      {vehicleLocations.map(v => (
+                        <th key={v.id} className="text-center font-semibold text-gray-700 p-2">
+                          <div>{v.name}</div>
+                          <div className="text-gray-500 font-normal">Current → Counted</div>
+                        </th>
+                      ))}
+                      <th className="text-center font-semibold text-gray-700 p-2 w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedRows.map((row, idx) => {
+                      const actualIdx = seedRows.findIndex(r => r.price_list_item_id === row.price_list_item_id);
+                      return (
+                        <tr key={idx} className="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+                          <td className="p-2 text-gray-900 font-medium">{row.item_name}</td>
+                          {warehouseLocation && (
+                            <td className="p-2">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-gray-600">{row.quantities[warehouseLocation.id]?.current || 0}</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={row.quantities[warehouseLocation.id]?.counted || 0}
+                                  onChange={(e) => updateCounted(actualIdx, warehouseLocation.id, e.target.value)}
+                                  className="w-12 h-7 text-center text-sm"
+                                />
+                                {row.quantities[warehouseLocation.id]?.current !== row.quantities[warehouseLocation.id]?.counted && (
+                                  <span className="text-orange-600 font-semibold">
+                                    {(row.quantities[warehouseLocation.id]?.counted || 0) - (row.quantities[warehouseLocation.id]?.current || 0)}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                          {vehicleLocations.map(v => (
+                            <td key={v.id} className="p-2">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-gray-600">{row.quantities[v.id]?.current || 0}</span>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={row.quantities[v.id]?.counted || 0}
+                                  onChange={(e) => updateCounted(actualIdx, v.id, e.target.value)}
+                                  className="w-12 h-7 text-center text-sm"
+                                />
+                                {row.quantities[v.id]?.current !== row.quantities[v.id]?.counted && (
+                                  <span className="text-orange-600 font-semibold">
+                                    {(row.quantities[v.id]?.counted || 0) - (row.quantities[v.id]?.current || 0)}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          ))}
+                          <td className="p-2 text-center">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => removeRow(actualIdx)}
+                              className="h-6 w-6 text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-
-              {skuSearch && filteredSkus.length > 0 && (
-                <div className="border rounded-lg max-h-48 overflow-y-auto">
-                  {filteredSkus.map(sku => (
-                    <button
-                      key={sku.id}
-                      onClick={() => addSkuRow(sku)}
-                      className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b last:border-0 transition-colors"
-                    >
-                      <div className="font-medium text-sm text-gray-900">{sku.item}</div>
-                      {sku.sku && <div className="text-xs text-gray-500">SKU: {sku.sku}</div>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Seed Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Stocktake Data</CardTitle>
-              <p className="text-xs text-gray-500 mt-2">Current values prefilled from inventory ledger</p>
-            </CardHeader>
-            <CardContent>
-              {seedRows.length === 0 ? (
-                <p className="text-sm text-gray-500 italic">No SKUs added yet. Search and select above.</p>
-              ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {seedRows.map((row, idx) => (
-                    <div key={idx} className="p-3 border rounded-lg bg-gray-50 space-y-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="font-semibold text-sm text-gray-900">{row.item_name}</div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => removeRow(idx)}
-                          className="h-8 w-8 text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="grid gap-3">
-                        {warehouseLocation && (
-                          <div className="grid grid-cols-12 gap-2 items-center text-xs">
-                            <div className="col-span-3 font-medium text-gray-700">{warehouseLocation.name}</div>
-                            <div className="col-span-2 text-gray-600">
-                              Current: <span className="font-semibold">{row.quantities[warehouseLocation.id]?.current || 0}</span>
-                            </div>
-                            <div className="col-span-3">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={row.quantities[warehouseLocation.id]?.counted || 0}
-                                onChange={(e) => updateCounted(idx, warehouseLocation.id, e.target.value)}
-                                placeholder="Counted"
-                                className="h-7 text-sm"
-                              />
-                            </div>
-                            <div className="col-span-4 text-gray-500">
-                              Δ: <span className={row.quantities[warehouseLocation.id]?.counted !== row.quantities[warehouseLocation.id]?.current ? 'font-semibold text-orange-600' : ''}>
-                                {(row.quantities[warehouseLocation.id]?.counted || 0) - (row.quantities[warehouseLocation.id]?.current || 0)}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-
-                        {vehicleLocations.map(v => (
-                          <div key={v.id} className="grid grid-cols-12 gap-2 items-center text-xs">
-                            <div className="col-span-3 font-medium text-gray-700">{v.name}</div>
-                            <div className="col-span-2 text-gray-600">
-                              Current: <span className="font-semibold">{row.quantities[v.id]?.current || 0}</span>
-                            </div>
-                            <div className="col-span-3">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={row.quantities[v.id]?.counted || 0}
-                                onChange={(e) => updateCounted(idx, v.id, e.target.value)}
-                                placeholder="Counted"
-                                className="h-7 text-sm"
-                              />
-                            </div>
-                            <div className="col-span-4 text-gray-500">
-                              Δ: <span className={row.quantities[v.id]?.counted !== row.quantities[v.id]?.current ? 'font-semibold text-orange-600' : ''}>
-                                {(row.quantities[v.id]?.counted || 0) - (row.quantities[v.id]?.current || 0)}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Confirmation & Submit */}
