@@ -14,12 +14,14 @@ import { v4 as uuidv4 } from 'npm:uuid@9.0.0';
  *       price_list_item_id: string,
  *       item_name: string,
  *       locations: [
- *         { location_id: string, location_name: string, quantity: number },
+ *         { location_id: string, location_name: string, current: number, counted: number },
  *         ...
  *       ]
  *     },
  *     ...
- *   ]
+ *   ],
+ *   allowRerun: boolean (optional, default false),
+ *   overrideReason: string (required if allowRerun=true)
  * }
  */
 
@@ -35,7 +37,7 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
 
-    const { seedData, allowRerun = false } = await req.json();
+    const { seedData, allowRerun = false, overrideReason } = await req.json();
 
     if (!seedData || !Array.isArray(seedData) || seedData.length === 0) {
       return Response.json({
@@ -52,62 +54,73 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    if (existingRuns.length > 0 && allowRerun && !overrideReason) {
+      return Response.json({
+        error: 'Override reason required for re-run'
+      }, { status: 400 });
+    }
+
     const seedBatchId = uuidv4();
     const now = new Date().toISOString();
     let totalQtySeeded = 0;
     let totalLocationQtys = 0;
+    let changesCount = 0;
 
     // Process each SKU and location
     for (const skuEntry of seedData) {
       if (!skuEntry.price_list_item_id || !skuEntry.locations) continue;
 
       for (const locEntry of skuEntry.locations) {
-        if (!locEntry.location_id || (locEntry.quantity === null && locEntry.quantity === undefined)) continue;
+        if (!locEntry.location_id) continue;
 
-        const qty = Math.max(0, locEntry.quantity);
-        if (qty === 0) continue;
+        const current = locEntry.current || 0;
+        const counted = locEntry.counted || 0;
+        const delta = counted - current;
 
-        // 1. Upsert InventoryQuantity
+        // 1. Upsert InventoryQuantity (always set to counted value)
         const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
           price_list_item_id: skuEntry.price_list_item_id,
           location_id: locEntry.location_id
         });
 
         if (existing.length > 0) {
-          // Update existing record
+          // Update existing record to exact counted value
           await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
-            quantity: qty
+            quantity: counted
           });
         } else {
           // Create new record
           await base44.asServiceRole.entities.InventoryQuantity.create({
             price_list_item_id: skuEntry.price_list_item_id,
             location_id: locEntry.location_id,
-            quantity: qty,
+            quantity: counted,
             item_name: skuEntry.item_name,
             location_name: locEntry.location_name
           });
         }
 
-        // 2. Create StockMovement audit record
-        await base44.asServiceRole.entities.StockMovement.create({
-          sku_id: skuEntry.price_list_item_id,
-          item_name: skuEntry.item_name,
-          quantity: qty,
-          from_location_id: null,
-          to_location_id: locEntry.location_id,
-          to_location_name: locEntry.location_name,
-          performed_by_user_id: user.id,
-          performed_by_user_email: user.email,
-          performed_by_user_name: user.full_name || user.display_name,
-          performed_at: now,
-          source: 'baseline_seed',
-          reference_type: 'system_migration',
-          reference_id: seedBatchId,
-          notes: 'Baseline stocktake seed'
-        });
+        // 2. Only create StockMovement if value changed
+        if (delta !== 0) {
+          await base44.asServiceRole.entities.StockMovement.create({
+            sku_id: skuEntry.price_list_item_id,
+            item_name: skuEntry.item_name,
+            quantity: delta,  // Store the delta (positive or negative)
+            from_location_id: null,
+            to_location_id: locEntry.location_id,
+            to_location_name: locEntry.location_name,
+            performed_by_user_id: user.id,
+            performed_by_user_email: user.email,
+            performed_by_user_name: user.full_name || user.display_name,
+            performed_at: now,
+            source: 'baseline_seed',
+            reference_type: 'system_migration',
+            reference_id: seedBatchId,
+            notes: `Baseline stocktake seed (set exact: ${current} → ${counted})`
+          });
+          changesCount++;
+        }
 
-        totalQtySeeded += qty;
+        totalQtySeeded += counted;
         totalLocationQtys++;
       }
     }
@@ -121,7 +134,7 @@ Deno.serve(async (req) => {
       skus_seeded: seedData,
       total_locations: totalLocationQtys,
       total_skus: seedData.length,
-      notes: 'System baseline stock migration'
+      notes: `System baseline stock migration${overrideReason ? ` (Override: ${overrideReason})` : ''}`
     });
 
     return Response.json({
@@ -132,6 +145,7 @@ Deno.serve(async (req) => {
         totalQtySeeded,
         totalLocationQtys,
         totalSkus: seedData.length,
+        changesApplied: changesCount,
         executedAt: now,
         executedBy: user.full_name || user.display_name
       }
