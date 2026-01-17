@@ -507,7 +507,7 @@ export default function EmailMessageItem({
                   </span>
                   <Button
                     onClick={handleRetryImages}
-                    disabled={isRetryingImages || inlineImageErrors.size === 0}
+                    disabled={isRetryingImages || pendingInlineCount === 0}
                     size="sm"
                     variant="outline"
                     className="text-[11px] h-6 px-2 flex-shrink-0 gap-1"
