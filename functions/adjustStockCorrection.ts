@@ -51,20 +51,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create StockMovement audit record
+    // Create StockMovement audit record (canonical schema)
     await base44.asServiceRole.entities.StockMovement.create({
-      sku_id: priceListItemId,
+      price_list_item_id: priceListItemId,
       item_name: item?.item || 'Unknown Item',
       quantity: Math.abs(delta),
       from_location_id: delta < 0 ? locationId : null,
       from_location_name: delta < 0 ? location?.name : null,
       to_location_id: delta > 0 ? locationId : null,
       to_location_name: delta > 0 ? location?.name : null,
-      performed_by_user_id: user.id,
       performed_by_user_email: user.email,
-      performed_by_user_name: user.full_name || user.display_name,
+      performed_by_user_name: user.full_name || user.display_name || user.email,
       performed_at: new Date().toISOString(),
-      source: 'correction_adjustment',
+      source: 'manual_adjustment',
       notes: `Admin correction: ${isExactCount ? `set exact: ${currentQty} → ${newQty}` : `delta: ${delta > 0 ? '+' : ''}${delta}`}. Reason: ${reason}`
     });
 
