@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { AddIconButton } from "@/components/ui/AddIconButton";
 import { Plus, X } from "lucide-react";
 import MeasurementsForm from "../jobs/MeasurementsForm";
-import InitialVisitSummary from "./InitialVisitSummary";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import ProjectContactsPanel from "./ProjectContactsPanel";
 import RichTextField from "../common/RichTextField";
@@ -148,17 +147,7 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
       </Card>
       )}
 
-      {/* Visits Context - Show for all projects */}
-      {project.initial_visit_job_id && (
-        <Card className="border border-[#E5E7EB] shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-[16px] font-semibold text-[#111827]">Initial Site Visit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <InitialVisitSummary project={project} />
-          </CardContent>
-        </Card>
-      )}
+      {/* Deprecated: Initial Site Visit removed - unified in VisitsTimeline */}
 
       {/* Project Contacts - Always show */}
       <ProjectContactsPanel project={project} />
