@@ -408,20 +408,26 @@ Deno.serve(async (req) => {
               if (part.filename && part.filename.length > 0) {
                 const attachmentId = part.body?.attachmentId;
                 if (attachmentId) {
-                  const contentIdHeader = part.headers?.find(h => h.name.toLowerCase() === 'content-id');
-                  const contentDisposition = part.headers?.find(h => h.name.toLowerCase() === 'content-disposition');
-                  const contentId = contentIdHeader?.value?.replace(/[<>]/g, '');
-                  const isInline = contentDisposition?.value?.toLowerCase().includes('inline') || !!contentId;
-                  
-                  const attachmentData = {
-                    filename: part.filename,
-                    mime_type: part.mimeType,
-                    size: parseInt(part.body.size) || 0,
-                    attachment_id: attachmentId,
-                    gmail_message_id: message.id,
-                    content_id: contentId || null,
-                    is_inline: isInline
-                  };
+                 const contentIdHeader = part.headers?.find(h => h.name.toLowerCase() === 'content-id');
+                 const contentDisposition = part.headers?.find(h => h.name.toLowerCase() === 'content-disposition');
+                 const contentId = contentIdHeader?.value?.replace(/[<>]/g, '');
+                 const isInline = contentDisposition?.value?.toLowerCase().includes('inline') || !!contentId;
+
+                 // Normalize content_id: strip "cid:" prefix, angle brackets, trim whitespace
+                 const contentIdNormalized = contentId 
+                   ? contentId.replace(/^cid:/i, '').replace(/^<|>$/g, '').trim() 
+                   : null;
+
+                 const attachmentData = {
+                   filename: part.filename,
+                   mime_type: part.mimeType,
+                   size: parseInt(part.body.size) || 0,
+                   attachment_id: attachmentId,
+                   gmail_message_id: message.id,
+                   content_id: contentId || null,
+                   content_id_normalized: contentIdNormalized,
+                   is_inline: isInline
+                 };
                   
                   attachments.push(attachmentData);
                   if (isInline && contentId) {
@@ -453,14 +459,15 @@ Deno.serve(async (req) => {
         }
 
         const processedAttachments = attachments.map(att => ({
-          filename: att.filename,
-          mime_type: att.mime_type,
-          size: att.size,
-          attachment_id: att.attachment_id,
-          gmail_message_id: att.gmail_message_id,
-          content_id: att.content_id || null,
-          is_inline: att.is_inline || false
-        }));
+           filename: att.filename,
+           mime_type: att.mime_type,
+           size: att.size,
+           attachment_id: att.attachment_id,
+           gmail_message_id: att.gmail_message_id,
+           content_id: att.content_id || null,
+           content_id_normalized: att.content_id_normalized || null,
+           is_inline: att.is_inline || false
+         }));
         
         const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
         const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
