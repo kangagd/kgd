@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 // Decode Base64URL to Uint8Array with proper padding handling
-function decodeBase64UrlToBytes(base64Url: string): Uint8Array {
+function decodeBase64UrlToBytes(base64Url) {
   if (!base64Url) {
     throw new Error('Empty Base64URL string');
   }
