@@ -28,8 +28,6 @@ export default function Fleet() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isFilling, setIsFilling] = useState(false);
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
