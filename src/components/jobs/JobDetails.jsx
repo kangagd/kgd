@@ -2369,12 +2369,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
 
                   {/* Logistics Transfer Section */}
-                  <LogisticsJobTransferSection 
-                    job={job}
-                    sourceLocation={sourceLocation}
-                    destinationLocation={destinationLocation}
-                    isAdmin={isAdmin}
-                  />
+                  {job.logistics_purpose !== 'sample_dropoff' && job.logistics_purpose !== 'sample_pickup' && (
+                    <LogisticsJobTransferSection 
+                      job={job}
+                      sourceLocation={sourceLocation}
+                      destinationLocation={destinationLocation}
+                      isAdmin={isAdmin}
+                    />
+                  )}
 
                   {/* Sample Outcome Selector - Only for sample_pickup jobs */}
                   {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose === 'sample_pickup' && (
@@ -2405,7 +2407,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
 
                   {/* Logistics Outcome Selector */}
-                  {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose !== 'sample_pickup' && (
+                  {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose !== 'sample_pickup' && job.logistics_purpose !== 'sample_dropoff' && (
                     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                       <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                         <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
