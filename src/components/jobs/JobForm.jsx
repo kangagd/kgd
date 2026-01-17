@@ -1135,6 +1135,28 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </>
             )}
 
+            {/* Sample Outcome Selector - Only for sample_pickup jobs */}
+            {isLogisticsJob && formData.logistics_purpose === 'sample_pickup' && (
+              <div className="space-y-3 p-4 bg-purple-50 border-2 border-purple-200 rounded-xl">
+                <div>
+                  <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Sample Outcome</h3>
+                  <p className="text-[12px] text-[#6B7280] mt-1">
+                    Where should samples go after pickup completion?
+                  </p>
+                </div>
+
+                <Select value={formData.sample_outcome || 'return_to_storage'} onValueChange={(val) => setFormData({ ...formData, sample_outcome: val })}>
+                  <SelectTrigger className="border-2 border-purple-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
+                    <SelectValue placeholder="Select outcome" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="return_to_storage">Return to Storage</SelectItem>
+                    <SelectItem value="move_to_vehicle">Move to Vehicle</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {/* Checklist Items for Logistics Jobs */}
             {isLogisticsJob && (
               <div className="space-y-3 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
