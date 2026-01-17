@@ -103,10 +103,11 @@ Deno.serve(async (req) => {
       }
 
       // Update check-in event with check-out time
+      const checkOutTime = new Date().toISOString();
       const updatedEvents = [...checkInEvents];
       updatedEvents[activeEventIndex] = {
         ...updatedEvents[activeEventIndex],
-        checked_out_at: new Date().toISOString()
+        checked_out_at: checkOutTime
       };
 
       // Remove from checked-in arrays
@@ -115,6 +116,19 @@ Deno.serve(async (req) => {
         (visit.checked_in_technicians || [])[idx] !== user.email
       );
 
+      // Determine if this is the last technician
+      const isLastTechnician = updatedTechnicians.length === 0;
+
+      // AUTHORITY CHECK: Only last technician can set outcome and complete the visit
+      const attemptingToComplete = data?.outcome || data?.completed_at;
+      if (attemptingToComplete && !isLastTechnician) {
+        return Response.json({ 
+          error: 'ONLY_LAST_TECH_CAN_COMPLETE_VISIT',
+          message: 'Only the last checked-in technician can complete the visit'
+        }, { status: 403 });
+      }
+
+      // Build update payload (all technicians can update draft fields)
       const updates = {
         checked_in_technicians: updatedTechnicians,
         checked_in_names: updatedNames,
@@ -125,19 +139,19 @@ Deno.serve(async (req) => {
         measurements: data?.measurements || visit.measurements,
         photos: data?.photos || visit.photos,
         communication_notes: data?.communication_notes || visit.communication_notes,
-        next_steps: data?.next_steps || visit.next_steps,
-        outcome: data?.outcome || visit.outcome
+        next_steps: data?.next_steps || visit.next_steps
       };
 
-      // If last technician checking out and outcome provided, mark as completed
-      if (updatedTechnicians.length === 0 && data?.outcome) {
-        updates.completed_at = new Date().toISOString();
+      // ONLY last technician can set completion fields
+      if (isLastTechnician && data?.outcome) {
+        updates.outcome = data.outcome;
+        updates.completed_at = checkOutTime;
         updates.completed_by_email = user.email;
         updates.completed_by_name = user.display_name || user.full_name;
       }
 
       const updatedVisit = await base44.asServiceRole.entities.Visit.update(visit.id, updates);
-      return Response.json({ success: true, visit: updatedVisit });
+      return Response.json({ success: true, visit: updatedVisit, is_last_technician: isLastTechnician });
     }
 
     // UPDATE
