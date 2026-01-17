@@ -16,7 +16,7 @@ import { base44 } from '@/api/base44Client';
 import { computeInferredStateWithAutoClear } from '@/components/inbox/inferredStateAutoClear';
 import { closeThread, reopenThread } from '@/components/inbox/threadCloseActions';
 import LinkThreadModal from './LinkThreadModal';
-import CreateProjectFromThreadModal from './CreateProjectFromThreadModal';
+import CreateProjectFromEmailModal from './CreateProjectFromEmailModal';
 import ThreadInternalNotesModal from './ThreadInternalNotesModal';
 import DeleteThreadConfirmModal from './DeleteThreadConfirmModal';
 
