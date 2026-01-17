@@ -884,8 +884,30 @@ export default function UnifiedEmailComposer({
         }
       }
 
+      // Immediately refetch thread messages to show sent email
+      const baseThreadId = response.data?.baseThreadId || thread?.id;
+      if (baseThreadId) {
+        try {
+          await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(baseThreadId) });
+          await queryClient.refetchQueries({ queryKey: inboxKeys.messages(baseThreadId) });
+        } catch (err) {
+          console.error("[UnifiedEmailComposer] Failed to refetch messages:", err);
+        }
+
+        // If linked to project, also refetch project activity/emails
+        const projId = linkTarget?.type === "project" ? linkTarget.id : thread?.project_id;
+        if (projId) {
+          try {
+            await queryClient.invalidateQueries({ queryKey: ["project", projId] });
+            await queryClient.refetchQueries({ queryKey: ["projectActivity", projId] });
+          } catch (err) {
+            console.error("[UnifiedEmailComposer] Failed to refetch project activity:", err);
+          }
+        }
+      }
+
       toast.success("Email sent successfully");
-      if (onSent) await onSent(response.data?.baseThreadId || thread?.id);
+      if (onSent) await onSent(baseThreadId);
 
       handleClose();
     } catch (error) {
