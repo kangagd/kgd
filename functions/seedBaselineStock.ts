@@ -1,169 +1,220 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { v4 as uuidv4 } from 'npm:uuid@9.0.0';
 
-/**
- * BASELINE STOCK SEED FUNCTION
- * 
- * Admin-only migration tool to initialize InventoryQuantity from a physical stocktake.
- * One-time execution, prevents accidental re-runs.
- * 
- * Payload:
- * {
- *   seedData: [
- *     {
- *       price_list_item_id: string,
- *       item_name: string,
- *       locations: [
- *         { location_id: string, location_name: string, current: number, counted: number },
- *         ...
- *       ]
- *     },
- *     ...
- *   ],
- *   allowRerun: boolean (optional, default false),
- *   overrideReason: string (required if allowRerun=true)
- * }
- */
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+const isRateLimitError = (err) => {
+  const msg = String(err && err.message ? err.message : err || '').toLowerCase();
+  return (msg.includes('rate') && msg.includes('limit')) || msg.includes('429');
+};
+
+const withRetry = async (fn, opts) => {
+  const maxRetries = (opts && opts.maxRetries) ?? 8;
+  const baseDelayMs = (opts && opts.baseDelayMs) ?? 250;
+  const jitterMs = (opts && opts.jitterMs) ?? 150;
+
+  let attempt = 0;
+  while (true) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt += 1;
+      if (!isRateLimitError(err) || attempt > maxRetries) throw err;
+      const delay =
+        baseDelayMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * jitterMs);
+      await sleep(delay);
+    }
+  }
+};
+
+/**
+ * BASELINE STOCK SEED FUNCTION (rate-limit safe)
+ *
+ * Strategy:
+ * 1) Load all InventoryQuantity once, build map (sku|loc -> record)
+ * 2) Flatten seed pairs, skip no-ops
+ * 3) Upsert with retry/backoff + small pacing
+ * 4) Write StockMovement only when delta != 0
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    // Admin-only enforcement
     if (!user || user.role !== 'admin') {
-      return Response.json({
-        error: 'Forbidden: Admin access required'
-      }, { status: 403 });
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { seedData, allowRerun = false, overrideReason } = await req.json();
+    const body = await req.json();
+    const seedData = body.seedData;
+    const allowRerun = Boolean(body.allowRerun);
+    const overrideReason = body.overrideReason;
 
     if (!seedData || !Array.isArray(seedData) || seedData.length === 0) {
-      return Response.json({
-        error: 'seedData array required and must not be empty'
-      }, { status: 400 });
+      return Response.json({ error: 'seedData array required and must not be empty' }, { status: 400 });
     }
 
-    // Check if baseline seed has already been executed
-    const existingRuns = await base44.asServiceRole.entities.BaselineSeedRun.list();
+    // Guard: baseline already run?
+    const existingRuns = await withRetry(() =>
+      base44.asServiceRole.entities.BaselineSeedRun.list()
+    );
+
     if (existingRuns.length > 0 && !allowRerun) {
-      return Response.json({
-        error: 'Baseline seed already executed',
-        lastRun: existingRuns[existingRuns.length - 1]
-      }, { status: 400 });
+      return Response.json(
+        { error: 'Baseline seed already executed', lastRun: existingRuns[existingRuns.length - 1] },
+        { status: 400 }
+      );
     }
-
-    if (existingRuns.length > 0 && allowRerun && !overrideReason) {
-      return Response.json({
-        error: 'Override reason required for re-run'
-      }, { status: 400 });
+    if (existingRuns.length > 0 && allowRerun && !String(overrideReason || '').trim()) {
+      return Response.json({ error: 'Override reason required for re-run' }, { status: 400 });
     }
 
     const seedBatchId = uuidv4();
     const now = new Date().toISOString();
-    let totalQtySeeded = 0;
-    let totalLocationQtys = 0;
-    let changesCount = 0;
 
-    // Flatten all SKU×location pairs for batch processing
-    const allPairs = [];
+    // 1) Load ALL current InventoryQuantity ONCE (removes per-row filter() calls)
+    const allIQ = await withRetry(() =>
+      base44.asServiceRole.entities.InventoryQuantity.list()
+    );
+
+    // Map key => { id, quantity }
+    const iqMap = new Map();
+    for (const iq of allIQ || []) {
+      const skuId = iq.price_list_item_id;
+      const locId = iq.location_id;
+      if (!skuId || !locId) continue;
+      const qty = Number(iq.quantity ?? iq.qty ?? 0);
+      iqMap.set(`${skuId}__${locId}`, { id: iq.id, quantity: Number.isFinite(qty) ? qty : 0 });
+    }
+
+    // 2) Flatten seed rows and SKIP no-ops early
+    const pairs = [];
+
     for (const skuEntry of seedData) {
-      if (!skuEntry.price_list_item_id || !skuEntry.locations) continue;
+      if (!skuEntry || !skuEntry.price_list_item_id || !Array.isArray(skuEntry.locations)) continue;
+
       for (const locEntry of skuEntry.locations) {
-        if (!locEntry.location_id) continue;
-        allPairs.push({ skuEntry, locEntry });
+        if (!locEntry || !locEntry.location_id) continue;
+
+        const current = Number(locEntry.current ?? 0);
+        const counted = Number(locEntry.counted ?? 0);
+        if (!Number.isFinite(current) || !Number.isFinite(counted) || counted < 0) continue;
+
+        const delta = counted - current;
+        if (delta === 0) continue;
+
+        pairs.push({
+          sku_id: skuEntry.price_list_item_id,
+          item_name: skuEntry.item_name || 'Unknown',
+          location_id: locEntry.location_id,
+          location_name: locEntry.location_name || 'Unknown',
+          current,
+          counted,
+          delta
+        });
       }
     }
 
-    // Process in batches of 10 to avoid timeout
-    const batchSize = 10;
-    for (let i = 0; i < allPairs.length; i += batchSize) {
-      const batch = allPairs.slice(i, i + batchSize);
+    if (pairs.length === 0) {
+      return Response.json({
+        success: true,
+        seedBatchId,
+        message: 'No changes detected (all counted == current). Nothing to seed.',
+        summary: { changesApplied: 0, executedAt: now, executedBy: user.full_name || user.display_name }
+      });
+    }
 
-      // Process each item in batch sequentially to avoid overload
-      for (const { skuEntry, locEntry } of batch) {
-        const current = locEntry.current || 0;
-        const counted = locEntry.counted || 0;
-        const delta = counted - current;
+    // 3) Process pairs with pacing + retry/backoff
+    const OP_PAUSE_MS = 50;   // tune upward if still rate-limiting (75-120ms)
+    const BATCH_PAUSE_MS = 300;
+    const batchSize = 20;
 
-        // Fetch existing record
-        const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
-          price_list_item_id: skuEntry.price_list_item_id,
-          location_id: locEntry.location_id
-        });
+    let changesCount = 0;
+    let inventoryWrites = 0;
 
-        // Upsert InventoryQuantity
-        if (existing.length > 0) {
-          await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
-            quantity: counted
-          });
+    for (let i = 0; i < pairs.length; i += batchSize) {
+      const batch = pairs.slice(i, i + batchSize);
+
+      for (const p of batch) {
+        const key = `${p.sku_id}__${p.location_id}`;
+        const existing = iqMap.get(key);
+
+        // Upsert InventoryQuantity to EXACT counted value
+        if (existing && existing.id) {
+          await withRetry(() =>
+            base44.asServiceRole.entities.InventoryQuantity.update(existing.id, {
+              quantity: p.counted
+            })
+          );
         } else {
-          await base44.asServiceRole.entities.InventoryQuantity.create({
-            price_list_item_id: skuEntry.price_list_item_id,
-            location_id: locEntry.location_id,
-            quantity: counted,
-            item_name: skuEntry.item_name,
-            location_name: locEntry.location_name
-          });
+          const created = await withRetry(() =>
+            base44.asServiceRole.entities.InventoryQuantity.create({
+              price_list_item_id: p.sku_id,
+              location_id: p.location_id,
+              quantity: p.counted,
+              item_name: p.item_name,
+              location_name: p.location_name
+            })
+          );
+          if (created && created.id) iqMap.set(key, { id: created.id, quantity: p.counted });
         }
+        inventoryWrites++;
 
-        // Create StockMovement if delta exists
-        if (delta !== 0) {
-          await base44.asServiceRole.entities.StockMovement.create({
+        // Create StockMovement ONLY when delta != 0
+        await withRetry(() =>
+          base44.asServiceRole.entities.StockMovement.create({
             job_id: seedBatchId,
-            sku_id: skuEntry.price_list_item_id,
-            item_name: skuEntry.item_name,
-            quantity: delta,
-            from_location_id: delta < 0 ? locEntry.location_id : null,
-            to_location_id: delta > 0 ? locEntry.location_id : null,
-            to_location_name: delta > 0 ? locEntry.location_name : null,
-            from_location_name: delta < 0 ? locEntry.location_name : null,
+            sku_id: p.sku_id,
+            item_name: p.item_name,
+            quantity: p.delta,
+            from_location_id: p.delta < 0 ? p.location_id : null,
+            to_location_id: p.delta > 0 ? p.location_id : null,
+            to_location_name: p.delta > 0 ? p.location_name : null,
+            from_location_name: p.delta < 0 ? p.location_name : null,
             performed_by_user_id: user.id,
             performed_by_user_email: user.email,
             performed_by_user_name: user.full_name || user.display_name,
             performed_at: now,
             source: 'baseline_seed',
-            notes: `Baseline stocktake seed (set exact: ${current} → ${counted})`
-          });
-          changesCount++;
-        }
+            reference_type: 'system_migration',
+            reference_id: seedBatchId,
+            notes: `Baseline seed (set exact: ${p.current} → ${p.counted})${overrideReason ? ` | Override: ${overrideReason}` : ''}`
+          })
+        );
 
-        totalQtySeeded += counted;
-        totalLocationQtys++;
+        changesCount++;
+        await sleep(OP_PAUSE_MS);
       }
+
+      await sleep(BATCH_PAUSE_MS);
     }
 
-    // 3. Record the baseline seed run
-    const seedRun = await base44.asServiceRole.entities.BaselineSeedRun.create({
-      seed_batch_id: seedBatchId,
-      executed_at: now,
-      executed_by_email: user.email,
-      executed_by_name: user.full_name || user.display_name,
-      skus_seeded: seedData,
-      total_locations: totalLocationQtys,
-      total_skus: seedData.length,
-      notes: `System baseline stock migration${overrideReason ? ` (Override: ${overrideReason})` : ''}`
-    });
+    // 4) Record baseline seed run
+    await withRetry(() =>
+      base44.asServiceRole.entities.BaselineSeedRun.create({
+        seed_batch_id: seedBatchId,
+        executed_at: now,
+        executed_by_email: user.email,
+        executed_by_name: user.full_name || user.display_name,
+        total_locations: pairs.length,
+        total_skus: seedData.length,
+        notes: `System baseline stock migration${overrideReason ? ` (Override: ${overrideReason})` : ''}`
+      })
+    );
 
     return Response.json({
       success: true,
       seedBatchId,
       message: 'Baseline stock seeded successfully',
       summary: {
-        totalQtySeeded,
-        totalLocationQtys,
-        totalSkus: seedData.length,
+        inventoryWrites,
         changesApplied: changesCount,
         executedAt: now,
         executedBy: user.full_name || user.display_name
       }
     });
-
   } catch (error) {
     console.error('[seedBaselineStock] Error:', error);
-    return Response.json({
-      error: error.message
-    }, { status: 500 });
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
