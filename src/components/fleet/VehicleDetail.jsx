@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, RefreshCw, Plus, Settings, FileText, Car, Upload, Image as ImageIcon, Wrench, Package } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, Plus, Settings, FileText, Car, Upload, Image as ImageIcon, Wrench, Package, ArrowRightLeft } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import VehicleStockList from "./VehicleStockList";
@@ -11,6 +11,7 @@ import StockAdjustmentModal from "./StockAdjustmentModal";
 import RestockRequestModal from "./RestockRequestModal";
 import AddVehicleStockModal from "./AddVehicleStockModal";
 import VehicleFormModal from "./VehicleFormModal";
+import TransferStockModal from "./TransferStockModal";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import LocationBadge from "@/components/common/LocationBadge";
@@ -24,7 +25,14 @@ export default function VehicleDetail({ vehicle, onBack }) {
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Get current user role to determine if technician
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me()
+  });
 
   const { data: stock = [], isLoading: isStockLoading } = useQuery({
     queryKey: ['vehicleStock', vehicle.id],
@@ -192,6 +200,14 @@ export default function VehicleDetail({ vehicle, onBack }) {
           </div>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowTransferModal(true)}
+            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+          >
+            <ArrowRightLeft className="w-4 h-4 mr-2" />
+            Transfer Stock
+          </Button>
           <Button variant="outline" onClick={() => setShowEditModal(true)}>
             <Settings className="w-4 h-4 mr-2" />
             Edit Vehicle
@@ -539,6 +555,13 @@ export default function VehicleDetail({ vehicle, onBack }) {
         open={showAddStockModal}
         onClose={() => setShowAddStockModal(false)}
         vehicleId={vehicle.id}
+      />
+
+      <TransferStockModal
+        open={showTransferModal}
+        onOpenChange={setShowTransferModal}
+        vehicleId={vehicle.id}
+        isTechnician={user?.role === 'technician'}
       />
     </div>
   );
