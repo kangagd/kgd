@@ -255,7 +255,27 @@ export default function BaselineStockSeed() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Baseline Stock Seed (Day 0)</h1>
         <p className="text-gray-600 mt-2">Initialize inventory from a physical stocktake. Run once only.</p>
-        <div className="mt-4">
+        <div className="mt-4 flex gap-3">
+          <Button
+            onClick={async () => {
+              try {
+                const response = await base44.functions.invoke('seedPreviewBootstrapData', {});
+                toast.success('Preview Bootstrap Data Seeded', {
+                  description: JSON.stringify(response.data, null, 2),
+                  duration: 10000,
+                });
+              } catch (error) {
+                toast.error('Seeding Failed', {
+                  description: error.message,
+                  duration: 9000,
+                });
+              }
+            }}
+            variant="default"
+            className="flex items-center gap-2 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+          >
+            <Plus className="w-4 h-4" /> Seed Preview Bootstrap Data
+          </Button>
           <Button
             onClick={async () => {
               try {
@@ -274,7 +294,7 @@ export default function BaselineStockSeed() {
             variant="outline"
             className="flex items-center gap-2"
           >
-            <AlertTriangle className="w-4 h-4" /> Run Inventory Sanity Check (Admin)
+            <AlertTriangle className="w-4 h-4" /> Run Inventory Sanity Check
           </Button>
         </div>
       </div>
