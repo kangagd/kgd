@@ -1,4 +1,3 @@
-import BaselineStockSeed from './pages/BaselineStockSeed';
 import CheckIn from './pages/CheckIn';
 import Contracts from './pages/Contracts';
 import Customers from './pages/Customers';
@@ -31,11 +30,11 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
+import BaselineStockSeed from './pages/BaselineStockSeed';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "BaselineStockSeed": BaselineStockSeed,
     "CheckIn": CheckIn,
     "Contracts": Contracts,
     "Customers": Customers,
@@ -68,6 +67,7 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
+    "BaselineStockSeed": BaselineStockSeed,
 }
 
 export const pagesConfig = {

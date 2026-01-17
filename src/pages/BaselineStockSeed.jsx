@@ -23,6 +23,7 @@ export default function BaselineStockSeed() {
   const [overrideReason, setOverrideReason] = useState('');
   const [mode, setMode] = useState('exact'); // 'exact' | 'delta'
   const [filterEmpty, setFilterEmpty] = useState(false);
+  const [skuSearch, setSkuSearch] = useState('');
   const queryClient = useQueryClient();
 
   // Load user
@@ -131,6 +132,18 @@ export default function BaselineStockSeed() {
     }
     return seedRows;
   }, [seedRows, filterEmpty]);
+
+  // Filter SKUs for search (exclude already added)
+  const filteredSkus = useMemo(() => {
+    if (!skuSearch) return [];
+    const alreadyAdded = new Set(seedRows.map(r => r.price_list_item_id));
+    return skus.filter(s =>
+      !alreadyAdded.has(s.id) && (
+        s.item?.toLowerCase().includes(skuSearch.toLowerCase()) ||
+        s.sku?.toLowerCase().includes(skuSearch.toLowerCase())
+      )
+    ).slice(0, 20);
+  }, [skus, skuSearch, seedRows]);
 
   // Check if baseline already executed
   const { data: existingRuns = [] } = useQuery({
@@ -335,6 +348,49 @@ export default function BaselineStockSeed() {
                 <div className="text-xs text-gray-500">Replace current values with stocktake counts</div>
               </span>
             </label>
+          </CardContent>
+        </Card>
+
+        {/* Add New SKU */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Add New SKU</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="sku-search">Search SKU</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="sku-search"
+                  placeholder="Item name or SKU..."
+                  value={skuSearch}
+                  onChange={(e) => setSkuSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            {skuSearch && filteredSkus.length > 0 && (
+              <div className="border rounded-lg max-h-40 overflow-y-auto">
+                {filteredSkus.map(sku => (
+                  <button
+                    key={sku.id}
+                    onClick={() => {
+                      addNewSkuRow(sku);
+                      setSkuSearch('');
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b last:border-0 transition-colors"
+                  >
+                    <div className="font-medium text-sm text-gray-900">{sku.item}</div>
+                    {sku.sku && <div className="text-xs text-gray-500">SKU: {sku.sku}</div>}
+                  </button>
+                ))}
+              </div>
+            )}
+            {skuSearch && filteredSkus.length === 0 && (
+              <p className="text-xs text-gray-500 italic">No SKUs found or already added.</p>
+            )}
           </CardContent>
         </Card>
 
