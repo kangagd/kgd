@@ -366,6 +366,13 @@ export default function UnifiedEmailComposer({
       parseISO
     );
 
+    console.log("[UnifiedEmailComposer] Init body for mode='" + mode + "':", {
+      initialBodyLength: initialBody?.length,
+      initialBodyPreview: initialBody?.substring(0, 100),
+      hasSignatureMarker: (initialBody || '').includes(SIGNATURE_MARKER),
+      userSignatureLength: currentUser?.email_signature?.length || 0
+    });
+
     setBody(initialBody);
     didInitBodyRef.current = true;
   }, [currentUser, existingDraft?.id, mode, thread?.id]);
