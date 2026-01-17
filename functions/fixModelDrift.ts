@@ -55,46 +55,27 @@ Deno.serve(async (req) => {
       
       if (!isV2Exec) continue; // Only fix V2 execution jobs
       
-      let jobNeedsFix = false;
-      const jobFixes = [];
-
-      // ONLY FIXABLE DRIFT: Sync visit_count with actual Visit records
+      // ONLY ALLOWED FIX: visit_count correction
+      // GUARDRAIL: Do NOT modify job_model_version, legacy fields, status, or any other field
       if (jobVisits.length > 0 && job.visit_count !== jobVisits.length) {
-        jobNeedsFix = true;
-        jobFixes.push(`visit_count: ${job.visit_count || 0} → ${jobVisits.length}`);
-        if (!dry_run) {
-          await base44.asServiceRole.entities.Job.update(job.id, {
-            visit_count: jobVisits.length
-          });
-        }
-      }
-
-      // SAFE FIX: Mark as v2 explicitly if visits exist but not marked
-      if (jobVisits.length > 0 && job.job_model_version !== 'v2') {
-        jobNeedsFix = true;
-        jobFixes.push(`job_model_version: ${job.job_model_version || 'null'} → v2`);
-        if (!dry_run) {
-          await base44.asServiceRole.entities.Job.update(job.id, {
-            job_model_version: 'v2'
-          });
-        }
-      }
-
-      // GUARDRAIL: Do NOT clear legacy fields - migration not implemented
-      // This would be data loss without proper Visit migration
-
-      if (jobNeedsFix) {
         fixedCount++;
+        
         const fixEntry = {
           job_id: job.id,
           job_number: job.job_number,
           customer_name: job.customer_name,
-          fixes: jobFixes
+          old_visit_count: job.visit_count || 0,
+          new_visit_count: jobVisits.length,
+          visits_found: jobVisits.length
         };
         
         if (dry_run) {
           proposedFixes.push(fixEntry);
         } else {
+          // SAFE WRITE: Only update visit_count, nothing else
+          await base44.asServiceRole.entities.Job.update(job.id, {
+            visit_count: jobVisits.length
+          });
           fixLog.push(fixEntry);
         }
       }
@@ -102,12 +83,14 @@ Deno.serve(async (req) => {
 
     return Response.json({
       dry_run,
-      fixed_count: fixedCount,
-      proposed_fixes: dry_run ? proposedFixes.slice(0, 20) : undefined, // For dry run
-      fixes_applied: !dry_run ? fixLog.slice(0, 20) : undefined, // For commit
+      would_fix_count: dry_run ? fixedCount : undefined,
+      would_fix_jobs: dry_run ? proposedFixes : undefined,
+      fixed_count: !dry_run ? fixedCount : undefined,
+      fixed_jobs: !dry_run ? fixLog : undefined,
+      no_changes_made: dry_run,
       message: dry_run 
-        ? `Dry run complete: ${fixedCount} jobs would be fixed (no changes made)`
-        : `Successfully fixed ${fixedCount} jobs`,
+        ? `Dry run: ${fixedCount} jobs would have visit_count corrected (no writes performed)`
+        : `Fixed ${fixedCount} jobs - visit_count synced with Visit records`,
       timestamp: new Date().toISOString()
     });
 
