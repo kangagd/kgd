@@ -497,6 +497,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     enabled: !!purchaseOrder?.supplier_id && isLogisticsJob,
   });
 
+  // Fetch source and destination locations for logistics transfer
+  const { data: sourceLocation } = useQuery({
+    queryKey: ['sourceLocation', job.source_location_id],
+    queryFn: () => base44.entities.InventoryLocation.get(job.source_location_id),
+    enabled: !!job.source_location_id && isLogisticsJob,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: destinationLocation } = useQuery({
+    queryKey: ['destinationLocation', job.destination_location_id],
+    queryFn: () => base44.entities.InventoryLocation.get(job.destination_location_id),
+    enabled: !!job.destination_location_id && isLogisticsJob,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
+
   const { data: xeroInvoice } = useQuery({
     queryKey: ['xeroInvoice', job.xero_invoice_id],
     queryFn: () => base44.entities.XeroInvoice.get(job.xero_invoice_id),
