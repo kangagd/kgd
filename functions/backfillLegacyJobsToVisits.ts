@@ -1,15 +1,16 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.6";
 
 /**
- * Backfill legacy Job execution fields into the Visit model for historical COMPLETED jobs.
+ * Backfill legacy execution data from Job -> Visit.
  *
- * SAFETY PRINCIPLES
- * - Admin-only
- * - Dry-run by default
- * - Idempotent: do not create duplicate "backfilled" visits
- * - Never overwrite existing Visit data
- * - Never delete legacy Job fields (optional cleanup is separate and disabled by default)
- * - Never change job_model_version or other Job fields beyond optional visit_count reconciliation
+ * SAFE RULES:
+ * - Admin only
+ * - dryRun supported
+ * - Never overwrite non-empty Visit fields
+ * - If Visit exists: only fill missing fields
+ * - If no Visit exists: create a completed Visit
+ * - Never delete legacy Job fields in this function
+ * - Never change job_model_version
  */
 
 const LEGACY_FIELDS = [
@@ -46,7 +47,6 @@ function nowIso() {
 }
 
 function safeDateOnly(isoOrDateString) {
-  // Returns YYYY-MM-DD
   try {
     const d = isoOrDateString ? new Date(isoOrDateString) : new Date();
     const yyyy = d.getUTCFullYear();
@@ -58,34 +58,31 @@ function safeDateOnly(isoOrDateString) {
   }
 }
 
-async function listAllEntities(entity, filterObj, pageSize = 200) {
-  // Base44 list/filter shapes vary, so we do simple pagination by repeatedly calling filter with limit/offset when available.
-  // If your Base44 SDK does not support offset, it will still return first page; this is still safe for smaller datasets.
+function normaliseRecords(res) {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.data)) return res.data;
+  if (Array.isArray(res.results)) return res.results;
+  if (Array.isArray(res.items)) return res.items;
+  return [];
+}
+
+async function listAll(entity, filterObj, pageSize = 200, maxPages = 200) {
   const all = [];
   let offset = 0;
 
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < maxPages; i++) {
     let res;
     try {
       res = await entity.filter(filterObj, { limit: pageSize, offset });
-    } catch (e) {
-      // Fallback: some SDKs only accept one argument
+    } catch {
       res = await entity.filter(filterObj);
     }
 
-    const records = Array.isArray(res)
-      ? res
-      : Array.isArray(res?.data)
-      ? res.data
-      : Array.isArray(res?.results)
-      ? res.results
-      : Array.isArray(res?.items)
-      ? res.items
-      : [];
-
+    const records = normaliseRecords(res);
     all.push(...records);
 
-    // If pagination isn't supported, break after first pull.
+    // if pagination unsupported or exhausted
     if (!records || records.length < pageSize) break;
     offset += pageSize;
   }
@@ -93,12 +90,87 @@ async function listAllEntities(entity, filterObj, pageSize = 200) {
   return all;
 }
 
+/**
+ * Choose primary Visit to backfill into.
+ * Preference:
+ * 1) latest completed
+ * 2) latest by date/created_at
+ */
+function pickPrimaryVisit(visits = []) {
+  if (!visits.length) return null;
+
+  const completed = visits.filter(v => String(v?.status || "").toLowerCase() === "completed");
+  const pool = completed.length ? completed : visits;
+
+  const toTs = (v) => {
+    const d = v?.date || v?.completed_at || v?.updated_at || v?.created_at;
+    const t = d ? new Date(d).getTime() : 0;
+    return Number.isFinite(t) ? t : 0;
+  };
+
+  return [...pool].sort((a, b) => toTs(b) - toTs(a))[0] || null;
+}
+
+/**
+ * Map legacy Job fields into Visit fields (adjust names here if needed).
+ * IMPORTANT: Only used to fill EMPTY Visit fields.
+ */
+function buildVisitBackfillFromJob(job) {
+  const attachments = [
+    ...(Array.isArray(job.image_urls) ? job.image_urls.filter(Boolean) : []),
+    ...(Array.isArray(job.other_documents) ? job.other_documents.filter(Boolean) : []),
+  ];
+
+  return {
+    work_performed: job.overview || "",
+    next_steps: job.next_steps || "",
+    communication: job.communication_with_client || "",
+    completion_notes: job.completion_notes || "",
+    outcome: job.outcome || null,
+    measurements: job.measurements || null,
+    attachments,
+    pricing_notes: job.pricing_provided || "",
+    issues_found: job.additional_info || "",
+    resolution: "", // keep blank unless you have a real legacy split
+  };
+}
+
+/**
+ * Only set fields that are currently empty on Visit.
+ */
+function computeVisitPatch(visit, backfill) {
+  const patch = {};
+  for (const [key, val] of Object.entries(backfill)) {
+    const current = visit?.[key];
+
+    // attachments: treat empty array as empty
+    if (key === "attachments") {
+      const curArr = Array.isArray(current) ? current.filter(Boolean) : [];
+      const nextArr = Array.isArray(val) ? val.filter(Boolean) : [];
+      if (curArr.length === 0 && nextArr.length > 0) patch[key] = nextArr;
+      continue;
+    }
+
+    if (!isNonEmpty(current) && isNonEmpty(val)) {
+      patch[key] = val;
+    }
+  }
+
+  // Traceability, only if not already present
+  const existingNotes = typeof visit?.notes === "string" ? visit.notes : "";
+  if (!existingNotes.includes("legacy_backfill_v2")) {
+    patch.notes = `${existingNotes ? existingNotes + "\n" : ""}legacy_backfill_v2: filled missing fields from Job at ${nowIso()}`;
+  }
+  if (!visit?.source_tag) patch.source_tag = "legacy_backfill_v2";
+
+  return patch;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    // ADMIN ONLY
     if (user?.role !== "admin") {
       return Response.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
@@ -106,41 +178,22 @@ Deno.serve(async (req) => {
     const payload = await req.json().catch(() => ({}));
     const {
       dryRun = true,
-      // filters
-      onlyCompleted = true,
       limit = 500,
-      jobIds = null, // optional explicit array of job IDs
-      // behavior flags
+      onlyCompleted = true,
       reconcileVisitCount = true,
-      // legacy cleanup is intentionally disabled by default
-      clearLegacyFieldsAfterBackfill = false,
+      jobIds = null, // optional explicit list
     } = payload || {};
-
-    if (clearLegacyFieldsAfterBackfill) {
-      // Hard stop guardrail: accidental destructive migration
-      return Response.json(
-        {
-          error:
-            "clearLegacyFieldsAfterBackfill is DISALLOWED in this function. Do cleanup as a separate explicit migration step.",
-        },
-        { status: 400 }
-      );
-    }
 
     const Job = base44.asServiceRole.entities.Job;
     const Visit = base44.asServiceRole.entities.Visit;
 
     if (!Job || !Visit) {
-      return Response.json(
-        { error: "Missing required entities: Job and/or Visit not available" },
-        { status: 500 }
-      );
+      return Response.json({ error: "Missing Job or Visit entity" }, { status: 500 });
     }
 
-    // 1) Select candidate jobs
+    // Load candidate jobs
     let jobs = [];
-    if (Array.isArray(jobIds) && jobIds.length > 0) {
-      // Explicit set
+    if (Array.isArray(jobIds) && jobIds.length) {
       for (const id of jobIds.slice(0, limit)) {
         const j = await Job.get(id).catch(() => null);
         if (j && !j.deleted_at) jobs.push(j);
@@ -150,183 +203,160 @@ Deno.serve(async (req) => {
         deleted_at: { $exists: false },
         ...(onlyCompleted ? { status: "Completed" } : {}),
       };
-
-      jobs = await listAllEntities(Job, filterObj);
-      jobs = jobs.slice(0, limit);
+      jobs = (await listAll(Job, filterObj)).slice(0, limit);
     }
 
-    // 2) Load visits once (group by job_id) to ensure idempotency
-    const allVisits = await listAllEntities(Visit, { deleted_at: { $exists: false } }).catch(() => []);
-    const visitsByJob = {};
-    for (const v of allVisits) {
+    // Group visits by job
+    const visits = await listAll(Visit, { deleted_at: { $exists: false } }).catch(() => []);
+    const visitsByJobId = {};
+    for (const v of visits) {
       if (!v?.job_id) continue;
-      if (!visitsByJob[v.job_id]) visitsByJob[v.job_id] = [];
-      visitsByJob[v.job_id].push(v);
+      if (!visitsByJobId[v.job_id]) visitsByJobId[v.job_id] = [];
+      visitsByJobId[v.job_id].push(v);
     }
 
-    // 3) Backfill plan
-    const planned = [];
-    const skipped = [];
-    const warnings = [];
+    const report = {
+      success: true,
+      dryRun: !!dryRun,
+      total_jobs_considered: jobs.length,
+      candidates_with_legacy: 0,
+      created_visits: 0,
+      updated_visits: 0,
+      updated_jobs: 0,
+      skipped: {
+        no_legacy_fields: 0,
+        legacy_but_no_visit_patch_needed: 0,
+        errors: 0,
+      },
+      samples: {
+        created: [],
+        updated: [],
+        skipped: [],
+        errors: [],
+      },
+      analyzed_at: nowIso(),
+    };
 
     for (const job of jobs) {
-      const legacyFields = collectLegacy(job);
+      try {
+        const legacyFields = collectLegacy(job);
+        if (!legacyFields.length) {
+          report.skipped.no_legacy_fields++;
+          continue;
+        }
+        report.candidates_with_legacy++;
 
-      if (legacyFields.length === 0) {
-        skipped.push({
-          job_id: job.id,
-          job_number: job.job_number,
-          reason: "no_legacy_fields_present",
-        });
-        continue;
-      }
+        const jobVisits = visitsByJobId[job.id] || [];
+        const backfill = buildVisitBackfillFromJob(job);
 
-      const jobVisits = visitsByJob[job.id] || [];
+        // If no visits, create one
+        if (jobVisits.length === 0) {
+          const visitDate =
+            job.completed_at ||
+            job.client_confirmed_at ||
+            job.scheduled_date ||
+            job.updated_at ||
+            job.created_date ||
+            nowIso();
 
-      // Idempotency key:
-      // We treat a "backfilled" visit as any Visit with:
-      // - job_id = job.id
-      // - source_tag === "legacy_backfill_v1"
-      // OR notes containing "legacy_backfill_v1"
-      const alreadyBackfilled = jobVisits.some(
-        (v) => v?.source_tag === "legacy_backfill_v1" || (typeof v?.notes === "string" && v.notes.includes("legacy_backfill_v1"))
-      );
+          const payloadToCreate = {
+            job_id: job.id,
+            date: safeDateOnly(visitDate),
+            status: "completed",
+            ...backfill,
+            source_tag: "legacy_backfill_v2",
+            notes: `legacy_backfill_v2: created Visit from Job legacy fields at ${nowIso()}`,
+          };
 
-      if (alreadyBackfilled) {
-        skipped.push({
-          job_id: job.id,
-          job_number: job.job_number,
-          reason: "already_backfilled",
-          legacy_fields: legacyFields,
-        });
-        continue;
-      }
-
-      // If job has visits already, we DO NOT overwrite them.
-      // We only backfill if there are NO visits, or if visits exist but none appear to contain execution fields
-      // (this is conservative and avoids creating duplicates).
-      const hasAnyVisits = jobVisits.length > 0;
-      if (hasAnyVisits) {
-        // Conservative skip: you can override by passing jobIds explicitly if needed
-        skipped.push({
-          job_id: job.id,
-          job_number: job.job_number,
-          reason: "has_existing_visits_skip_conservative",
-          visit_count: jobVisits.length,
-          legacy_fields: legacyFields,
-        });
-        continue;
-      }
-
-      // Build Visit payload WITHOUT overwriting rules (new record only)
-      const visitDate =
-        job.completed_at || job.client_confirmed_at || job.scheduled_date || job.updated_at || job.created_date || nowIso();
-
-      const visitPayload = {
-        job_id: job.id,
-        // If Visit schema expects date-only:
-        date: safeDateOnly(visitDate),
-        status: "completed",
-        // Standardized fields (adjust to your Visit schema as needed)
-        work_performed: job.overview || "",
-        next_steps: job.next_steps || "",
-        communication: job.communication_with_client || "",
-        completion_notes: job.completion_notes || "",
-        outcome: job.outcome || null,
-        measurements: job.measurements || null,
-        // Attachments: combine image_urls + other_documents into one array
-        attachments: [
-          ...(Array.isArray(job.image_urls) ? job.image_urls.filter(Boolean) : []),
-          ...(Array.isArray(job.other_documents) ? job.other_documents.filter(Boolean) : []),
-        ],
-        // Store pricing in a safe text field (if Visit has no pricing field)
-        pricing_notes: job.pricing_provided || "",
-        // Store any extra info safely
-        issues_found: job.additional_info || "",
-        resolution: "", // legacy model doesn't split this reliably; keep blank unless you have a field
-        // Traceability
-        source_tag: "legacy_backfill_v1",
-        notes: `legacy_backfill_v1: migrated legacy fields from Job into Visit at ${nowIso()}`,
-      };
-
-      planned.push({
-        job_id: job.id,
-        job_number: job.job_number,
-        customer_name: job.customer_name,
-        legacy_fields: legacyFields,
-        visit_to_create: visitPayload,
-        reconcile_visit_count: reconcileVisitCount,
-      });
-    }
-
-    // 4) Execute (or dry run)
-    const created = [];
-    const updatedJobs = [];
-
-    if (!dryRun) {
-      for (const item of planned) {
-        // Create visit
-        const createdVisit = await Visit.create(item.visit_to_create);
-
-        created.push({
-          job_id: item.job_id,
-          job_number: item.job_number,
-          visit_id: createdVisit?.id,
-        });
-
-        // Optionally reconcile visit_count, but do not alter anything else
-        if (reconcileVisitCount) {
-          try {
-            const job = await Job.get(item.job_id);
-            const current = Number(job?.visit_count || 0);
-            const next = Math.max(current, 1);
-
-            if (next !== current) {
-              await Job.update(item.job_id, { visit_count: next });
-              updatedJobs.push({
-                job_id: item.job_id,
-                job_number: item.job_number,
-                visit_count_before: current,
-                visit_count_after: next,
-              });
+          if (!dryRun) {
+            const created = await Visit.create(payloadToCreate);
+            report.created_visits++;
+            if (report.samples.created.length < 10) {
+              report.samples.created.push({ job_id: job.id, job_number: job.job_number, visit_id: created?.id });
             }
-          } catch (e) {
-            warnings.push({
-              job_id: item.job_id,
-              job_number: item.job_number,
-              warning: "visit_count_reconcile_failed",
-              detail: e?.message || String(e),
+
+            if (reconcileVisitCount) {
+              const current = Number(job?.visit_count || 0);
+              const next = Math.max(current, 1);
+              if (next !== current) {
+                await Job.update(job.id, { visit_count: next });
+                report.updated_jobs++;
+              }
+            }
+          } else {
+            report.created_visits++;
+            if (report.samples.created.length < 10) {
+              report.samples.created.push({ job_id: job.id, job_number: job.job_number, would_create: true });
+            }
+          }
+
+          continue;
+        }
+
+        // If visits exist: patch the primary visit ONLY where empty
+        const primary = pickPrimaryVisit(jobVisits);
+        if (!primary) {
+          report.skipped.errors++;
+          if (report.samples.errors.length < 10) {
+            report.samples.errors.push({ job_id: job.id, job_number: job.job_number, error: "no_primary_visit" });
+          }
+          continue;
+        }
+
+        const patch = computeVisitPatch(primary, backfill);
+        const patchKeys = Object.keys(patch);
+
+        if (patchKeys.length === 0) {
+          report.skipped.legacy_but_no_visit_patch_needed++;
+          continue;
+        }
+
+        if (!dryRun) {
+          await Visit.update(primary.id, patch);
+          report.updated_visits++;
+          if (report.samples.updated.length < 10) {
+            report.samples.updated.push({
+              job_id: job.id,
+              job_number: job.job_number,
+              visit_id: primary.id,
+              patched_fields: patchKeys,
             });
           }
+
+          if (reconcileVisitCount) {
+            const current = Number(job?.visit_count || 0);
+            const expected = Math.max(current, jobVisits.length);
+            if (expected !== current) {
+              await Job.update(job.id, { visit_count: expected });
+              report.updated_jobs++;
+            }
+          }
+        } else {
+          report.updated_visits++;
+          if (report.samples.updated.length < 10) {
+            report.samples.updated.push({
+              job_id: job.id,
+              job_number: job.job_number,
+              visit_id: primary.id,
+              would_patch_fields: patchKeys,
+            });
+          }
+        }
+      } catch (e) {
+        report.skipped.errors++;
+        if (report.samples.errors.length < 10) {
+          report.samples.errors.push({
+            job_id: job?.id,
+            job_number: job?.job_number,
+            error: e?.message || String(e),
+          });
         }
       }
     }
 
-    return Response.json({
-      success: true,
-      dryRun: !!dryRun,
-      total_jobs_considered: jobs.length,
-      planned_backfills: planned.length,
-      created_visits: created.length,
-      updated_jobs: updatedJobs.length,
-      skipped_count: skipped.length,
-      warnings_count: warnings.length,
-      planned: dryRun ? planned.slice(0, 50) : undefined, // keep response size sane
-      created,
-      updatedJobs,
-      skipped: skipped.slice(0, 50),
-      warnings: warnings.slice(0, 50),
-      analyzed_at: nowIso(),
-      guardrails: {
-        admin_only: true,
-        never_overwrite_visits: true,
-        never_delete_legacy_fields: true,
-        conservative_skip_if_visits_exist: true,
-        idempotent_source_tag: "legacy_backfill_v1",
-      },
-    });
+    return Response.json(report);
   } catch (error) {
-    console.error("[backfillLegacyJobsToVisits] Error:", error);
+    console.error("[backfillLegacyToVisits] Error:", error);
     return Response.json({ success: false, error: error?.message || String(error) }, { status: 500 });
   }
 });
