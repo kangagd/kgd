@@ -7,12 +7,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import StockByLocationView from "@/components/inventory/StockByLocationView";
 import StockSummaryLine from "@/components/pricelist/StockSummaryLine";
 
-export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, onMoveStock, inventorySummary, stockByLocation, locations, canViewCosts }) {
-  // Derive on-hand stock from InventoryQuantity only (sum across ALL physical locations)
-  // stockByLocation is pre-filtered to only include physical (warehouse+vehicle) locations
-  const onHandTotal = Array.isArray(stockByLocation) 
-    ? stockByLocation.reduce((sum, q) => sum + (q.quantity || 0), 0) 
-    : 0;
+export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, onMoveStock, inventorySummary, stockByLocation, onHandQty = 0, locations, canViewCosts }) {
+  // Use pre-calculated onHandQty from parent (always matches stockByLocation)
+  const onHandTotal = onHandQty;
   const isLowStock = onHandTotal <= item.min_stock_level && onHandTotal > 0;
   const isOutOfStock = onHandTotal === 0;
 
