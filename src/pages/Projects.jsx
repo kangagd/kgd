@@ -155,20 +155,70 @@ export default function Projects() {
     ...QUERY_CONFIG.reference,
   });
 
-  const inventoryByItem = useMemo(() => {
-    const map = {};
-    // Warehouse from PriceList
-    for (const item of priceListItems) {
-      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
-    }
-    // Vehicles from InventoryQuantity
-    for (const iq of inventoryQuantities) {
-      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
-        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+  // Build indexes for O(1) lookups instead of per-row scans
+  const indexes = useMemo(() => {
+    console.time('[Projects] Build indexes');
+    
+    const jobsByProjectId = new Map();
+    const partsByProjectId = new Map();
+    const tradeReqByProjectId = new Map();
+    const attentionByProjectId = new Map();
+    const posByProjectId = new Map();
+    const threadsByProjectId = new Map();
+
+    for (const job of allJobs) {
+      if (job.project_id) {
+        if (!jobsByProjectId.has(job.project_id)) jobsByProjectId.set(job.project_id, []);
+        jobsByProjectId.get(job.project_id).push(job);
       }
     }
-    return map;
-  }, [priceListItems, inventoryQuantities]);
+
+    for (const part of allParts) {
+      if (part.project_id) {
+        if (!partsByProjectId.has(part.project_id)) partsByProjectId.set(part.project_id, []);
+        partsByProjectId.get(part.project_id).push(part);
+      }
+    }
+
+    for (const tr of allTradeRequirements) {
+      if (tr.project_id) {
+        if (!tradeReqByProjectId.has(tr.project_id)) tradeReqByProjectId.set(tr.project_id, []);
+        tradeReqByProjectId.get(tr.project_id).push(tr);
+      }
+    }
+
+    for (const att of allAttentionItems) {
+      if (att.project_id) {
+        if (!attentionByProjectId.has(att.project_id)) attentionByProjectId.set(att.project_id, []);
+        attentionByProjectId.get(att.project_id).push(att);
+      }
+    }
+
+    for (const po of allPurchaseOrders) {
+      if (po.project_id) {
+        if (!posByProjectId.has(po.project_id)) posByProjectId.set(po.project_id, []);
+        posByProjectId.get(po.project_id).push(po);
+      }
+    }
+
+    for (const thread of allEmailThreads) {
+      if (thread.project_id) {
+        if (!threadsByProjectId.has(thread.project_id)) threadsByProjectId.set(thread.project_id, []);
+        threadsByProjectId.get(thread.project_id).push(thread);
+      }
+    }
+
+    console.timeEnd('[Projects] Build indexes');
+    
+    return {
+      jobsByProjectId,
+      partsByProjectId,
+      tradeReqByProjectId,
+      attentionByProjectId,
+      posByProjectId,
+      threadsByProjectId
+    };
+  }, [allJobs, allParts, allTradeRequirements, allAttentionItems, allPurchaseOrders, allEmailThreads]);
 
   const detectShortage = useCallback((part) => {
     // Cancelled or installed parts are not shortages
