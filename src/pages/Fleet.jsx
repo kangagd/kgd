@@ -11,7 +11,6 @@ import {
   Search, 
   Plus, 
   AlertTriangle,
-  Battery,
   User,
   Package,
   Wrench
