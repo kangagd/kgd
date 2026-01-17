@@ -102,7 +102,7 @@ export default function VehicleStockView({ vehicleId }) {
              <Package className="w-12 h-12 text-muted-foreground mb-4" />
              <h3 className="text-lg font-semibold mb-2">No Stock in Vehicle</h3>
              <p className="text-sm text-muted-foreground max-w-md">
-               This vehicle has no current stock. Stock will appear here when items are transferred from the warehouse into this vehicle.
+               This vehicle currently has no stock. Stock appears after items are received from purchase orders or transferred from the warehouse.
              </p>
            </div>
          </CardContent>
@@ -182,7 +182,7 @@ export default function VehicleStockView({ vehicleId }) {
             <div>
               <h4 className="text-sm font-medium text-blue-900">Vehicle-Scoped Stock</h4>
               <p className="text-sm text-blue-700 mt-1">
-                This shows only stock at this vehicle's location. Transfer items from the warehouse or adjust stock as needed.
+                This shows only stock currently at this vehicle. Use transfers or logistics jobs to move stock between locations.
               </p>
             </div>
           </div>
