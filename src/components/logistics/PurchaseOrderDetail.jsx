@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar, Trash } from "lucide-react";
+import { X, Plus, Trash2, Package, Truck, Save, Send, ArrowRight, List, ShoppingCart, Upload, FileText, Calendar, Trash, Download } from "lucide-react";
 import { toast } from "sonner";
 import { PO_STATUS, PO_STATUS_OPTIONS, PO_STATUS_OPTIONS_NON_PROJECT, PO_STATUS_OPTIONS_PROJECT, getPoStatusLabel, getPoStatusColor, normaliseLegacyPoStatus } from "@/components/domain/purchaseOrderStatusConfig";
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD, DELIVERY_METHOD_OPTIONS as PO_DELIVERY_METHOD_OPTIONS } from "@/components/domain/supplierDeliveryConfig";
@@ -31,6 +31,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import ReceivePoItemsModal from "./ReceivePoItemsModal";
 
 export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
     line_items: []
   });
   const [uploading, setUploading] = useState(false);
+  const [showReceiveModal, setShowReceiveModal] = useState(false);
 
   const { data: po, isLoading } = useQuery({
     queryKey: ['purchaseOrder', poId],
@@ -1127,11 +1129,77 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           </CardContent>
         </Card>
 
-        {/* Line Items */}
+        {/* Items Summary */}
+        {formData.line_items.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[18px]">Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#E5E7EB]">
+                      <th className="text-left py-2 px-2 font-semibold text-[#111827]">Item Name</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[#111827]">Qty Ordered</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[#111827]">Qty Received</th>
+                      <th className="text-right py-2 px-2 font-semibold text-[#111827]">Remaining</th>
+                      <th className="text-center py-2 px-2 font-semibold text-[#111827]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.line_items.map((item, idx) => {
+                      const poLine = lineItems.find(l => sameId(l.id, item.id));
+                      const qtyOrdered = poLine?.qty_ordered || item.quantity || 0;
+                      const qtyReceived = poLine?.qty_received || 0;
+                      const remaining = qtyOrdered - qtyReceived;
+                      
+                      let statusBadge = "bg-blue-100 text-blue-800";
+                      if (remaining === 0 && qtyReceived > 0) {
+                        statusBadge = "bg-green-100 text-green-800";
+                      } else if (qtyReceived > 0) {
+                        statusBadge = "bg-amber-100 text-amber-800";
+                      }
+                      
+                      const statusLabel = remaining === 0 && qtyReceived > 0 ? "Received" : qtyReceived > 0 ? "Partial" : "Not Received";
+                      
+                      return (
+                        <tr key={idx} className="border-b border-[#F3F4F6] hover:bg-[#F9FAFB]">
+                          <td className="py-2 px-2 text-[#111827]">{item.name}</td>
+                          <td className="text-right py-2 px-2 text-[#6B7280]">{qtyOrdered}</td>
+                          <td className="text-right py-2 px-2 text-[#6B7280]">{qtyReceived}</td>
+                          <td className="text-right py-2 px-2 text-[#6B7280]">{remaining}</td>
+                          <td className="text-center py-2 px-2">
+                            <Badge className={statusBadge}>{statusLabel}</Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Receive Items Button */}
+              {[PO_STATUS.SENT, PO_STATUS.ON_ORDER, PO_STATUS.IN_TRANSIT, PO_STATUS.IN_LOADING_BAY, PO_STATUS.AT_SUPPLIER].includes(formData.status) && (
+                <div className="mt-4">
+                  <Button
+                    onClick={() => setShowReceiveModal(true)}
+                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] w-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Receive Items
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Line Items (Editable) */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-[18px]">Line Items</CardTitle>
+              <CardTitle className="text-[18px]">Edit Line Items</CardTitle>
               {isDraft && (
                 <Popover open={addItemMenuOpen} onOpenChange={setAddItemMenuOpen}>
                   <PopoverTrigger asChild>
