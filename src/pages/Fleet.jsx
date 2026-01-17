@@ -28,6 +28,7 @@ export default function Fleet() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
+  const [isEnsuring, setIsEnsuring] = useState(false);
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
@@ -143,6 +144,28 @@ export default function Fleet() {
           <p className="text-gray-500 mt-1">Manage vehicles, assignments, and inventory</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={async () => {
+              setIsEnsuring(true);
+              try {
+                const { data } = await base44.functions.invoke('ensureVehicleInventoryLocations', {});
+                if (data.error) {
+                  alert(`Error: ${data.error}`);
+                } else {
+                  alert(`Done! Checked ${data.vehicles_checked} vehicles. Created ${data.created_count} new locations, ${data.already_exists_count} already existed.${data.errors.length > 0 ? ` ${data.errors.length} errors occurred.` : ''}`);
+                }
+              } catch (error) {
+                alert(`Error: ${error.message}`);
+              } finally {
+                setIsEnsuring(false);
+              }
+            }}
+            disabled={isEnsuring}
+          >
+            <Package className="w-4 h-4 mr-2" />
+            {isEnsuring ? "Ensuring..." : "Ensure Vehicle Inventory Locations"}
+          </Button>
           <Button 
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold"
             onClick={() => setShowCreateModal(true)}
