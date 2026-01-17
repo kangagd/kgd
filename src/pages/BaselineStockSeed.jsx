@@ -408,69 +408,75 @@ export default function BaselineStockSeed() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-300 bg-gray-50">
-                      <th className="text-left font-semibold text-gray-700 p-2">SKU / Item</th>
+                  <thead className="sticky top-0 bg-gray-50 z-10">
+                    <tr className="border-b-2 border-gray-400">
+                      <th className="text-left font-bold text-gray-800 p-3 bg-gray-100">SKU / Item</th>
                       {warehouseLocation && (
-                        <th className="text-center font-semibold text-gray-700 p-2">
-                          <div>{warehouseLocation.name}</div>
-                          <div className="text-gray-500 font-normal">Current → Counted</div>
+                        <th className="text-center font-bold text-gray-800 p-3 bg-blue-50">
+                          <div className="text-sm">📦 {warehouseLocation.name}</div>
+                          <div className="text-xs text-gray-600 font-normal mt-1">Current → Counted</div>
                         </th>
                       )}
                       {vehicleLocations.map(v => (
-                        <th key={v.id} className="text-center font-semibold text-gray-700 p-2">
-                          <div>{v.name}</div>
-                          <div className="text-gray-500 font-normal">Current → Counted</div>
+                        <th key={v.id} className="text-center font-bold text-gray-800 p-3 bg-green-50">
+                          <div className="text-sm">🚗 {v.name}</div>
+                          <div className="text-xs text-gray-600 font-normal mt-1">Current → Counted</div>
                         </th>
                       ))}
-                      <th className="text-center font-semibold text-gray-700 p-2 w-12"></th>
+                      <th className="text-center font-bold text-gray-800 p-3 bg-gray-100 w-12"></th>
                     </tr>
                   </thead>
                   <tbody>
                     {displayedRows.map((row, idx) => {
                       const actualIdx = seedRows.findIndex(r => r.price_list_item_id === row.price_list_item_id);
                       return (
-                        <tr key={idx} className="border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                          <td className="p-2 text-gray-900 font-medium">{row.item_name}</td>
+                        <tr key={idx} className="border-b border-gray-200 hover:bg-slate-50 transition-colors">
+                          <td className="p-3 text-gray-900 font-semibold bg-gray-50">{row.item_name}</td>
                           {warehouseLocation && (
-                            <td className="p-2">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="text-gray-600">{row.quantities[warehouseLocation.id]?.current || 0}</span>
+                            <td className="p-3 bg-blue-50">
+                              <div className="flex flex-col items-center gap-2">
+                                <div className="text-xs text-gray-600">
+                                  <span className="font-semibold">{row.quantities[warehouseLocation.id]?.current || 0}</span>
+                                </div>
                                 <Input
                                   type="number"
                                   min="0"
                                   value={row.quantities[warehouseLocation.id]?.counted || 0}
                                   onChange={(e) => updateCounted(actualIdx, warehouseLocation.id, e.target.value)}
-                                  className="w-12 h-7 text-center text-sm"
+                                  placeholder="Count"
+                                  className="w-16 h-8 text-center text-sm font-semibold border-blue-300 focus:border-blue-500"
                                 />
                                 {row.quantities[warehouseLocation.id]?.current !== row.quantities[warehouseLocation.id]?.counted && (
-                                  <span className="text-orange-600 font-semibold">
-                                    {(row.quantities[warehouseLocation.id]?.counted || 0) - (row.quantities[warehouseLocation.id]?.current || 0)}
+                                  <span className="text-orange-600 font-bold text-xs">
+                                    Δ {(row.quantities[warehouseLocation.id]?.counted || 0) - (row.quantities[warehouseLocation.id]?.current || 0)}
                                   </span>
                                 )}
                               </div>
                             </td>
                           )}
                           {vehicleLocations.map(v => (
-                            <td key={v.id} className="p-2">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="text-gray-600">{row.quantities[v.id]?.current || 0}</span>
+                            <td key={v.id} className="p-3 bg-green-50">
+                              <div className="flex flex-col items-center gap-2">
+                                <div className="text-xs text-gray-600">
+                                  <span className="font-semibold">{row.quantities[v.id]?.current || 0}</span>
+                                </div>
                                 <Input
                                   type="number"
                                   min="0"
                                   value={row.quantities[v.id]?.counted || 0}
                                   onChange={(e) => updateCounted(actualIdx, v.id, e.target.value)}
-                                  className="w-12 h-7 text-center text-sm"
+                                  placeholder="Count"
+                                  className="w-16 h-8 text-center text-sm font-semibold border-green-300 focus:border-green-500"
                                 />
                                 {row.quantities[v.id]?.current !== row.quantities[v.id]?.counted && (
-                                  <span className="text-orange-600 font-semibold">
-                                    {(row.quantities[v.id]?.counted || 0) - (row.quantities[v.id]?.current || 0)}
+                                  <span className="text-orange-600 font-bold text-xs">
+                                    Δ {(row.quantities[v.id]?.counted || 0) - (row.quantities[v.id]?.current || 0)}
                                   </span>
                                 )}
                               </div>
                             </td>
                           ))}
-                          <td className="p-2 text-center">
+                          <td className="p-3 text-center bg-gray-50">
                             <Button
                               size="icon"
                               variant="ghost"
