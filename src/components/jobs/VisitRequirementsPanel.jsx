@@ -415,25 +415,4 @@ export default function VisitRequirementsPanel({
       )}
     </>
   );
-
-  function getStatusBadge(status) {
-    const statusConfig = {
-      required: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Required' },
-      ordered: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Ordered' },
-      in_storage: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'In Storage' },
-      in_vehicle: { bg: 'bg-green-100', text: 'text-green-700', label: 'In Vehicle' },
-      installed: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Installed' },
-      cancelled: { bg: 'bg-red-100', text: 'text-red-700', label: 'Cancelled' },
-      booked: { bg: 'bg-green-100', text: 'text-green-700', label: 'Booked' },
-      completed: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Completed' },
-      done: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Done' },
-      unknown: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'Unknown' },
-    };
-    const config = statusConfig[status] || statusConfig.unknown;
-    return (
-      <Badge className={`${config.bg} ${config.text} text-[10px] border-0`}>
-        {config.label}
-      </Badge>
-    );
-  }
 }
