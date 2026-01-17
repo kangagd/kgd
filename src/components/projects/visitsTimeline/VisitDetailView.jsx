@@ -6,7 +6,7 @@ import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 
 const normalizeDoors = (measurements) => {
   if (!measurements) return [];
@@ -64,11 +64,12 @@ export default function VisitDetailView({ visit }) {
                 </div>
               )}
               {visit.overview && (
-                <div className="text-sm text-[#111827] prose prose-sm max-w-none">
-                  <ReactMarkdown>
-                    {visit.overview}
-                  </ReactMarkdown>
-                </div>
+                <div
+                  className="text-sm text-[#111827] prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(visit.overview)
+                  }}
+                />
               )}
               {visit.completion_notes && (
                 <details className="text-xs text-[#4B5563]">
@@ -105,13 +106,13 @@ export default function VisitDetailView({ visit }) {
                       {doors.length === 1 ? 'Door' : `Door ${idx + 1}`}
                     </h5>
                     <div className="space-y-1 text-xs text-[#4B5563]">
-                      {(door.opening_width || door.opening_height) && (
-                        <div>Opening: {door.opening_width || '?'} × {door.opening_height || '?'}</div>
-                      )}
-                      {door.headroom && <div>Headroom: {door.headroom}</div>}
-                      {door.sideroom_left && <div>Sideroom (L): {door.sideroom_left}</div>}
-                      {door.sideroom_right && <div>Sideroom (R): {door.sideroom_right}</div>}
-                      {door.backroom && <div>Backroom: {door.backroom}</div>}
+                      {(door.opening_width && door.opening_width !== '0') || (door.opening_height && door.opening_height !== '0') ? (
+                        <div>Opening: {door.opening_width && door.opening_width !== '0' ? door.opening_width : '?'} × {door.opening_height && door.opening_height !== '0' ? door.opening_height : '?'}</div>
+                      ) : null}
+                      {door.headroom && door.headroom !== '0' && <div>Headroom: {door.headroom}</div>}
+                      {door.sideroom_left && door.sideroom_left !== '0' && <div>Sideroom (L): {door.sideroom_left}</div>}
+                      {door.sideroom_right && door.sideroom_right !== '0' && <div>Sideroom (R): {door.sideroom_right}</div>}
+                      {door.backroom && door.backroom !== '0' && <div>Backroom: {door.backroom}</div>}
                       {door.type && <div>Type: {door.type}</div>}
                       {door.material && <div>Material: {door.material}</div>}
                       {door.existing_door_removal && (
