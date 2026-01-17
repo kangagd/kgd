@@ -28,8 +28,6 @@ export default function Fleet() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [search, setSearch] = useState("");
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [isFilling, setIsFilling] = useState(false);
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicles'],
@@ -132,41 +130,7 @@ export default function Fleet() {
     return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicleId(null)} />;
   }
 
-  const handleSyncStockTemplates = async () => {
-    setIsSyncing(true);
-    try {
-      const { data } = await base44.functions.invoke('syncVehicleStockTemplates', {});
-      if (data.error) {
-        alert(`Error: ${data.error}`);
-      } else {
-        alert(`Success! Created ${data.created} records, updated ${data.updated} records across ${data.vehicles} vehicles.`);
-      }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
-  const handleFillAllVehicles = async () => {
-    if (!confirm('This will set all stock items in all vehicles to their "full" car_quantity. Continue?')) {
-      return;
-    }
-    
-    setIsFilling(true);
-    try {
-      const { data } = await base44.functions.invoke('fillAllVehicleStock', {});
-      if (data.error) {
-        alert(`Error: ${data.error}`);
-      } else {
-        alert(`Success! Updated ${data.total_updates} stock items across ${data.vehicles_processed} vehicles.`);
-      }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsFilling(false);
-    }
-  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -179,23 +143,6 @@ export default function Fleet() {
           <p className="text-gray-500 mt-1">Manage vehicles, assignments, and inventory</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={handleSyncStockTemplates}
-            disabled={isSyncing}
-          >
-            <Package className="w-4 h-4 mr-2" />
-            {isSyncing ? "Syncing..." : "Sync Stock Templates"}
-          </Button>
-          <Button 
-            variant="outline"
-            onClick={handleFillAllVehicles}
-            disabled={isFilling}
-            className="border-green-300 hover:bg-green-50 text-green-700"
-          >
-            <Battery className="w-4 h-4 mr-2" />
-            {isFilling ? "Filling..." : "Fill All Vehicles"}
-          </Button>
           <Button 
             className="bg-[#FAE008] hover:bg-[#E5CF07] text-black font-semibold"
             onClick={() => setShowCreateModal(true)}
