@@ -1454,7 +1454,7 @@ export default function Schedule() {
           booking={selectedBooking}
           defaultDate={bookingDefaultDate}
           defaultUsers={selectedTechnicianEmail === 'me' ? [user?.id] : null}
-          allJobs={expandedJobs}
+          allJobs={jobsWithVisits}
           allBookings={allBookings}
         />
 
@@ -1463,7 +1463,7 @@ export default function Schedule() {
           open={!!selectedBooking && !showBookingEditor}
           onClose={() => setSelectedBooking(null)}
           booking={selectedBooking}
-          allJobs={expandedJobs}
+          allJobs={jobsWithVisits}
           allBookings={allBookings}
         />
       </div>
