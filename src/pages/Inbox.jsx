@@ -837,6 +837,10 @@ export default function Inbox() {
                       can_create_job_from_email: true,
                     }}
                     onClose={() => setSelectedThreadId(null)}
+                    onCreateProject={(msg) => {
+                      setSelectedMessageForProject(msg);
+                      setShowCreateProjectModal(true);
+                    }}
                     onLinkProject={() => setShowLinkModal(true)}
                     onUnlinkProject={async () => {
                                        try {
