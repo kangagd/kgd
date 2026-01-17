@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export default function JobContactsPanel({ job }) {
+export default function JobContactsPanel({ job, inline = false }) {
   const queryClient = useQueryClient();
   const { data: people = [] } = useQuery({
     queryKey: ["people-for-job-contacts"],
@@ -158,6 +158,69 @@ export default function JobContactsPanel({ job }) {
     },
   });
 
+  // Inline mode: compact, no collapsible, no add form
+  if (inline) {
+    if (jobContactsLoading) {
+      return (
+        <div className="text-[11px] text-[#6B7280] mt-2">Loading contacts...</div>
+      );
+    }
+
+    if (!jobContacts || jobContacts.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
+        <div className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide mb-2">
+          Additional Contacts ({jobContacts.length})
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {jobContacts.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+            >
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="font-medium text-gray-900 flex items-center gap-2">
+                  <span className="truncate">{c.name || "Unnamed contact"}</span>
+                  {c.role && (
+                    <span className="rounded-md bg-[#FAE008]/20 border border-[#FAE008]/30 px-1.5 py-0.5 text-[10px] font-medium text-[#854D0E] flex-shrink-0">
+                      {c.role}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-gray-500 flex items-center gap-2 flex-wrap">
+                  {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{c.email}</span></span>}
+                  {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 flex-shrink-0" /> {c.phone}</span>}
+                </div>
+                {c.contact_id && (
+                  <Link 
+                    to={`${createPageUrl("Customers")}?customerId=${c.contact_id}`}
+                    className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5"
+                  >
+                    View contact <ExternalLink className="w-2.5 h-2.5" />
+                  </Link>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => deleteContactMutation.mutate(c.id)}
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Full mode: collapsible with add form
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-4 border border-[#E5E7EB] rounded-lg bg-white shadow-sm">
       <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-[#F9FAFB] transition-colors group">

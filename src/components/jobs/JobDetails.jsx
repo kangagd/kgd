@@ -1360,62 +1360,65 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="flex items-start gap-2.5">
-                <Navigation className="text-green-600 w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
-                  <EditableField
-                    value={job.address_full || job.address}
-                    onSave={(newAddressData) => {
-                      // newAddressData could be string or object from AddressAutocomplete
-                      const addressObj = typeof newAddressData === 'string' 
-                        ? { address_full: newAddressData, address: newAddressData }
-                        : newAddressData;
-                      
-                      const updates = {
-                        ...addressObj,
-                        address: addressObj.address_full || addressObj.address
-                      };
-                      
-                      logChange('address', job.address, updates.address);
-                      base44.entities.Job.update(job.id, updates).then(() => {
-                        queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-                        queryClient.invalidateQueries({ queryKey: ['jobs'] });
-                        toast.success('Address updated');
-                      });
-                    }}
-                    type="address"
-                    displayFormat={(val) => (
-                      <button
-                        onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`, '_blank')}
-                        className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
-                      >
-                        {val}
-                      </button>
-                    )}
-                    placeholder="Set address"
-                    className="text-[14px] font-medium text-[#111827] leading-[1.4]"
-                  />
-                </div>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <Phone className="text-blue-600 w-5 h-5 flex-shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Phone</div>
-                  {job.customer_phone ? (
-                    <a
-                      href={`tel:${job.customer_phone}`}
-                      className="text-[14px] text-[#111827] leading-[1.4] hover:text-blue-600 transition-colors"
-                    >
-                      {job.customer_phone}
-                    </a>
-                  ) : (
-                    <span className="text-[14px] text-[#6B7280] leading-[1.4]">-</span>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-start gap-2.5">
+              <Navigation className="text-green-600 w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Address</div>
+                <EditableField
+                  value={job.address_full || job.address}
+                  onSave={(newAddressData) => {
+                    // newAddressData could be string or object from AddressAutocomplete
+                    const addressObj = typeof newAddressData === 'string' 
+                      ? { address_full: newAddressData, address: newAddressData }
+                      : newAddressData;
 
+                    const updates = {
+                      ...addressObj,
+                      address: addressObj.address_full || addressObj.address
+                    };
+
+                    logChange('address', job.address, updates.address);
+                    base44.entities.Job.update(job.id, updates).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+                      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+                      toast.success('Address updated');
+                    });
+                  }}
+                  type="address"
+                  displayFormat={(val) => (
+                    <button
+                      onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(val)}`, '_blank')}
+                      className="text-[14px] text-[#111827] leading-[1.4] hover:text-green-600 transition-colors text-left"
+                    >
+                      {val}
+                    </button>
+                  )}
+                  placeholder="Set address"
+                  className="text-[14px] font-medium text-[#111827] leading-[1.4]"
+                />
+              </div>
             </div>
+            <div className="flex items-start gap-2.5">
+              <Phone className="text-blue-600 w-5 h-5 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-[12px] text-[#6B7280] font-normal leading-[1.35] mb-0.5">Phone</div>
+                {job.customer_phone ? (
+                  <a
+                    href={`tel:${job.customer_phone}`}
+                    className="text-[14px] text-[#111827] leading-[1.4] hover:text-blue-600 transition-colors"
+                  >
+                    {job.customer_phone}
+                  </a>
+                ) : (
+                  <span className="text-[14px] text-[#6B7280] leading-[1.4]">-</span>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Inline Job Contacts */}
+          <JobContactsPanel job={job} inline={true} />
 
             <Collapsible defaultOpen={true} className="bg-white rounded-lg border border-[#E5E7EB]">
               <CollapsibleTrigger className="w-full flex items-center justify-between p-3 hover:bg-[#F9FAFB] transition-colors group">
@@ -2351,9 +2354,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   {/* Standard Job Details */}
                   {/* Linked Parts Card - Logistics */}
                   <LinkedPartsCard job={job} />
-
-                  {/* Job Contacts Panel */}
-                  <JobContactsPanel job={job} />
 
                   {/* Sample Quick Actions */}
                   {user && <SampleQuickActionsPanel job={job} user={user} />}
