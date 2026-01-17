@@ -20,6 +20,11 @@ export default function TransferStockModal({ open, onOpenChange, vehicleId, isTe
   const [notes, setNotes] = useState("");
   const [maxAvailable, setMaxAvailable] = useState(0);
 
+  // Guard: return early if no vehicleId
+  if (!vehicleId) {
+    return null;
+  }
+
   // Fetch all active price list items (tracked inventory only)
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],

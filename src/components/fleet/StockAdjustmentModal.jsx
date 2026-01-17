@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useQuery } from "react";
+import React, { useState, useEffect } from "react";
 import StockAdjustmentAdminModal from "@/components/inventory/StockAdjustmentAdminModal";
 
 /**
