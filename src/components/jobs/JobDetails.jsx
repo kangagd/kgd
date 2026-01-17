@@ -2573,6 +2573,24 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             {!isLogisticsJob && (
               <TabsContent value="visit" className="space-y-3 mt-2">
+                {/* DRIFT DETECTOR: Check for legacy sections rendering in V2 mode */}
+                {(() => {
+                  const shouldHide = shouldHideLegacySections(job);
+                  const isV2Enabled = isJobV2Enabled(job);
+                  
+                  if (isV2Enabled && shouldHide && !visitsEnabled) {
+                    warnJobV2Drift('Legacy sections rendered while V2 enabled', {
+                      jobId: job.id,
+                      visitCount: job.visit_count,
+                      jobModelVersion: job.job_model_version,
+                      hasActiveVisit: !!activeVisit,
+                      visitsEnabled,
+                      shouldHide
+                    });
+                  }
+                  return null;
+                })()}
+
                 {/* Feature Flag Notice */}
                 {visitsEnabled && (
                   <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-3 mb-4">
