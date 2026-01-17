@@ -53,8 +53,7 @@ import JobModalView from "../jobs/JobModalView";
 import TasksPanel from "../tasks/TasksPanel";
 import ProjectEmailSection from "./ProjectEmailSection";
 import QuotesSection from "../quotes/QuotesSection";
-import InitialVisitSummary from "./InitialVisitSummary";
-import JobVisitSummary from "../jobs/JobVisitSummary";
+import VisitsTimeline from "./visitsTimeline/VisitsTimeline";
 import ExpandableJobCard from "./ExpandableJobCard";
 import MarkAsLostModal from "./MarkAsLostModal";
 import LinkInvoiceModal from "../invoices/LinkInvoiceModal";
@@ -1899,20 +1898,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               </CardContent>
             </Card>
 
-            {/* Row 3: Upcoming Visits + Latest Visit */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <UpcomingVisitsCard 
-                jobs={jobs}
-                onScheduleVisit={handleAddJob}
-              />
-              <LatestVisitCard 
-                jobs={jobs}
-                onOpenMediaDrawer={(tab) => {
-                  setMediaDrawerTab(tab);
-                  setMediaDrawerOpen(true);
-                }}
-              />
-            </div>
+            {/* Row 3: Unified Visits Timeline */}
+            <VisitsTimeline visits={jobs} projectId={project.id} />
 
             {/* Row 4: Jobs List */}
             <Card className="border border-[#E5E7EB] shadow-sm">
