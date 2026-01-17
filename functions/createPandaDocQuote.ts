@@ -263,9 +263,9 @@ Deno.serve(async (req) => {
     // Calculate expiry date
     const expiresAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000).toISOString();
 
-    // Create Quote record in our database
+    // CRITICAL: Create Quote record with project_id (never null when initiated from project)
     const quote = await base44.entities.Quote.create({
-      project_id: project_id || null,
+      project_id: project_id, // ALWAYS set when project exists (guardrail above ensures this)
       job_id: job_id || null,
       customer_id: customerId,
       name: finalQuoteName,
@@ -284,6 +284,8 @@ Deno.serve(async (req) => {
       job_number: job?.job_number || null,
       address_full: address
     });
+
+    console.log(`[createPandaDocQuote] Created Quote ${quote.id} with project_id=${quote.project_id}`);
 
     // Link quote to project by adding to quote_ids array
     if (project_id) {
