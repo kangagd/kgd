@@ -248,8 +248,8 @@ export default function Inbox() {
         clearTimeout(visibilityTimeout);
         visibilityTimeout = setTimeout(() => {
           const now = Date.now();
-          // Only auto-sync if threads data is > 30s stale
-          if (now - lastThreadFetchTime >= 30000) {
+          // Only auto-sync if threads data is > 10 minutes stale
+          if (now - lastThreadFetchTime >= 10 * 60 * 1000) {
             syncGmailInbox();
           }
         }, 500);
