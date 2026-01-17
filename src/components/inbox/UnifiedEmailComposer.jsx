@@ -106,8 +106,17 @@ function computeInitialBody(existingDraft, mode, currentUser, selectedMessage, t
     return existingDraft.body_html;
   }
 
-  // Build signature using buildSignatureHtml helper (handles both HTML and plain text)
-  const signatureHtml = buildSignatureHtml(currentUser?.email_signature, currentUser?.email_signature_image_url);
+  // Build signature: check if it's already HTML or plain text
+  let signatureHtml = '';
+  if (currentUser?.email_signature) {
+    if (currentUser.email_signature.includes('<')) {
+      // Already HTML (from rich text editor): wrap with marker and styling
+      signatureHtml = `${SIGNATURE_MARKER}<div data-email-signature="true" style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${currentUser.email_signature}</div>`;
+    } else {
+      // Plain text: use buildSignatureHtml to convert newlines and wrap
+      signatureHtml = buildSignatureHtml(currentUser.email_signature, currentUser?.email_signature_image_url);
+    }
+  }
 
   // B) For reply/forward, build quoted message
   if ((mode === "reply" || mode === "reply_all" || mode === "forward") && selectedMessage) {
