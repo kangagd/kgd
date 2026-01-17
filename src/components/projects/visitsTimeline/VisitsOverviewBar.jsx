@@ -7,25 +7,14 @@ import { Button } from '@/components/ui/button';
 const normalizeDoors = (measurements) => {
   if (!measurements) return [];
   
-  // Check for new_doors array (future format)
+  // Check for new_doors array
   if (Array.isArray(measurements.new_doors) && measurements.new_doors.length > 0) {
     return measurements.new_doors;
   }
   
-  // Check for single new_door object (future format)
+  // Check for single new_door object
   if (measurements.new_door) {
     return [measurements.new_door];
-  }
-  
-  // Check for legacy flat format (current data structure)
-  const hasMeasurementFields = [
-    'left_h', 'mid_h', 'right_h',
-    'top_w', 'mid_w', 'bottom_w',
-    'opening_width', 'opening_height'
-  ].some(field => measurements[field] !== undefined && measurements[field] !== null);
-  
-  if (hasMeasurementFields) {
-    return [{ _hasMeasurements: true }];
   }
   
   return [];
