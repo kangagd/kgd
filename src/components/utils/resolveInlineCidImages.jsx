@@ -45,8 +45,8 @@ export function resolveInlineCidImages(html, attachments = [], options = {}) {
     if (url) {
       return `src="${url}"`;
     }
-    // Mark for later lazy-loading
-    return `src="" data-inline-cid="${cid}" data-attachment-pending="true"`;
+    // Mark for later lazy-loading with data-cid-pending for detection
+    return `src="" data-cid-pending="${cid}" data-attachment-pending="true"`;
   });
 
   // Callback for missing URLs (caller can lazy-load them)
