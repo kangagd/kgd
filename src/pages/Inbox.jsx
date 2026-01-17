@@ -87,6 +87,8 @@ export default function Inbox() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedThreadIds, setSelectedThreadIds] = useState(new Set());
   const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [selectedMessageForProject, setSelectedMessageForProject] = useState(null);
 
   // Cleanup on unmount to avoid setState warnings and reset sync lock
   useEffect(() => {
