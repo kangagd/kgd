@@ -233,9 +233,9 @@ export default function EmailMessageItem({
     const container = document.querySelector('[class*="gmail-email-body"]');
     if (!container) return;
 
-    const images = container.querySelectorAll('img[data-cid-pending], img[data-cid]');
+    const images = container.querySelectorAll('img[data-cid-pending], img[data-inline-cid], img[data-attachment-pending="true"]');
     images.forEach((img) => {
-      const contentId = img.getAttribute('data-cid-pending') || img.getAttribute('data-cid');
+      const contentId = img.getAttribute('data-cid-pending') || img.getAttribute('data-inline-cid') || img.getAttribute('data-cid');
       
       // Track successful loads
       const handleLoad = () => {
