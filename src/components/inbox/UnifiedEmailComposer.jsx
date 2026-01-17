@@ -168,10 +168,34 @@ function isEmptyBody(html) {
 
 /**
  * Build signature HTML with marker and data attribute for idempotency
+ * Supports: plain text (with \n to <br> conversion) + optional image/logo
  */
-function buildSignatureHtml(signatureText) {
-  if (!signatureText || !isNonEmptyString(signatureText)) return "";
-  return `${SIGNATURE_MARKER}<div data-email-signature="true" style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">${signatureText}</div>`;
+function buildSignatureHtml(signatureText, signatureImageUrl = null) {
+  if (!signatureText || !isNonEmptyString(signatureText)) {
+    // Still render image-only signature if provided
+    if (signatureImageUrl) {
+      return `${SIGNATURE_MARKER}<div data-email-signature="true" style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;"><img src="${signatureImageUrl}" alt="Logo" style="max-width: 200px; height: auto;"></div>`;
+    }
+    return "";
+  }
+
+  // Convert newlines in plain text to <br> tags for proper formatting
+  const signatureWithBr = signatureText
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .join('<br>');
+
+  // Build signature with optional image
+  let signatureHtml = `<div data-email-signature="true" style="border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 12px;">`;
+  
+  if (signatureImageUrl) {
+    signatureHtml += `<div style="margin-bottom: 8px;"><img src="${signatureImageUrl}" alt="Logo" style="max-width: 200px; height: auto;"></div>`;
+  }
+
+  signatureHtml += `<div>${signatureWithBr}</div></div>`;
+
+  return `${SIGNATURE_MARKER}${signatureHtml}`;
 }
 
 /**
