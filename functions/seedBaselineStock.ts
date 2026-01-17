@@ -106,12 +106,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Process inventory in chunks to avoid rate limiting
-    const chunkSize = 5;
-    for (let i = 0; i < inventoryOps.length; i += chunkSize) {
-      const chunk = inventoryOps.slice(i, i + chunkSize);
-      
-      for (const op of chunk) {
+    // Process inventory one-by-one with generous throttling to avoid rate limiting
+    for (const op of inventoryOps) {
+      try {
         const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
           price_list_item_id: op.skuId,
           location_id: op.locationId
@@ -130,19 +127,18 @@ Deno.serve(async (req) => {
             location_name: op.locationName
           });
         }
+      } catch (err) {
+        console.error(`Failed to process inventory op for ${op.skuId}@${op.locationId}:`, err.message);
       }
 
-      // Throttle between chunks
-      await new Promise(r => setTimeout(r, 500));
+      // Aggressive throttle to stay under rate limits
+      await new Promise(r => setTimeout(r, 1000));
     }
 
-    // Batch create stock movements
-    if (movementOps.length > 0) {
-      const movementChunkSize = 5;
-      for (let i = 0; i < movementOps.length; i += movementChunkSize) {
-        const chunk = movementOps.slice(i, i + movementChunkSize);
-        
-        const movementData = chunk.map(op => ({
+    // Create stock movements one-by-one with generous throttling
+    for (const op of movementOps) {
+      try {
+        await base44.asServiceRole.entities.StockMovement.create({
           job_id: seedBatchId,
           sku_id: op.skuId,
           item_name: op.itemName,
@@ -156,15 +152,15 @@ Deno.serve(async (req) => {
           performed_by_user_name: user.full_name || user.display_name,
           performed_at: now,
           source: 'baseline_seed',
-          notes: `Baseline stocktake seed (set exact: ${chunk[0].current} → ${chunk[0].counted})`
-        }));
-
-        await base44.asServiceRole.entities.StockMovement.bulkCreate(movementData);
-        changesCount += chunk.length;
-
-        // Throttle between chunks
-        await new Promise(r => setTimeout(r, 500));
+          notes: `Baseline stocktake seed (set exact: ${op.current} → ${op.counted})`
+        });
+        changesCount++;
+      } catch (err) {
+        console.error(`Failed to create stock movement for ${op.skuId}:`, err.message);
       }
+
+      // Aggressive throttle to stay under rate limits
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     // 3. Record the baseline seed run
