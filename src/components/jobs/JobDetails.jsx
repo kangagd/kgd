@@ -64,6 +64,7 @@ import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import JobBriefCard from "./JobBriefCard";
 
 function isLastCheckedInTechnician(checkIns, currentUserEmail) {
   if (!checkIns || checkIns.length === 0 || !currentUserEmail) return false;
@@ -2407,35 +2408,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </div>
                   )}
 
-                  <div>
-                <RichTextField
-                  label="Job Info"
-                  value={additionalInfo}
-                  onChange={setAdditionalInfo}
-                  onBlur={handleAdditionalInfoBlur}
-                  placeholder="Add any additional information or context…"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Pricing</label>
-                <Input
-                  value={pricingProvided}
-                  onChange={(e) => setPricingProvided(e.target.value)}
-                  onBlur={handlePricingProvidedBlur}
-                  placeholder="Enter pricing..."
-                />
-              </div>
-
-              <div>
-                <RichTextField
-                  label="Notes"
-                  value={notes}
-                  onChange={setNotes}
-                  onBlur={handleNotesBlur}
-                  placeholder="Add notes and instructions for technicians…"
-                />
-              </div>
+                  {/* Job Brief - Replaces Job Info, Pricing, Notes */}
+                  <JobBriefCard 
+                    job={job}
+                    onRefresh={() => {
+                      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+                    }}
+                  />
 
                   {!isTechnician && (
                     <div className="flex flex-col gap-2">
