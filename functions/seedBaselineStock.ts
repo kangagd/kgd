@@ -102,19 +102,19 @@ Deno.serve(async (req) => {
         // 2. Only create StockMovement if value changed
         if (delta !== 0) {
           await base44.asServiceRole.entities.StockMovement.create({
+            job_id: seedBatchId,
             sku_id: skuEntry.price_list_item_id,
             item_name: skuEntry.item_name,
-            quantity: delta,  // Store the delta (positive or negative)
-            from_location_id: null,
-            to_location_id: locEntry.location_id,
-            to_location_name: locEntry.location_name,
+            quantity: delta,
+            from_location_id: delta < 0 ? locEntry.location_id : null,
+            to_location_id: delta > 0 ? locEntry.location_id : null,
+            to_location_name: delta > 0 ? locEntry.location_name : null,
+            from_location_name: delta < 0 ? locEntry.location_name : null,
             performed_by_user_id: user.id,
             performed_by_user_email: user.email,
             performed_by_user_name: user.full_name || user.display_name,
             performed_at: now,
             source: 'baseline_seed',
-            reference_type: 'system_migration',
-            reference_id: seedBatchId,
             notes: `Baseline stocktake seed (set exact: ${current} → ${counted})`
           });
           changesCount++;
