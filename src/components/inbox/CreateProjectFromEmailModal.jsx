@@ -24,47 +24,8 @@ const CATEGORIES = [
 export default function CreateProjectFromEmailModal({ open, onClose, thread, emailMessage, onSuccess }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [step, setStep] = useState('review'); // 'review' or 'confirm'
-  const [preview, setPreview] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [previewError, setPreviewError] = useState(null);
-
-  // Override fields
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [editedAddress, setEditedAddress] = useState('');
-  const [editedCustomerName, setEditedCustomerName] = useState('');
-
-  // Generate preview on mount/open
-  useEffect(() => {
-    if (open && thread && emailMessage) {
-      generatePreview();
-    }
-  }, [open, thread, emailMessage]);
-
-  const generatePreview = async () => {
-    setLoading(true);
-    setPreviewError(null);
-    try {
-      // Call preview function to get AI suggestions
-      const result = await base44.functions.invoke('previewProjectFromEmail', {
-        email_thread_id: thread.id,
-        email_message_id: emailMessage?.id || thread.id,
-      });
-
-      if (result.data?.error) {
-        setPreviewError(result.data.error);
-      } else {
-        setPreview(result.data);
-        setSelectedCategory(result.data?.suggested_category || '');
-        setEditedAddress(result.data?.short_address || '');
-        setEditedCustomerName(result.data?.customer_name || '');
-      }
-    } catch (err) {
-      setPreviewError(err.message || 'Failed to generate preview');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState(null);
 
   const createProjectMutation = useMutation({
     mutationFn: async () => {
