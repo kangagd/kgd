@@ -27,6 +27,7 @@ import RichTextEditor from "../common/RichTextEditor";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PART_STATUS, PART_STATUS_OPTIONS, PART_LOCATION, PART_LOCATION_OPTIONS, PART_CATEGORIES, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation } from "@/components/domain/partConfig";
+import { getPhysicalAvailableLocations, getDefaultWarehouseLocation, getVehicleLocationByVehicleId, calculateOnHandFromPhysicalLocations } from "@/components/utils/inventoryLocationUtils";
 import { SOURCE_TYPE, SOURCE_TYPE_OPTIONS, SOURCE_TYPE_LABELS, getSourceTypeLabel, normaliseLegacySourceType } from "@/components/domain/supplierDeliveryConfig";
 import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig";
 import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
@@ -54,6 +55,31 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const [poError, setPoError] = useState("");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // A) Fetch Inventory Data
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+    enabled: open,
+  });
+
+  const { data: inventoryLocations = [] } = useQuery({
+    queryKey: ['inventoryLocations'],
+    queryFn: () => base44.entities.InventoryLocation.filter({ is_active: true }),
+    enabled: open,
+  });
+
+  // A) Compute stock levels
+  const physicalLocations = getPhysicalAvailableLocations(inventoryLocations);
+  const defaultWarehouseLocation = getDefaultWarehouseLocation(inventoryLocations);
+
+  const onHandByItemId = React.useMemo(() => {
+    const onHandMap = {};
+    priceListItems.forEach(item => {
+      onHandMap[item.id] = calculateOnHandFromPhysicalLocations(inventoryQuantities, physicalLocations, item.id);
+    });
+    return onHandMap;
+  }, [inventoryQuantities, physicalLocations, priceListItems]);
 
   // Fetch linked PO if part has one
   const { data: linkedPO } = useQuery({
@@ -247,10 +273,41 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
       };
 
       // Save/create the Part
+      // D) Validation on Save
+      if (dataToSave.price_list_item_id && dataToSave.source_type === SOURCE_TYPE.IN_STOCK) {
+        let availableQty = 0;
+        let locationName = '';
+
+        if (dataToSave.location === PART_LOCATION.WAREHOUSE_STORAGE) {
+            const warehouseLocation = getDefaultWarehouseLocation(inventoryLocations);
+            locationName = warehouseLocation?.name || 'the warehouse';
+            if(warehouseLocation){
+                const stock = inventoryQuantities.find(iq => iq.location_id === warehouseLocation.id && iq.price_list_item_id === dataToSave.price_list_item_id);
+                availableQty = stock?.quantity || 0;
+            }
+        } else if (dataToSave.location === PART_LOCATION.VEHICLE) {
+            if (!dataToSave.assigned_vehicle_id) {
+                throw new Error("Please select a vehicle.");
+            }
+            const vehicleLocation = getVehicleLocationByVehicleId(inventoryLocations, dataToSave.assigned_vehicle_id);
+            locationName = vehicles.find(v => v.id === dataToSave.assigned_vehicle_id)?.name || 'the selected vehicle';
+            if(vehicleLocation){
+                const stock = inventoryQuantities.find(iq => iq.location_id === vehicleLocation.id && iq.price_list_item_id === dataToSave.price_list_item_id);
+                availableQty = stock?.quantity || 0;
+            }
+        }
+
+        if (dataToSave.quantity_required > availableQty) {
+            dataToSave.backorder_pending = true;
+            dataToSave.backorder_quantity = dataToSave.quantity_required - availableQty;
+            toast.warning(`Quantity exceeds available stock. Part is on backorder.`);
+        } else {
+            dataToSave.backorder_pending = false;
+            dataToSave.backorder_quantity = 0;
+        }
+      }
+
       const savedPart = await onSave(dataToSave);
-      
-      // No longer create PO here - user will use "Create PO" button from PartsSection
-      // or navigate to existing PO to add this part
       
       toast.success("Part saved");
       onClose();
@@ -427,12 +484,17 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                     <PopoverContent className="w-[400px] p-0" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                       <div className="max-h-[300px] overflow-y-auto">
                         {priceListItems
-                          .filter(item => 
-                            !priceListSearch || 
-                            item.item?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
-                            item.sku?.toLowerCase().includes(priceListSearch.toLowerCase()) ||
-                            item.brand?.toLowerCase().includes(priceListSearch.toLowerCase())
-                          )
+                          .filter(item => {
+                            const hasStock = onHandByItemId[item.id] > 0;
+                            if (!hasStock) return false;
+                            if (!priceListSearch) return true;
+                            const searchLower = priceListSearch.toLowerCase();
+                            return (
+                              item.item?.toLowerCase().includes(searchLower) ||
+                              item.sku?.toLowerCase().includes(searchLower) ||
+                              item.brand?.toLowerCase().includes(searchLower)
+                            );
+                          })
                           .slice(0, 50)
                           .map((item) => (
                             <button
@@ -452,7 +514,10 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                               }}
                               className="w-full text-left px-3 py-2 hover:bg-[#F3F4F6] transition-colors border-b border-[#E5E7EB] last:border-0"
                             >
-                              <div className="font-medium text-sm text-[#111827]">{item.item}</div>
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium text-sm text-[#111827]">{item.item}</span>
+                                <Badge variant="outline">On hand: {onHandByItemId[item.id]}</Badge>
+                              </div>
                               <div className="text-xs text-[#6B7280] mt-0.5">
                                 {item.sku && `SKU: ${item.sku}`}
                                 {item.brand && ` • ${item.brand}`}
@@ -534,6 +599,39 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
                   </Select>
                   <p className="text-xs text-[#6B7280]">For items on order, use Purchase Orders</p>
                 </div>
+
+                {formData.price_list_item_id && formData.source_type === SOURCE_TYPE.IN_STOCK && (
+                  <div className="md:col-span-2 space-y-3 pt-4 border-t">
+                    <div>
+                      <Label>Stock Source</Label>
+                      <div className="flex gap-2 mt-1">
+                        <Button type="button" variant={formData.location === PART_LOCATION.WAREHOUSE_STORAGE ? 'default' : 'outline'} onClick={() => setFormData({...formData, location: PART_LOCATION.WAREHOUSE_STORAGE, assigned_vehicle_id: null})}>Warehouse</Button>
+                        <Button type="button" variant={formData.location === PART_LOCATION.VEHICLE ? 'default' : 'outline'} onClick={() => setFormData({...formData, location: PART_LOCATION.VEHICLE})}>Vehicle</Button>
+                      </div>
+                    </div>
+
+                    {formData.location === PART_LOCATION.VEHICLE && (
+                      <div>
+                        <Label>Vehicle</Label>
+                        <Select value={formData.assigned_vehicle_id} onValueChange={(val) => setFormData({...formData, assigned_vehicle_id: val})}>
+                          <SelectTrigger className="bg-white">
+                            <SelectValue placeholder="Select vehicle" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {vehicles.map(v => {
+                                const vehicleLocation = getVehicleLocationByVehicleId(inventoryLocations, v.id);
+                                const stock = inventoryQuantities.find(iq => iq.location_id === vehicleLocation?.id && iq.price_list_item_id === formData.price_list_item_id);
+                                if(stock && stock.quantity > 0){
+                                    return <SelectItem key={v.id} value={v.id}>{v.name} ({stock.quantity})</SelectItem>
+                                }
+                                return null;
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label>Quantity Required</Label>
