@@ -452,9 +452,11 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = () => base44.auth.logout();
   const handleRefresh = () => window.location.reload();
 
+  const showEnvBanner = user?.role === 'admin' && (import.meta?.env?.MODE !== 'production');
+
   return (
     <PermissionsProvider>
-      <EnvironmentBanner />
+      {showEnvBanner && <EnvironmentBanner />}
       <div className="min-h-screen flex bg-[#ffffff]">
         <Toaster position="top-right" richColors closeButton />
 
