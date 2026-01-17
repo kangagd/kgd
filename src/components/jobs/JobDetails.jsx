@@ -64,7 +64,6 @@ import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
-import JobBriefCard from "./JobBriefCard";
 
 function isLastCheckedInTechnician(checkIns, currentUserEmail) {
   if (!checkIns || checkIns.length === 0 || !currentUserEmail) return false;
@@ -1786,9 +1785,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             <TabsContent value="details" className="space-y-4 mt-3">
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
-
-              {/* Job Brief Card */}
-              <JobBriefCard job={job} />
 
               {/* Parts & Requirements Section */}
               {!isLogisticsJob && (() => {
