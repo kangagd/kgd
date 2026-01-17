@@ -276,6 +276,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     loadUser();
   }, []);
 
+  // SILENT VISIT CREATION: Ensure active Visit exists when opening a Scheduled job
+  useEffect(() => {
+    const ensureVisit = async () => {
+      if (job?.status === 'Scheduled' && job?.id) {
+        try {
+          await base44.functions.invoke('ensureActiveVisit', { job_id: job.id });
+        } catch (e) {
+          // Silent failure - don't block UI
+        }
+      }
+    };
+    ensureVisit();
+  }, [job?.id, job?.status]);
+
   const { data: checkIns = [] } = useQuery({
     queryKey: ['checkIns', job.id],
     queryFn: () => base44.entities.CheckInOut.filter({ job_id: job.id }),

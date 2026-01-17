@@ -147,6 +147,14 @@ Deno.serve(async (req) => {
             // Non-critical, don't fail the check-in
         }
 
+        // 6.5. Ensure active Visit exists (silent background creation)
+        try {
+            await base44.asServiceRole.functions.invoke('ensureActiveVisit', { job_id: jobId });
+        } catch (e) {
+            console.error("Failed to ensure active visit (non-critical):", e);
+            // Don't block check-in if this fails
+        }
+
         // 7. Update Job Status (Optional)
         if (newStatus && newStatus !== job.status) {
             try {

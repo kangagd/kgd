@@ -395,6 +395,15 @@ Deno.serve(async (req) => {
                 }
             }
             
+            // SILENT VISIT CREATION: If job just became Scheduled, ensure active Visit exists
+            if (job.status === 'Scheduled' && previousJob.status !== 'Scheduled') {
+                try {
+                    await base44.asServiceRole.functions.invoke('ensureActiveVisit', { job_id: job.id });
+                } catch (e) {
+                    console.error("Failed to ensure active visit (non-critical):", e);
+                }
+            }
+
             // Update project activity when job is updated
             if (job.project_id) {
                 await updateProjectActivity(base44, job.project_id, 'Job Updated');
