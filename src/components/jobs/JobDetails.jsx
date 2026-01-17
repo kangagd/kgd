@@ -2431,7 +2431,19 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
 
                   {/* Show applied outcome for completed jobs */}
-                  {job.status === 'Completed' && job.logistics_outcome && job.logistics_outcome !== 'none' && (
+                  {job.status === 'Completed' && job.sample_outcome && job.sample_outcome !== 'return_to_storage' && job.logistics_purpose === 'sample_pickup' && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-purple-700">
+                        <Package className="w-4 h-4" />
+                        <span className="text-sm font-semibold">
+                          Samples moved to {job.sample_outcome === 'move_to_vehicle' ? 'vehicle' : 'storage'} (transferring...)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show applied outcome for completed stock jobs */}
+                  {job.status === 'Completed' && job.logistics_outcome && job.logistics_outcome !== 'none' && job.logistics_purpose !== 'sample_pickup' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-green-700">
                         <Package className="w-4 h-4" />
