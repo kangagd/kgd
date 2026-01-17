@@ -221,38 +221,33 @@ export default function Projects() {
   }, [allJobs, allParts, allTradeRequirements, allAttentionItems, allPurchaseOrders, allEmailThreads]);
 
   const detectShortage = useCallback((part) => {
-    // Cancelled or installed parts are not shortages
-    if (part.status === 'cancelled' || part.status === 'installed') {
-      return false;
-    }
-    
-    // CRITICAL: Check linked PO status first (takes precedence)
-    if (part.purchase_order_id) {
-      const linkedPO = allPurchaseOrders.find(po => po.id === part.purchase_order_id);
-      if (linkedPO) {
-        const poStatus = (linkedPO.status || '').toLowerCase().replace(/[\s_-]/g, '');
-        const readyPOStatuses = ['instorage', 'inloadingbay', 'invehicle', 'ready', 'received', 'in_storage', 'in_loading_bay', 'in_vehicle'];
-        if (readyPOStatuses.includes(linkedPO.status) || readyPOStatuses.includes(poStatus)) {
-          return false;
-        }
-      }
-    }
-    
-    // CRITICAL: Parts with these statuses are READY (not a shortage)
-    const readyStatuses = ['in_storage', 'in_loading_bay', 'in_vehicle', 'ready', 'received', 'instorage', 'invehicle', 'inloadingbay'];
-    const normalizedStatus = (part.status || '').toLowerCase().replace(/[\s_-]/g, '');
-    if (readyStatuses.includes(part.status) || readyStatuses.includes(normalizedStatus)) {
-      return false;
-    }
-    
-    // Check if received quantity is available
-    const receivedQty = Number(part.received_qty || part.quantity_received || 0);
-    if (receivedQty > 0) {
-      return false;
-    }
-    
-    // Everything else is a shortage
-    return true;
+  if (part.status === 'cancelled' || part.status === 'installed') {
+  return false;
+  }
+
+  if (part.purchase_order_id) {
+  const linkedPO = allPurchaseOrders.find(po => po.id === part.purchase_order_id);
+  if (linkedPO) {
+  const poStatus = (linkedPO.status || '').toLowerCase().replace(/[\s_-]/g, '');
+  const readyPOStatuses = ['instorage', 'inloadingbay', 'invehicle', 'ready', 'received', 'in_storage', 'in_loading_bay', 'in_vehicle'];
+  if (readyPOStatuses.includes(linkedPO.status) || readyPOStatuses.includes(poStatus)) {
+    return false;
+  }
+  }
+  }
+
+  const readyStatuses = ['in_storage', 'in_loading_bay', 'in_vehicle', 'ready', 'received', 'instorage', 'invehicle', 'inloadingbay'];
+  const normalizedStatus = (part.status || '').toLowerCase().replace(/[\s_-]/g, '');
+  if (readyStatuses.includes(part.status) || readyStatuses.includes(normalizedStatus)) {
+  return false;
+  }
+
+  const receivedQty = Number(part.received_qty || part.quantity_received || 0);
+  if (receivedQty > 0) {
+  return false;
+  }
+
+  return true;
   }, [allPurchaseOrders]);
 
   const createProjectMutation = useMutation({
