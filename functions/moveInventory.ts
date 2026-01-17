@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
       movementType = null,
       source = null,
       jobId = null,
+      vehicleId = null,
       notes = null 
     } = body;
 
@@ -35,6 +36,60 @@ Deno.serve(async (req) => {
     // Validate transfer requires both locations
     if (finalSource === 'transfer' && (!fromLocationId || !toLocationId)) {
       return Response.json({ error: 'Transfer requires both from and to locations' }, { status: 400 });
+    }
+
+    // TECHNICIAN AUTHORIZATION: enforce warehouse <-> own vehicle only
+    if (user.role === 'technician') {
+      // Resolve technician's assigned vehicle
+      const vehicles = await base44.asServiceRole.entities.Vehicle.filter({
+        assigned_user_id: user.id,
+        is_active: { $ne: false }
+      });
+
+      if (vehicles.length === 0) {
+        return Response.json({ error: 'No vehicle assigned to this user' }, { status: 403 });
+      }
+
+      if (vehicles.length > 1) {
+        return Response.json({ error: 'Multiple vehicles assigned; admin must resolve' }, { status: 409 });
+      }
+
+      const techVehicle = vehicles[0];
+
+      // Resolve vehicle inventory location
+      const vehicleLocs = await base44.asServiceRole.entities.InventoryLocation.filter({
+        type: 'vehicle',
+        vehicle_id: techVehicle.id,
+        is_active: { $ne: false }
+      });
+
+      if (vehicleLocs.length === 0) {
+        return Response.json({ error: 'Vehicle inventory location missing. Run ensureVehicleInventoryLocations.' }, { status: 409 });
+      }
+
+      const vehicleLoc = vehicleLocs[0];
+
+      // Resolve main warehouse
+      const warehouses = await base44.asServiceRole.entities.InventoryLocation.filter({
+        type: 'warehouse',
+        is_active: { $ne: false }
+      });
+
+      if (warehouses.length === 0) {
+        return Response.json({ error: 'No active warehouse location configured' }, { status: 409 });
+      }
+
+      const warehouseLoc = warehouses[0];
+
+      // Enforce allowed routes: warehouse <-> vehicle only
+      const isWarehouseToVehicle = fromLocationId === warehouseLoc.id && toLocationId === vehicleLoc.id;
+      const isVehicleToWarehouse = fromLocationId === vehicleLoc.id && toLocationId === warehouseLoc.id;
+
+      if (!isWarehouseToVehicle && !isVehicleToWarehouse) {
+        return Response.json({ 
+          error: 'Technicians can only transfer between the main warehouse and their assigned vehicle.' 
+        }, { status: 403 });
+      }
     }
 
     // Get item details
@@ -103,6 +158,17 @@ Deno.serve(async (req) => {
     }
 
     // Log the movement (canonical schema)
+    let referenceType = null;
+    let referenceId = null;
+    
+    if (jobId) {
+      referenceType = 'job';
+      referenceId = jobId;
+    } else if (vehicleId) {
+      referenceType = 'vehicle_transfer';
+      referenceId = vehicleId;
+    }
+
     await base44.entities.StockMovement.create({
       price_list_item_id: priceListItemId,
       item_name: item.item,
@@ -115,8 +181,8 @@ Deno.serve(async (req) => {
       performed_by_user_email: user.email,
       performed_by_user_name: user.full_name || user.display_name || user.email,
       performed_at: new Date().toISOString(),
-      reference_type: jobId ? 'job' : null,
-      reference_id: jobId || null,
+      reference_type: referenceType,
+      reference_id: referenceId,
       notes: notes
     });
 
