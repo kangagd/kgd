@@ -320,6 +320,16 @@ export default function UnifiedEmailComposer({
 
         const user = { ...authUser, email_signature: signature };
 
+        console.log("[UnifiedEmailComposer] Loaded user signature:", { 
+          hasSignature: !!signature, 
+          signatureLength: signature?.length || 0,
+          availableFields: {
+            email_signature: authUser?.email_signature,
+            emailSignature: authUser?.emailSignature,
+            signature: authUser?.signature
+          }
+        });
+
         if (!unmountedRef.current) {
           setCurrentUser(user);
         }
