@@ -757,12 +757,68 @@ export default function UnifiedEmailComposer({
         size: att.size
       }));
 
+      // Render merge fields at send time
+      let renderedSubject = subject;
+      let renderedBodyHtml = body;
+      let unresolvedTokens = [];
+
+      try {
+        // Build template context from current state
+        let customer = null;
+        if (toChips.length > 0) {
+          customer = customers.find(
+            (c) => c.email?.toLowerCase() === toChips[0].toLowerCase()
+          );
+        }
+        if (!customer && linkedProject?.customer_id) {
+          try {
+            customer = await base44.entities.Customer.get(
+              linkedProject.customer_id
+            );
+          } catch (error) {
+            console.log("Could not fetch customer for merge fields:", error);
+          }
+        }
+
+        const context = buildTemplateContext({
+          project: linkedProject,
+          customer,
+          user: currentUser,
+        });
+
+        // Create a mock template object to use renderTemplate
+        const mockTemplate = { subject, body };
+        const rendered = renderTemplate(mockTemplate, context);
+        
+        renderedSubject = rendered.subject || subject;
+        renderedBodyHtml = rendered.body || body;
+
+        // Detect unresolved tokens (simple check for {field_name} pattern)
+        const tokenRegex = /\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g;
+        const subjectTokens = (renderedSubject.match(tokenRegex) || []).map(t => t.slice(1, -1));
+        const bodyTokens = (renderedBodyHtml.match(tokenRegex) || []).map(t => t.slice(1, -1));
+        unresolvedTokens = [...new Set([...subjectTokens, ...bodyTokens])];
+      } catch (err) {
+        console.error('Merge field rendering error:', err);
+        // Gracefully fallback to original content on error
+        renderedSubject = subject;
+        renderedBodyHtml = body;
+      }
+
+      // Warn if unresolved tokens remain
+      if (unresolvedTokens.length > 0) {
+        toast.warning(
+          `Some merge fields could not be resolved: ${unresolvedTokens.join(', ')}. Email will be sent with tokens as-is.`,
+          { duration: 5000 }
+        );
+      }
+
       const payload = {
         to: toChips,
         cc: ccChips.length > 0 ? ccChips : undefined,
         bcc: bccChips.length > 0 ? bccChips : undefined,
-        subject,
-        body_html: body,
+        subject: renderedSubject,
+        body_html: renderedBodyHtml,
         attachments: cleanAttachments.length > 0 ? cleanAttachments : undefined,
         thread_id: thread?.id || null,
         gmail_thread_id: thread?.gmail_thread_id || undefined,
