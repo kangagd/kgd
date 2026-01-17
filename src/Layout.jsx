@@ -87,6 +87,7 @@ const navigationSections = [
       { title: "Role Settings", url: createPageUrl("RoleSettings"), icon: Shield },
       { title: "Photos", url: createPageUrl("Photos"), icon: ImageIcon },
       { title: "Reports", url: createPageUrl("Reports"), icon: TrendingUp },
+      { title: "Model Health", url: createPageUrl("ModelHealth"), icon: AlertTriangle },
     ]
   }
 ];
