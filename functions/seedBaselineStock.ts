@@ -106,53 +106,65 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Execute inventory operations with throttling
-    for (const op of inventoryOps) {
-      const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
-        price_list_item_id: op.skuId,
-        location_id: op.locationId
-      });
-
-      if (existing.length > 0) {
-        await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
-          quantity: op.quantity
-        });
-      } else {
-        await base44.asServiceRole.entities.InventoryQuantity.create({
+    // Process inventory in chunks to avoid rate limiting
+    const chunkSize = 5;
+    for (let i = 0; i < inventoryOps.length; i += chunkSize) {
+      const chunk = inventoryOps.slice(i, i + chunkSize);
+      
+      for (const op of chunk) {
+        const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
           price_list_item_id: op.skuId,
-          location_id: op.locationId,
-          quantity: op.quantity,
-          item_name: op.itemName,
-          location_name: op.locationName
+          location_id: op.locationId
         });
+
+        if (existing.length > 0) {
+          await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
+            quantity: op.quantity
+          });
+        } else {
+          await base44.asServiceRole.entities.InventoryQuantity.create({
+            price_list_item_id: op.skuId,
+            location_id: op.locationId,
+            quantity: op.quantity,
+            item_name: op.itemName,
+            location_name: op.locationName
+          });
+        }
       }
 
-      // Throttle to avoid rate limiting
-      await new Promise(r => setTimeout(r, 10));
+      // Throttle between chunks
+      await new Promise(r => setTimeout(r, 500));
     }
 
-    // Execute movement operations with throttling
-    for (const op of movementOps) {
-      await base44.asServiceRole.entities.StockMovement.create({
-        job_id: seedBatchId,
-        sku_id: op.skuId,
-        item_name: op.itemName,
-        quantity: op.delta,
-        from_location_id: op.delta < 0 ? op.locationId : null,
-        to_location_id: op.delta > 0 ? op.locationId : null,
-        to_location_name: op.delta > 0 ? op.locationName : null,
-        from_location_name: op.delta < 0 ? op.locationName : null,
-        performed_by_user_id: user.id,
-        performed_by_user_email: user.email,
-        performed_by_user_name: user.full_name || user.display_name,
-        performed_at: now,
-        source: 'baseline_seed',
-        notes: `Baseline stocktake seed (set exact: ${op.current} → ${op.counted})`
-      });
-      changesCount++;
+    // Batch create stock movements
+    if (movementOps.length > 0) {
+      const movementChunkSize = 5;
+      for (let i = 0; i < movementOps.length; i += movementChunkSize) {
+        const chunk = movementOps.slice(i, i + movementChunkSize);
+        
+        const movementData = chunk.map(op => ({
+          job_id: seedBatchId,
+          sku_id: op.skuId,
+          item_name: op.itemName,
+          quantity: op.delta,
+          from_location_id: op.delta < 0 ? op.locationId : null,
+          to_location_id: op.delta > 0 ? op.locationId : null,
+          to_location_name: op.delta > 0 ? op.locationName : null,
+          from_location_name: op.delta < 0 ? op.locationName : null,
+          performed_by_user_id: user.id,
+          performed_by_user_email: user.email,
+          performed_by_user_name: user.full_name || user.display_name,
+          performed_at: now,
+          source: 'baseline_seed',
+          notes: `Baseline stocktake seed (set exact: ${chunk[0].current} → ${chunk[0].counted})`
+        }));
 
-      // Throttle to avoid rate limiting
-      await new Promise(r => setTimeout(r, 10));
+        await base44.asServiceRole.entities.StockMovement.bulkCreate(movementData);
+        changesCount += chunk.length;
+
+        // Throttle between chunks
+        await new Promise(r => setTimeout(r, 500));
+      }
     }
 
     // 3. Record the baseline seed run
