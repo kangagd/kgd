@@ -1457,6 +1457,15 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
             </CardContent>
           </Card>
         )}
+
+        {/* Receive Items Modal */}
+        <ReceivePoItemsModal
+          open={showReceiveModal}
+          onOpenChange={setShowReceiveModal}
+          poId={poId}
+          poReference={getPoDisplayReference(po)}
+          lineItems={lineItems}
+        />
       </div>
     </div>
   );
