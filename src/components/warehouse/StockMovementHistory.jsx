@@ -18,15 +18,18 @@ export default function StockMovementHistory() {
 
   const filteredMovements = movements.filter(m => {
     const query = search.toLowerCase();
+    const performerName = m.performed_by_user_name || m.moved_by_name || '';
     return (
       m.item_name?.toLowerCase().includes(query) ||
       m.from_location_name?.toLowerCase().includes(query) ||
       m.to_location_name?.toLowerCase().includes(query) ||
-      m.moved_by_name?.toLowerCase().includes(query)
+      performerName.toLowerCase().includes(query)
     );
   });
 
-  const getMovementIcon = (type) => {
+  const getMovementIcon = (source) => {
+    // Support both legacy movement_type and new source fields
+    const type = source || 'transfer';
     switch (type) {
       case 'transfer':
         return <ArrowRightLeft className="w-4 h-4 text-blue-600" />;
@@ -38,20 +41,31 @@ export default function StockMovementHistory() {
         return <Wrench className="w-4 h-4 text-amber-600" />;
       case 'job_usage':
         return <TrendingDown className="w-4 h-4 text-purple-600" />;
+      case 'po_receipt':
+        return <TrendingUp className="w-4 h-4 text-green-600" />;
+      case 'manual_adjustment':
+        return <Wrench className="w-4 h-4 text-amber-600" />;
+      case 'logistics_job_completion':
+        return <ArrowRightLeft className="w-4 h-4 text-blue-500" />;
       default:
         return <ArrowRightLeft className="w-4 h-4 text-gray-600" />;
     }
   };
 
-  const getMovementBadge = (type) => {
+  const getMovementBadge = (source) => {
+    // Support both legacy movement_type and new source fields
+    const type = source || 'transfer';
     const badges = {
       transfer: { label: 'Transfer', variant: 'secondary' },
       stock_in: { label: 'Stock In', variant: 'success' },
       stock_out: { label: 'Stock Out', variant: 'destructive' },
       adjustment: { label: 'Adjustment', variant: 'warning' },
-      job_usage: { label: 'Job Usage', variant: 'secondary' }
+      job_usage: { label: 'Job Usage', variant: 'secondary' },
+      po_receipt: { label: 'PO Receipt', variant: 'success' },
+      manual_adjustment: { label: 'Adjustment', variant: 'warning' },
+      logistics_job_completion: { label: 'Logistics', variant: 'secondary' }
     };
-    return badges[type] || { label: type, variant: 'secondary' };
+    return badges[type] || { label: 'Movement', variant: 'secondary' };
   };
 
   if (isLoading) {
@@ -73,13 +87,17 @@ export default function StockMovementHistory() {
 
       <div className="space-y-2 max-h-[600px] overflow-y-auto">
         {filteredMovements.map((movement) => {
-          const badge = getMovementBadge(movement.movement_type);
+          // Support new + legacy field names for backward compatibility
+          const source = movement.source || movement.movement_type || 'transfer';
+          const performerName = movement.performed_by_user_name || movement.moved_by_name || 'Unknown';
+          const performerEmail = movement.performed_by_user_email || movement.moved_by || '';
+          const badge = getMovementBadge(source);
 
           return (
             <Card key={movement.id} className="border-[#E5E7EB]">
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
-                  {getMovementIcon(movement.movement_type)}
+                  {getMovementIcon(source)}
 
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium text-[#111827]">
@@ -87,22 +105,27 @@ export default function StockMovementHistory() {
                     </p>
 
                     <div className="text-[12px] text-[#6B7280] mt-1 space-y-0.5">
-                      {movement.movement_type === 'transfer' && (
+                      {(source === 'transfer') && (
                         <p>
                           {movement.from_location_name} → {movement.to_location_name}
                         </p>
                       )}
-                      {movement.movement_type === 'stock_in' && (
+                      {(source === 'stock_in' || source === 'po_receipt') && (
                         <p>Received to {movement.to_location_name}</p>
                       )}
-                      {movement.movement_type === 'stock_out' && (
+                      {(source === 'stock_out') && (
                         <p>Deducted from {movement.from_location_name}</p>
                       )}
-                      {movement.movement_type === 'job_usage' && (
+                      {(source === 'job_usage') && (
                         <p>Used on job from {movement.from_location_name}</p>
                       )}
-                      {movement.movement_type === 'adjustment' && (
+                      {(source === 'adjustment' || source === 'manual_adjustment') && (
                         <p>Adjusted at {movement.to_location_name}</p>
+                      )}
+                      {(source === 'logistics_job_completion') && (
+                        <p>
+                          {movement.from_location_name} → {movement.to_location_name}
+                        </p>
                       )}
 
                       {movement.notes && (
@@ -113,7 +136,7 @@ export default function StockMovementHistory() {
                     </div>
 
                     <div className="text-[11px] text-[#9CA3AF] mt-2 space-y-0.5">
-                      <p>By: {movement.moved_by_name || movement.moved_by}</p>
+                      <p>By: {performerName} {performerEmail ? `(${performerEmail})` : ''}</p>
                       <p>{format(new Date(movement.created_date), 'MMM d, yyyy HH:mm')}</p>
                     </div>
                   </div>
