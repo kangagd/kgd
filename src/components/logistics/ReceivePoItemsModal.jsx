@@ -80,14 +80,25 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
         notes: notes
       });
 
+      // Check if operation fully failed (all items skipped)
       if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to receive items');
+        const skipReasons = response.data?.skipped_lines?.map(s => `${s.po_line_id}: ${s.reason}`).join(', ') || 'unknown';
+        throw new Error(response.data?.error || `Failed to receive any items. ${skipReasons}`);
       }
 
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success(`Received ${data.items_received} items`);
+      // Show success with warning if items were skipped
+      if (data.skipped_items > 0) {
+        toast.warning(
+          `Received ${data.items_received} items. ${data.skipped_items} skipped: ${
+            data.skipped_lines?.map(s => s.reason).join('; ') || 'see details'
+          }`
+        );
+      } else {
+        toast.success(`Received ${data.items_received} items`);
+      }
       queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
       queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
       queryClient.invalidateQueries({ queryKey: ['inventoryQuantities'] });
