@@ -47,40 +47,49 @@ export default function ModelHealth() {
     staleTime: 60000, // 1 minute
   });
 
-  // Dry run mutation
+  // State for dry run results
+  const [dryRunResults, setDryRunResults] = useState(null);
+
+  // Dry run mutation - ALWAYS allowed (read-only)
   const dryRunMutation = useMutation({
     mutationFn: async () => {
       const response = await base44.functions.invoke('fixModelDrift', { dry_run: true });
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success(`Dry Run Complete: ${data.fixed_count} issues would be fixed`);
+      setDryRunResults(data);
+      toast.success(`Dry Run Complete: ${data.fixed_count} issues would be fixed (no changes made)`);
       queryClient.invalidateQueries({ queryKey: ['modelDrift'] });
     },
     onError: (error) => {
-      toast.error(error.message || 'Dry run failed');
+      const errorMsg = error?.response?.data?.error || error?.message || 'Dry run failed';
+      toast.error(errorMsg);
     }
   });
 
-  // Commit fix mutation
+  // Commit fix mutation - Requires feature flag
   const commitFixMutation = useMutation({
     mutationFn: async () => {
       const response = await base44.functions.invoke('fixModelDrift', { dry_run: false });
       return response.data;
     },
     onSuccess: (data) => {
+      setDryRunResults(null);
       toast.success(`Fixed ${data.fixed_count} drift issues successfully`);
       queryClient.invalidateQueries({ queryKey: ['modelDrift'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.invalidateQueries({ queryKey: ['visits'] });
     },
     onError: (error) => {
-      toast.error(error.message || 'Fix commit failed');
+      const errorMsg = error?.response?.data?.error || error?.message || 'Fix commit failed';
+      toast.error(errorMsg);
     }
   });
 
   const handleAction = (action) => {
-    if (!isModelHealthEnabled) {
+    // Dry run is always allowed (read-only)
+    // Commit requires feature flag
+    if (action === 'commit' && !isModelHealthEnabled) {
       toast.error('Model Health fixes are disabled. Enable FEATURE_MODEL_HEALTH_FIXES flag.');
       return;
     }
@@ -218,33 +227,48 @@ export default function ModelHealth() {
 
             {/* Action Buttons */}
             {driftData.drift_issues_count > 0 && (
-              <div className="flex gap-3 flex-wrap">
-                <Button
-                  onClick={() => handleAction('dry_run')}
-                  disabled={dryRunMutation.isPending}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  {dryRunMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <PlayCircle className="w-4 h-4" />
-                  )}
-                  Run Dry Run Analysis
-                </Button>
-                <Button
-                  onClick={() => handleAction('commit')}
-                  disabled={commitFixMutation.isPending || !isModelHealthEnabled}
-                  className="gap-2 bg-blue-600 hover:bg-blue-700"
-                >
-                  {commitFixMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Commit Fixes
-                </Button>
-              </div>
+              <Card className="border-2 border-blue-200 bg-blue-50">
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-blue-900 mb-1">Dry Run Analysis</div>
+                      <div className="text-xs text-blue-700 mb-3">Read-only simulation - always available</div>
+                      <Button
+                        onClick={() => handleAction('dry_run')}
+                        disabled={dryRunMutation.isPending}
+                        variant="outline"
+                        className="gap-2 w-full sm:w-auto"
+                      >
+                        {dryRunMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <PlayCircle className="w-4 h-4" />
+                        )}
+                        Run Dry Run
+                      </Button>
+                    </div>
+                    
+                    <div className="flex-1 border-l border-blue-200 pl-4">
+                      <div className="text-sm font-semibold text-blue-900 mb-1">Commit Fixes</div>
+                      <div className="text-xs text-blue-700 mb-3">
+                        {isModelHealthEnabled ? 'Writes data - requires confirmation' : 'Requires FEATURE_MODEL_HEALTH_FIXES flag'}
+                      </div>
+                      <Button
+                        onClick={() => handleAction('commit')}
+                        disabled={commitFixMutation.isPending || !isModelHealthEnabled}
+                        className="gap-2 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto disabled:opacity-50"
+                      >
+                        {commitFixMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        Commit Fixes
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Drift Issues by Type */}
@@ -311,6 +335,66 @@ export default function ModelHealth() {
               </div>
             )}
 
+            {/* Dry Run Results */}
+            {dryRunResults && (
+              <Card className="border-2 border-purple-200 bg-purple-50">
+                <CardHeader className="bg-purple-100 border-b border-purple-200">
+                  <CardTitle className="text-[18px] font-semibold text-purple-800 flex items-center gap-2">
+                    <PlayCircle className="w-5 h-5" />
+                    Dry Run Results
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="text-sm text-purple-900 mb-3">
+                    <strong>{dryRunResults.fixed_count}</strong> jobs would be fixed (no data was modified)
+                  </div>
+                  
+                  {dryRunResults.proposed_fixes && dryRunResults.proposed_fixes.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs font-semibold text-purple-700 uppercase tracking-wide">
+                        Proposed Changes (showing first {Math.min(20, dryRunResults.proposed_fixes.length)})
+                      </div>
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {dryRunResults.proposed_fixes.map((fix, idx) => (
+                          <div key={idx} className="bg-white border border-purple-200 rounded-lg p-3">
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="flex-1">
+                                <div className="font-semibold text-[#111827]">#{fix.job_number}</div>
+                                <div className="text-xs text-[#6B7280]">{fix.customer_name}</div>
+                              </div>
+                              <Link
+                                to={`${createPageUrl("Jobs")}?jobId=${fix.job_id}`}
+                                className="text-purple-600 hover:text-purple-700"
+                                title="View Job"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                              </Link>
+                            </div>
+                            <div className="space-y-1">
+                              {fix.fixes.map((f, i) => (
+                                <div key={i} className="text-xs text-purple-800 bg-purple-50 px-2 py-1 rounded">
+                                  {f}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <Button
+                    onClick={() => setDryRunResults(null)}
+                    variant="ghost"
+                    size="sm"
+                    className="mt-3 text-purple-700 hover:text-purple-800"
+                  >
+                    Clear Results
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {/* No Issues Found */}
             {driftData.drift_issues_count === 0 && (
               <Card className="border-2 border-green-200 bg-green-50">
@@ -332,16 +416,18 @@ export default function ModelHealth() {
             <AlertDialogTitle className="text-[22px] font-semibold text-[#111827]">
               {confirmAction === 'dry_run' ? 'Run Dry Run Analysis?' : 'Commit Fixes to Database?'}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-[14px] text-slate-600">
+            <AlertDialogDescription className="text-[14px] text-slate-600 space-y-2">
               {confirmAction === 'dry_run' ? (
                 <>
-                  This will analyze what would be fixed <strong>without making any changes</strong> to the database.
-                  Safe to run anytime.
+                  <p>This will analyze what would be fixed <strong>without making any changes</strong> to the database.</p>
+                  <p className="text-green-700 font-medium">✓ Read-only operation - Safe to run anytime</p>
+                  <p className="text-green-700 font-medium">✓ No writes to Job, Visit, or any entity</p>
                 </>
               ) : (
                 <>
-                  This will <strong>permanently modify</strong> {driftData?.drift_issues_count || 0} job(s) and create/update Visit records.
-                  Make sure you've reviewed the dry run results first.
+                  <p>This will <strong>permanently modify</strong> up to {driftData?.drift_issues_count || 0} job(s) and Visit records.</p>
+                  <p className="text-red-700 font-medium">⚠ Database writes will occur</p>
+                  <p className="text-amber-700 font-medium">⚠ Review dry run results first</p>
                 </>
               )}
             </AlertDialogDescription>

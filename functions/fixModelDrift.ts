@@ -42,6 +42,17 @@ Deno.serve(async (req) => {
 
     const { dry_run = true } = await req.json();
 
+    // GUARDRAIL: Require feature flag for commit mode (writes)
+    if (!dry_run) {
+      // Check if model health fixes are enabled
+      const modelHealthEnabled = Deno.env.get('FEATURE_MODEL_HEALTH_FIXES') === 'true';
+      if (!modelHealthEnabled) {
+        return Response.json({ 
+          error: 'Model Health fixes are disabled. Enable FEATURE_MODEL_HEALTH_FIXES to commit changes.' 
+        }, { status: 403 });
+      }
+    }
+
     // Fetch all non-deleted jobs
     const jobs = await base44.asServiceRole.entities.Job.filter({ 
       deleted_at: { $exists: false } 
@@ -57,6 +68,7 @@ Deno.serve(async (req) => {
 
     let fixedCount = 0;
     const fixLog = [];
+    const proposedFixes = []; // For dry run mode
 
     for (const job of jobs) {
       const isV2 = isJobV2Enabled(job);
@@ -104,18 +116,26 @@ Deno.serve(async (req) => {
 
       if (jobNeedsFix) {
         fixedCount++;
-        fixLog.push({
+        const fixEntry = {
           job_id: job.id,
           job_number: job.job_number,
+          customer_name: job.customer_name,
           fixes: jobFixes
-        });
+        };
+        
+        if (dry_run) {
+          proposedFixes.push(fixEntry);
+        } else {
+          fixLog.push(fixEntry);
+        }
       }
     }
 
     return Response.json({
       dry_run,
       fixed_count: fixedCount,
-      fixes_applied: fixLog.slice(0, 20), // First 20 for preview
+      proposed_fixes: dry_run ? proposedFixes.slice(0, 20) : undefined, // For dry run
+      fixes_applied: !dry_run ? fixLog.slice(0, 20) : undefined, // For commit
       message: dry_run 
         ? `Dry run complete: ${fixedCount} jobs would be fixed (no changes made)`
         : `Successfully fixed ${fixedCount} jobs`,
