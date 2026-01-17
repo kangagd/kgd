@@ -27,10 +27,8 @@ Deno.serve(async (req) => {
       fromLocationId,
       toLocationId,
       quantity,
-      movementType = 'manual_adjustment',
+      source = 'manual_adjustment',
       notes = null,
-      jobId = null,
-      projectId = null,
       reference_type = null,
       reference_id = null,
     } = await req.json();
@@ -42,6 +40,12 @@ Deno.serve(async (req) => {
 
     if (!fromLocationId && !toLocationId) {
       return Response.json({ error: 'At least one location required' }, { status: 400 });
+    }
+
+    // Validate source enum
+    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage'];
+    if (!validSources.includes(source)) {
+      return Response.json({ error: `Invalid source. Must be one of: ${validSources.join(', ')}` }, { status: 400 });
     }
 
     // Get item details
@@ -119,7 +123,7 @@ Deno.serve(async (req) => {
       performed_by_user_email: user.email,
       performed_by_user_name: user.full_name || user.display_name || user.email,
       performed_at: new Date().toISOString(),
-      source: movementType,
+      source: source,
       reference_type: reference_type || null,
       reference_id: reference_id || null,
       notes: notes || null
