@@ -154,6 +154,8 @@ const getAvatarColor = (name) => {
 
 export default function JobDetails({ job: initialJob, onClose, onStatusChange, onDelete }) {
   const navigate = useNavigate();
+  const visitsEnabled = isFeatureEnabled('visits_enabled');
+  
   const { data: job = initialJob } = useQuery({
     queryKey: ['job', initialJob.id],
     queryFn: async () => {
@@ -311,7 +313,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   });
 
   // Fetch active Visit when feature flag is enabled
-  const visitsEnabled = isFeatureEnabled('visits_enabled');
   const { data: activeVisits = [] } = useQuery({
     queryKey: ['activeVisits', job.id],
     queryFn: () => base44.entities.Visit.filter({ 
