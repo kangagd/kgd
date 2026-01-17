@@ -27,7 +27,7 @@ export default function SupplyLogistics() {
 
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
-    queryFn: () => base44.entities.PurchaseOrder.list('-created_date'),
+    queryFn: () => base44.entities.PurchaseOrder.filter({}),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: (count, err) => err?.status !== 429 && count < 2,
