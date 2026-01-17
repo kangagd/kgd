@@ -1,124 +1,135 @@
 import React, { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { PackagePlus, PackageMinus } from "lucide-react";
-import { usePermissions, PERMISSIONS } from "@/components/auth/permissions";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { recordStockMovement } from "@/components/utils/stockHelpers";
 import { toast } from "sonner";
-import { getPhysicalAvailableLocations } from "@/components/utils/inventoryLocationUtils";
+import { getPhysicalAvailableLocations, normalizeLocationType } from "@/components/utils/inventoryLocationUtils";
+import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
-export default function StockAdjustmentModal({ item, open, onClose, vehicles = [], locations = [] }) {
-  const [fromLocation, setFromLocation] = useState("");
-  const [toLocation, setToLocation] = useState("");
+export default function StockAdjustmentModal({ item, open, onClose, locations = [] }) {
+  const [location, setLocation] = useState("");
+  const [isExactCount, setIsExactCount] = useState(true);
   const [quantity, setQuantity] = useState("");
-  const [notes, setNotes] = useState("");
+  const [reason, setReason] = useState("");
   const queryClient = useQueryClient();
-  const { can } = usePermissions();
 
-  // Only show physical available locations (warehouse + vehicles)
-  const allLocations = useMemo(() => {
-    const combined = [
-      ...locations,
-      ...vehicles.map(v => ({ id: v.id, name: v.name, type: 'vehicle' }))
-    ];
-    return getPhysicalAvailableLocations(combined);
-  }, [locations, vehicles]);
+  // Physical locations only (warehouse + vehicles)
+  const availableLocations = useMemo(() => {
+    return getPhysicalAvailableLocations(locations || []);
+  }, [locations]);
 
-  const adjustStockMutation = useMutation({
+  const adjustmentMutation = useMutation({
     mutationFn: async (data) => {
-      const quantityValue = parseInt(data.quantity);
-      const fromLoc = data.fromLocation || null;
-      const toLoc = data.toLocation || null;
-
-      // Determine movement type
-      let movementType = 'manual_adjustment';
-      if (!fromLoc && toLoc) {
-        movementType = 'manual_stock_in';
-      } else if (fromLoc && !toLoc) {
-        movementType = 'manual_stock_out';
-      } else if (fromLoc && toLoc) {
-        movementType = 'manual_transfer';
-      }
-
-      // Call canonical backend function (NEW SCHEMA)
-      const response = await base44.functions.invoke('recordStockMovement', {
-        priceListItemId: item.id,
-        fromLocationId: fromLoc,
-        toLocationId: toLoc,
-        quantity: quantityValue,
-        movementType: movementType,
-        notes: data.notes
+      // Fetch current inventory quantity
+      const current = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: item.id,
+        location_id: data.location
       });
 
-      if (response.data.error) throw new Error(response.data.error);
-      return response.data;
+      const currentQty = current[0]?.quantity || 0;
+      const newQty = data.isExactCount ? data.quantity : currentQty + data.quantity;
+
+      // Ensure non-negative
+      if (newQty < 0) {
+        throw new Error('Stock cannot be negative');
+      }
+
+      const delta = newQty - currentQty;
+
+      // Update InventoryQuantity
+      if (current[0]) {
+        await base44.asServiceRole.entities.InventoryQuantity.update(current[0].id, {
+          quantity: newQty
+        });
+      } else {
+        await base44.asServiceRole.entities.InventoryQuantity.create({
+          price_list_item_id: item.id,
+          location_id: data.location,
+          quantity: newQty,
+          item_name: item.item,
+          location_name: locations.find(l => l.id === data.location)?.name || ''
+        });
+      }
+
+      // Create StockMovement audit record
+      const batchId = uuidv4();
+      await base44.asServiceRole.entities.StockMovement.create({
+        sku_id: item.id,
+        item_name: item.item,
+        quantity: Math.abs(delta),
+        from_location_id: delta < 0 ? data.location : null,
+        from_location_name: delta < 0 ? locations.find(l => l.id === data.location)?.name : null,
+        to_location_id: delta > 0 ? data.location : null,
+        to_location_name: delta > 0 ? locations.find(l => l.id === data.location)?.name : null,
+        performed_by_user_id: (await base44.auth.me()).id,
+        performed_by_user_email: (await base44.auth.me()).email,
+        performed_by_user_name: (await base44.auth.me()).full_name || (await base44.auth.me()).display_name,
+        performed_at: new Date().toISOString(),
+        source: 'correction_adjustment',
+        notes: `Admin correction: ${data.isExactCount ? `set exact: ${currentQty} → ${newQty}` : `delta: ${delta > 0 ? '+' : ''}${delta}`}. Reason: ${data.reason}`
+      });
+
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['priceListItems'] });
-      queryClient.invalidateQueries({ queryKey: ['vehicle-stock'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-quantities'] });
-      toast.success('Stock adjusted successfully');
+      toast.success('Stock corrected successfully');
+      setLocation("");
       setQuantity("");
-      setNotes("");
-      setFromLocation("");
-      setToLocation("");
+      setReason("");
+      setIsExactCount(true);
       onClose();
     },
     onError: (error) => {
-      toast.error(error.message || "Failed to adjust stock");
+      toast.error(error.message || "Failed to correct stock");
     }
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    adjustStockMutation.mutate({
-      fromLocation,
-      toLocation,
-      quantity,
-      notes
+    if (!location || !reason || quantity === "") {
+      toast.error("Location, quantity, and reason are required");
+      return;
+    }
+    adjustmentMutation.mutate({
+      location,
+      quantity: parseInt(quantity) || 0,
+      reason,
+      isExactCount
     });
   };
 
   if (!item) return null;
 
-  const isStockIn = !fromLocation && toLocation;
-  const isStockOut = fromLocation && !toLocation;
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Adjust Stock - {item.item}</DialogTitle>
+          <DialogTitle>Adjust Stock (Admin) — {item.item}</DialogTitle>
+          <DialogDescription>
+            Use only to correct counts after stocktake errors. For receiving use PO Receive. For moving stock use Transfer.
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-            <div className="text-sm text-slate-600 mb-1">Warehouse Stock</div>
-            <div className="text-2xl font-bold text-slate-900">{item.stock_level || 0}</div>
-          </div>
-
           <div>
-            <Label>From Location</Label>
-            <Select value={fromLocation} onValueChange={setFromLocation}>
+            <Label>Location *</Label>
+            <Select value={location} onValueChange={setLocation}>
               <SelectTrigger>
-                <SelectValue placeholder="None (New stock)" />
+                <SelectValue placeholder="Select location" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={null}>None (New stock)</SelectItem>
-                {allLocations.map(loc => (
+                {availableLocations.map(loc => (
                   <SelectItem key={loc.id} value={loc.id}>
+                    {normalizeLocationType(loc.type) === 'warehouse' && '📦 '}
+                    {normalizeLocationType(loc.type) === 'vehicle' && '🚗 '}
                     {loc.name}
                   </SelectItem>
                 ))}
@@ -126,55 +137,41 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
             </Select>
           </div>
 
-          <div>
-            <Label>To Location</Label>
-            <Select value={toLocation} onValueChange={setToLocation}>
-              <SelectTrigger>
-                <SelectValue placeholder="None (Stock out)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>None (Stock out)</SelectItem>
-                {allLocations.map(loc => (
-                  <SelectItem key={loc.id} value={loc.id}>
-                    {loc.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="exact-count"
+                checked={isExactCount}
+                onCheckedChange={setIsExactCount}
+              />
+              <Label htmlFor="exact-count" className="font-normal cursor-pointer">
+                Set exact count
+              </Label>
+            </div>
+            <p className="text-xs text-slate-500 ml-6">
+              {isExactCount ? "Replace current count with new number" : "Add or subtract from current count"}
+            </p>
           </div>
 
           <div>
-            <Label>Quantity *</Label>
+            <Label>{isExactCount ? "New Count *" : "Change By (+/-) *"}</Label>
             <Input
               type="number"
-              min="1"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              placeholder="Enter quantity"
+              placeholder={isExactCount ? "0" : "+/- 0"}
               required
             />
           </div>
 
-          {quantity && (fromLocation || toLocation) && (
-            <div className={`rounded-lg p-4 border ${isStockIn ? 'bg-green-50 border-green-200' : isStockOut ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'}`}>
-              <div className={`text-sm mb-1 ${isStockIn ? 'text-green-600' : isStockOut ? 'text-red-600' : 'text-blue-600'}`}>
-                {isStockIn ? 'Stock In' : isStockOut ? 'Stock Out' : 'Transfer'}
-              </div>
-              <div className="text-sm text-slate-600">
-                {fromLocation && `From: ${allLocations.find(l => l.id === fromLocation)?.name}`}
-                {fromLocation && toLocation && ' → '}
-                {toLocation && `To: ${allLocations.find(l => l.id === toLocation)?.name}`}
-              </div>
-            </div>
-          )}
-
           <div>
-            <Label>Notes</Label>
+            <Label>Reason *</Label>
             <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes about this adjustment..."
-              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="e.g., 'Physical stocktake found 3 extra units in warehouse'"
+              rows={2}
+              required
             />
           </div>
 
@@ -183,31 +180,18 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
               type="button"
               variant="outline"
               onClick={onClose}
-              disabled={adjustStockMutation.isPending}
+              disabled={adjustmentMutation.isPending}
               className="flex-1"
             >
               Cancel
             </Button>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="flex-1">
-                    <Button
-                      type="submit"
-                      disabled={adjustStockMutation.isPending || !quantity || (!fromLocation && !toLocation) || !can(PERMISSIONS.ADJUST_STOCK)}
-                      className="w-full bg-orange-600 hover:bg-orange-700"
-                    >
-                      {adjustStockMutation.isPending ? 'Adjusting...' : 'Adjust Stock'}
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {!can(PERMISSIONS.ADJUST_STOCK) && (
-                  <TooltipContent>
-                    <p>Insufficient permissions</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
+            <Button
+              type="submit"
+              disabled={adjustmentMutation.isPending || !location || !reason || quantity === ""}
+              className="flex-1 bg-orange-600 hover:bg-orange-700"
+            >
+              {adjustmentMutation.isPending ? 'Correcting...' : 'Correct Stock'}
+            </Button>
           </div>
         </form>
       </DialogContent>
