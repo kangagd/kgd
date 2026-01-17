@@ -67,11 +67,11 @@ export default function BaselineStockSeed() {
 
   // Identify warehouse and vehicles
   const warehouseLocation = useMemo(() => {
-    return locations.find(l => String(l.type || '').toLowerCase() === 'warehouse') || null;
+    return locations.find(l => (l.type || '').toLowerCase?.() === 'warehouse' || (String(l.type || '') || '').toLowerCase() === 'warehouse') || null;
   }, [locations]);
 
   const vehicleLocations = useMemo(() => {
-    return locations.filter(l => String(l.type || '').toLowerCase() === 'vehicle');
+    return locations.filter(l => (l.type || '').toLowerCase?.() === 'vehicle' || (String(l.type || '') || '').toLowerCase() === 'vehicle');
   }, [locations]);
 
   // Fetch SKUs
