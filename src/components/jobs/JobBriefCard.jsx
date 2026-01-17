@@ -199,7 +199,7 @@ export default function JobBriefCard({ job, onRefresh }) {
             </div>
           ) : hasContent ? (
             <div 
-              className="prose prose-sm max-w-none text-[14px] text-[#111827] leading-relaxed"
+              className="prose prose-sm max-w-none text-[14px] text-[#111827] leading-relaxed [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:my-2 [&_li]:my-1 [&_strong]:font-semibold [&_p]:my-2"
               dangerouslySetInnerHTML={{ __html: job.job_brief }}
             />
           ) : (
