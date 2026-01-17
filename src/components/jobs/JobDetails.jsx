@@ -66,6 +66,7 @@ import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import JobBriefCard from "./JobBriefCard";
 import VisitScopeSection from "./VisitScopeSection";
+import { isFeatureEnabled } from "../domain/featureFlags";
 
 function isLastCheckedInTechnician(checkIns, currentUserEmail) {
   if (!checkIns || checkIns.length === 0 || !currentUserEmail) return false;
@@ -198,24 +199,35 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   }, [job.id, job.purchase_order_id, queryClient]);
 
   const [user, setUser] = useState(null);
-  const [measurements, setMeasurements] = useState(job.measurements || null);
+  
+  // VISIT MODEL FEATURE FLAG: Source execution data from Visit or Job
+  const executionSource = visitsEnabled && activeVisit ? activeVisit : job;
+  
+  const [measurements, setMeasurements] = useState(executionSource.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
-  const [overview, setOverview] = useState(job.overview || "");
-  const [issuesFound, setIssuesFound] = useState("");
-  const [resolution, setResolution] = useState("");
+  const [overview, setOverview] = useState(executionSource.work_performed || executionSource.overview || "");
+  const [issuesFound, setIssuesFound] = useState(executionSource.issues_found || "");
+  const [resolution, setResolution] = useState(executionSource.resolution || "");
   const [pricingProvided, setPricingProvided] = useState(job.pricing_provided || "");
   const [additionalInfo, setAdditionalInfo] = useState(job.additional_info || "");
-  const [nextSteps, setNextSteps] = useState(job.next_steps || "");
-  const [communicationWithClient, setCommunicationWithClient] = useState(job.communication_with_client || "");
-  const [outcome, setOutcome] = useState(job.outcome || "");
+  const [nextSteps, setNextSteps] = useState(executionSource.next_steps || "");
+  const [communicationWithClient, setCommunicationWithClient] = useState(executionSource.communication_notes || executionSource.communication_with_client || "");
+  const [outcome, setOutcome] = useState(executionSource.outcome || "");
   const [logisticsOutcome, setLogisticsOutcome] = useState(job.logistics_outcome || "none");
   const [validationError, setValidationError] = useState("");
 
 
-  // Sync measurements state when job data changes
+  // Sync state when data source changes
   useEffect(() => {
-    setMeasurements(job.measurements || null);
-  }, [job.measurements]);
+    const source = visitsEnabled && activeVisit ? activeVisit : job;
+    setMeasurements(source.measurements || null);
+    setOverview(source.work_performed || source.overview || "");
+    setIssuesFound(source.issues_found || "");
+    setResolution(source.resolution || "");
+    setNextSteps(source.next_steps || "");
+    setCommunicationWithClient(source.communication_notes || source.communication_with_client || "");
+    setOutcome(source.outcome || "");
+  }, [job, activeVisit, visitsEnabled]);
 
   const { data: allJobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
@@ -297,6 +309,22 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
+
+  // Fetch active Visit when feature flag is enabled
+  const visitsEnabled = isFeatureEnabled('visits_enabled');
+  const { data: activeVisits = [] } = useQuery({
+    queryKey: ['activeVisits', job.id],
+    queryFn: () => base44.entities.Visit.filter({ 
+      job_id: job.id, 
+      completed_at: { $exists: false } 
+    }),
+    enabled: visitsEnabled,
+    staleTime: 10000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const activeVisit = activeVisits.length > 0 ? activeVisits[0] : null;
 
   const lastTechCheckOut = isLastCheckedInTechnician(checkIns, user?.email);
 
@@ -2530,6 +2558,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
             {!isLogisticsJob && (
               <TabsContent value="visit" className="space-y-3 mt-2">
+                {/* Feature Flag Notice */}
+                {visitsEnabled && (
+                  <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-3 mb-4">
+                    <div className="flex items-center gap-2 text-purple-700">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Visit Model Enabled: Data sourced from Visit records</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Prior Job Summaries from Project */}
                 {priorProjectJobSummaries.length > 0 && (
                   <div className="space-y-3 mb-4">
@@ -2806,70 +2844,154 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                 <div className="space-y-3">
 
+                  {/* LEGACY EXECUTION FIELDS: Hidden when visits_enabled */}
+                  {!visitsEnabled && (
+                    <>
+                      <RichTextField
+                        label="Work Performed (Overview) *"
+                        value={overview}
+                        onChange={setOverview}
+                        onBlur={handleOverviewBlur}
+                        placeholder="Detailed description of tasks completed..."
+                        helperText="Required for checkout"
+                      />
 
-                  <RichTextField
-                    label="Work Performed (Overview) *"
-                    value={overview}
-                    onChange={setOverview}
-                    onBlur={handleOverviewBlur}
-                    placeholder="Detailed description of tasks completed..."
-                    helperText="Required for checkout"
-                  />
+                      <RichTextField
+                        label="Issues Found"
+                        value={issuesFound}
+                        onChange={setIssuesFound}
+                        placeholder="Diagnosis of problems identified..."
+                      />
 
-                  <RichTextField
-                    label="Issues Found"
-                    value={issuesFound}
-                    onChange={setIssuesFound}
-                    placeholder="Diagnosis of problems identified..."
-                  />
+                      <RichTextField
+                        label="Resolution"
+                        value={resolution}
+                        onChange={setResolution}
+                        placeholder="How the issues were resolved..."
+                      />
 
-                  <RichTextField
-                    label="Resolution"
-                    value={resolution}
-                    onChange={setResolution}
-                    placeholder="How the issues were resolved..."
-                  />
+                      <RichTextField
+                        label="Next Steps / Recommendations *"
+                        value={nextSteps}
+                        onChange={setNextSteps}
+                        onBlur={handleNextStepsBlur}
+                        placeholder="What needs to happen next? Any follow-up required…"
+                        helperText="Required for checkout"
+                      />
 
-                  <RichTextField
-                    label="Next Steps / Recommendations *"
-                    value={nextSteps}
-                    onChange={setNextSteps}
-                    onBlur={handleNextStepsBlur}
-                    placeholder="What needs to happen next? Any follow-up required…"
-                    helperText="Required for checkout"
-                  />
+                      <RichTextField
+                        label="Communication *"
+                        value={communicationWithClient}
+                        onChange={setCommunicationWithClient}
+                        onBlur={handleCommunicationBlur}
+                        placeholder="What was discussed with the client? Any agreements made…"
+                        helperText="Required for checkout"
+                      />
 
-                  <RichTextField
-                    label="Communication *"
-                    value={communicationWithClient}
-                    onChange={setCommunicationWithClient}
-                    onBlur={handleCommunicationBlur}
-                    placeholder="What was discussed with the client? Any agreements made…"
-                    helperText="Required for checkout"
-                  />
+                      <div>
+                        <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
+                        <Select 
+                          value={outcome} 
+                          onValueChange={handleOutcomeChange}
+                          disabled={!lastTechCheckOut && activeCheckIn}
+                        >
+                          <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
+                            <SelectValue placeholder="Select outcome" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new_quote">New Quote</SelectItem>
+                            <SelectItem value="update_quote">Update Quote</SelectItem>
+                            <SelectItem value="send_invoice">Send Invoice</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {!lastTechCheckOut && activeCheckIn && (
+                            <p className="text-xs text-slate-500 mt-1">Outcome can be selected by the last technician checking out.</p>
+                        )}
+                      </div>
+                    </>
+                  )}
 
-                  <div>
-                    <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
-                    <Select 
-                      value={outcome} 
-                      onValueChange={handleOutcomeChange}
-                      disabled={!lastTechCheckOut && activeCheckIn}
-                    >
-                      <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
-                        <SelectValue placeholder="Select outcome" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new_quote">New Quote</SelectItem>
-                        <SelectItem value="update_quote">Update Quote</SelectItem>
-                        <SelectItem value="send_invoice">Send Invoice</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="return_visit_required">Return Visit Required</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {!lastTechCheckOut && activeCheckIn && (
-                        <p className="text-xs text-slate-500 mt-1">Outcome can be selected by the last technician checking out.</p>
-                    )}
-                  </div>
+                  {/* VISIT MODEL UI: Show when visits_enabled */}
+                  {visitsEnabled && activeVisit && (
+                    <>
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                        <div className="text-sm font-semibold text-blue-900 mb-1">Visit #{activeVisit.visit_number}</div>
+                        <div className="text-xs text-blue-700">
+                          {activeVisit.checked_in_technicians?.length > 0 
+                            ? `Currently active: ${activeVisit.checked_in_names?.join(', ')}`
+                            : 'No technicians checked in'
+                          }
+                        </div>
+                      </div>
+
+                      <RichTextField
+                        label="Work Performed (Overview) *"
+                        value={overview}
+                        onChange={setOverview}
+                        placeholder="Detailed description of tasks completed..."
+                        helperText="Data saved to Visit record"
+                        disabled={true}
+                      />
+
+                      <RichTextField
+                        label="Issues Found"
+                        value={issuesFound}
+                        onChange={setIssuesFound}
+                        placeholder="Diagnosis of problems identified..."
+                        disabled={true}
+                      />
+
+                      <RichTextField
+                        label="Resolution"
+                        value={resolution}
+                        onChange={setResolution}
+                        placeholder="How the issues were resolved..."
+                        disabled={true}
+                      />
+
+                      <RichTextField
+                        label="Next Steps / Recommendations *"
+                        value={nextSteps}
+                        onChange={setNextSteps}
+                        placeholder="What needs to happen next? Any follow-up required…"
+                        helperText="Data saved to Visit record"
+                        disabled={true}
+                      />
+
+                      <RichTextField
+                        label="Communication *"
+                        value={communicationWithClient}
+                        onChange={setCommunicationWithClient}
+                        placeholder="What was discussed with the client? Any agreements made…"
+                        helperText="Data saved to Visit record"
+                        disabled={true}
+                      />
+
+                      <div>
+                        <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">Outcome *</Label>
+                        <Select 
+                          value={outcome} 
+                          disabled={true}
+                        >
+                          <SelectTrigger className="h-11 text-sm border-2 border-slate-300 rounded-xl font-medium">
+                            <SelectValue placeholder={outcome || "Select outcome"} />
+                          </SelectTrigger>
+                        </Select>
+                        <p className="text-xs text-purple-600 mt-1">Visit model active - fields are read-only in UI</p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* If visits_enabled but no active visit, show message */}
+                  {visitsEnabled && !activeVisit && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                      <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                      <p className="text-sm text-amber-800 font-medium">No active Visit found</p>
+                      <p className="text-xs text-amber-700 mt-1">Visit will be created when job is scheduled</p>
+                    </div>
+                  )}
 
                   {validationError && (
                     <div className="bg-red-50 border-2 border-red-200 rounded-xl p-2.5 flex items-start gap-2">
@@ -3026,9 +3148,35 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               <TabsContent value="form" className="mt-2">
               <div className="space-y-2.5">
                 <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2] mb-3">Measurements</h3>
-                <MeasurementsForm
-                  measurements={measurements}
-                  onChange={handleMeasurementsChange} />
+                
+                {/* LEGACY: Hidden when visits_enabled */}
+                {!visitsEnabled && (
+                  <MeasurementsForm
+                    measurements={measurements}
+                    onChange={handleMeasurementsChange}
+                  />
+                )}
+
+                {/* VISIT MODEL: Read-only display when visits_enabled */}
+                {visitsEnabled && activeVisit && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <p className="text-sm text-purple-800 font-medium mb-2">Measurements (Visit Model - Read Only)</p>
+                    {measurements && Object.keys(measurements).length > 0 ? (
+                      <pre className="text-xs text-purple-700 bg-white p-3 rounded-lg border border-purple-100 overflow-auto">
+                        {JSON.stringify(measurements, null, 2)}
+                      </pre>
+                    ) : (
+                      <p className="text-xs text-purple-700">No measurements recorded yet</p>
+                    )}
+                  </div>
+                )}
+
+                {visitsEnabled && !activeVisit && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                    <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                    <p className="text-sm text-amber-800 font-medium">No active Visit</p>
+                  </div>
+                )}
 
               </div>
 
@@ -3184,27 +3332,87 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                 {!isLogisticsJob && (
                   <>
-                    <EditableFileUpload
-                      files={job.image_urls || []}
-                      onFilesChange={handleImagesChange}
-                      accept="image/*,video/*"
-                      multiple={true}
-                      icon={ImageIcon}
-                      label=""
-                      emptyText="Upload media"
-                    />
+                    {/* LEGACY: Editable when visits_enabled is false */}
+                    {!visitsEnabled && (
+                      <>
+                        <EditableFileUpload
+                          files={job.image_urls || []}
+                          onFilesChange={handleImagesChange}
+                          accept="image/*,video/*"
+                          multiple={true}
+                          icon={ImageIcon}
+                          label=""
+                          emptyText="Upload media"
+                        />
 
-                    <div className="pt-3 border-t-2">
-                      <EditableFileUpload
-                        files={job.other_documents || []}
-                        onFilesChange={handleOtherDocumentsChange}
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-                        multiple={true}
-                        icon={FileText}
-                        label="Other Documents"
-                        emptyText="Upload documents"
-                      />
-                    </div>
+                        <div className="pt-3 border-t-2">
+                          <EditableFileUpload
+                            files={job.other_documents || []}
+                            onFilesChange={handleOtherDocumentsChange}
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            multiple={true}
+                            icon={FileText}
+                            label="Other Documents"
+                            emptyText="Upload documents"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* VISIT MODEL: Read-only display when visits_enabled */}
+                    {visitsEnabled && activeVisit && (
+                      <>
+                        <div>
+                          <h4 className="text-[14px] font-semibold text-[#111827] mb-2">Photos (from Visit)</h4>
+                          {activeVisit.photos && activeVisit.photos.length > 0 ? (
+                            <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                              {activeVisit.photos.map((url, idx) => (
+                                <a
+                                  key={idx}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="aspect-square rounded-lg overflow-hidden border border-purple-200 hover:border-purple-400 transition-colors"
+                                >
+                                  <img src={url} alt="" className="w-full h-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-[#9CA3AF]">No photos uploaded yet</p>
+                          )}
+                        </div>
+
+                        <div className="pt-3 border-t-2">
+                          <h4 className="text-[14px] font-semibold text-[#111827] mb-2">Documents (Legacy Job Files)</h4>
+                          {job.other_documents && job.other_documents.length > 0 ? (
+                            <div className="space-y-2">
+                              {job.other_documents.map((url, idx) => (
+                                <a
+                                  key={idx}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors text-[#2563EB]"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  <span className="text-sm">Document {idx + 1}</span>
+                                </a>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-[#9CA3AF]">No documents uploaded</p>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {visitsEnabled && !activeVisit && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+                        <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+                        <p className="text-sm text-amber-800 font-medium">No active Visit</p>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
