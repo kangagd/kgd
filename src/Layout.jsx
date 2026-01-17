@@ -173,6 +173,9 @@ export default function Layout({ children, currentPageName }) {
   const touchStartX = useRef(0);
 
   useEffect(() => {
+    // Safety cleanup: ensure scroll is never locked on mount
+    forceUnlockBodyScroll();
+    
     const loadUser = async () => {
       try {
         const currentUser = await base44.auth.me();
