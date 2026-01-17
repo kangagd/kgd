@@ -44,6 +44,24 @@ function parseEmailAddress(addressString) {
   return match ? match[1] : addressString;
 }
 
+/**
+ * Detect if email is from a Wix enquiry/form
+ * Wix enquiries should never be merged by fallback heuristic
+ */
+function isWixEnquiry(fromAddress, headers = []) {
+  const fromLower = (fromAddress || '').toLowerCase();
+  const headerNames = headers.map(h => (h.name || '').toLowerCase());
+  const headerValues = headers.map(h => (h.value || '').toLowerCase()).join(' ');
+  
+  // Check if from address contains Wix domain
+  const isWixDomain = /wix|crm\.wix\.com|wixforms/.test(fromLower);
+  
+  // Check if headers mention Wix
+  const isWixHeader = /wix|wixforms/.test(headerValues);
+  
+  return isWixDomain || isWixHeader;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -194,8 +212,10 @@ Deno.serve(async (req) => {
         
         // If no exact match via headers, try to find related threads by subject + email participants
         // This handles edge cases where threading headers are missing
-        // OPTIMIZATION: Skip fallback if participants don't match any known customers (save O(n) scan)
-        if (existingThreads.length === 0) {
+        // GUARDRAIL: Skip fallback for Wix enquiries - each must be separate
+        const isWix = isWixEnquiry(from, headers);
+        
+        if (existingThreads.length === 0 && !isWix) {
           const normalizedSubject = subject.replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
           const fromAddr = parseEmailAddress(from).toLowerCase();
           const toAddrs = to.split(',').map(e => parseEmailAddress(e.trim()).toLowerCase());
@@ -310,7 +330,8 @@ Deno.serve(async (req) => {
             last_message_snippet: detail.snippet,
             status: 'Open',
             priority: 'Normal',
-            message_count: 1
+            message_count: 1,
+            source_type: isWix ? 'wix_enquiry' : 'email'
           });
           threadId = newThread.id;
           
