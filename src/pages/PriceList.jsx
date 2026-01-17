@@ -13,12 +13,11 @@ import PriceListItemForm from "../components/pricelist/PriceListItemForm";
 import StockAdjustmentModal from "../components/pricelist/StockAdjustmentModal";
 import PriceListCard from "../components/pricelist/PriceListCard";
 import MoveStockModal from "../components/inventory/MoveStockModal";
-import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
 import { useMemo } from "react";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
 import SkuStockView from "../components/pricelist/SkuStockView";
-import { getPhysicalAvailableLocations, calculateOnHandFromPhysicalLocations } from "@/components/utils/inventoryLocationUtils";
+import { getPhysicalAvailableLocations, calculateOnHandFromPhysicalLocations, normalizeLocationType } from "@/components/utils/inventoryLocationUtils";
 
 
 export default function PriceList() {
@@ -71,6 +70,11 @@ export default function PriceList() {
     queryFn: () => base44.entities.InventoryLocation.filter({ is_active: true }),
   });
 
+  const locationsById = useMemo(() => 
+    Object.fromEntries(inventoryLocations.map(l => [l.id, l])), 
+    [inventoryLocations]
+  );
+
   const inventorySummaryByItem = useMemo(() => {
     const map = {};
     for (const iq of inventoryQuantities) {
@@ -84,14 +88,19 @@ export default function PriceList() {
       }
       const summary = map[iq.price_list_item_id];
       summary.total_on_hand += iq.quantity || 0;
-      if (iq.location_type === LOCATION_TYPE.VEHICLE) {
+      
+      // Lookup location type via location_id
+      const location = locationsById[iq.location_id];
+      const locType = location ? normalizeLocationType(location.type) : 'other';
+      
+      if (locType === 'vehicle') {
         summary.total_in_vehicles += iq.quantity || 0;
-      } else if (iq.location_type === LOCATION_TYPE.WAREHOUSE) {
+      } else if (locType === 'warehouse') {
         summary.total_in_warehouse += iq.quantity || 0;
       }
     }
     return map;
-  }, [inventoryQuantities]);
+  }, [inventoryQuantities, locationsById]);
 
   const createItemMutation = useMutation({
     mutationFn: (data) => base44.entities.PriceListItem.create(data),
