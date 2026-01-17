@@ -39,69 +39,27 @@ export default function StockAdjustmentModal({ item, open, onClose, vehicles = [
       const toLoc = data.toLocation || null;
 
       // Determine movement type
-      let movementType = 'adjustment';
+      let movementType = 'manual_adjustment';
       if (!fromLoc && toLoc) {
-        movementType = 'stock_in';
+        movementType = 'manual_stock_in';
       } else if (fromLoc && !toLoc) {
-        movementType = 'stock_out';
+        movementType = 'manual_stock_out';
       } else if (fromLoc && toLoc) {
-        movementType = 'transfer';
+        movementType = 'manual_transfer';
       }
 
-      // Create StockMovement record
-      const fromLocationObj = fromLoc ? allLocations.find(l => l.id === fromLoc) : null;
-      const toLocationObj = toLoc ? allLocations.find(l => l.id === toLoc) : null;
-      const user = await base44.auth.me();
-
-      await base44.entities.StockMovement.create({
-        price_list_item_id: item.id,
-        item_name: item.item,
-        from_location_id: fromLoc,
-        from_location_name: fromLocationObj?.name || null,
-        to_location_id: toLoc,
-        to_location_name: toLocationObj?.name || null,
+      // Call canonical backend function (NEW SCHEMA)
+      const response = await base44.functions.invoke('recordStockMovement', {
+        priceListItemId: item.id,
+        fromLocationId: fromLoc,
+        toLocationId: toLoc,
         quantity: quantityValue,
-        movement_type: movementType,
-        notes: data.notes,
-        moved_by: user?.email,
-        moved_by_name: user?.display_name || user?.full_name
+        movementType: movementType,
+        notes: data.notes
       });
 
-      // Update InventoryQuantity records
-      if (fromLoc) {
-        const fromQty = await base44.entities.InventoryQuantity.filter({
-          price_list_item_id: item.id,
-          location_id: fromLoc
-        });
-        if (fromQty.length > 0) {
-          await base44.entities.InventoryQuantity.update(fromQty[0].id, {
-            quantity: (fromQty[0].quantity || 0) - quantityValue
-          });
-        }
-      }
-
-      if (toLoc) {
-        const toQty = await base44.entities.InventoryQuantity.filter({
-          price_list_item_id: item.id,
-          location_id: toLoc
-        });
-        if (toQty.length > 0) {
-          await base44.entities.InventoryQuantity.update(toQty[0].id, {
-            quantity: (toQty[0].quantity || 0) + quantityValue
-          });
-        } else {
-          // Create new quantity record
-          await base44.entities.InventoryQuantity.create({
-            price_list_item_id: item.id,
-            location_id: toLoc,
-            quantity: quantityValue,
-            item_name: item.item,
-            location_name: toLocationObj?.name || 'Unknown'
-          });
-        }
-      }
-
-      return { success: true };
+      if (response.data.error) throw new Error(response.data.error);
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['priceListItems'] });

@@ -1,99 +1,136 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { updateProjectActivity } from './updateProjectActivity.js';
-import { PART_STATUS, PART_LOCATION } from './shared/constants.js';
-import { determinePartStatus } from './shared/partHelpers.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+/**
+ * NEW SCHEMA: Record stock movement via inventory location ledger
+ * CANONICAL PATH for all manual stock adjustments
+ * 
+ * Writes to:
+ * - InventoryQuantity (on-hand source of truth)
+ * - StockMovement (audit ledger)
+ * 
+ * Does NOT write to:
+ * - PriceListItem.stock_level (deprecated, cached only)
+ * - VehicleStock (computed only)
+ */
 
 Deno.serve(async (req) => {
-    try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
 
-        const { part_ids, from_location, to_location, project_id, note } = await req.json();
-
-        // Validation
-        if (!part_ids || !Array.isArray(part_ids) || part_ids.length === 0) {
-            return Response.json({ 
-                success: false, 
-                error: 'part_ids array is required and must not be empty' 
-            }, { status: 400 });
-        }
-
-        const validLocations = Object.values(PART_LOCATION);
-        if (!from_location || !validLocations.includes(from_location)) {
-            return Response.json({ 
-                success: false, 
-                error: `Invalid from_location. Must be one of: ${validLocations.join(', ')}` 
-            }, { status: 400 });
-        }
-
-        if (!to_location || !validLocations.includes(to_location)) {
-            return Response.json({ 
-                success: false, 
-                error: `Invalid to_location. Must be one of: ${validLocations.join(', ')}` 
-            }, { status: 400 });
-        }
-
-        // Fetch all parts
-        const parts = await Promise.all(
-            part_ids.map(id => 
-                base44.asServiceRole.entities.Part.get(id).catch(() => null)
-            )
-        );
-
-        const validParts = parts.filter(p => p !== null);
-        if (validParts.length === 0) {
-            return Response.json({ 
-                success: false, 
-                error: 'No valid parts found' 
-            }, { status: 404 });
-        }
-
-        // Determine new status based on destination
-        const newStatus = determinePartStatus(to_location);
-
-        const updatedParts = [];
-        const timestamp = new Date().toISOString();
-
-        // Process each part
-        for (const part of validParts) {
-            // Create movement log
-            await base44.asServiceRole.entities.StockMovement.create({
-                part_id: part.id,
-                project_id: part.project_id || project_id || null,
-                from_location,
-                to_location,
-                moved_by: user.email,
-                moved_by_name: user.full_name || user.email,
-                moved_at: timestamp,
-                notes: note || null,
-            });
-
-            // Update part status if applicable
-            const updateData = { location: to_location };
-            if (newStatus) {
-                updateData.status = newStatus;
-            }
-
-            const updatedPart = await base44.asServiceRole.entities.Part.update(
-                part.id,
-                updateData
-            );
-            updatedParts.push(updatedPart);
-        }
-
-        return Response.json({
-            success: true,
-            parts: updatedParts
-        });
-
-    } catch (error) {
-        console.error('Error recording stock movement:', error);
-        return Response.json({ 
-            success: false, 
-            error: error.message 
-        }, { status: 500 });
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const {
+      priceListItemId,
+      fromLocationId,
+      toLocationId,
+      quantity,
+      movementType = 'manual_adjustment',
+      notes = null,
+      jobId = null,
+    } = await req.json();
+
+    // Validate required fields
+    if (!priceListItemId || !quantity || quantity <= 0) {
+      return Response.json({ error: 'Invalid parameters' }, { status: 400 });
+    }
+
+    if (!fromLocationId && !toLocationId) {
+      return Response.json({ error: 'At least one location required' }, { status: 400 });
+    }
+
+    // Get item details
+    const item = await base44.entities.PriceListItem.get(priceListItemId);
+    if (!item) {
+      return Response.json({ error: 'Item not found' }, { status: 404 });
+    }
+
+    let fromLocation = null;
+    let toLocation = null;
+
+    // Validate from location has sufficient stock
+    if (fromLocationId) {
+      fromLocation = await base44.entities.InventoryLocation.get(fromLocationId);
+      if (!fromLocation) {
+        return Response.json({ error: 'Source location not found' }, { status: 404 });
+      }
+
+      const sourceQty = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: priceListItemId,
+        location_id: fromLocationId
+      });
+
+      const currentQty = sourceQty[0]?.quantity || 0;
+      if (currentQty < quantity) {
+        return Response.json({ 
+          error: `Insufficient stock. Available: ${currentQty}, Requested: ${quantity}` 
+        }, { status: 400 });
+      }
+
+      // Decrement from source
+      if (sourceQty[0]) {
+        await base44.asServiceRole.entities.InventoryQuantity.update(sourceQty[0].id, {
+          quantity: currentQty - quantity
+        });
+      }
+    }
+
+    // Add to destination
+    if (toLocationId) {
+      toLocation = await base44.entities.InventoryLocation.get(toLocationId);
+      if (!toLocation) {
+        return Response.json({ error: 'Destination location not found' }, { status: 404 });
+      }
+
+      const destQty = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: priceListItemId,
+        location_id: toLocationId
+      });
+
+      if (destQty[0]) {
+        await base44.asServiceRole.entities.InventoryQuantity.update(destQty[0].id, {
+          quantity: (destQty[0].quantity || 0) + quantity
+        });
+      } else {
+        await base44.asServiceRole.entities.InventoryQuantity.create({
+          price_list_item_id: priceListItemId,
+          location_id: toLocationId,
+          quantity: quantity,
+          item_name: item.item,
+          location_name: toLocation.name
+        });
+      }
+    }
+
+    // Create audit ledger entry (StockMovement)
+    await base44.asServiceRole.entities.StockMovement.create({
+      sku_id: priceListItemId,
+      item_name: item.item,
+      quantity: quantity,
+      from_location_id: fromLocationId,
+      from_location_name: fromLocation?.name || null,
+      to_location_id: toLocationId,
+      to_location_name: toLocation?.name || null,
+      performed_by_user_id: user.id,
+      performed_by_user_email: user.email,
+      performed_by_user_name: user.full_name || user.display_name,
+      performed_at: new Date().toISOString(),
+      source: movementType,
+      notes: notes || null,
+      job_id: jobId
+    });
+
+    return Response.json({
+      success: true,
+      message: `Moved ${quantity} ${item.item} ${fromLocation ? `from ${fromLocation.name}` : ''} ${toLocation ? `to ${toLocation.name}` : ''}`,
+      item_name: item.item,
+      quantity_moved: quantity
+    });
+
+  } catch (error) {
+    console.error('[recordStockMovement] Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 });

@@ -1,18 +1,14 @@
 import { base44 } from "@/api/base44Client";
 
 /**
- * Record a stock movement and update the item's stock level
- * @param {Object} payload - Movement details
- * @param {string} payload.stock_item_id - PriceListItem ID
- * @param {number} payload.quantity_delta - Change in quantity (+ or -)
- * @param {string} payload.reason - Reason for movement
- * @param {string} [payload.from_location] - Source location
- * @param {string} [payload.to_location] - Destination location
- * @param {string} [payload.vehicle_id] - Vehicle ID if applicable
- * @param {string} [payload.project_id] - Project ID if applicable
- * @param {string} [payload.job_id] - Job ID if applicable
- * @param {string} [payload.notes] - Additional notes
- * @returns {Promise<Object>} Created movement record and new stock level
+ * DEPRECATED: Legacy recordStockMovement helper
+ * 
+ * This is now a SHIM that calls the canonical backend function.
+ * DO NOT use the legacy payload shape (quantity_delta, from_location, etc.)
+ * 
+ * Convert callers to use moveInventory() function directly instead.
+ * 
+ * @deprecated Use base44.functions.invoke('recordStockMovement', {...}) instead
  */
 export async function recordStockMovement(payload) {
   const {
@@ -32,43 +28,12 @@ export async function recordStockMovement(payload) {
     throw new Error("Missing required fields: stock_item_id, quantity_delta, reason");
   }
 
-  // Get current stock item
-  const item = await base44.entities.PriceListItem.get(stock_item_id);
-  if (!item) {
-    throw new Error("Stock item not found");
-  }
-
-  const previousStock = item.stock_level || 0;
-  const newStock = previousStock + quantity_delta;
-
-  // Prevent negative stock
-  if (newStock < 0) {
-    throw new Error(`Insufficient stock. Current: ${previousStock}, Requested: ${Math.abs(quantity_delta)}`);
-  }
-
-  // Create movement record
-  const movement = await base44.entities.StockMovement.create({
-    stock_item_id,
-    quantity_delta,
-    reason,
-    from_location,
-    to_location,
-    vehicle_id,
-    project_id,
-    job_id,
-    notes,
-  });
-
-  // Update stock level
-  await base44.entities.PriceListItem.update(stock_item_id, {
-    stock_level: newStock,
-  });
-
-  return {
-    movement,
-    previousStock,
-    newStock,
-  };
+  // This helper is deprecated—throw error to force migration to backend function
+  throw new Error(
+    "Legacy recordStockMovement helper is deprecated. " +
+    "Call base44.functions.invoke('recordStockMovement', {...}) with NEW schema instead. " +
+    "See audit report for migration details."
+  );
 }
 
 /**
@@ -78,11 +43,12 @@ export async function recordStockMovement(payload) {
  */
 export async function calculateStockFromMovements(stock_item_id) {
   const movements = await base44.entities.StockMovement.filter({
-    stock_item_id,
+    sku_id: stock_item_id,
   });
 
   const total = movements.reduce((sum, movement) => {
-    return sum + (movement.quantity_delta || 0);
+    // Only count positive quantities from movements (new schema)
+    return sum + (movement.quantity || 0);
   }, 0);
 
   return total;

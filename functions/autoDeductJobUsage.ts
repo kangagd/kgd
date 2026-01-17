@@ -62,54 +62,30 @@ Deno.serve(async (req) => {
     }
     const deducted = [];
 
-    // For each line item, decrement from vehicle inventory
+    // For each line item, decrement from vehicle inventory via canonical backend
     for (const lineItem of lineItems) {
       try {
-        // Get current quantity in vehicle
-        const existingQty = await base44.entities.InventoryQuantity.filter({
-          location_id: vehicleLocation.id,
-          price_list_item_id: lineItem.price_list_item_id
-        });
-
-        const currentQty = existingQty[0]?.quantity || 0;
-        const newQty = Math.max(0, currentQty - lineItem.quantity);
-
-        // Update quantity
-        if (existingQty.length > 0) {
-          await base44.asServiceRole.entities.InventoryQuantity.update(
-            existingQty[0].id,
-            { quantity: newQty }
-          );
-        } else {
-          // Create new quantity record if it doesn't exist
-          await base44.asServiceRole.entities.InventoryQuantity.create({
-            location_id: vehicleLocation.id,
-            price_list_item_id: lineItem.price_list_item_id,
-            item_name: lineItem.item_name,
-            location_name: vehicleLocation.name,
-            quantity: Math.max(0, -lineItem.quantity)
-          });
-        }
-
-        // Record movement
-        await base44.asServiceRole.entities.StockMovement.create({
-          item_name: lineItem.item_name,
-          price_list_item_id: lineItem.price_list_item_id,
-          movement_type: 'job_usage',
+        // Call canonical recordStockMovement function (NEW SCHEMA)
+        // This handles InventoryQuantity updates + StockMovement audit ledger
+        const response = await base44.asServiceRole.functions.invoke('recordStockMovement', {
+          priceListItemId: lineItem.price_list_item_id,
+          fromLocationId: vehicleLocation.id,
+          toLocationId: null, // Stock out (no destination)
           quantity: lineItem.quantity,
-          from_location_id: vehicleLocation.id,
-          from_location_name: vehicleLocation.name,
-          moved_by: user.email,
-          moved_by_name: user.full_name,
-          job_id,
+          movementType: 'job_usage',
+          jobId: job_id,
           notes: `Used on job #${job.job_number}`
         });
+
+        if (response.data.error) {
+          console.error(`Error deducting item ${lineItem.item_name}:`, response.data.error);
+          continue;
+        }
 
         deducted.push({
           item_name: lineItem.item_name,
           quantity: lineItem.quantity,
-          previous_stock: currentQty,
-          new_stock: newQty
+          status: 'deducted'
         });
       } catch (itemError) {
         console.error(`Error deducting item ${lineItem.item_name}:`, itemError);
