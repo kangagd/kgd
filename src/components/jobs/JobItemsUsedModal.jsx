@@ -85,38 +85,8 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     );
   };
 
-  const adjustInventoryForUsage = async ({ price_list_item_id, quantity, location_id }) => {
-    if (!price_list_item_id || !quantity || !location_id) return;
-  
-    // Update InventoryQuantity for the selected location
-    const existingRows = await base44.entities.InventoryQuantity.filter({
-      price_list_item_id,
-      location_id: location_id,
-    });
-  
-    if (existingRows && existingRows.length > 0) {
-      const row = existingRows[0];
-      const currentQty = row.quantity || 0;
-      const newQty = Math.max(0, currentQty - quantity);
-  
-      await base44.entities.InventoryQuantity.update(row.id, {
-        quantity: newQty,
-      });
-    }
-  
-    // Update PriceListItem global stock
-    const item = priceListMap[price_list_item_id];
-    if (item && typeof item.stock_level === "number") {
-      const newStockLevel = Math.max(0, (item.stock_level || 0) - quantity);
-      await base44.entities.PriceListItem.update(price_list_item_id, {
-        stock_level: newStockLevel,
-      });
-    }
-  
-    queryClient.invalidateQueries(["inventory-quantities"]);
-    queryClient.invalidateQueries(["inventory-for-item", price_list_item_id]);
-    queryClient.invalidateQueries(["priceListItems"]);
-  };
+  // Removed - using backend recordStockMovement function instead
+  // This ensures all inventory writes go through single canonical path
 
   const addUsageCostToProject = async ({ projectId, price_list_item_id, quantity }) => {
     if (!price_list_item_id || !quantity || !projectId) return;
@@ -141,75 +111,50 @@ export default function JobItemsUsedModal({ job, vehicle, open, onClose, onSaved
     queryClient.invalidateQueries(["projects"]);
   };
 
-  // Create Stock Movement and Adjust Inventory
-  const createMovementMutation = useMutation({
-    mutationFn: async () => {
-      const qty = Number(quantity);
-      if (!selectedItemId || !qty || qty <= 0 || !selectedLocationId) return;
+  // Record job usage via backend function
+   const createMovementMutation = useMutation({
+     mutationFn: async () => {
+       const qty = Number(quantity);
+       if (!selectedItemId || !qty || qty <= 0 || !selectedLocationId) return;
 
-      const selectedLocation = availableLocations.find(loc => loc.id === selectedLocationId);
-      
-      const payload = {
-        price_list_item_id: selectedItemId,
-        quantity: qty,
-        movement_type: MOVEMENT_TYPE.USAGE,
-        from_location_type: selectedLocation?.type === 'vehicle' ? LOCATION_TYPE.VEHICLE : LOCATION_TYPE.WAREHOUSE,
-        from_location_id: selectedLocationId,
-        to_location_type: LOCATION_TYPE.OTHER,
-        to_location_id: `job:${job.id}`,
-        job_id: job.id,
-        project_id: job.project_id,
-        technician_id: job.assigned_to && job.assigned_to.length > 0 ? job.assigned_to[0] : null,
-        created_at: new Date().toISOString(),
-      };
-      
-      // 1) Create StockMovement
-      await base44.entities.StockMovement.create(payload);
+       // Call backend to handle all inventory updates atomically
+       const response = await base44.functions.invoke('recordStockMovement', {
+         priceListItemId: selectedItemId,
+         fromLocationId: selectedLocationId,
+         toLocationId: null,
+         quantity: qty,
+         movementType: 'job_usage',
+         reference_type: 'job',
+         reference_id: job.id,
+         jobId: job.id,
+         projectId: job.project_id,
+         notes: `Used on ${job.job_number} - ${job.customer_name || 'Job'}`
+       });
 
-      // 2) Adjust inventory at source
-      await adjustInventoryForUsage({
-        price_list_item_id: selectedItemId,
-        quantity: qty,
-        location_id: selectedLocationId,
-      });
+       if (response.data?.error) {
+         throw new Error(response.data.error);
+       }
 
-      // 3) Dual-write: sync VehicleStock if it's a vehicle location
-      if (selectedLocation?.type === 'vehicle' && selectedLocation.vehicle_id) {
-        try {
-          const vehicleStocks = await base44.entities.VehicleStock.filter({
-            vehicle_id: selectedLocation.vehicle_id,
-            product_id: selectedItemId
-          });
-          if (vehicleStocks.length > 0) {
-            const currentQty = vehicleStocks[0].quantity_on_hand || 0;
-            await base44.entities.VehicleStock.update(vehicleStocks[0].id, {
-              quantity_on_hand: Math.max(0, currentQty - qty)
-            });
-          }
-        } catch (err) {
-          console.warn('Failed to sync VehicleStock during usage:', err);
-        }
-      }
-
-      // 4) Add cost to Project.materials_cost
-      await addUsageCostToProject({
-        projectId: job.project_id,
-        price_list_item_id: selectedItemId,
-        quantity: qty,
-      });
-    },
-    onSuccess: () => {
-      toast.success("Item usage recorded");
-      queryClient.invalidateQueries({ queryKey: ['vehicleStock'] });
-      queryClient.invalidateQueries({ queryKey: ['stock-usage-today'] });
-      if (onSaved) onSaved();
-      handleClose();
-    },
-    onError: (error) => {
-      console.error("Error recording usage:", error);
-      toast.error("Failed to record usage");
-    }
-  });
+       // Add cost to Project.materials_cost
+       await addUsageCostToProject({
+         projectId: job.project_id,
+         price_list_item_id: selectedItemId,
+         quantity: qty,
+       });
+     },
+     onSuccess: () => {
+       toast.success("Item usage recorded");
+       queryClient.invalidateQueries({ queryKey: ['vehicleStock'] });
+       queryClient.invalidateQueries({ queryKey: ['stock-usage-today'] });
+       queryClient.invalidateQueries({ queryKey: ['inventory-quantities'] });
+       if (onSaved) onSaved();
+       handleClose();
+     },
+     onError: (error) => {
+       console.error("Error recording usage:", error);
+       toast.error("Failed to record usage");
+     }
+   });
 
   const handleSubmit = (e) => {
     e.preventDefault();

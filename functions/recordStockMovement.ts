@@ -30,6 +30,9 @@ Deno.serve(async (req) => {
       movementType = 'manual_adjustment',
       notes = null,
       jobId = null,
+      projectId = null,
+      reference_type = null,
+      reference_id = null,
     } = await req.json();
 
     // Validate required fields
@@ -104,7 +107,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create audit ledger entry (StockMovement)
+    // Create audit ledger entry (StockMovement) - new schema
     await base44.asServiceRole.entities.StockMovement.create({
       sku_id: priceListItemId,
       item_name: item.item,
@@ -119,7 +122,10 @@ Deno.serve(async (req) => {
       performed_at: new Date().toISOString(),
       source: movementType,
       notes: notes || null,
-      job_id: jobId
+      job_id: jobId,
+      project_id: projectId || null,
+      reference_type: reference_type || null,
+      reference_id: reference_id || null
     });
 
     return Response.json({

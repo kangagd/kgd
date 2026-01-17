@@ -76,47 +76,41 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
         }
       }
       
-      // Process each line
-      const updates = lines.map(async (line) => {
-        const receiveNow = parseFloat(receipts[line.id] || 0);
-        const remaining = (line.qty_ordered || 0) - (line.qty_received || 0);
+      // Process each line via backend function
+       const updates = lines.map(async (line) => {
+         const receiveNow = parseFloat(receipts[line.id] || 0);
+         const remaining = (line.qty_ordered || 0) - (line.qty_received || 0);
 
-        if (receiveNow <= 0 || remaining <= 0) return null;
+         if (receiveNow <= 0 || remaining <= 0) return null;
 
-        // Limit to remaining? Or allow over-receiving? 
-        // Standard practice: usually allow over-receiving but warn. 
-        // For simplicity based on prompt: "ActualReceive = Math.min(receiveNow, remaining)" logic suggested in prompt.
-        // However, prompt says: "actualReceive = Math.min(receiveNow, remaining)"
-        // I will stick to prompt logic to avoid logic errors.
-        
-        // NOTE: User instructions actually said: "actualReceive = Math.min(receiveNow, remaining);"
-        // This prevents over-receiving.
-        const actualReceive = Math.min(receiveNow, remaining);
-        
-        if (actualReceive <= 0) return null;
+         const actualReceive = Math.min(receiveNow, remaining);
+         if (actualReceive <= 0) return null;
 
-        // 1. Update PurchaseOrderLine
-        await base44.entities.PurchaseOrderLine.update(line.id, {
-          qty_received: (line.qty_received || 0) + actualReceive,
-        });
+         // Call backend function to record receipt
+         const response = await base44.functions.invoke('recordStockMovement', {
+           priceListItemId: line.price_list_item_id,
+           fromLocationId: null,
+           toLocationId: locationId,
+           quantity: actualReceive,
+           movementType: 'po_receipt',
+           reference_type: 'purchase_order',
+           reference_id: purchaseOrder.id,
+           notes: `Received from PO ${purchaseOrder.po_number || purchaseOrder.id} - ${line.item_name || line.description}`
+         });
 
-        // 2. Create StockMovement (always with valid locationId)
-        await base44.entities.StockMovement.create({
-          price_list_item_id: line.price_list_item_id,
-          location_id: locationId,
-          movement_type: "purchase_in",
-          qty: actualReceive,
-          unit_cost_ex_tax: line.unit_cost_ex_tax || 0,
-          reference_type: "purchase_order",
-          reference_id: purchaseOrder.id,
-          occurred_at: now,
-          notes: `PO ${purchaseOrder.po_number || purchaseOrder.id} – received`,
-        });
-        
-        return actualReceive;
-      });
+         if (response.data?.error) {
+           throw new Error(response.data.error);
+         }
 
-      await Promise.all(updates);
+         // Update PO line qty_received (separate)
+         await base44.entities.PurchaseOrderLine.update(line.id, {
+           qty_received: (line.qty_received || 0) + actualReceive,
+         });
+
+         return actualReceive;
+       });
+
+       await Promise.all(updates);
 
       // After processing, update PO status
       // Need to re-fetch lines to get updated quantities? Or just calculate locally?
