@@ -1,86 +1,103 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import DraftProjectForm from "./DraftProjectForm";
-import ProjectForm from "../projects/ProjectForm";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import { ChevronRight, Loader2 } from "lucide-react";
 
-export default function CreateProjectFromEmailModal({ open, onClose, thread, onSuccess }) {
+const CATEGORIES = [
+  'Sectional Door Repair',
+  'Sectional Door Install',
+  'Roller Shutter Repair',
+  'Roller Shutter Install',
+  'Custom Door Repair',
+  'Custom Door Install',
+  'Maintenance Service',
+  'General Enquiry',
+];
+
+export default function CreateProjectFromEmailModal({ open, onClose, thread, emailMessage, onSuccess }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [draftSubmitted, setDraftSubmitted] = useState(false);
-  const [draftData, setDraftData] = useState(null);
+  const [step, setStep] = useState('review'); // 'review' or 'confirm'
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [previewError, setPreviewError] = useState(null);
+
+  // Override fields
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [editedAddress, setEditedAddress] = useState('');
+  const [editedCustomerName, setEditedCustomerName] = useState('');
+
+  // Generate preview on mount/open
+  useEffect(() => {
+    if (open && thread && emailMessage) {
+      generatePreview();
+    }
+  }, [open, thread, emailMessage]);
+
+  const generatePreview = async () => {
+    setLoading(true);
+    setPreviewError(null);
+    try {
+      // Call preview function to get AI suggestions
+      const result = await base44.functions.invoke('previewProjectFromEmail', {
+        email_thread_id: thread.id,
+        email_message_id: emailMessage?.id || thread.id,
+      });
+
+      if (result.data?.error) {
+        setPreviewError(result.data.error);
+      } else {
+        setPreview(result.data);
+        setSelectedCategory(result.data?.suggested_category || '');
+        setEditedAddress(result.data?.short_address || '');
+        setEditedCustomerName(result.data?.customer_name || '');
+      }
+    } catch (err) {
+      setPreviewError(err.message || 'Failed to generate preview');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const createProjectMutation = useMutation({
-    mutationFn: async (data) => {
-      const response = await base44.functions.invoke('manageProject', { 
-        action: 'create', 
-        data: {
-          ...data,
-          source_email_thread_id: thread.id
-        }
+    mutationFn: async () => {
+      const response = await base44.functions.invoke('createProjectFromEmail', {
+        email_thread_id: thread.id,
+        email_message_id: emailMessage?.id || thread.id,
+        selected_category_override: selectedCategory || undefined,
       });
-      if (response.data?.error) throw new Error(response.data.error);
-      return response.data.project;
-    },
-    onSuccess: async (newProject) => {
-      try {
-        // Explicitly link thread to project via EmailThread.project_id
-        await base44.entities.EmailThread.update(thread.id, {
-          project_id: newProject.id,
-          linked_to_project_at: new Date().toISOString(),
-          linked_to_project_by: (await base44.auth.me()).email
-        });
 
-        // Create ProjectEmail record for activity timeline
-        await base44.entities.ProjectEmail.create({
-          project_id: newProject.id,
-          thread_id: thread.gmail_thread_id || thread.id,
-          gmail_message_id: thread.gmail_thread_id || thread.id,
-          subject: thread.subject,
-          from_email: thread.from_address,
-          to_email: Array.isArray(thread.to_addresses) ? thread.to_addresses.join(', ') : thread.to_addresses,
-          sent_at: thread.last_message_date || thread.created_date,
-          direction: 'incoming'
-        });
-        
-        queryClient.invalidateQueries({ queryKey: ['projects'] });
-        queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
-        queryClient.invalidateQueries({ queryKey: ['project', newProject.id] });
-        queryClient.invalidateQueries({ queryKey: ['emailThread', thread.id] });
-        
-        toast.success(`Project created and linked to email`);
-        onSuccess(newProject.id, newProject.title);
-        onClose();
-        
-        // Navigate to the new project
-        navigate(`${createPageUrl("Projects")}?projectId=${newProject.id}`);
-      } catch (error) {
-        toast.error(`Failed to link project: ${error.message}`);
-        // Project was created but linking failed - still navigate
-        navigate(`${createPageUrl("Projects")}?projectId=${newProject.id}`);
-      }
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onSuccess: async (result) => {
+      // Invalidate caches
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: inboxKeys?.threads?.() });
+      queryClient.invalidateQueries({ queryKey: ['project', result.projectId] });
+
+      toast.success(`Project created: ${result.projectTitle}`);
+      if (onSuccess) onSuccess(result.projectId, result.projectTitle);
+      
+      onClose();
+
+      // Navigate to project
+      navigate(`${createPageUrl("Projects")}?projectId=${result.projectId}`);
     },
     onError: (error) => {
       toast.error(`Failed to create project: ${error.message}`);
-    }
+    },
   });
 
-  const handleDraftSubmit = (draftFormData) => {
-    setDraftData(draftFormData);
-    setDraftSubmitted(true);
-  };
-
-  const handleDraftCancel = () => {
-    setDraftSubmitted(false);
-    setDraftData(null);
-  };
-
-  const handleConfirmCreate = (fullProjectData) => {
-    createProjectMutation.mutate(fullProjectData);
+  const handleCreate = () => {
+    createProjectMutation.mutate();
   };
 
   if (!thread) return null;
