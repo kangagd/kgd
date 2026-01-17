@@ -325,16 +325,16 @@ export default function EmailMessageItem({
   const accentClass = message.is_outbound ? "bg-blue-500" : "bg-[#E5E7EB]";
   const containerTint = message.is_outbound ? "bg-blue-50/30" : "bg-white";
 
-  // Retry failed inline images
+  // Retry pending inline images (both errored and not yet fetched)
   const handleRetryImages = async () => {
     setIsRetryingImages(true);
-    const failedAttachments = (message.attachments || []).filter(
-      (att) => att.is_inline && att.content_id && inlineImageErrors.has(att.content_id) && !(att.file_url || att.url)
+    const pendingAttachments = (message.attachments || []).filter(
+      (att) => att.is_inline && att.content_id && !(att.file_url || att.url)
     );
 
     try {
       await Promise.all(
-        failedAttachments.map((att) =>
+        pendingAttachments.map((att) =>
           base44.functions.invoke('gmailGetInlineAttachmentUrl', {
             gmail_message_id: att.gmail_message_id || message.gmail_message_id,
             attachment_id: att.attachment_id,
