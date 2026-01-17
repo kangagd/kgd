@@ -165,12 +165,13 @@ export default function Inbox() {
     let debounceTimer;
     const unsubscribe = base44.entities.EmailThread.subscribe(() => {
       const now = Date.now();
-      if (now - lastThreadFetchTime < 30000) return; // fresh, skip
+      // Only refetch if stale (> 5 minutes old)
+      if (now - lastThreadFetchTime < 5 * 60 * 1000) return;
 
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
-      }, 500);
+      }, 1000);
     });
 
     return () => {
