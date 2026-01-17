@@ -190,6 +190,30 @@ export default function Layout({ children, currentPageName }) {
       }
     };
     loadUser();
+
+    // Global scroll unlock guardrails
+    const handleWindowFocus = () => forceUnlockBodyScroll();
+    const handleVisibilityChange = () => {
+      if (!document.hidden) forceUnlockBodyScroll();
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') forceUnlockBodyScroll();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Dev-only debug access
+    if (import.meta?.env?.DEV) {
+      window.__kgdForceUnlockScroll = forceUnlockBodyScroll;
+    }
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // GUARDRAIL: Use React Query for active check-ins to ensure cache consistency
