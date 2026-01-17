@@ -446,7 +446,7 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <PermissionsProvider>
-
+      <EnvironmentBanner />
       <div className="h-screen flex bg-[#ffffff] overflow-hidden">
         <Toaster position="top-right" richColors closeButton />
 
