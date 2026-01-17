@@ -167,109 +167,11 @@ export default function VisitRequirementsPanel({
     );
   };
 
-  // COMPLETED CONTEXT: Show Product Requirements (read-only)
-  if (!hasActiveVisit) {
-    return (
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-        <CardHeader className="bg-[#F9FAFB] px-4 py-3 border-b border-[#E5E7EB]">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-[14px] font-semibold text-[#6B7280] leading-[1.2]">
-              Product Requirements
-            </CardTitle>
-            <span className="text-[11px] text-[#9CA3AF] italic">Inherited from Project</span>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          {isLoading ? (
-            <div className="flex items-center gap-2 py-4">
-              <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
-              <span className="text-[13px] text-[#6B7280]">Loading project requirements...</span>
-            </div>
-          ) : !hasAnyProjectContent ? (
-            <p className="text-[13px] text-[#9CA3AF] py-2">No project requirements found.</p>
-          ) : (
-            <div className="space-y-4">
-              {/* Parts Required */}
-              {hasProjectParts && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Package className="w-4 h-4 text-[#6B7280]" />
-                    <h4 className="text-[13px] font-semibold text-[#111827]">Parts ({projectParts.length})</h4>
-                  </div>
-                  <div className="space-y-1.5">
-                    {projectParts.map((part) => (
-                      <div key={part.id} className="rounded-lg border border-[#E5E7EB] bg-white p-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[13px] font-medium text-[#111827] truncate block">
-                              {part.item_name || part.category || 'Part'}
-                            </span>
-                            {part.quantity_required && (
-                              <span className="text-[11px] text-[#6B7280]">Qty: {part.quantity_required}</span>
-                            )}
-                          </div>
-                          {part.status && (
-                            <Badge className="text-[10px] bg-slate-100 text-slate-700">
-                              {part.status}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Third-party Trades */}
-              {hasProjectTrades && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wrench className="w-4 h-4 text-[#6B7280]" />
-                    <h4 className="text-[13px] font-semibold text-[#111827]">Third-party Trades ({projectTrades.length})</h4>
-                  </div>
-                  <div className="space-y-1.5">
-                    {projectTrades.map((trade) => (
-                      <div key={trade.id} className="rounded-lg border border-[#E5E7EB] bg-white p-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[13px] font-medium text-[#111827] truncate">
-                            {trade.trade_name || trade.trade_type || 'Trade'}
-                          </span>
-                          {trade.is_booked ? (
-                            <Badge className="bg-green-100 text-green-700 text-[10px]">Booked</Badge>
-                          ) : trade.is_required ? (
-                            <Badge className="bg-amber-100 text-amber-700 text-[10px]">Required</Badge>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Project Requirements / Notes */}
-              {hasProjectRequirements && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <FileText className="w-4 h-4 text-[#6B7280]" />
-                    <h4 className="text-[13px] font-semibold text-[#111827]">Special Requirements</h4>
-                  </div>
-                  <div 
-                    className="text-[13px] text-[#111827] prose prose-sm max-w-none bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]"
-                    dangerouslySetInnerHTML={{ __html: project.special_requirements }}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
   // ACTIVE VISIT CONTEXT: Show This Visit Covers (editable)
-  return (
-    <>
-      <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+  if (hasActiveVisit) {
+    return (
+      <>
+        <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
         <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
           <div className="flex items-center justify-between">
             <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
@@ -413,6 +315,104 @@ export default function VisitRequirementsPanel({
           itemType={customItemType}
         />
       )}
-    </>
+      </>
+    );
+  }
+
+  // COMPLETED CONTEXT: Show Product Requirements (read-only)
+  return (
+    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+      <CardHeader className="bg-[#F9FAFB] px-4 py-3 border-b border-[#E5E7EB]">
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-[14px] font-semibold text-[#6B7280] leading-[1.2]">
+            Product Requirements
+          </CardTitle>
+          <span className="text-[11px] text-[#9CA3AF] italic">Inherited from Project</span>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        {isLoading ? (
+          <div className="flex items-center gap-2 py-4">
+            <Loader2 className="w-4 h-4 animate-spin text-[#6B7280]" />
+            <span className="text-[13px] text-[#6B7280]">Loading project requirements...</span>
+          </div>
+        ) : !hasAnyProjectContent ? (
+          <p className="text-[13px] text-[#9CA3AF] py-2">No project requirements found.</p>
+        ) : (
+          <div className="space-y-4">
+            {/* Parts Required */}
+            {hasProjectParts && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="w-4 h-4 text-[#6B7280]" />
+                  <h4 className="text-[13px] font-semibold text-[#111827]">Parts ({projectParts.length})</h4>
+                </div>
+                <div className="space-y-1.5">
+                  {projectParts.map((part) => (
+                    <div key={part.id} className="rounded-lg border border-[#E5E7EB] bg-white p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[13px] font-medium text-[#111827] truncate block">
+                            {part.item_name || part.category || 'Part'}
+                          </span>
+                          {part.quantity_required && (
+                            <span className="text-[11px] text-[#6B7280]">Qty: {part.quantity_required}</span>
+                          )}
+                        </div>
+                        {part.status && (
+                          <Badge className="text-[10px] bg-slate-100 text-slate-700">
+                            {part.status}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Third-party Trades */}
+            {hasProjectTrades && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Wrench className="w-4 h-4 text-[#6B7280]" />
+                  <h4 className="text-[13px] font-semibold text-[#111827]">Third-party Trades ({projectTrades.length})</h4>
+                </div>
+                <div className="space-y-1.5">
+                  {projectTrades.map((trade) => (
+                    <div key={trade.id} className="rounded-lg border border-[#E5E7EB] bg-white p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] font-medium text-[#111827] truncate">
+                          {trade.trade_name || trade.trade_type || 'Trade'}
+                        </span>
+                        {trade.is_booked ? (
+                          <Badge className="bg-green-100 text-green-700 text-[10px]">Booked</Badge>
+                        ) : trade.is_required ? (
+                          <Badge className="bg-amber-100 text-amber-700 text-[10px]">Required</Badge>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Project Requirements / Notes */}
+            {hasProjectRequirements && (
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4 text-[#6B7280]" />
+                  <h4 className="text-[13px] font-semibold text-[#111827]">Special Requirements</h4>
+                </div>
+                <div 
+                  className="text-[13px] text-[#111827] prose prose-sm max-w-none bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]"
+                  dangerouslySetInnerHTML={{ __html: project.special_requirements }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
