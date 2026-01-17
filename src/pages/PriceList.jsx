@@ -125,10 +125,15 @@ export default function PriceList() {
 
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
 
+    // Derive on-hand from InventoryQuantity only
+    const onHandTotal = inventoryQuantities
+      .filter(q => q.price_list_item_id === item.id)
+      .reduce((sum, q) => sum + (q.quantity || 0), 0);
+
     const matchesStock =
     stockFilter === "all" ||
-    (stockFilter === "low" && item.stock_level <= item.min_stock_level && item.track_inventory !== false) ||
-    (stockFilter === "out" && item.stock_level === 0 && item.track_inventory !== false);
+    (stockFilter === "low" && onHandTotal <= item.min_stock_level && onHandTotal > 0 && item.track_inventory !== false) ||
+    (stockFilter === "out" && onHandTotal === 0 && item.track_inventory !== false);
 
     const matchesInventoryType = !showStockOnly || item.track_inventory !== false;
 
@@ -147,8 +152,19 @@ export default function PriceList() {
   const isTechnician = user?.is_field_technician && !isAdminOrManager;
   const canModifyStock = isAdminOrManager || isTechnician;
   const canEditPriceList = isAdminOrManager;
-  const lowStockCount = priceItems.filter((item) => item.stock_level <= item.min_stock_level && item.stock_level > 0 && item.track_inventory !== false).length;
-  const outOfStockCount = priceItems.filter((item) => item.stock_level === 0 && item.track_inventory !== false).length;
+  const lowStockCount = priceItems.filter((item) => {
+    const onHandTotal = inventoryQuantities
+      .filter(q => q.price_list_item_id === item.id)
+      .reduce((sum, q) => sum + (q.quantity || 0), 0);
+    return onHandTotal <= item.min_stock_level && onHandTotal > 0 && item.track_inventory !== false;
+  }).length;
+
+  const outOfStockCount = priceItems.filter((item) => {
+    const onHandTotal = inventoryQuantities
+      .filter(q => q.price_list_item_id === item.id)
+      .reduce((sum, q) => sum + (q.quantity || 0), 0);
+    return onHandTotal === 0 && item.track_inventory !== false;
+  }).length;
 
   const handleSubmit = (data) => {
     if (editingItem) {
