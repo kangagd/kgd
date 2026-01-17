@@ -121,10 +121,7 @@ export default function Jobs() {
     ...QUERY_CONFIG.paginated,
   });
 
-  const allJobsData = useMemo(() => jobsPages?.pages.flatMap(page => page.data.jobs) ?? [], [jobsPages]);
-
-
-  const allJobsData = useMemo(() => jobsPages?.pages.flatMap(page => page.data.jobs) ?? [], [jobsPages]);
+  const allJobsData = useMemo(() => jobsPages?.pages.flatMap(page => page.data?.jobs ?? []).flat() ?? [], [jobsPages]);
 
   const jobs = allJobsData;
 
@@ -206,11 +203,9 @@ export default function Jobs() {
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: jobKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      setJobsCursor(null); // Reset pagination
-      setAllJobsData([]); // Clear accumulated data
-      refetch();
+       queryClient.invalidateQueries({ queryKey: jobKeys.all });
+       queryClient.invalidateQueries({ queryKey: ['projects'] });
+       refetch();
       setSelectedJob(null);
       setModalJob(null);
       navigate(createPageUrl("Jobs")); // Navigate back to list

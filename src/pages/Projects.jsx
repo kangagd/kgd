@@ -124,20 +124,6 @@ export default function Projects() {
 
 
 
-  const { data: allTradeRequirements = [] } = useQuery({
-    queryKey: ['allTradeRequirements'],
-    queryFn: () => base44.entities.ProjectTradeRequirement.list(),
-    ...QUERY_CONFIG.reference,
-  });
-
-  const { data: allPurchaseOrders = [] } = useQuery({
-    queryKey: ['allPurchaseOrders'],
-    queryFn: () => base44.entities.PurchaseOrder.list(),
-    ...QUERY_CONFIG.reference,
-  });
-
-
-
 
 
 
@@ -629,8 +615,6 @@ export default function Projects() {
               customerLabel={getProjectCustomerLabel(project)}
             />
           ))}
-            
-          })}
         </div>
 
         <EntityModal
