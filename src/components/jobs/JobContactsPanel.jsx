@@ -158,7 +158,7 @@ export default function JobContactsPanel({ job, inline = false }) {
     },
   });
 
-  // Inline mode: compact, no collapsible, no add form
+  // Inline mode: compact, collapsible, with add form
   if (inline) {
     if (jobContactsLoading) {
       return (
@@ -172,50 +172,146 @@ export default function JobContactsPanel({ job, inline = false }) {
 
     return (
       <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
-        <div className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide mb-2">
-          Additional Contacts ({jobContacts.length})
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {jobContacts.map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger className="w-full flex items-center justify-between mb-2 group">
+            <div className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-wide flex items-center gap-1.5">
+              Additional Contacts ({jobContacts.length})
+              <ChevronDown className="w-3 h-3 transition-transform group-data-[state=open]:rotate-180" />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(true);
+              }}
+              className="h-6 w-6 hover:bg-[#FAE008]/20 text-[#6B7280] hover:text-[#111827]"
+              title="Add Contact"
             >
-              <div className="space-y-1 min-w-0 flex-1">
-                <div className="font-medium text-gray-900 flex items-center gap-2">
-                  <span className="truncate">{c.name || "Unnamed contact"}</span>
-                  {c.role && (
-                    <span className="rounded-md bg-[#FAE008]/20 border border-[#FAE008]/30 px-1.5 py-0.5 text-[10px] font-medium text-[#854D0E] flex-shrink-0">
-                      {c.role}
-                    </span>
+              <Plus className="w-3.5 h-3.5" />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+              {jobContacts.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 text-xs hover:bg-gray-50 transition-colors"
+                >
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="font-medium text-gray-900 flex items-center gap-2">
+                      <span className="truncate">{c.name || "Unnamed contact"}</span>
+                      {c.role && (
+                        <span className="rounded-md bg-[#FAE008]/20 border border-[#FAE008]/30 px-1.5 py-0.5 text-[10px] font-medium text-[#854D0E] flex-shrink-0">
+                          {c.role}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-gray-500 flex items-center gap-2 flex-wrap">
+                      {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{c.email}</span></span>}
+                      {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 flex-shrink-0" /> {c.phone}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => deleteContactMutation.mutate(c.id)}
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick add contact form */}
+            <div className="border-t border-gray-100 pt-3">
+              <p className="text-[11px] font-medium text-gray-500 mb-2">
+                Quick add contact
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
+                <div className="relative z-20">
+                  <Input
+                    placeholder="Name"
+                    value={newContact.name}
+                    onChange={(e) => {
+                      setNewContact((c) => ({ ...c, name: e.target.value, contact_id: "" }));
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    className="h-8 text-xs"
+                    autoComplete="off"
+                  />
+                  {showSuggestions && newContact.name && !newContact.contact_id && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto py-1">
+                      {people
+                        .filter(p => p.name?.toLowerCase().includes(newContact.name.toLowerCase()))
+                        .slice(0, 5)
+                        .map(person => (
+                          <button
+                            key={person.id}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-gray-50 flex flex-col"
+                            onClick={() => {
+                              setNewContact(prev => ({
+                                ...prev,
+                                contact_id: person.id,
+                                name: person.name,
+                                email: person.email || prev.email,
+                                phone: person.phone || prev.phone,
+                              }));
+                              setShowSuggestions(false);
+                            }}
+                          >
+                            <span className="font-medium text-gray-900">{person.name}</span>
+                            {(person.email || person.phone) && (
+                              <span className="text-gray-500 text-[10px]">
+                                {person.email} {person.phone && `• ${person.phone}`}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                       {people.filter(p => p.name?.toLowerCase().includes(newContact.name.toLowerCase())).length === 0 && (
+                         <div className="px-3 py-2 text-xs text-gray-400 italic">No existing contacts found</div>
+                       )}
+                    </div>
                   )}
                 </div>
-                <div className="text-[11px] text-gray-500 flex items-center gap-2 flex-wrap">
-                  {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{c.email}</span></span>}
-                  {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 flex-shrink-0" /> {c.phone}</span>}
-                </div>
-                {c.contact_id && (
-                  <Link 
-                    to={`${createPageUrl("Customers")}?customerId=${c.contact_id}`}
-                    className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5"
-                  >
-                    View contact <ExternalLink className="w-2.5 h-2.5" />
-                  </Link>
-                )}
+                <Input
+                  placeholder="Email"
+                  value={newContact.email}
+                  onChange={(e) => setNewContact((c) => ({ ...c, email: e.target.value }))}
+                  className="h-8 text-xs"
+                />
+                <Input
+                  placeholder="Phone"
+                  value={newContact.phone}
+                  onChange={(e) => setNewContact((c) => ({ ...c, phone: e.target.value }))}
+                  className="h-8 text-xs"
+                />
+                <Input
+                  placeholder="Role (e.g. Builder)"
+                  value={newContact.role}
+                  onChange={(e) => setNewContact((c) => ({ ...c, role: e.target.value }))}
+                  className="h-8 text-xs"
+                />
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
-                    onClick={() => deleteContactMutation.mutate(c.id)}
+              <div className="flex items-center justify-end">
+                <Button
+                  size="sm"
+                  onClick={() => createContactMutation.mutate()}
+                  disabled={!newContact.name || createContactMutation.isPending}
+                  className="h-8 bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
                 >
-                    <Trash2 className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  {createContactMutation.isPending ? "Adding…" : "Add contact"}
                 </Button>
               </div>
             </div>
-          ))}
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     );
   }
