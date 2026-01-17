@@ -39,10 +39,9 @@ Deno.serve(async (req) => {
 
     const latestSummary = jobSummaries[0];
 
-    // Check if job type is "Initial Site Visit" (case-insensitive check)
-    const isInitialSiteVisit = job.job_type_name?.toLowerCase().includes('initial') || 
-                               job.job_type_name?.toLowerCase().includes('site visit') ||
-                               job.job_type_name?.toLowerCase() === 'isv';
+    // DEPRECATED: Initial Site Visit concept removed - all visits handled uniformly
+    // Kept for backward compatibility - legacy status advance logic
+    const isInitialSiteVisit = false;
 
     // Fetch current project
     const project = await base44.entities.Project.get(job.project_id);
@@ -52,20 +51,12 @@ Deno.serve(async (req) => {
     const jobImages = job.image_urls || latestSummary?.photo_urls || [];
     const mergedImages = [...new Set([...existingImages, ...jobImages])];
 
-    // Build project update with all job data
-    // GUARDRAIL: Prioritize latestSummary fields (from checkout) over job fields
-    // because basic checkout stores detailed notes in JobSummary, not Job entity
+    // Build project update - DEPRECATED: no longer sync to initial_visit_* fields
+    // All visit data now comes from VisitsTimeline which reads jobs directly
     const projectUpdate = {
-      image_urls: mergedImages,
-      initial_visit_job_id: job.id,
-      initial_visit_overview: latestSummary?.overview || job.overview || null,
-      initial_visit_next_steps: latestSummary?.next_steps || job.next_steps || null,
-      initial_visit_customer_communication: latestSummary?.communication_with_client || job.communication_with_client || null,
-      initial_visit_measurements: latestSummary?.measurements || job.measurements || null,
-      initial_visit_image_urls: jobImages,
-      initial_visit_outcome: latestSummary?.outcome || job.outcome || null,
-      initial_visit_completed_at: latestSummary?.check_out_time || new Date().toISOString(),
-      initial_visit_technician_name: latestSummary?.technician_name || null
+      image_urls: mergedImages
+      // NOTE: initial_visit_* fields are deprecated (retained for backward compatibility)
+      // Do not write to them anymore - all display now sources from jobs/visits
     };
 
     // Sync Xero invoice to project if job has one
@@ -80,10 +71,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // If it's an Initial Site Visit and project status is still "Initial Site Visit", advance to next stage
-    if (isInitialSiteVisit && project.status === 'Initial Site Visit') {
-      projectUpdate.status = 'Create Quote';
-    }
+    // DEPRECATED: Status advancement logic disabled (was for legacy Initial Site Visit)
+    // Projects now follow standard stage automation rules only
 
     // Update the project
     await base44.entities.Project.update(job.project_id, projectUpdate);
