@@ -65,6 +65,7 @@ import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
 import JobBriefCard from "./JobBriefCard";
+import VisitScopeSection from "./VisitScopeSection";
 
 function isLastCheckedInTechnician(checkIns, currentUserEmail) {
   if (!checkIns || checkIns.length === 0 || !currentUserEmail) return false;
@@ -1800,8 +1801,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {/* Duplicate Warning */}
               <DuplicateWarningCard entityType="Job" record={job} />
 
-              {/* Parts & Requirements Section */}
-              {!isLogisticsJob && (() => {
+              {/* Visit Scope Section - Replaces old Parts & Requirements */}
+              {!isLogisticsJob && <VisitScopeSection job={job} />}
+
+              {/* Legacy Parts & Requirements Section - REMOVED */}
+              {false && !isLogisticsJob && (() => {
                 if (!job.project_id || isProjectLoading || projectError) {
                   return null;
                 }
