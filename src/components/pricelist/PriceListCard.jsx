@@ -13,6 +13,9 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
   const isLowStock = onHandTotal <= item.min_stock_level && onHandTotal > 0;
   const isOutOfStock = onHandTotal === 0;
 
+  // Tracked inventory: track_inventory === true AND in_inventory === true
+  const isTrackedInventory = item.track_inventory === true && item.in_inventory === true;
+
   if (item.is_active === false && !isAdmin) return null;
 
   return (
@@ -38,13 +41,13 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                   <Badge className="bg-slate-100 text-slate-700 font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                     {item.category}
                   </Badge>
-                  {(item.track_inventory !== false && item.in_inventory !== false) && isOutOfStock && (
+                  {isTrackedInventory && isOutOfStock && (
                     <Badge className="bg-red-100 text-red-700 font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                       <Package className="w-3 h-3 mr-1" />
                       Out
                     </Badge>
                   )}
-                  {(item.track_inventory !== false && item.in_inventory !== false) && isLowStock && (
+                  {isTrackedInventory && isLowStock && (
                     <Badge className="bg-amber-100 text-amber-700 font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                       <AlertCircle className="w-3 h-3 mr-1" />
                       Low
@@ -77,10 +80,12 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
               </div>
             </div>
 
-            {/* Stock Summary Line - Minimal, muted */}
-            <div className="pt-1">
-              <StockSummaryLine onHand={onHandTotal} inbound={inventorySummary?.inbound || 0} trackInventory={item.track_inventory} />
-            </div>
+            {/* Stock Summary Line - Only for tracked inventory */}
+            {isTrackedInventory && (
+              <div className="pt-1">
+                <StockSummaryLine onHand={onHandTotal} inbound={inventorySummary?.inbound || 0} trackInventory={true} />
+              </div>
+            )}
 
             {/* Admin Quick Actions - Only price edit and delete */}
             {isAdmin && (
@@ -113,7 +118,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
             )}
 
             {/* Expandable Details */}
-            {(item.description || item.notes || (item.track_inventory !== false && stockByLocation?.length > 0)) && (
+            {(item.description || item.notes || (isTrackedInventory && (stockByLocation?.length > 0 || isOutOfStock))) && (
               <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#111827] transition-colors group w-full pt-2 border-t border-[#E5E7EB]">
                 <span>Stock details</span>
                 <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
@@ -121,7 +126,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
             )}
           </div>
 
-          {(item.description || item.notes || (item.track_inventory !== false && stockByLocation?.length > 0)) && (
+          {(item.description || item.notes || (isTrackedInventory && (stockByLocation?.length > 0 || isOutOfStock))) && (
             <CollapsibleContent className="pt-3">
               <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-3">
                 {item.description && (
@@ -136,52 +141,55 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                     <p className="text-[14px] text-[#4B5563] leading-[1.4] italic">{item.notes}</p>
                   </div>
                 )}
-                {item.track_inventory !== false && stockByLocation?.length > 0 && (
+                {isTrackedInventory && (
                   <div className="pt-2 border-t border-[#E5E7EB] space-y-3">
-                    <div>
-                      <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-2">Stock by location</div>
-                      <div className="space-y-1">
-                        {stockByLocation.map((qty, idx) => (
-                          <div key={idx} className="flex justify-between text-[13px] text-[#4B5563]">
-                            <span>{qty.location_name}</span>
-                            <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
-                              {qty.quantity}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {/* Stock Actions - Admin only, visible in expanded view */}
-                    {(isAdmin || canModifyStock) && (
-                      <div className="pt-2 border-t border-[#E5E7EB] flex gap-2 flex-wrap">
-                        {isAdmin && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onStockAdjust(item);
-                            }}
-                            className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
-                          >
-                            Adjust stock (admin)
-                          </button>
-                        )}
-                        {onMoveStock && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onMoveStock(item);
-                            }}
-                            className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
-                          >
-                            Transfer
-                          </button>
-                        )}
+                    {stockByLocation?.length > 0 && (
+                      <div>
+                        <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-2">Stock by location</div>
+                        <div className="space-y-1">
+                          {stockByLocation.map((qty, idx) => (
+                            <div key={idx} className="flex justify-between text-[13px] text-[#4B5563]">
+                              <span>{qty.location_name}</span>
+                              <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
+                                {qty.quantity}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
+                    {isOutOfStock && !stockByLocation?.length && (
+                      <div className="text-[13px] text-[#6B7280] italic">No stock at any location</div>
+                    )}
+                    {/* Stock Actions - Always available for tracked inventory (even out of stock) */}
+                    <div className="pt-2 border-t border-[#E5E7EB] flex gap-2 flex-wrap">
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onStockAdjust(item);
+                          }}
+                          className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
+                        >
+                          Adjust stock (admin)
+                        </button>
+                      )}
+                      {canModifyStock && onMoveStock && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMoveStock(item);
+                          }}
+                          className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
+                        >
+                          Transfer
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
-                {!item.in_inventory && (
-                  <Badge variant="outline" className="text-[#6B7280] text-[12px]">Not in inventory</Badge>
+                {!isTrackedInventory && (
+                  <Badge variant="outline" className="text-[#6B7280] text-[12px]">Not tracked</Badge>
                 )}
               </div>
             </CollapsibleContent>
