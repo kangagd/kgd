@@ -5,37 +5,29 @@ import { generateJobNumber } from './shared/jobNumberGenerator.js';
 import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
 import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.js';
 
-// Helper: Handle sample pickup job completion - move samples to vehicle
-async function handleSamplePickupCompletion(base44, job) {
+// Helper: Process sample transfers (explicit action on completion)
+async function processSampleTransfers(base44, job) {
     if (!job.sample_ids || job.sample_ids.length === 0) return;
     
-    const jobTypeName = (job.job_type_name || job.job_type || '').toLowerCase();
-    const isSamplePickup = jobTypeName.includes('sample') && jobTypeName.includes('pickup');
-    
-    if (!isSamplePickup) return;
+    // Skip if already processed (idempotency guard)
+    if (job.samples_transfer_status === 'completed') {
+        console.log(`[manageJob] Job ${job.id} samples already processed - skipping`);
+        return;
+    }
 
     try {
-        // Import the helper function
-        const { moveSampleFromClientToVehicle } = await import('./recordSampleMovement.js');
+        // Invoke the dedicated sample transfer processor
+        const result = await base44.asServiceRole.functions.invoke('processSampleTransfersForJob', {
+            job_id: job.id
+        });
         
-        // Move samples from client to vehicle (or warehouse if no vehicle)
-        const vehicleId = job.vehicle_id || null;
-        
-        if (vehicleId) {
-            await moveSampleFromClientToVehicle(
-                base44,
-                job.sample_ids,
-                vehicleId,
-                null, // technician_id will be set by recordSampleMovement context
-                job.id
-            );
+        if (result?.data?.success) {
+            console.log(`[manageJob] Processed ${result.data.processed_count} sample(s) for job ${job.id}`);
         } else {
-            // No vehicle - move to warehouse
-            const { moveSampleToWarehouse } = await import('./recordSampleMovement.js');
-            await moveSampleToWarehouse(base44, job.sample_ids, null);
+            console.warn(`[manageJob] Sample transfer incomplete for job ${job.id}:`, result?.data?.skipped_reason);
         }
     } catch (error) {
-        console.error(`Error handling sample pickup completion for job ${job.id}:`, error);
+        console.error(`[manageJob] Error processing sample transfers for job ${job.id}:`, error);
     }
 }
 
