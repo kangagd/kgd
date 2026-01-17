@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import ReceivePoItemsModal from "./ReceivePoItemsModal";
+import POLogisticsJobsSection from "./POLogisticsJobsSection";
 
 export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const navigate = useNavigate();
@@ -1413,49 +1414,53 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           </CardContent>
         </Card>
 
-        {/* Logistics Section */}
+        {/* Logistics Section with Linked Jobs */}
         {canCreateLogistics && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-[18px] flex items-center gap-2">
-                <Truck className="w-5 h-5" />
-                Logistics
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {po.linked_logistics_job_id ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-[#6B7280]">
-                    A logistics job has been created for this purchase order.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => navigate(`${createPageUrl("Jobs")}?jobId=${po.linked_logistics_job_id}`)}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <ArrowRight className="w-4 h-4 mr-2" />
-                    View Logistics Job {linkedJob?.job_number ? `#${linkedJob.job_number}` : ''}
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-[#6B7280]">
-                    Create a logistics job to track delivery from {formData.delivery_method === 'Supplier → Pickup Required' ? 'supplier pickup' : 'supplier to warehouse'}.
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={handleCreateLogisticsJob}
-                    disabled={createLogisticsJobMutation.isPending}
-                    className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-                  >
-                    <Truck className="w-4 h-4 mr-2" />
-                    Create Logistics Job
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <>
+            <POLogisticsJobsSection purchaseOrderId={poId} />
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-[18px] flex items-center gap-2">
+                  <Truck className="w-5 h-5" />
+                  Create Logistics Job
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {po.linked_logistics_job_id && linkedJob ? (
+                  <div className="space-y-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-900 font-medium">
+                      Primary logistics job already linked
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => navigate(`${createPageUrl("Jobs")}?jobId=${po.linked_logistics_job_id}`)}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <ArrowRight className="w-4 h-4 mr-2" />
+                      View Job #{linkedJob.job_number}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-[#6B7280]">
+                      Create a new logistics job to track delivery from {formData.delivery_method === 'Supplier → Pickup Required' ? 'supplier pickup' : 'supplier to warehouse'}.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleCreateLogisticsJob}
+                      disabled={createLogisticsJobMutation.isPending}
+                      className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+                    >
+                      <Truck className="w-4 h-4 mr-2" />
+                      Create New Logistics Job
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
 
         {/* Receive Items Modal */}
