@@ -89,10 +89,21 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
               </div>
             </div>
 
-            {/* Stock Summary Line - Only for tracked inventory */}
+            {/* Compact Inventory Chip - Only for tracked inventory */}
             {isTrackedInventory && (
-              <div className="pt-1">
-                <StockSummaryLine onHand={onHandTotal} inbound={inventorySummary?.inbound || 0} trackInventory={true} />
+              <div className="flex items-center gap-2 pt-1">
+                <Badge variant="outline" className="text-[12px] leading-[1.35] font-normal">
+                  <span className="text-[#6B7280]">On Hand:</span>
+                  <span className={`font-semibold ml-1 ${onHandTotal === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
+                    {onHandTotal}
+                  </span>
+                </Badge>
+                {inboundQty > 0 && (
+                  <Badge variant="outline" className="text-[12px] leading-[1.35] font-normal">
+                    <span className="text-[#6B7280]">Inbound:</span>
+                    <span className="font-semibold ml-1 text-[#6B7280]">{inboundQty}</span>
+                  </Badge>
+                )}
               </div>
             )}
 
@@ -126,16 +137,16 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
               </div>
             )}
 
-            {/* Expandable Details */}
-            {(item.description || item.notes || (isTrackedInventory && (stockByLocation?.length > 0 || isOutOfStock))) && (
+            {/* Expandable Details - Only for items with content or tracked inventory */}
+            {(item.description || item.notes || isTrackedInventory) && (
               <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-[#6B7280] hover:text-[#111827] transition-colors group w-full pt-2 border-t border-[#E5E7EB]">
-                <span>Stock details</span>
+                <span>{isTrackedInventory ? 'Inventory & details' : 'Details'}</span>
                 <ChevronDown className="w-4 h-4 transition-transform group-data-[state=open]:rotate-180" />
               </CollapsibleTrigger>
             )}
           </div>
 
-          {(item.description || item.notes || (isTrackedInventory && (stockByLocation?.length > 0 || isOutOfStock))) && (
+          {(item.description || item.notes || isTrackedInventory) && (
             <CollapsibleContent className="pt-3">
               <div className="bg-[#F8F9FA] rounded-lg p-3 space-y-3">
                 {item.description && (
@@ -150,55 +161,66 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                     <p className="text-[14px] text-[#4B5563] leading-[1.4] italic">{item.notes}</p>
                   </div>
                 )}
+                
                 {isTrackedInventory && (
-                  <div className="pt-2 border-t border-[#E5E7EB] space-y-3">
-                    {stockByLocation?.length > 0 && (
-                      <div>
-                        <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-2">Stock by location</div>
-                        <div className="space-y-1">
-                          {stockByLocation.map((qty, idx) => (
-                            <div key={idx} className="flex justify-between text-[13px] text-[#4B5563]">
-                              <span>{qty.location_name}</span>
-                              <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
-                                {qty.quantity}
-                              </span>
-                            </div>
-                          ))}
+                  <>
+                    {(item.description || item.notes) && <div className="border-t border-[#E5E7EB]" />}
+                    <div className="space-y-3">
+                      {stockByLocation?.length > 0 && (
+                        <div>
+                          <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-2">On hand by location</div>
+                          <div className="space-y-1">
+                            {stockByLocation.map((qty, idx) => (
+                              <div key={idx} className="flex justify-between text-[13px] text-[#4B5563]">
+                                <span>{qty.location_name}</span>
+                                <span className={`font-semibold ${qty.quantity === 0 ? 'text-red-600' : 'text-[#111827]'}`}>
+                                  {qty.quantity}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
+                      )}
+                      {isOutOfStock && !stockByLocation?.length && (
+                        <div className="text-[13px] text-[#6B7280] italic">No stock at any location</div>
+                      )}
+                      {inboundQty > 0 && (
+                        <div>
+                          <div className="text-[12px] font-medium text-[#6B7280] leading-[1.35] mb-2">Inbound (open POs)</div>
+                          <div className="text-[13px] text-[#4B5563]">
+                            <span className="font-semibold text-[#111827]">{inboundQty}</span>
+                            <span className="text-[#6B7280]"> units</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Stock Actions */}
+                      <div className="pt-2 border-t border-[#E5E7EB] flex gap-2 flex-wrap">
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStockAdjust(item);
+                            }}
+                            className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
+                          >
+                            Adjust stock
+                          </button>
+                        )}
+                        {canModifyStock && onMoveStock && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onMoveStock(item);
+                            }}
+                            className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
+                          >
+                            Transfer stock
+                          </button>
+                        )}
                       </div>
-                    )}
-                    {isOutOfStock && !stockByLocation?.length && (
-                      <div className="text-[13px] text-[#6B7280] italic">No stock at any location</div>
-                    )}
-                    {/* Stock Actions - Always available for tracked inventory (even out of stock) */}
-                    <div className="pt-2 border-t border-[#E5E7EB] flex gap-2 flex-wrap">
-                      {isAdmin && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onStockAdjust(item);
-                          }}
-                          className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
-                        >
-                          Adjust stock (admin)
-                        </button>
-                      )}
-                      {canModifyStock && onMoveStock && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onMoveStock(item);
-                          }}
-                          className="text-xs text-[#6B7280] hover:text-[#111827] hover:underline font-medium transition-colors"
-                        >
-                          Transfer
-                        </button>
-                      )}
                     </div>
-                  </div>
-                )}
-                {!isTrackedInventory && (
-                  <Badge variant="outline" className="text-[#6B7280] text-[12px]">Not tracked</Badge>
+                  </>
                 )}
               </div>
             </CollapsibleContent>
