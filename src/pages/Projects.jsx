@@ -708,11 +708,11 @@ export default function Projects() {
                           <UserX className="w-4 h-4 text-[#DC2626]" />
                         </span>
                       )}
-                      {allParts.filter(p => sameId(p.project_id, project.id)).some(detectShortage) && (
-                        <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
-                          Shortage
-                        </span>
-                      )}
+                      {(indexes.partsByProjectId.get(project.id) || []).some(detectShortage) && (
+                         <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
+                            Shortage
+                         </span>
+                       )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {project.organisation_type && (
