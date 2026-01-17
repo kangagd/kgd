@@ -15,16 +15,99 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import {
-  extractCustomerEmail,
-  extractCustomerName,
-  extractPhoneFromBody,
-  extractAddressFromBody,
-  formatShortAddress,
-  classifyCategory,
-  cleanEmailBody,
-  generateBulletDescription,
-} from './shared/emailProjectCreateHelpers.js';
+
+// ============================================================================
+// HELPER FUNCTIONS (inlined to avoid module import issues)
+// ============================================================================
+
+function extractCustomerEmail(emailMessage) {
+  if (!emailMessage) return null;
+  return emailMessage.from_address?.toLowerCase() || null;
+}
+
+function extractCustomerName(displayName, email) {
+  if (displayName && displayName.trim().length > 0) {
+    return displayName.trim();
+  }
+  if (email) {
+    const name = email.split('@')[0];
+    return name.replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return null;
+}
+
+function extractPhoneFromBody(text) {
+  if (!text) return null;
+  const phoneRegex = /(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/;
+  const match = text.match(phoneRegex);
+  return match ? match[0] : null;
+}
+
+function extractAddressFromBody(text) {
+  if (!text) return null;
+  const addressRegex = /(\d+\s+[a-zA-Z\s]+)[,]?\s+([A-Za-z\s]+)\s+([A-Z]{2})\s+(\d{4})/;
+  const match = text.match(addressRegex);
+  if (match) {
+    return {
+      street: match[1].trim(),
+      suburb: match[2].trim(),
+      state: match[3],
+      postcode: match[4],
+      fullAddress: `${match[1].trim()}, ${match[2].trim()} ${match[3]} ${match[4]}`,
+    };
+  }
+  return null;
+}
+
+function formatShortAddress(addressObj) {
+  if (!addressObj) return 'Address Unknown';
+  if (addressObj.suburb && addressObj.postcode) {
+    return `${addressObj.suburb} ${addressObj.postcode}`;
+  }
+  if (addressObj.suburb) return addressObj.suburb;
+  if (addressObj.fullAddress) return addressObj.fullAddress;
+  return 'Address Unknown';
+}
+
+function classifyCategory(subject, body, overrideCategory = null) {
+  if (overrideCategory) {
+    return { category: overrideCategory, confidence: 'user-selected' };
+  }
+  const combined = `${subject} ${body}`.toLowerCase();
+  const categories = {
+    'Sectional Door Repair': ['garage door repair', 'broken door', 'door stuck', 'door broken'],
+    'Sectional Door Install': ['garage door install', 'new door', 'install garage door'],
+    'Roller Shutter Repair': ['roller shutter repair', 'shutter broken', 'shutter stuck'],
+    'Roller Shutter Install': ['roller shutter install', 'new shutter', 'install shutter'],
+    'Maintenance Service': ['maintenance', 'service call', 'regular service'],
+    'General Enquiry': ['enquiry', 'inquiry', 'quote', 'more info'],
+  };
+  for (const [category, keywords] of Object.entries(categories)) {
+    if (keywords.some(keyword => combined.includes(keyword))) {
+      return { category, confidence: 'high' };
+    }
+  }
+  return { category: 'General Enquiry', confidence: 'low' };
+}
+
+function cleanEmailBody(htmlBody, textBody) {
+  let body = htmlBody || textBody || '';
+  body = body.replace(/<[^>]*>/g, ' ');
+  body = body.split(/^--\s*$/m)[0];
+  body = body.split(/^Sent from/m)[0];
+  body = body.replace(/\s+/g, ' ').trim();
+  return body;
+}
+
+function generateBulletDescription(text) {
+  if (!text || text.length === 0) return [];
+  const sentences = text
+    .split(/[.!?]\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 10 && s.length < 200)
+    .slice(0, 5);
+  return sentences.length > 0 ? sentences : ['Email received from customer'];
+}
 
 Deno.serve(async (req) => {
   try {
