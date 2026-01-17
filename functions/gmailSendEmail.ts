@@ -517,6 +517,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Trigger immediate Gmail sync for the thread to ensure sent message is synced back
+    // (best-effort, non-blocking - doesn't delay response)
+    if (result.threadId) {
+      try {
+        base44.functions.invoke('gmailSyncThreadMessages', {
+          gmail_thread_id: result.threadId
+        }).catch(err => {
+          console.error('[gmailSendEmail] Async sync failed:', err.message);
+          // Non-blocking failure
+        });
+      } catch (err) {
+        console.error('[gmailSendEmail] Failed to invoke async sync:', err.message);
+        // Non-blocking failure
+      }
+    }
+
     return Response.json({
       success: true,
       gmailMessageId: result.id,
