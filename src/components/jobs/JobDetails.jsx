@@ -57,7 +57,6 @@ import {
 "@/components/ui/alert-dialog";
 import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
-import LinkedPartsCard from "./LinkedPartsCard";
 import JobItemsUsedModal from "./JobItemsUsedModal";
 import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
@@ -2427,9 +2426,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               ) : (
                 <>
                   {/* Standard Job Details */}
-                  {/* Linked Parts Card - Logistics */}
-                  <LinkedPartsCard job={job} />
-
                   {/* Sample Quick Actions */}
                   {user && <SampleQuickActionsPanel job={job} user={user} />}
 
