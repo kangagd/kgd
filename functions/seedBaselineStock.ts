@@ -160,20 +160,18 @@ Deno.serve(async (req) => {
         }
         inventoryWrites++;
 
-        // Create StockMovement ONLY when delta != 0
+        // Create StockMovement ONLY when delta != 0 (canonical schema)
         await withRetry(() =>
           base44.asServiceRole.entities.StockMovement.create({
-            job_id: seedBatchId,
-            sku_id: p.sku_id,
+            price_list_item_id: p.sku_id,
             item_name: p.item_name,
-            quantity: p.delta,
+            quantity: Math.abs(p.delta),
             from_location_id: p.delta < 0 ? p.location_id : null,
+            from_location_name: p.delta < 0 ? p.location_name : null,
             to_location_id: p.delta > 0 ? p.location_id : null,
             to_location_name: p.delta > 0 ? p.location_name : null,
-            from_location_name: p.delta < 0 ? p.location_name : null,
-            performed_by_user_id: user.id,
             performed_by_user_email: user.email,
-            performed_by_user_name: user.full_name || user.display_name,
+            performed_by_user_name: user.full_name || user.display_name || user.email,
             performed_at: now,
             source: 'baseline_seed',
             reference_type: 'system_migration',
