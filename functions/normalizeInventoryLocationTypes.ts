@@ -77,6 +77,7 @@ function normalizeType(type) {
   if (!type) return 'other';
   const lower = String(type).toLowerCase().trim();
   if (lower === 'warehouse') return 'warehouse';
-  if (lower === 'vehicle') return 'vehicle';
+  // Map common vehicle synonyms to 'vehicle'
+  if (['vehicle', 'van', 'car', 'truck', 'mobile'].includes(lower)) return 'vehicle';
   return 'other';
 }
