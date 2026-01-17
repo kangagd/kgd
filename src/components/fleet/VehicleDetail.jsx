@@ -206,42 +206,15 @@ export default function VehicleDetail({ vehicle, onBack }) {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-white border border-gray-200 p-1 h-auto">
-          <TabsTrigger value="stock" className="px-6 py-2">Stock Inventory</TabsTrigger>
-          <TabsTrigger value="vehicle-stock" className="px-6 py-2">Vehicle Stock</TabsTrigger>
-          <TabsTrigger value="samples" className="px-6 py-2">Samples</TabsTrigger>
-          <TabsTrigger value="tools" className="px-6 py-2">Tools</TabsTrigger>
-          <TabsTrigger value="parts" className="px-6 py-2">Parts & Hardware</TabsTrigger>
-          <TabsTrigger value="movements" className="px-6 py-2">History & Movements</TabsTrigger>
-          <TabsTrigger value="photos" className="px-6 py-2">Photos</TabsTrigger>
-          <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="stock">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Current Inventory</CardTitle>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowAddStockModal(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Item
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowRestockModal(true)}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Generate Restock List
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <VehicleStockList 
-                stock={stock} 
-                isLoading={isStockLoading}
-                onMarkUsed={() => {}} // Admin probably doesn't mark used often, or maybe they do
-                onAdjust={(item) => setAdjustmentItem(item)}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+         <TabsList className="bg-white border border-gray-200 p-1 h-auto">
+           <TabsTrigger value="vehicle-stock" className="px-6 py-2">Stock</TabsTrigger>
+           <TabsTrigger value="samples" className="px-6 py-2">Samples</TabsTrigger>
+           <TabsTrigger value="tools" className="px-6 py-2">Tools</TabsTrigger>
+           <TabsTrigger value="parts" className="px-6 py-2">Parts & Hardware</TabsTrigger>
+           <TabsTrigger value="movements" className="px-6 py-2">History & Movements</TabsTrigger>
+           <TabsTrigger value="photos" className="px-6 py-2">Photos</TabsTrigger>
+           <TabsTrigger value="overview" className="px-6 py-2">Overview</TabsTrigger>
+         </TabsList>
 
         <TabsContent value="vehicle-stock">
           <VehicleStockView vehicleId={vehicle.id} />
