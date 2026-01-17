@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertCircle, CheckCircle2, Clock, ArrowRight, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, ArrowRight, Loader2, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const transferStatusConfig = {
@@ -17,7 +17,7 @@ const transferStatusConfig = {
   'skipped': { icon: AlertCircle, color: 'bg-slate-100 text-slate-800', label: 'Skipped' }
 };
 
-export default function LogisticsJobTransferSection({ job, sourceLocation, destinationLocation }) {
+export default function LogisticsJobTransferSection({ job, sourceLocation, destinationLocation, isAdmin = false }) {
   const queryClient = useQueryClient();
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedItems, setSelectedItems] = useState({});
@@ -26,6 +26,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
   const status = job.stock_transfer_status || 'not_started';
   const config = transferStatusConfig[status];
   const Icon = config.icon;
+  const isLegacy = job.legacy_flag === true;
 
   const recordTransferMutation = useMutation({
     mutationFn: async () => {
@@ -67,7 +68,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   // Show different UI based on job type
   const isWarehouseTransfer = destinationLocation?.type === 'vehicle' && sourceLocation?.type === 'warehouse';
-  const canTransfer = sourceLocation && destinationLocation && status !== 'completed';
+  const canTransfer = sourceLocation && destinationLocation && status !== 'completed' && !isLegacy;
 
   return (
     <Card>
@@ -137,6 +138,17 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           </div>
         )}
 
+        {/* Legacy Job Warning */}
+        {isLegacy && (
+          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex gap-2">
+            <Lock className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-orange-800">
+              <p className="font-medium">Legacy Job - No Automatic Actions</p>
+              <p className="text-xs mt-1">Inventory changes were not automatically tracked for this legacy job. Only admins can manually link inventory transfers.</p>
+            </div>
+          </div>
+        )}
+
         {/* Record Transfer Button */}
         {canTransfer && (
           <Button
@@ -148,11 +160,32 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           </Button>
         )}
 
+        {/* Admin-Only Legacy Helper Button */}
+        {isLegacy && isAdmin && (
+          <Button
+            onClick={() => setShowTransferModal(true)}
+            variant="outline"
+            className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
+            disabled={!sourceLocation || !destinationLocation}
+          >
+            Link Inventory Transfer (Admin)
+          </Button>
+        )}
+
         {/* Info */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900">
-          <p className="font-medium mb-1">About Inventory Transfers</p>
+        <div className={`p-3 border rounded-lg text-sm ${
+          isLegacy 
+            ? 'bg-orange-50 border-orange-200 text-orange-900' 
+            : 'bg-blue-50 border-blue-200 text-blue-900'
+        }`}>
+          <p className="font-medium mb-1">
+            {isLegacy ? 'About Legacy Jobs' : 'About Inventory Transfers'}
+          </p>
           <p className="text-xs leading-relaxed">
-            Completing this logistics job does NOT automatically move stock. Use "Record Transfer" to explicitly record inventory movement between locations, which updates stock quantities and creates an audit trail.
+            {isLegacy 
+              ? 'This job was created before inventory tracking was implemented. Stock was not automatically tracked during delivery. To record inventory that should have been transferred, use "Link Inventory Transfer" to manually create audit records.'
+              : 'Completing this logistics job does NOT automatically move stock. Use "Record Transfer" to explicitly record inventory movement between locations, which updates stock quantities and creates an audit trail.'
+            }
           </p>
         </div>
       </CardContent>
