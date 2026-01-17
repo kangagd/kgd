@@ -147,32 +147,22 @@ Deno.serve(async (req) => {
       }) : Promise.resolve([]),
       includeFlags.quotes ? (async () => {
         try {
-          // CANONICAL: Try filter by project_id first
-          let quotes = await base44.asServiceRole.entities.Quote.filter({ 
-            project_id, 
-            deleted_at: { $exists: false } 
+          // CANONICAL: Query by project_id relationship (not project.quote_ids)
+          const quotes = await base44.asServiceRole.entities.Quote.filter({ 
+            project_id
           }).catch(err => {
             console.error('[getProjectWithRelations] Failed to filter quotes by project_id:', err);
             return [];
           });
 
-          // FALLBACK: If no quotes found via filter, try project's quote_ids array
-          if (!quotes || quotes.length === 0) {
-            const proj = await base44.asServiceRole.entities.Project.get(project_id).catch(() => null);
-            if (proj?.quote_ids && proj.quote_ids.length > 0) {
-              console.log(`[getProjectWithRelations] No quotes via filter, falling back to ${proj.quote_ids.length} quote IDs from project`);
-              const quotePromises = proj.quote_ids.map(id => 
-                base44.asServiceRole.entities.Quote.get(id).catch(err => {
-                  console.error(`[getProjectWithRelations] Failed to fetch quote ${id}:`, err);
-                  return null;
-                })
-              );
-              const fetchedQuotes = await Promise.all(quotePromises);
-              quotes = fetchedQuotes.filter(q => q !== null && !q.deleted_at);
-            }
-          }
+          console.log(`[getProjectWithRelations] Found ${quotes?.length || 0} quotes for project ${project_id}`);
 
-          return Array.isArray(quotes) ? quotes : [];
+          // Filter out soft-deleted quotes
+          const activeQuotes = Array.isArray(quotes) 
+            ? quotes.filter(q => q && !q.deleted_at)
+            : [];
+
+          return activeQuotes;
         } catch (err) {
           console.error('[getProjectWithRelations] Failed to fetch quotes:', err);
           return [];
