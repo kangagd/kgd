@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,21 @@ import { PackagePlus, Pencil, Trash2, ChevronDown, AlertCircle, Package, ArrowRi
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import StockByLocationView from "@/components/inventory/StockByLocationView";
 import StockSummaryLine from "@/components/pricelist/StockSummaryLine";
+import { getPhysicalAvailableLocations } from "@/components/utils/inventoryLocationUtils";
 
 export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, onMoveStock, inventorySummary, stockByLocation, onHandQty = 0, locations, canViewCosts }) {
-  // Use pre-calculated onHandQty from parent (always matches stockByLocation)
+  // Use pre-calculated onHandQty from parent (already filtered to physical locations)
   const onHandTotal = onHandQty;
   const isLowStock = onHandTotal <= item.min_stock_level && onHandTotal > 0;
   const isOutOfStock = onHandTotal === 0;
+  
+  // Get inbound quantity (from non-physical locations: supplier, in-transit, etc.)
+  const inboundQty = useMemo(() => {
+    const physicalLocationIds = new Set(getPhysicalAvailableLocations(locations).map(loc => loc.id));
+    return (stockByLocation || [])
+      .filter(q => !physicalLocationIds.has(q.location_id))
+      .reduce((sum, q) => sum + (q.quantity || 0), 0);
+  }, [stockByLocation, locations]);
 
   // Tracked inventory: track_inventory === true AND in_inventory === true
   const isTrackedInventory = item.track_inventory === true && item.in_inventory === true;
@@ -44,7 +53,7 @@ export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, o
                   {isTrackedInventory && isOutOfStock && (
                     <Badge className="bg-red-100 text-red-700 font-medium border-0 px-2.5 py-0.5 rounded-lg text-[12px] leading-[1.35]">
                       <Package className="w-3 h-3 mr-1" />
-                      Out
+                      {inboundQty > 0 ? `Out (${inboundQty} inbound)` : 'Out'}
                     </Badge>
                   )}
                   {isTrackedInventory && isLowStock && (
