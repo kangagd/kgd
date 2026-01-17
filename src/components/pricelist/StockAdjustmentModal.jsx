@@ -25,55 +25,19 @@ export default function StockAdjustmentModal({ item, open, onClose, locations = 
 
   const adjustmentMutation = useMutation({
     mutationFn: async (data) => {
-      // Fetch current inventory quantity
-      const current = await base44.entities.InventoryQuantity.filter({
-        price_list_item_id: item.id,
-        location_id: data.location
+      const response = await base44.functions.invoke('adjustStockCorrection', {
+        priceListItemId: item.id,
+        locationId: data.location,
+        quantity: data.quantity,
+        isExactCount: data.isExactCount,
+        reason: data.reason
       });
 
-      const currentQty = current[0]?.quantity || 0;
-      const newQty = data.isExactCount ? data.quantity : currentQty + data.quantity;
-
-      // Ensure non-negative
-      if (newQty < 0) {
-        throw new Error('Stock cannot be negative');
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to adjust stock');
       }
 
-      const delta = newQty - currentQty;
-
-      // Update InventoryQuantity
-      if (current[0]) {
-        await base44.asServiceRole.entities.InventoryQuantity.update(current[0].id, {
-          quantity: newQty
-        });
-      } else {
-        await base44.asServiceRole.entities.InventoryQuantity.create({
-          price_list_item_id: item.id,
-          location_id: data.location,
-          quantity: newQty,
-          item_name: item.item,
-          location_name: locations.find(l => l.id === data.location)?.name || ''
-        });
-      }
-
-      // Create StockMovement audit record
-      await base44.asServiceRole.entities.StockMovement.create({
-        sku_id: item.id,
-        item_name: item.item,
-        quantity: Math.abs(delta),
-        from_location_id: delta < 0 ? data.location : null,
-        from_location_name: delta < 0 ? locations.find(l => l.id === data.location)?.name : null,
-        to_location_id: delta > 0 ? data.location : null,
-        to_location_name: delta > 0 ? locations.find(l => l.id === data.location)?.name : null,
-        performed_by_user_id: (await base44.auth.me()).id,
-        performed_by_user_email: (await base44.auth.me()).email,
-        performed_by_user_name: (await base44.auth.me()).full_name || (await base44.auth.me()).display_name,
-        performed_at: new Date().toISOString(),
-        source: 'correction_adjustment',
-        notes: `Admin correction: ${data.isExactCount ? `set exact: ${currentQty} → ${newQty}` : `delta: ${delta > 0 ? '+' : ''}${delta}`}. Reason: ${data.reason}`
-      });
-
-      return { success: true };
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['priceListItems'] });
