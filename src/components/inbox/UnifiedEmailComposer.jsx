@@ -341,13 +341,14 @@ export default function UnifiedEmailComposer({
     if (!currentUser) return;
     if (didInitBodyRef.current) return; // Already initialized
     
+    const signatureBuilder = (sig) => buildSignatureHtml(sig, currentUser?.email_signature_image_url);
     const initialBody = computeInitialBody(
       existingDraft,
       mode,
       currentUser,
       selectedMessage || message,
       thread,
-      buildSignatureHtml,
+      signatureBuilder,
       ensureSignature,
       sanitizeForCompose,
       format,
