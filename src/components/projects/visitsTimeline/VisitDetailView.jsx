@@ -1,0 +1,195 @@
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
+const normalizeDoors = (measurements) => {
+  if (!measurements) return [];
+  if (Array.isArray(measurements.new_doors) && measurements.new_doors.length > 0) {
+    return measurements.new_doors;
+  }
+  if (measurements.new_door) {
+    return [measurements.new_door];
+  }
+  return [];
+};
+
+export default function VisitDetailView({ visit }) {
+  const [expandedSections, setExpandedSections] = useState({
+    summary: true,
+    measurements: true,
+    findings: false,
+    nextSteps: false,
+    photos: false,
+  });
+
+  const toggleSection = (section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  const doors = normalizeDoors(visit.measurements);
+
+  return (
+    <div className="space-y-3">
+      {/* Outcome & Summary */}
+      <Collapsible open={expandedSections.summary} onOpenChange={() => toggleSection('summary')}>
+        <Card className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+          <CollapsibleTrigger className="w-full">
+            <div className="px-4 py-3 bg-white hover:bg-[#F9FAFB] transition-colors flex items-center justify-between cursor-pointer">
+              <h4 className="font-semibold text-[#111827] text-sm">Summary</h4>
+              {expandedSections.summary ? (
+                <ChevronUp className="w-4 h-4 text-[#6B7280]" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+              )}
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-4 py-3 border-t border-[#E5E7EB] bg-[#FAFBFC] space-y-2">
+              {visit.outcome && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-[#6B7280]">Outcome:</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {visit.outcome}
+                  </Badge>
+                </div>
+              )}
+              {visit.overview && (
+                <div>
+                  <p className="text-sm text-[#111827]">{visit.overview}</p>
+                </div>
+              )}
+              {visit.completion_notes && (
+                <details className="text-xs text-[#4B5563]">
+                  <summary className="cursor-pointer font-medium text-[#6B7280] mb-1">Technician Notes</summary>
+                  <p className="pl-3 text-xs whitespace-pre-wrap">{visit.completion_notes}</p>
+                </details>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Measurements */}
+      {doors.length > 0 && (
+        <Collapsible open={expandedSections.measurements} onOpenChange={() => toggleSection('measurements')}>
+          <Card className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+            <CollapsibleTrigger className="w-full">
+              <div className="px-4 py-3 bg-white hover:bg-[#F9FAFB] transition-colors flex items-center justify-between cursor-pointer">
+                <h4 className="font-semibold text-[#111827] text-sm">
+                  Measurements ({doors.length} {doors.length === 1 ? 'door' : 'doors'})
+                </h4>
+                {expandedSections.measurements ? (
+                  <ChevronUp className="w-4 h-4 text-[#6B7280]" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                )}
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 py-3 border-t border-[#E5E7EB] bg-[#FAFBFC] space-y-3">
+                {doors.map((door, idx) => (
+                  <div key={idx} className="border border-[#E5E7EB] rounded-lg p-3 bg-white">
+                    <h5 className="font-medium text-[#111827] text-xs mb-2">
+                      {doors.length === 1 ? 'Door' : `Door ${idx + 1}`}
+                    </h5>
+                    <div className="space-y-1 text-xs text-[#4B5563]">
+                      {(door.opening_width || door.opening_height) && (
+                        <div>Opening: {door.opening_width || '?'} × {door.opening_height || '?'}</div>
+                      )}
+                      {door.headroom && <div>Headroom: {door.headroom}</div>}
+                      {door.sideroom_left && <div>Sideroom (L): {door.sideroom_left}</div>}
+                      {door.sideroom_right && <div>Sideroom (R): {door.sideroom_right}</div>}
+                      {door.backroom && <div>Backroom: {door.backroom}</div>}
+                      {door.type && <div>Type: {door.type}</div>}
+                      {door.material && <div>Material: {door.material}</div>}
+                      {door.existing_door_removal && (
+                        <div className="text-[#D97706]">⚠️ Existing door removal required</div>
+                      )}
+                      {door.additional_info && (
+                        <div className="italic text-[#6B7280]">{door.additional_info}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {visit.measurements?.notes && (
+                  <div className="text-xs text-[#4B5563] italic border-t border-[#E5E7EB] pt-2">
+                    {visit.measurements.notes}
+                  </div>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
+      {/* Next Steps */}
+      {visit.next_steps && (
+        <Collapsible open={expandedSections.nextSteps} onOpenChange={() => toggleSection('nextSteps')}>
+          <Card className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+            <CollapsibleTrigger className="w-full">
+              <div className="px-4 py-3 bg-white hover:bg-[#F9FAFB] transition-colors flex items-center justify-between cursor-pointer">
+                <h4 className="font-semibold text-[#111827] text-sm">Next Steps</h4>
+                {expandedSections.nextSteps ? (
+                  <ChevronUp className="w-4 h-4 text-[#6B7280]" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                )}
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 py-3 border-t border-[#E5E7EB] bg-[#FAFBFC]">
+                <div className="text-sm text-[#111827] whitespace-pre-wrap">{visit.next_steps}</div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
+      {/* Photos */}
+      {visit.image_urls && visit.image_urls.length > 0 && (
+        <Collapsible open={expandedSections.photos} onOpenChange={() => toggleSection('photos')}>
+          <Card className="border border-[#E5E7EB] rounded-lg overflow-hidden">
+            <CollapsibleTrigger className="w-full">
+              <div className="px-4 py-3 bg-white hover:bg-[#F9FAFB] transition-colors flex items-center justify-between cursor-pointer">
+                <h4 className="font-semibold text-[#111827] text-sm">
+                  Photos ({visit.image_urls.length})
+                </h4>
+                {expandedSections.photos ? (
+                  <ChevronUp className="w-4 h-4 text-[#6B7280]" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-[#6B7280]" />
+                )}
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="px-4 py-3 border-t border-[#E5E7EB] bg-[#FAFBFC]">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {visit.image_urls.map((url, idx) => (
+                    <a
+                      key={idx}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
+                    >
+                      <img
+                        src={url}
+                        alt={`Photo ${idx + 1}`}
+                        className="w-full h-24 object-cover"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+    </div>
+  );
+}
