@@ -569,16 +569,16 @@ Deno.serve(async (req) => {
                 // LOGISTICS JOB: Record stock movements
                 if (job.is_logistics_job === true) {
                     await handleLogisticsJobCompletion(base44, job);
-                    
+
                     // Create StockMovement records
                     if (job.logistics_purpose && job.purchase_order_id) {
                         await createStockMovementsForLogisticsJob(base44, job, user);
                     }
                 }
-                
-                // Move Samples when sample pickup job is completed
+
+                // Process sample transfers (explicit action on completion)
                 if (job.sample_ids && job.sample_ids.length > 0) {
-                    await handleSamplePickupCompletion(base44, job);
+                    await processSampleTransfers(base44, job);
                 }
             }
 
