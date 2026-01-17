@@ -58,7 +58,7 @@ export default function ModelHealth() {
     },
     onSuccess: (data) => {
       setDryRunResults(data);
-      toast.success(`Dry Run Complete: ${data.fixed_count} issues would be fixed (no changes made)`);
+      toast.success(`Dry Run Complete: ${data.would_fix_count || 0} issues would be fixed (no changes made)`);
       queryClient.invalidateQueries({ queryKey: ['modelDrift'] });
     },
     onError: (error) => {
@@ -395,16 +395,16 @@ export default function ModelHealth() {
                 </CardHeader>
                 <CardContent className="p-4">
                   <div className="text-sm text-purple-900 mb-3">
-                    <strong>{dryRunResults.fixed_count}</strong> jobs would be fixed (no data was modified)
+                    <strong>{dryRunResults.would_fix_count || 0}</strong> jobs would be fixed (no data was modified)
                   </div>
                   
-                  {dryRunResults.proposed_fixes && dryRunResults.proposed_fixes.length > 0 && (
+                  {dryRunResults.would_fix_jobs && dryRunResults.would_fix_jobs.length > 0 && (
                     <div className="space-y-2">
                       <div className="text-xs font-semibold text-purple-700 uppercase tracking-wide">
-                        Proposed Changes (showing first {Math.min(20, dryRunResults.proposed_fixes.length)})
+                        Proposed Changes ({dryRunResults.would_fix_jobs.length} jobs)
                       </div>
                       <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {dryRunResults.proposed_fixes.map((fix, idx) => (
+                        {dryRunResults.would_fix_jobs.map((fix, idx) => (
                           <div key={idx} className="bg-white border border-purple-200 rounded-lg p-3">
                             <div className="flex items-start justify-between gap-3 mb-2">
                               <div className="flex-1">
@@ -419,12 +419,11 @@ export default function ModelHealth() {
                                 <ExternalLink className="w-4 h-4" />
                               </Link>
                             </div>
-                            <div className="space-y-1">
-                              {fix.fixes.map((f, i) => (
-                                <div key={i} className="text-xs text-purple-800 bg-purple-50 px-2 py-1 rounded">
-                                  {f}
-                                </div>
-                              ))}
+                            <div className="bg-purple-50 px-2 py-1.5 rounded text-xs">
+                              <div className="text-purple-900 font-medium mb-0.5">visit_count correction:</div>
+                              <div className="text-purple-800">
+                                {fix.old_visit_count} → {fix.new_visit_count} ({fix.visits_found} Visit records found)
+                              </div>
                             </div>
                           </div>
                         ))}
