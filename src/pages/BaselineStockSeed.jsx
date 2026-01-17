@@ -255,6 +255,28 @@ export default function BaselineStockSeed() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Baseline Stock Seed (Day 0)</h1>
         <p className="text-gray-600 mt-2">Initialize inventory from a physical stocktake. Run once only.</p>
+        <div className="mt-4">
+          <Button
+            onClick={async () => {
+              try {
+                const response = await base44.functions.invoke('inventorySanityCheck', {});
+                toast.success('Inventory Sanity Check Completed', {
+                  description: JSON.stringify(response.data, null, 2),
+                  duration: 9000,
+                });
+              } catch (error) {
+                toast.error('Inventory Sanity Check Failed', {
+                  description: error.message,
+                  duration: 9000,
+                });
+              }
+            }}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <AlertTriangle className="w-4 h-4" /> Run Inventory Sanity Check (Admin)
+          </Button>
+        </div>
       </div>
 
       {/* Warning Banner */}
