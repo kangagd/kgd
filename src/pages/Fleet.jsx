@@ -130,41 +130,7 @@ export default function Fleet() {
     return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicleId(null)} />;
   }
 
-  const handleSyncStockTemplates = async () => {
-    setIsSyncing(true);
-    try {
-      const { data } = await base44.functions.invoke('syncVehicleStockTemplates', {});
-      if (data.error) {
-        alert(`Error: ${data.error}`);
-      } else {
-        alert(`Success! Created ${data.created} records, updated ${data.updated} records across ${data.vehicles} vehicles.`);
-      }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
-  const handleFillAllVehicles = async () => {
-    if (!confirm('This will set all stock items in all vehicles to their "full" car_quantity. Continue?')) {
-      return;
-    }
-    
-    setIsFilling(true);
-    try {
-      const { data } = await base44.functions.invoke('fillAllVehicleStock', {});
-      if (data.error) {
-        alert(`Error: ${data.error}`);
-      } else {
-        alert(`Success! Updated ${data.total_updates} stock items across ${data.vehicles_processed} vehicles.`);
-      }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsFilling(false);
-    }
-  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
