@@ -340,7 +340,11 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => { localStorage.setItem('moreMenuOpen', isMoreMenuOpen); }, [isMoreMenuOpen]);
 
   // Close mobile menu on route change or ESC key
-  useEffect(() => { setIsMobileMenuOpen(false); }, [location.pathname]);
+  useEffect(() => { 
+    setIsMobileMenuOpen(false);
+    // Safety cleanup on route change
+    forceUnlockBodyScroll();
+  }, [location.pathname]);
   
   useEffect(() => {
     const handleEscape = (e) => e.key === 'Escape' && isMobileMenuOpen && setIsMobileMenuOpen(false);
