@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Log the movement
+    // Log the movement (canonical schema)
     await base44.entities.StockMovement.create({
       price_list_item_id: priceListItemId,
       item_name: item.item,
@@ -103,11 +103,13 @@ Deno.serve(async (req) => {
       to_location_id: toLocationId || null,
       to_location_name: toLocation?.name || null,
       quantity: quantity,
-      movement_type: movementType,
-      job_id: jobId,
-      notes: notes,
-      moved_by: user.email,
-      moved_by_name: user.full_name
+      source: movementType,
+      performed_by_user_email: user.email,
+      performed_by_user_name: user.full_name || user.display_name || user.email,
+      performed_at: new Date().toISOString(),
+      reference_type: jobId ? 'job' : null,
+      reference_id: jobId || null,
+      notes: notes
     });
 
     return Response.json({
