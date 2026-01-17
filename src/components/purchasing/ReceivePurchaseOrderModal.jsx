@@ -67,65 +67,37 @@ export default function ReceivePurchaseOrderModal({ open, onClose, purchaseOrder
         locationId = warehouse.id;
       }
       
-      // Process each line via backend function
-       const updates = lines.map(async (line) => {
-         const receiveNow = parseFloat(receipts[line.id] || 0);
-         const remaining = (line.qty_ordered || 0) - (line.qty_received || 0);
+      // Build items array for canonical receivePoItems function
+      const itemsToReceive = lines
+        .map(line => {
+          const receiveNow = parseFloat(receipts[line.id] || 0);
+          const remaining = (line.qty_ordered || 0) - (line.qty_received || 0);
+          const actualReceive = Math.min(Math.max(0, receiveNow), remaining);
+          
+          if (actualReceive <= 0) return null;
+          return {
+            po_line_id: line.id,
+            qty_received: actualReceive
+          };
+        })
+        .filter(Boolean);
 
-         if (receiveNow <= 0 || remaining <= 0) return null;
-
-         const actualReceive = Math.min(receiveNow, remaining);
-         if (actualReceive <= 0) return null;
-
-         // Call backend function to record receipt
-         const response = await base44.functions.invoke('recordStockMovement', {
-           priceListItemId: line.price_list_item_id,
-           fromLocationId: null,
-           toLocationId: locationId,
-           quantity: actualReceive,
-           movementType: 'po_receipt',
-           reference_type: 'purchase_order',
-           reference_id: purchaseOrder.id,
-           notes: `Received from PO ${purchaseOrder.po_number || purchaseOrder.id} - ${line.item_name || line.description}`
-         });
-
-         if (response.data?.error) {
-           throw new Error(response.data.error);
-         }
-
-         // Update PO line qty_received (separate)
-         await base44.entities.PurchaseOrderLine.update(line.id, {
-           qty_received: (line.qty_received || 0) + actualReceive,
-         });
-
-         return actualReceive;
-       });
-
-       await Promise.all(updates);
-
-      // After processing, update PO status
-      // Need to re-fetch lines to get updated quantities? Or just calculate locally?
-      // Better to fetch fresh state to be sure.
-      const updatedLines = await base44.entities.PurchaseOrderLine.filter({
-        purchase_order_id: purchaseOrderId,
-      });
-
-      const allReceived = updatedLines.every(
-        (l) => (l.qty_received || 0) >= (l.qty_ordered || 0)
-      );
-      const anyReceived = updatedLines.some((l) => (l.qty_received || 0) > 0);
-
-      let newStatus = purchaseOrder.status;
-      if (allReceived) {
-        newStatus = "received";
-      } else if (anyReceived) {
-        newStatus = "partially_received";
+      if (itemsToReceive.length === 0) {
+        throw new Error('No quantities to receive');
       }
 
-      if (newStatus !== purchaseOrder.status) {
-        await base44.entities.PurchaseOrder.update(purchaseOrder.id, {
-          status: newStatus,
-        });
+      // Call canonical receivePoItems function
+      const response = await base44.functions.invoke('receivePoItems', {
+        po_id: purchaseOrderId,
+        location_id: locationId,
+        receive_date_time: now,
+        items: itemsToReceive,
+        mark_po_received: false,
+        notes: ''
+      });
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to receive items');
       }
     },
     onSuccess: () => {
