@@ -649,42 +649,42 @@ export default function UnifiedEmailComposer({
 
   // Apply template (explicit user action - allowed to overwrite body)
   const handleApplyTemplate = async (templateId) => {
-    const template = templates.find((t) => t.id === templateId);
-    if (!template) return;
+  const template = templates.find((t) => t.id === templateId);
+  if (!template) return;
 
-    // Build context: NO Job context
-    let customer = null;
-    if (toChips.length > 0) {
-      customer = customers.find(
-        (c) => c.email?.toLowerCase() === toChips[0].toLowerCase()
+  // Build context: NO Job context
+  let customer = null;
+  if (toChips.length > 0) {
+    customer = customers.find(
+      (c) => c.email?.toLowerCase() === toChips[0].toLowerCase()
+    );
+  }
+  if (!customer && linkedProject?.customer_id) {
+    try {
+      customer = await base44.entities.Customer.get(
+        linkedProject.customer_id
       );
+    } catch (error) {
+      console.log("Could not fetch customer:", error);
     }
-    if (!customer && linkedProject?.customer_id) {
-      try {
-        customer = await base44.entities.Customer.get(
-          linkedProject.customer_id
-        );
-      } catch (error) {
-        console.log("Could not fetch customer:", error);
-      }
-    }
+  }
 
-    const context = buildTemplateContext({
-      project: linkedProject,
-      customer,
-      user: currentUser,
-    });
+  const context = buildTemplateContext({
+    project: linkedProject,
+    customer,
+    user: currentUser,
+  });
 
-    const rendered = renderTemplate(template, context);
-    if (rendered.subject && !subject) setSubject(rendered.subject);
-    if (rendered.body) {
-      const signatureHtml = buildSignatureHtml(currentUser?.email_signature);
-      setBody(ensureSignature(rendered.body, signatureHtml));
-      // Allow this explicit user action, even if userHasTyped
-    }
+  const rendered = renderTemplate(template, context);
+  if (rendered.subject && !subject) setSubject(rendered.subject);
+  if (rendered.body) {
+    const signatureHtml = buildSignatureHtml(currentUser?.email_signature, currentUser?.email_signature_image_url);
+    setBody(ensureSignature(rendered.body, signatureHtml));
+    // Allow this explicit user action, even if userHasTyped
+  }
 
-    setSelectedTemplate("");
-    toast.success(`Template "${template.name}" applied`);
+  setSelectedTemplate("");
+  toast.success(`Template "${template.name}" applied`);
   };
 
   // File handling
