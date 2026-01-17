@@ -23,7 +23,6 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
     description: "",
     track_inventory: true,
     in_inventory: true,
-    stock_level: 0,
     min_stock_level: 5,
     car_quantity: 0,
     notes: "",
@@ -56,7 +55,6 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
       price: parseFloat(formData.price) || 0,
       unit_cost: parseFloat(formData.unit_cost) || 0,
       target_margin: parseFloat(formData.target_margin) || 0,
-      stock_level: parseFloat(formData.stock_level) || 0,
       min_stock_level: parseFloat(formData.min_stock_level) || 5,
       car_quantity: parseFloat(formData.car_quantity) || 0,
       // Sync legacy field
@@ -261,16 +259,6 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Stock Level</Label>
-                  <Input
-                    type="number"
-                    step="1"
-                    value={formData.stock_level}
-                    onChange={(e) => setFormData({ ...formData, stock_level: e.target.value })}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
                   <Label>Min Stock Level</Label>
                   <Input
                     type="number"
@@ -281,7 +269,7 @@ export default function PriceListItemForm({ item, onSubmit, onCancel, isSubmitti
                   />
                 </div>
                 <div>
-                  <Label>Car Quantity</Label>
+                  <Label>Vehicle Target Qty</Label>
                   <Input
                     type="number"
                     step="1"
