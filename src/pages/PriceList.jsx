@@ -18,6 +18,7 @@ import { useMemo } from "react";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
 import SkuStockView from "../components/pricelist/SkuStockView";
+import { getPhysicalAvailableLocations, calculateOnHandFromPhysicalLocations } from "@/components/utils/inventoryLocationUtils";
 
 
 export default function PriceList() {
@@ -117,6 +118,9 @@ export default function PriceList() {
     }
   });
 
+  // Memoize physical locations (only active warehouse + vehicles)
+  const physicalLocations = useMemo(() => getPhysicalAvailableLocations(inventoryLocations), [inventoryLocations]);
+
   const filteredItems = priceItems.filter((item) => {
     const matchesSearch =
     item.item?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -125,10 +129,8 @@ export default function PriceList() {
 
     const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
 
-    // Derive on-hand from InventoryQuantity only
-    const onHandTotal = inventoryQuantities
-      .filter(q => q.price_list_item_id === item.id)
-      .reduce((sum, q) => sum + (q.quantity || 0), 0);
+    // Derive on-hand ONLY from physical available locations (warehouse + vehicles)
+    const onHandTotal = calculateOnHandFromPhysicalLocations(inventoryQuantities, physicalLocations, item.id);
 
     const matchesStock =
     stockFilter === "all" ||
@@ -152,19 +154,15 @@ export default function PriceList() {
   const isTechnician = user?.is_field_technician && !isAdminOrManager;
   const canModifyStock = isAdminOrManager || isTechnician;
   const canEditPriceList = isAdminOrManager;
-  const lowStockCount = priceItems.filter((item) => {
-    const onHandTotal = inventoryQuantities
-      .filter(q => q.price_list_item_id === item.id)
-      .reduce((sum, q) => sum + (q.quantity || 0), 0);
+  const lowStockCount = useMemo(() => priceItems.filter((item) => {
+    const onHandTotal = calculateOnHandFromPhysicalLocations(inventoryQuantities, physicalLocations, item.id);
     return onHandTotal <= item.min_stock_level && onHandTotal > 0 && item.track_inventory !== false;
-  }).length;
+  }).length, [priceItems, inventoryQuantities, physicalLocations]);
 
-  const outOfStockCount = priceItems.filter((item) => {
-    const onHandTotal = inventoryQuantities
-      .filter(q => q.price_list_item_id === item.id)
-      .reduce((sum, q) => sum + (q.quantity || 0), 0);
+  const outOfStockCount = useMemo(() => priceItems.filter((item) => {
+    const onHandTotal = calculateOnHandFromPhysicalLocations(inventoryQuantities, physicalLocations, item.id);
     return onHandTotal === 0 && item.track_inventory !== false;
-  }).length;
+  }).length, [priceItems, inventoryQuantities, physicalLocations]);
 
   const handleSubmit = (data) => {
     if (editingItem) {
@@ -322,9 +320,9 @@ export default function PriceList() {
         ) : (
           <div className="grid gap-3">
             {filteredItems.map((item) => {
-              // Get all quantities for this item from all locations
+              // Get quantities ONLY from physical available locations
               const stockByLocation = inventoryQuantities
-                .filter(q => q.price_list_item_id === item.id)
+                .filter(q => q.price_list_item_id === item.id && physicalLocations.some(loc => loc.id === q.location_id))
                 .map(q => {
                   // Fallback to location object if location_name is missing
                   let locationName = q.location_name || 'Unknown';
@@ -338,7 +336,7 @@ export default function PriceList() {
                   };
                 });
 
-              const onHandQty = stockByLocation.reduce((sum, q) => sum + (q.quantity || 0), 0);
+              const onHandQty = calculateOnHandFromPhysicalLocations(inventoryQuantities, physicalLocations, item.id);
               return (
                 <PriceListCard
                   key={`card-${item.id}`}
