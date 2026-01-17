@@ -102,24 +102,30 @@ Deno.serve(async (req) => {
 
     const prompt = `${context}
 
-Create a brief for the technician in this EXACT format (no extra text):
+Create a brief for the technician using HTML formatting.
 
-Purpose: [One clear sentence about the main goal]
+Use this EXACT structure:
 
-What to do today:
-• [Bullet 1]
-• [Bullet 2]
-• [Bullet 3]
-• [Optional bullet 4-6]
+<p><strong>Purpose:</strong> [One clear sentence about the main goal]</p>
 
-Bring/expect:
-• [Equipment or parts needed]
-• [What to expect on site]
-• [Optional 2-4 bullets total]
+<p><strong>What to do today:</strong></p>
+<ul>
+<li>[Bullet 1]</li>
+<li>[Bullet 2]</li>
+<li>[Bullet 3]</li>
+<li>[Optional bullet 4-6]</li>
+</ul>
 
-Commercial: [One sentence about pricing, quotes, or payment status]
+<p><strong>Bring/expect:</strong></p>
+<ul>
+<li>[Equipment or parts needed]</li>
+<li>[What to expect on site]</li>
+<li>[Optional 2-4 bullets total]</li>
+</ul>
 
-Keep it concise and actionable. No long paragraphs.`;
+<p><strong>Commercial:</strong> [One sentence about pricing, quotes, or payment status]</p>
+
+Keep it concise and actionable. Use <strong> for bold headings. Return ONLY the HTML, no markdown code fences.`;
 
     // Generate brief using AI
     const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
