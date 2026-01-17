@@ -338,21 +338,23 @@ export default function PriceList() {
                   };
                 });
 
+              const onHandQty = stockByLocation.reduce((sum, q) => sum + (q.quantity || 0), 0);
               return (
-                <PriceListCard key={item.id}
-                    key={`card-${item.id}`}
-                    item={item}
-                    isAdmin={canEditPriceList}
-                    canModifyStock={canModifyStock}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onStockAdjust={handleStockAdjust}
-                    onMoveStock={handleMoveStock}
-                    inventorySummary={inventorySummaryByItem[item.id]}
-                    stockByLocation={stockByLocation}
-                    locations={inventoryLocations}
-                    canViewCosts={isAdminOrManager}
-                  />
+                <PriceListCard
+                  key={`card-${item.id}`}
+                  item={item}
+                  isAdmin={canEditPriceList}
+                  canModifyStock={canModifyStock}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onStockAdjust={handleStockAdjust}
+                  onMoveStock={handleMoveStock}
+                  inventorySummary={inventorySummaryByItem[item.id]}
+                  stockByLocation={stockByLocation}
+                  onHandQty={onHandQty}
+                  locations={inventoryLocations}
+                  canViewCosts={isAdminOrManager}
+                />
               );
             })}
           </div>
