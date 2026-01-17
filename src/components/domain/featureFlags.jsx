@@ -6,6 +6,11 @@ export const FEATURE_FLAGS = {
   // When enabled: UI reads work_performed, photos, measurements from Visit instead of Job
   // When disabled: Legacy Job-based UI (default)
   visits_enabled: false,
+  
+  // Model Health: Enable commit fixes on Model Health admin page
+  // When enabled: Allows committing drift fixes (dry run always available)
+  // When disabled: Only dry run analysis allowed
+  model_health_fixes: false,
 };
 
 // Helper to check if a feature is enabled
