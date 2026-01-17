@@ -32,7 +32,8 @@ export default function StockAdjustmentModal({ open, onClose, item, vehicleId })
     }
   }, [open, vehicleId, item]);
 
-  if (!item) return null;
+  // Guard: return early if no vehicleId or item
+  if (!vehicleId || !item) return null;
 
   return (
     <StockAdjustmentAdminModal
