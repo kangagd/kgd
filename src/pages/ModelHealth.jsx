@@ -35,7 +35,7 @@ export default function ModelHealth() {
   const isAdmin = user?.role === 'admin';
 
   // Fetch drift analysis
-  const { data: driftData, isLoading, error, refetch } = useQuery({
+  const { data: driftData, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['modelDrift'],
     queryFn: async () => {
       const startTime = Date.now();
@@ -44,7 +44,7 @@ export default function ModelHealth() {
       return { ...response.data, loadTime };
     },
     enabled: isAdmin,
-    staleTime: 60000, // 1 minute
+    staleTime: 0, // Always fetch fresh data
   });
 
   // State for dry run results
@@ -131,13 +131,16 @@ export default function ModelHealth() {
             </p>
           </div>
           <Button
-            onClick={() => refetch()}
-            disabled={isLoading}
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['modelDrift'] });
+              refetch();
+            }}
+            disabled={isFetching}
             variant="outline"
             className="gap-2"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+            {isFetching ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
 
