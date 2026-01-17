@@ -7,8 +7,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import StockByLocationView from "@/components/inventory/StockByLocationView";
 
 export default function PriceListCard({ item, isAdmin, canModifyStock, onEdit, onDelete, onStockAdjust, onMoveStock, inventorySummary, stockByLocation, locations, canViewCosts }) {
-  const isLowStock = item.stock_level <= item.min_stock_level && item.stock_level > 0;
-  const isOutOfStock = item.stock_level === 0;
+  // Derive on-hand stock from InventoryQuantity only
+  const onHandTotal = stockByLocation?.reduce((sum, q) => sum + (q.quantity || 0), 0) || 0;
+  const isLowStock = onHandTotal <= item.min_stock_level && onHandTotal > 0;
+  const isOutOfStock = onHandTotal === 0;
 
   if (item.is_active === false && !isAdmin) return null;
 
