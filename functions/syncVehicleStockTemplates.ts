@@ -1,18 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 Deno.serve(async (req) => {
-    try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
-        
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        // Only admin can run this sync
-        if (user.role !== 'admin') {
-            return Response.json({ error: 'Admin access required' }, { status: 403 });
-        }
+    // VehicleStock is legacy. Do not use. InventoryQuantity is the sole source of truth.
+    return Response.json({ 
+        success: false, 
+        error: 'Deprecated: VehicleStock is legacy. Use InventoryQuantity + moveInventory.' 
+    }, { status: 410 });
 
         // Get all PriceListItems with car_quantity > 0
         const allItems = await base44.asServiceRole.entities.PriceListItem.list('item');
