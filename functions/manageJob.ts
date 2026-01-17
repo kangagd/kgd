@@ -39,6 +39,67 @@ async function handleSamplePickupCompletion(base44, job) {
     }
 }
 
+// Helper: Create StockMovement records for completed logistics job
+async function createStockMovementsForLogisticsJob(base44, job, user) {
+    try {
+        // Fetch parts linked to this logistics job
+        const parts = await base44.asServiceRole.entities.Part.filter({
+            purchase_order_id: job.purchase_order_id
+        });
+
+        if (parts.length === 0) return;
+
+        // Determine movement based on logistics_purpose
+        let fromLocationId = null, fromVehicleId = null;
+        let toLocationId = null, toVehicleId = null;
+        let fromLocationName = null, toLocationName = null;
+
+        switch (job.logistics_purpose) {
+            case 'po_delivery_to_loading_bay':
+                toLocationName = 'Loading Bay';
+                break;
+            case 'move_to_storage':
+                fromLocationName = 'Loading Bay';
+                toLocationName = 'Warehouse Storage';
+                break;
+            case 'supplier_pickup':
+                toVehicleId = job.vehicle_id;
+                toLocationName = 'Vehicle';
+                break;
+            case 'material_pickup_for_install':
+                toVehicleId = job.vehicle_id;
+                toLocationName = 'Vehicle';
+                break;
+        }
+
+        // Create StockMovement for each part
+        for (const part of parts) {
+            await base44.asServiceRole.entities.StockMovement.create({
+                job_id: job.id,
+                project_id: job.project_id,
+                purchase_order_id: job.purchase_order_id,
+                part_id: part.id,
+                sku_id: part.price_list_item_id,
+                item_name: part.item_name,
+                quantity: part.quantity_required || 1,
+                from_location_id: fromLocationId,
+                from_location_name: fromLocationName,
+                from_vehicle_id: fromVehicleId,
+                to_location_id: toLocationId,
+                to_location_name: toLocationName,
+                to_vehicle_id: toVehicleId,
+                performed_by_user_id: user.id,
+                performed_by_user_email: user.email,
+                performed_by_user_name: user.full_name || user.display_name,
+                performed_at: new Date().toISOString(),
+                source: 'logistics_job_completion'
+            });
+        }
+    } catch (error) {
+        console.error('Error creating stock movements:', error);
+    }
+}
+
 // Helper: Handle logistics job completion - update PO and Parts based on outcome
 async function handleLogisticsJobCompletion(base44, job) {
     if (!job.purchase_order_id) return;
@@ -117,9 +178,23 @@ Deno.serve(async (req) => {
         let previousJob = null;
 
         if (action === 'create') {
-            // GUARDRAIL: Validate required fields
-            if (!data?.customer_id?.trim() && !data?.supplier_id) {
-                return Response.json({ error: 'Customer or Supplier is required' }, { status: 400 });
+            // LOGISTICS JOB VALIDATION
+            if (data?.is_logistics_job === true) {
+                // Logistics jobs require logistics_purpose
+                if (!data?.logistics_purpose) {
+                    return Response.json({ error: 'Logistics purpose is required for logistics jobs' }, { status: 400 });
+                }
+                // Logistics jobs require origin OR destination address
+                if (!data?.origin_address && !data?.destination_address) {
+                    return Response.json({ error: 'Origin or destination address is required for logistics jobs' }, { status: 400 });
+                }
+            }
+
+            // GUARDRAIL: Validate required fields for standard jobs
+            if (data?.is_logistics_job !== true) {
+                if (!data?.customer_id?.trim() && !data?.supplier_id) {
+                    return Response.json({ error: 'Customer or Supplier is required' }, { status: 400 });
+                }
             }
             if (!data?.scheduled_date) {
                 return Response.json({ error: 'Scheduled date is required' }, { status: 400 });
@@ -425,9 +500,14 @@ Deno.serve(async (req) => {
 
             // Handle logistics job completion
             if (job.status === 'Completed' && previousJob.status !== 'Completed') {
-                // Move Parts when PO logistics job is completed
-                if (job.purchase_order_id) {
+                // LOGISTICS JOB: Record stock movements
+                if (job.is_logistics_job === true) {
                     await handleLogisticsJobCompletion(base44, job);
+                    
+                    // Create StockMovement records
+                    if (job.logistics_purpose && job.purchase_order_id) {
+                        await createStockMovementsForLogisticsJob(base44, job, user);
+                    }
                 }
                 
                 // Move Samples when sample pickup job is completed
