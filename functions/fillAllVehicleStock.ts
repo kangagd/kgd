@@ -1,11 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-  // VehicleStock is legacy. Do not use. InventoryQuantity is the sole source of truth.
-  return Response.json({ 
-    success: false, 
-    error: 'Deprecated: VehicleStock is legacy. Use InventoryQuantity + moveInventory.' 
-  }, { status: 410 });
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    console.log('[fillAllVehicleStock] Starting, user:', user?.email);
+
+    if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
+      return Response.json({ error: 'Forbidden: Admin or Manager access required' }, { status: 403 });
+    }
 
     // Get all active vehicles
     const vehicles = await base44.entities.Vehicle.list();
