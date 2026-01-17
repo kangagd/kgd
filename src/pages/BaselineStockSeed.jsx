@@ -139,8 +139,8 @@ export default function BaselineStockSeed() {
     const alreadyAdded = new Set(seedRows.map(r => r.price_list_item_id));
     return skus.filter(s =>
       !alreadyAdded.has(s.id) && (
-        s.item?.toLowerCase().includes(skuSearch.toLowerCase()) ||
-        s.sku?.toLowerCase().includes(skuSearch.toLowerCase())
+        (s.item || '').toLowerCase().includes(skuSearch.toLowerCase()) ||
+        (s.sku || '').toLowerCase().includes(skuSearch.toLowerCase())
       )
     ).slice(0, 20);
   }, [skus, skuSearch, seedRows]);
