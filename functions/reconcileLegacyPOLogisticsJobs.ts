@@ -10,7 +10,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { dryRun = true } = await req.json();
+    const body = await req.json();
+    const dryRun = body.dryRun === false ? false : (body.dry_run === false ? false : true);
 
     // Find logistics jobs missing modern reference fields
     const allJobs = await base44.asServiceRole.entities.Job.filter({
