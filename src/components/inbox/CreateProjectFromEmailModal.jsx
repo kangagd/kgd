@@ -65,111 +65,36 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, ema
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader className="pb-4 border-b">
           <DialogTitle>Create Project from Email</DialogTitle>
         </DialogHeader>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-            <span>Analyzing email...</span>
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+            {error}
           </div>
-        ) : previewError ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
-            {previewError}
-          </div>
-        ) : preview ? (
-          <div className="space-y-4">
-            {/* Customer Name */}
-            <div>
-              <label className="text-sm font-semibold text-slate-700 block mb-1">
-                Customer Name
-              </label>
-              <Input
-                value={editedCustomerName}
-                onChange={(e) => setEditedCustomerName(e.target.value)}
-                placeholder="Customer name"
-              />
-              <p className="text-xs text-slate-500 mt-1">
-                Extracted from: {preview.customer_email}
-              </p>
-            </div>
+        )}
 
-            {/* Category */}
-            <div>
-              <label className="text-sm font-semibold text-slate-700 block mb-1">
-                Project Category
-              </label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-slate-500 mt-1">
-                Confidence: {preview.category_confidence}
-              </p>
-            </div>
-
-            {/* Address */}
-            <div>
-              <label className="text-sm font-semibold text-slate-700 block mb-1">
-                Project Address
-              </label>
-              <Input
-                value={editedAddress}
-                onChange={(e) => setEditedAddress(e.target.value)}
-                placeholder="Address"
-              />
-            </div>
-
-            {/* Project Name Preview */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <p className="text-xs text-slate-600 font-semibold mb-1">Project Name Preview</p>
-              <p className="text-sm font-semibold text-slate-900">
-                {selectedCategory} - {editedAddress}
-              </p>
-            </div>
-
-            {/* Description Preview */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 max-h-32 overflow-y-auto">
-              <p className="text-xs text-slate-600 font-semibold mb-2">Description (from email)</p>
-              <div className="text-xs text-slate-700 space-y-1">
-                {preview.description_bullets?.map((bullet, idx) => (
-                  <div key={idx}>• {bullet}</div>
-                )) || <div>No description extracted</div>}
-              </div>
-            </div>
-
-            {/* Attachments Info */}
-            {preview.attachment_count > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-700">
-                  ✓ {preview.attachment_count} attachment(s) will be attached to the project
-                </p>
-              </div>
-            )}
-          </div>
-        ) : null}
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            {isCreating 
+              ? 'Creating project and extracting email details...' 
+              : 'This will create a new project and link it to this email thread.'}
+          </p>
+        </div>
 
         {/* Footer */}
         <div className="flex gap-2 justify-end pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isCreating}>
             Cancel
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={loading || !preview || createProjectMutation.isPending}
+            disabled={isCreating}
             className="bg-slate-900 text-white hover:bg-slate-800 gap-2"
           >
-            {createProjectMutation.isPending ? (
+            {isCreating ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Creating...
