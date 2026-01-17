@@ -9,13 +9,15 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
 export default function VehicleStockView({ vehicleId }) {
-   // Fetch vehicle's InventoryLocation
+   // Fetch vehicle's InventoryLocation via vehicle_id mapping
+   // Only resolve active locations
    const { data: vehicleLocation, isLoading: isLocationLoading } = useQuery({
      queryKey: ['vehicleLocation', vehicleId],
      queryFn: async () => {
        const locations = await base44.entities.InventoryLocation.filter({
          type: 'vehicle',
-         vehicle_id: vehicleId
+         vehicle_id: vehicleId,
+         is_active: true
        });
        return locations[0] || null;
      },
