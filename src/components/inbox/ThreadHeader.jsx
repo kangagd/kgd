@@ -402,11 +402,12 @@ export default function ThreadHeader({
         currentlyLinkedTitle={linkedTitle}
       />
 
-      <CreateProjectFromThreadModal
+      <CreateProjectFromEmailModal
         open={showCreateProjectModal}
         onClose={() => setShowCreateProjectModal(false)}
         thread={thread}
-        onCreated={onThreadUpdate}
+        emailMessage={null}
+        onSuccess={() => onThreadUpdate?.()}
       />
 
       <ThreadInternalNotesModal
