@@ -27,38 +27,38 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, ema
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState(null);
 
-  const createProjectMutation = useMutation({
-    mutationFn: async () => {
+  const handleCreate = async () => {
+    if (!thread) return;
+    
+    setIsCreating(true);
+    setError(null);
+    
+    try {
       const response = await base44.functions.invoke('createProjectFromEmail', {
         email_thread_id: thread.id,
         email_message_id: emailMessage?.id || thread.id,
-        selected_category_override: selectedCategory || undefined,
       });
 
       if (response.data?.error) throw new Error(response.data.error);
-      return response.data;
-    },
-    onSuccess: async (result) => {
+
+      const result = response.data;
+      
       // Invalidate caches
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: inboxKeys?.threads?.() });
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
       queryClient.invalidateQueries({ queryKey: ['project', result.projectId] });
 
       toast.success(`Project created: ${result.projectTitle}`);
-      if (onSuccess) onSuccess(result.projectId, result.projectTitle);
+      if (onSuccess) onSuccess(result.projectId);
       
       onClose();
-
-      // Navigate to project
       navigate(`${createPageUrl("Projects")}?projectId=${result.projectId}`);
-    },
-    onError: (error) => {
-      toast.error(`Failed to create project: ${error.message}`);
-    },
-  });
-
-  const handleCreate = () => {
-    createProjectMutation.mutate();
+    } catch (err) {
+      setError(err.message || 'Failed to create project');
+      toast.error(err.message || 'Failed to create project');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (!thread) return null;
