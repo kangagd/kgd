@@ -165,6 +165,13 @@ export default function EmailMessageItem({
     return message.attachments.some((att) => att.is_inline && att.content_id);
   }, [message.attachments]);
 
+  // Count inline images still pending (no file_url yet)
+  const pendingInlineCount = useMemo(() => {
+    return (message.attachments || []).filter(
+      (att) => att.is_inline && att.content_id && !(att.file_url || att.url)
+    ).length;
+  }, [message.attachments]);
+
   // Check if all inline images are loaded
   const allInlineImagesLoaded = useMemo(() => {
     if (!hasInlineImages) return true;
