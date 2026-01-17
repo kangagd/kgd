@@ -56,6 +56,22 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  // Fetch linked PO if part has one
+  const { data: linkedPO } = useQuery({
+    queryKey: ['linkedPO', part?.purchase_order_id],
+    queryFn: () => part?.purchase_order_id 
+      ? base44.entities.PurchaseOrder.get(part.purchase_order_id)
+      : null,
+    enabled: !!part?.purchase_order_id && open
+  });
+
+  // Fetch price list items FIRST (needed by useEffect below)
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list('item'),
+    enabled: open
+  });
+
   // A) Fetch Inventory Data
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ['inventoryQuantities'],
@@ -80,22 +96,6 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     });
     return onHandMap;
   }, [inventoryQuantities, physicalLocations, priceListItems]);
-
-  // Fetch linked PO if part has one
-  const { data: linkedPO } = useQuery({
-    queryKey: ['linkedPO', part?.purchase_order_id],
-    queryFn: () => part?.purchase_order_id 
-      ? base44.entities.PurchaseOrder.get(part.purchase_order_id)
-      : null,
-    enabled: !!part?.purchase_order_id && open
-  });
-
-  // Fetch price list items FIRST (needed by useEffect below)
-  const { data: priceListItems = [] } = useQuery({
-    queryKey: ['priceListItems'],
-    queryFn: () => base44.entities.PriceListItem.list('item'),
-    enabled: open
-  });
 
   const movePartMutation = useMutation({
     mutationFn: ({ part_ids, from_location, to_location }) => 
