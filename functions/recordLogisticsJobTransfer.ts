@@ -79,20 +79,21 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Create StockMovement record
+      // Create StockMovement record (canonical schema)
       const movement = await base44.asServiceRole.entities.StockMovement.create({
-        sku_id: price_list_item_id,
+        price_list_item_id: price_list_item_id,
         item_name: itemName,
         quantity: quantity,
         from_location_id: source_location_id,
         from_location_name: sourceLocation.name,
         to_location_id: destination_location_id,
         to_location_name: destLocation.name,
-        performed_by_user_id: user.id,
         performed_by_user_email: user.email,
-        performed_by_user_name: user.full_name || user.display_name,
+        performed_by_user_name: user.full_name || user.display_name || user.email,
         performed_at: new Date().toISOString(),
         source: 'logistics_job',
+        reference_type: 'job',
+        reference_id: job_id,
         notes: notes ? `Job #${job.job_number}: ${notes}` : `Transferred via Logistics Job #${job.job_number}`
       });
 
