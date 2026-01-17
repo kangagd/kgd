@@ -83,8 +83,9 @@ export default function ScheduleSampleDropOffModal({ open, onClose, project }) {
       return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientSamples'] });
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['clientSamples', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projectLogisticsJobs', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       toast.success("Sample drop-off job scheduled");
       handleClose();
     },

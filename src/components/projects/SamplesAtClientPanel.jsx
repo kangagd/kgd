@@ -16,26 +16,78 @@ export default function SamplesAtClientPanel({ project }) {
   const [showPickupModal, setShowPickupModal] = useState(false);
   const navigate = useNavigate();
 
-  const { data: clientSamples = [], isLoading } = useQuery({
+  const { data: clientSamples = [], isLoading: isLoadingClientSamples } = useQuery({
     queryKey: ['clientSamples', project.id],
-    queryFn: async () => {
-      const samples = await base44.entities.Sample.filter({
-        checked_out_project_id: project.id,
-      });
-      return samples;
-    },
+    queryFn: () => base44.entities.Sample.filter({ checked_out_project_id: project.id }),
   });
 
-  const { data: logisticsJobs = [] } = useQuery({
+  const { data: logisticsJobs = [], isLoading: isLoadingJobs } = useQuery({
     queryKey: ['projectLogisticsJobs', project.id],
-    queryFn: async () => {
-      const jobs = await base44.entities.Job.filter({
-        project_id: project.id,
-        is_logistics_job: true,
-      });
-      return jobs;
-    },
+    queryFn: () => base44.entities.Job.filter({
+      project_id: project.id,
+      is_logistics_job: true,
+      status: { $ne: 'Cancelled' }
+    }),
   });
+
+  const sampleIdsFromJobs = React.useMemo(() => 
+    logisticsJobs.flatMap(job => job.sample_ids || []), 
+    [logisticsJobs]
+  );
+
+  const { data: samplesFromJobsData = [], isLoading: isLoadingSamplesFromJobs } = useQuery({
+    queryKey: ['samplesFromJobs', sampleIdsFromJobs],
+    queryFn: () => base44.entities.Sample.filter({ id: { $in: sampleIdsFromJobs } }),
+    enabled: sampleIdsFromJobs.length > 0,
+  });
+
+  const isLoading = isLoadingClientSamples || isLoadingJobs || isLoadingSamplesFromJobs;
+
+  const allDisplaySamples = React.useMemo(() => {
+    const sampleMap = new Map();
+
+    // Add samples already at the client
+    clientSamples.forEach(s => sampleMap.set(s.id, { 
+      ...s, 
+      displayContext: { status: 'at_client', text: 'At Client' } 
+    }));
+
+    // Add samples from scheduled drop-off jobs
+    logisticsJobs.forEach(job => {
+      if (job.status !== 'Completed' && job.logistics_purpose === 'sample_dropoff') {
+        (job.sample_ids || []).forEach(sampleId => {
+          if (!sampleMap.has(sampleId)) {
+            const sample = samplesFromJobsData.find(s => s.id === sampleId);
+            if (sample) {
+              sampleMap.set(sampleId, { 
+                ...sample, 
+                displayContext: { status: 'in_transit', text: 'Drop-off Scheduled', job } 
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // Enhance samples at client with pickup job info if available
+    logisticsJobs.forEach(job => {
+      if (job.status !== 'Completed' && job.logistics_purpose === 'sample_pickup') {
+        (job.sample_ids || []).forEach(sampleId => {
+          if (sampleMap.has(sampleId)) {
+            const sample = sampleMap.get(sampleId);
+            if (sample.displayContext.status === 'at_client') {
+              sampleMap.set(sampleId, {
+                ...sample,
+                displayContext: { ...sample.displayContext, status: 'pickup_scheduled', text: 'Pickup Scheduled', job }
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return Array.from(sampleMap.values());
+  }, [clientSamples, logisticsJobs, samplesFromJobsData]);
 
   return (
     <>
@@ -70,19 +122,24 @@ export default function SamplesAtClientPanel({ project }) {
           </div>
         )}
 
-        {!isLoading && clientSamples.length === 0 && (
+        {!isLoading && allDisplaySamples.length === 0 && (
           <div className="text-center py-8">
             <p className="text-sm text-gray-500">No samples logged</p>
           </div>
         )}
 
-        {!isLoading && clientSamples.length > 0 && (
+        {!isLoading && allDisplaySamples.length > 0 && (
           <div className="space-y-2">
-            {clientSamples.map((sample) => {
-              const relatedJob = logisticsJobs.find(job => 
-                job.sample_ids?.includes(sample.id) && 
-                (job.logistics_purpose === 'sample_dropoff' || job.logistics_purpose === 'sample_pickup')
-              );
+            {allDisplaySamples.map((sample) => {
+              const { displayContext } = sample;
+              const relatedJob = displayContext.job;
+
+              const badgeMap = {
+                at_client: { text: 'At Client', className: 'bg-green-100 text-green-700 border-green-200' },
+                in_transit: { text: 'Drop-off Scheduled', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+                pickup_scheduled: { text: 'Pickup Scheduled', className: 'bg-orange-100 text-orange-700 border-orange-200' }
+              };
+              const badgeInfo = badgeMap[displayContext.status] || { text: displayContext.text, className: 'bg-gray-100 text-gray-700 border-gray-200' };
 
               return (
                 <div
@@ -93,22 +150,17 @@ export default function SamplesAtClientPanel({ project }) {
                   onClick={() => relatedJob && navigate(createPageUrl("Jobs") + `?jobId=${relatedJob.id}`)}
                 >
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-[14px] font-medium text-[#111827]">
                         {sample.name}
                       </span>
                       <Badge
                         variant="outline"
-                        className={`text-[10px] px-1.5 py-0 ${getSampleStatusColor(sample.status)}`}
+                        className={`text-[10px] px-1.5 py-0 ${badgeInfo.className}`}
                       >
-                        {sample.status}
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {badgeInfo.text}
                       </Badge>
-                      {relatedJob && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {relatedJob.logistics_purpose === 'sample_dropoff' ? 'Drop-off' : 'Pickup'} Scheduled
-                        </Badge>
-                      )}
                     </div>
                     {sample.category && (
                       <p className="text-[12px] text-[#6B7280]">{sample.category}</p>
