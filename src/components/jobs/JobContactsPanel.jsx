@@ -25,6 +25,7 @@ export default function JobContactsPanel({ job, inline = false }) {
   });
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const { data: jobContacts = [], isLoading: jobContactsLoading } = useQuery({
     queryKey: ["job-contacts", job.id],
@@ -184,6 +185,7 @@ export default function JobContactsPanel({ job, inline = false }) {
               onClick={(e) => {
                 e.stopPropagation();
                 setIsOpen(true);
+                setShowAddForm(true);
               }}
               className="h-6 w-6 hover:bg-[#FAE008]/20 text-[#6B7280] hover:text-[#111827]"
               title="Add Contact"
@@ -227,10 +229,11 @@ export default function JobContactsPanel({ job, inline = false }) {
             </div>
 
             {/* Quick add contact form */}
-            <div className="border-t border-gray-100 pt-3">
-              <p className="text-[11px] font-medium text-gray-500 mb-2">
-                Quick add contact
-              </p>
+            {showAddForm && (
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-[11px] font-medium text-gray-500 mb-2">
+                  Quick add contact
+                </p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
                 <div className="relative z-20">
                   <Input
@@ -310,6 +313,7 @@ export default function JobContactsPanel({ job, inline = false }) {
                 </Button>
               </div>
             </div>
+            )}
           </CollapsibleContent>
         </Collapsible>
       </div>
