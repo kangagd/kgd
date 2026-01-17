@@ -150,24 +150,9 @@ Deno.serve(async (req) => {
       checked_items: checkedItems,
     });
 
-    // Record sample movement based on job type using manageSample
-    if (job_type === SAMPLE_JOB_TYPES.SAMPLE_DROP_OFF) {
-      // Drop-off: Check out samples to project immediately
-      for (const sample_id of sample_ids) {
-        try {
-          await base44.asServiceRole.functions.invoke('manageSample', {
-            action: 'checkoutToProject',
-            sample_id,
-            project_id,
-            due_back_at: pickup_date || null,
-            notes: `Checked out for drop-off job #${job.job_number}`,
-          });
-        } catch (error) {
-          console.error(`Error checking out sample ${sample_id}:`, error);
-        }
-      }
-    }
-    // For pickup, samples are moved on job completion
+    // CRITICAL: Do NOT checkout samples on creation.
+    // Samples are ONLY transferred on job completion via processSampleTransfersForJob.
+    // This ensures explicit action pattern: job creation ≠ state change.
 
     return Response.json({
       success: true,
