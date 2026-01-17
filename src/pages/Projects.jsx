@@ -40,7 +40,6 @@ import { useNavigate } from "react-router-dom";
 import { QUERY_CONFIG } from "../components/api/queryConfig";
 import { projectKeys, jobKeys } from "../components/api/queryKeys";
 import { getProjectDisplayTitle, getProjectDisplayAddress, getProjectCustomerLabel } from "../components/projects/projectDisplay";
-import ProjectCard from '../components/projects/ProjectCard';
 
 export default function Projects() {
   const location = useLocation();
@@ -101,13 +100,35 @@ export default function Projects() {
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: jobKeys.all,
     queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
-    ...QUERY_CONFIG.reference
+    ...QUERY_CONFIG.reference,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
   });
 
   const { data: allParts = [] } = useQuery({
     queryKey: ['allParts'],
     queryFn: () => base44.entities.Part.list(),
-    ...QUERY_CONFIG.reference
+    ...QUERY_CONFIG.reference,
+    onError: (error) => {
+      if (error?.response?.status === 429) {
+        toast.error('Rate limit hit – slowing down');
+      }
+    }
+  });
+
+  const { data: priceListItems = [] } = useQuery({
+    queryKey: ['priceListItems'],
+    queryFn: () => base44.entities.PriceListItem.list(),
+    ...QUERY_CONFIG.reference,
+  });
+
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+    ...QUERY_CONFIG.reference,
   });
 
   const { data: allTradeRequirements = [] } = useQuery({
@@ -122,51 +143,44 @@ export default function Projects() {
     ...QUERY_CONFIG.reference,
   });
 
+  const { data: allAttentionItems = [] } = useQuery({
+    queryKey: ['allAttentionItems'],
+    queryFn: () => base44.entities.AttentionItem.list(),
+    ...QUERY_CONFIG.reference,
+  });
 
+  const { data: allEmailThreads = [] } = useQuery({
+    queryKey: ['allEmailThreads'],
+    queryFn: () => base44.entities.EmailThread.list(),
+    ...QUERY_CONFIG.reference,
+  });
 
+  const { data: allQuotes = [] } = useQuery({
+    queryKey: ['allQuotes'],
+    queryFn: () => base44.entities.Quote.list(),
+    ...QUERY_CONFIG.reference,
+  });
 
+  const { data: allXeroInvoices = [] } = useQuery({
+    queryKey: ['allXeroInvoices'],
+    queryFn: () => base44.entities.XeroInvoice.list(),
+    ...QUERY_CONFIG.reference,
+  });
 
-
-
-
-
-  const jobsByProjectId = useMemo(() => {
-    const map = new Map();
-    allJobs.forEach(job => {
-      if (!job.project_id) return;
-      if (!map.has(job.project_id)) {
-        map.set(job.project_id, []);
+  const inventoryByItem = useMemo(() => {
+    const map = {};
+    // Warehouse from PriceList
+    for (const item of priceListItems) {
+      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
+    }
+    // Vehicles from InventoryQuantity
+    for (const iq of inventoryQuantities) {
+      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
+        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
       }
-      map.get(job.project_id).push(job);
-    });
+    }
     return map;
-  }, [allJobs]);
-
-  const partsByProjectId = useMemo(() => {
-    const map = new Map();
-    allParts.forEach(part => {
-      if (!part.project_id) return;
-      if (!map.has(part.project_id)) {
-        map.set(part.project_id, []);
-      }
-      map.get(part.project_id).push(part);
-    });
-    return map;
-  }, [allParts]);
-
-  const tradesByProjectId = useMemo(() => {
-    const map = new Map();
-    allTradeRequirements.forEach(trade => {
-      if (!trade.project_id) return;
-      if (!map.has(trade.project_id)) {
-        map.set(trade.project_id, []);
-      }
-      map.get(trade.project_id).push(trade);
-    });
-    return map;
-  }, [allTradeRequirements]);
-
-  const poMap = useMemo(() => new Map(allPurchaseOrders.map(po => [po.id, po])), [allPurchaseOrders]);
+  }, [priceListItems, inventoryQuantities]);
 
   const detectShortage = useCallback((part) => {
     // Cancelled or installed parts are not shortages
@@ -176,11 +190,11 @@ export default function Projects() {
     
     // CRITICAL: Check linked PO status first (takes precedence)
     if (part.purchase_order_id) {
-      const linkedPO = poMap.get(part.purchase_order_id);
+      const linkedPO = allPurchaseOrders.find(po => po.id === part.purchase_order_id);
       if (linkedPO) {
         const poStatus = (linkedPO.status || '').toLowerCase().replace(/[\s_-]/g, '');
         const readyPOStatuses = ['instorage', 'inloadingbay', 'invehicle', 'ready', 'received', 'in_storage', 'in_loading_bay', 'in_vehicle'];
-        if (readyPOStatuses.includes(poStatus)) {
+        if (readyPOStatuses.includes(linkedPO.status) || readyPOStatuses.includes(poStatus)) {
           return false;
         }
       }
@@ -189,7 +203,7 @@ export default function Projects() {
     // CRITICAL: Parts with these statuses are READY (not a shortage)
     const readyStatuses = ['in_storage', 'in_loading_bay', 'in_vehicle', 'ready', 'received', 'instorage', 'invehicle', 'inloadingbay'];
     const normalizedStatus = (part.status || '').toLowerCase().replace(/[\s_-]/g, '');
-    if (readyStatuses.includes(normalizedStatus)) {
+    if (readyStatuses.includes(part.status) || readyStatuses.includes(normalizedStatus)) {
       return false;
     }
     
@@ -201,7 +215,7 @@ export default function Projects() {
     
     // Everything else is a shortage
     return true;
-  }, [poMap]);
+  }, [allPurchaseOrders]);
 
   const createProjectMutation = useMutation({
     mutationFn: async (data) => {
@@ -308,7 +322,7 @@ export default function Projects() {
         
         const matchesStage = stageFilter === "all" || project.status === stageFilter;
         
-        const projectParts = partsByProjectId.get(project.id) || [];
+        const projectParts = allParts.filter(p => sameId(p.project_id, project.id));
         const matchesPartsStatus = partsStatusFilter === "all" || 
           projectParts.some(p => p.status === partsStatusFilter);
         
@@ -337,16 +351,16 @@ export default function Projects() {
       });
   }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, allParts]);
 
-                const getJobCount = useCallback((projectId) => {
-          return (jobsByProjectId.get(projectId) || []).length;
-        }, [jobsByProjectId]);
+        const getJobCount = useCallback((projectId) => {
+          return allJobs.filter(j => sameId(j.project_id, projectId)).length;
+        }, [allJobs]);
 
-                const getNextJob = useCallback((projectId) => {
-          const projectJobs = jobsByProjectId.get(projectId) || [];
-          const futureJobs = projectJobs.filter(j => j.scheduled_date && new Date(j.scheduled_date) >= new Date());
-          if (futureJobs.length === 0) return null;
-          return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
-        }, [jobsByProjectId]);
+        const getNextJob = useCallback((projectId) => {
+          const projectJobs = allJobs.filter(j => sameId(j.project_id, projectId) && j.scheduled_date);
+        const futureJobs = projectJobs.filter(j => new Date(j.scheduled_date) >= new Date());
+        if (futureJobs.length === 0) return null;
+        return futureJobs.sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0];
+        }, [allJobs]);
 
         const extractSuburb = useCallback((address) => {
         if (!address) return null;
@@ -363,10 +377,9 @@ export default function Projects() {
         return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
         }, []);
 
-                const hasRequiredTrades = useCallback((projectId) => {
-          const projectTrades = tradesByProjectId.get(projectId) || [];
-          return projectTrades.some(t => t.is_required);
-        }, [tradesByProjectId]);
+        const hasRequiredTrades = useCallback((projectId) => {
+          return allTradeRequirements.some(t => sameId(t.project_id, projectId) && t.is_required);
+        }, [allTradeRequirements]);
 
         const hasCustomerIssue = useCallback((project) => {
           if (!project) return false;
@@ -598,23 +611,139 @@ export default function Projects() {
         )}
 
         <div className="grid gap-4">
-                    {filteredProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              jobCount={getJobCount(project.id)}
-              nextJob={getNextJob(project.id)}
-              suburb={extractSuburb(project.address_full)}
-              freshness={getProjectFreshnessBadge(project)}
-              age={getProjectAge(project)}
-              hasCustomerIssue={hasCustomerIssue(project)}
-              hasShortage={(partsByProjectId.get(project.id) || []).some(detectShortage)}
-              hasRequiredTrades={hasRequiredTrades(project.id)}
-              onViewDetails={setModalProject}
-              displayTitle={getProjectDisplayTitle(project)}
-              customerLabel={getProjectCustomerLabel(project)}
-            />
-          ))}
+          {filteredProjects.map((project) => {
+            const jobCount = getJobCount(project.id);
+            const nextJob = getNextJob(project.id);
+            const suburb = extractSuburb(project.address);
+            const scopeSummary = buildScopeSummary(project);
+            const freshness = getProjectFreshnessBadge(project);
+            const age = getProjectAge(project);
+            
+            const freshnessColors = {
+              green: "bg-green-100 text-green-700",
+              blue: "bg-blue-100 text-blue-700",
+              yellow: "bg-yellow-100 text-yellow-700",
+              red: "bg-red-100 text-red-700",
+              gray: "bg-gray-100 text-gray-700"
+            };
+
+            return (
+              <EntityLink
+                key={project.id}
+                to={`${createPageUrl("Projects")}?projectId=${project.id}`}
+                className="block"
+              >
+              <Card
+                className="hover:shadow-lg transition-all duration-200 hover:border-[#FAE008] border border-[#E5E7EB] rounded-xl relative"
+              >
+                <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
+                  <Badge variant="secondary" className="pointer-events-none">
+                    #{project.project_number}
+                  </Badge>
+                  <Badge className={freshnessColors[freshness.color]}>
+                    {freshness.label}
+                  </Badge>
+                  {age !== null && (
+                    <span className="text-[12px] text-[#6B7280] bg-white px-2 py-0.5 rounded-lg border border-[#E5E7EB]">
+                      {age}d
+                    </span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-lg hover:bg-[#F3F4F6]"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setModalProject(project);
+                    }}
+                  >
+                    <Eye className="w-4 h-4 text-[#6B7280]" />
+                  </Button>
+                </div>
+                <CardContent className="p-4">
+                  {/* Title row */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-2 pr-40">
+                      <h3 className="text-[18px] font-semibold text-[#111827] leading-[1.2]">{getProjectDisplayTitle(project)}</h3>
+                      <DuplicateBadge record={project} size="sm" />
+                      {hasCustomerIssue(project) && (
+                        <span className="inline-flex items-center gap-1" title="Customer information missing">
+                          <UserX className="w-4 h-4 text-[#DC2626]" />
+                        </span>
+                      )}
+                      {allParts.filter(p => sameId(p.project_id, project.id)).some(detectShortage) && (
+                        <span className="inline-flex items-center rounded-full bg-red-100 text-red-700 px-2 py-0.5 text-xs font-medium">
+                          Shortage
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {project.organisation_type && (
+                        <OrganisationTypeBadge value={project.organisation_type} />
+                      )}
+                      {project.customer_type && (
+                        <CustomerTypeBadge value={project.customer_type} />
+                      )}
+                      {project.project_type && (
+                        <ProjectTypeBadge value={project.project_type} />
+                      )}
+                      <ProjectStatusBadge value={project.status} />
+                      {hasRequiredTrades(project.id) && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium">
+                          Third-party required
+                        </span>
+                      )}
+                    </div>
+                    </div>
+
+                  {/* Second row */}
+                  <div className="flex items-center gap-4 mb-3 text-[#4B5563] flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-4 h-4" />
+                      <span className="text-[14px] leading-[1.4]">{getProjectCustomerLabel(project)}</span>
+                    </div>
+                    {suburb && (
+                      <div className="flex items-center gap-1.5">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span className="text-[14px] leading-[1.4]">{suburb}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Third row */}
+                  {project.stage && (
+                    <div className="flex items-center gap-3 mb-3">
+                      <Badge variant="outline" className="font-medium text-[12px] leading-[1.35] border-[#E5E7EB]">
+                        {project.stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Badge>
+                    </div>
+                  )}
+
+                  {/* Bottom row */}
+                  <div className="flex items-center justify-between text-[14px] leading-[1.4] pt-3 border-t border-[#E5E7EB]">
+                    <span className="text-[#4B5563] font-medium">
+                      Jobs: <span className="text-[#111827] font-semibold">{isJobsLoading ? '...' : jobCount}</span>
+                    </span>
+                    {nextJob && (
+                      <div className="text-[#4B5563]">
+                        <span className="font-medium">Next: </span>
+                        <span className="text-[#111827] font-medium">
+                          {new Date(nextJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
+                          {nextJob.scheduled_time && ` · ${nextJob.scheduled_time}`}
+                          {nextJob.job_type_name && ` · ${nextJob.job_type_name}`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              </EntityLink>
+            );
+          })}
         </div>
 
         <EntityModal
