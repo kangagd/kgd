@@ -147,18 +147,14 @@ export default function VehicleStockView({ vehicleId }) {
                 <tr className="border-b">
                   <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Item</th>
                   <th className="text-right py-3 px-2 text-sm font-medium text-muted-foreground">Quantity</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Last Movement</th>
-                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Source Job</th>
+                  <th className="text-left py-3 px-2 text-sm font-medium text-muted-foreground">Category</th>
                 </tr>
               </thead>
               <tbody>
-                {stockByItem.map((item, idx) => (
-                  <tr key={idx} className="border-b last:border-0 hover:bg-muted/50">
+                {stockByItem.map((item) => (
+                  <tr key={item.id} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="py-3 px-2">
-                      <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-sm">{item.item_name || 'Unknown Item'}</span>
-                      </div>
+                      <span className="font-medium text-sm">{item.item_name}</span>
                     </td>
                     <td className="py-3 px-2 text-right">
                       <Badge variant="secondary" className="font-mono">
@@ -166,19 +162,7 @@ export default function VehicleStockView({ vehicleId }) {
                       </Badge>
                     </td>
                     <td className="py-3 px-2 text-sm text-muted-foreground">
-                      {item.lastMovement ? format(new Date(item.lastMovement), 'MMM d, yyyy h:mm a') : 'N/A'}
-                    </td>
-                    <td className="py-3 px-2">
-                      {item.lastJob ? (
-                        <Link
-                          to={`${createPageUrl('Jobs')}?jobId=${item.lastJob}`}
-                          className="text-sm text-primary hover:underline"
-                        >
-                          View Job
-                        </Link>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">N/A</span>
-                      )}
+                      {item.category}
                     </td>
                   </tr>
                 ))}
@@ -188,15 +172,15 @@ export default function VehicleStockView({ vehicleId }) {
         </CardContent>
       </Card>
 
-      {/* Read-Only Notice */}
-      <Card className="border-amber-200 bg-amber-50">
+      {/* Info Notice */}
+      <Card className="border-blue-200 bg-blue-50">
         <CardContent className="pt-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5" />
+            <Package className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <h4 className="text-sm font-medium text-amber-900">Read-Only View</h4>
-              <p className="text-sm text-amber-700 mt-1">
-                Vehicle stock is computed from StockMovement records. Stock updates automatically when logistics jobs are completed.
+              <h4 className="text-sm font-medium text-blue-900">Vehicle-Scoped Stock</h4>
+              <p className="text-sm text-blue-700 mt-1">
+                This shows only stock at this vehicle's location. Transfer items from the warehouse or adjust stock as needed.
               </p>
             </div>
           </div>
