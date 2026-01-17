@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { decodeBase64UrlToBytes } from './shared/base64UrlDecoder.ts';
 
 // Helper to refresh Gmail token (copied from getGmailAttachment)
 async function refreshTokenIfNeeded(user, base44) {
@@ -186,13 +187,8 @@ Deno.serve(async (req) => {
           const attData = await attResponse.json();
           if (!attData.data) continue;
 
-          // Decode and upload
-          const base64Data = attData.data.replace(/-/g, '+').replace(/_/g, '/');
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
+          // Decode Base64URL with proper padding handling
+          const bytes = decodeBase64UrlToBytes(attData.data);
 
           const file = new File([bytes], attachment.filename, { type: attachment.mime_type || 'application/octet-stream' });
           const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });

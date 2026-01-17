@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { decodeBase64UrlToBytes } from './shared/base64UrlDecoder.ts';
 
 async function refreshTokenIfNeeded(user, base44) {
   const expiry = new Date(user.gmail_token_expiry);
@@ -92,13 +93,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No attachment data returned' }, { status: 500 });
     }
 
-    // Convert base64url to regular base64 and decode to binary
-    const base64Data = attData.data.replace(/-/g, '+').replace(/_/g, '/');
-    const binaryString = atob(base64Data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
+    // Decode Base64URL with proper padding handling
+    const bytes = decodeBase64UrlToBytes(attData.data);
 
     // Upload to Base44 file storage
     const file = new File([bytes], filename || 'attachment', { type: mime_type || 'application/octet-stream' });
