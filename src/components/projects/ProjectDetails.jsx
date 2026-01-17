@@ -1901,44 +1901,6 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             {/* Row 3: Unified Visits Timeline */}
             <VisitsTimeline visits={jobs} projectId={project.id} />
 
-            {/* Deprecated: Initial Visit component removed - now unified in VisitsTimeline above */}
-
-            {/* Row 4: Jobs List */}
-            <Card className="border border-[#E5E7EB] shadow-sm">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-[16px] font-semibold text-[#111827]">
-                  Jobs ({jobs.length})
-                </CardTitle>
-                {canCreateJobs && (
-                  <Button
-                    size="sm"
-                    onClick={handleAddJob}
-                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] h-8"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Job
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {jobs.length === 0 ? (
-                  <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
-                    No jobs created yet
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {jobs.map((job) => (
-                      <ExpandableJobCard
-                        key={job.id}
-                        job={job}
-                        onOpenJob={handleJobClick}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
             {/* Row 5: Collapsible Project Info */}
             <Collapsible open={projectInfoOpen} onOpenChange={setProjectInfoOpen}>
               <Card className="border border-[#E5E7EB] shadow-sm">
