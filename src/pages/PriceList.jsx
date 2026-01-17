@@ -17,6 +17,7 @@ import { LOCATION_TYPE } from "@/components/domain/inventoryConfig";
 import { useMemo } from "react";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
+import SkuStockView from "../components/pricelist/SkuStockView";
 
 
 export default function PriceList() {
@@ -322,20 +323,23 @@ export default function PriceList() {
                 });
 
               return (
-                <PriceListCard
-                  key={item.id}
-                  item={item}
-                  isAdmin={canEditPriceList}
-                  canModifyStock={canModifyStock}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onStockAdjust={handleStockAdjust}
-                  onMoveStock={handleMoveStock}
-                  inventorySummary={inventorySummaryByItem[item.id]}
-                  stockByLocation={stockByLocation}
-                  locations={inventoryLocations}
-                  canViewCosts={isAdminOrManager}
-                />
+                <div key={item.id} className="space-y-2">
+                  <SkuStockView skuId={item.id} itemName={item.item} />
+                  <PriceListCard
+                    key={`card-${item.id}`}
+                    item={item}
+                    isAdmin={canEditPriceList}
+                    canModifyStock={canModifyStock}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onStockAdjust={handleStockAdjust}
+                    onMoveStock={handleMoveStock}
+                    inventorySummary={inventorySummaryByItem[item.id]}
+                    stockByLocation={stockByLocation}
+                    locations={inventoryLocations}
+                    canViewCosts={isAdminOrManager}
+                  />
+                </div>
               );
             })}
           </div>
