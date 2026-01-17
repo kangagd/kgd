@@ -68,21 +68,33 @@ export default function VehicleDetail({ vehicle, onBack }) {
     }
   });
 
-  const { data: movements = [], isLoading: isMovementsLoading } = useQuery({
-    queryKey: ['vehicleMovements', vehicle.id],
-    queryFn: async () => {
+  const [vehicleLocationId, setVehicleLocationId] = React.useState(null);
+
+  // Fetch vehicle location ID once
+  React.useEffect(() => {
+    (async () => {
       const inventoryLoc = await base44.entities.InventoryLocation.filter({ 
         type: 'vehicle',
         vehicle_id: vehicle.id 
       });
-      if (inventoryLoc.length === 0) return [];
+      if (inventoryLoc.length > 0) {
+        setVehicleLocationId(inventoryLoc[0].id);
+      }
+    })();
+  }, [vehicle.id]);
+
+  const { data: movements = [], isLoading: isMovementsLoading } = useQuery({
+    queryKey: ['vehicleMovements', vehicle.id],
+    queryFn: async () => {
+      if (!vehicleLocationId) return [];
       
       const allMovements = await base44.entities.StockMovement.list('-created_date', 50);
       return allMovements.filter(m => 
-        m.from_location_id === inventoryLoc[0].id || 
-        m.to_location_id === inventoryLoc[0].id
+        m.from_location_id === vehicleLocationId || 
+        m.to_location_id === vehicleLocationId
       );
-    }
+    },
+    enabled: !!vehicleLocationId
   });
 
   const { data: photos = [] } = useQuery({
@@ -422,16 +434,16 @@ export default function VehicleDetail({ vehicle, onBack }) {
                             move.movement_type === 'adjustment' ? 'bg-amber-100 text-amber-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
-                            {move.movement_type.replace(/_/g, ' ')}
+                            {(move.movement_type || '').replace(/_/g, ' ')}
                           </span>
                         </td>
                         <td className={`p-3 text-right font-mono font-medium ${
                           (move.to_location_id && !move.from_location_id) || 
-                          (move.from_location_id && move.to_location_id && move.to_location_id === inventoryLoc[0]?.id)
+                          (move.from_location_id && move.to_location_id && move.to_location_id === vehicleLocationId)
                             ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {((move.to_location_id && !move.from_location_id) || 
-                            (move.from_location_id && move.to_location_id && move.to_location_id === inventoryLoc[0]?.id))
+                            (move.from_location_id && move.to_location_id && move.to_location_id === vehicleLocationId))
                             ? '+' : '-'}{move.quantity}
                         </td>
                         <td className="p-3 text-gray-600">{move.moved_by_name}</td>
