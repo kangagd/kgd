@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, PackageMinus, Ruler, ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Calendar, Clock, User, Briefcase, FileText, Image as ImageIcon, DollarSign, Sparkles, LogIn, FileCheck, History, Package, ClipboardCheck, LogOut, Timer, AlertCircle, ChevronDown, Mail, Navigation, Trash2, FolderKanban, Camera, Edit, ExternalLink, MessageCircle, Plus, AlertTriangle, Loader2, PackageMinus, Ruler, ArrowRight, CheckCircle, CheckSquare } from "lucide-react";
 import DuplicateWarningCard, { DuplicateBadge } from "../common/DuplicateWarningCard";
 import { format, parseISO, isPast } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -179,6 +179,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
+  const [showTasksModal, setShowTasksModal] = useState(false);
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
   const queryClient = useQueryClient();
@@ -1186,6 +1187,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 )}
                 {!isTechnician && (
                   <>
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowTasksModal(true)}
+                    className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                    title="Tasks">
+    
+                      <CheckSquare className="w-4 h-4" />
+                    </Button>
                     <Button
                     variant="ghost"
                     size="icon"
@@ -2348,22 +2358,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   {/* Sample Quick Actions */}
                   {user && <SampleQuickActionsPanel job={job} user={user} />}
 
-                  {/* Tasks Panel */}
-                  <Collapsible defaultOpen={false} className="border border-[#E5E7EB] shadow-sm rounded-lg bg-white">
-                    <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
-                      <h3 className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Tasks</h3>
-                      <ChevronDown className="w-4 h-4 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="p-4 pt-0">
-                      <TasksPanel
-                        entityType="job"
-                        entityId={job.id}
-                        entityName={`Job #${job.job_number}`}
-                        entityNumber={job.job_number}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
-
                   {job.project_id && projectJobs.length > 0 && (
                     <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-4">
                       <h3 className="text-[14px] font-semibold text-blue-900 leading-[1.4] mb-2 flex items-center gap-1.5">
@@ -3445,7 +3439,25 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         onClose={() => setShowItemsUsedModal(false)}
       />
 
-
+      {/* Tasks Modal */}
+      <Dialog open={showTasksModal} onOpenChange={setShowTasksModal}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-[20px] font-semibold text-[#111827] flex items-center gap-2">
+              <CheckSquare className="w-5 h-5 text-[#FAE008]" />
+              Tasks for Job #{job.job_number}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <TasksPanel
+              entityType="job"
+              entityId={job.id}
+              entityName={`Job #${job.job_number}`}
+              entityNumber={job.job_number}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       </>);
 
