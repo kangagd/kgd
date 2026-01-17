@@ -419,7 +419,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   // Detect logistics job - check is_logistics flag on JobType entity OR presence of logistics fields
   const isLogisticsJob = !!(currentJobType?.is_logistics === true || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id || job.is_logistics_job === true);
-  const isStockLogisticsJob = isLogisticsJob && job.logistics_purpose !== 'sample_dropoff' && job.logistics_purpose !== 'sample_pickup';
   
   // Helper function to determine if this is a pickup job
   const isPickupJob = (jobData) => {
@@ -2370,14 +2369,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   )}
 
                   {/* Logistics Transfer Section */}
-                  {isStockLogisticsJob && (
-                    <LogisticsJobTransferSection 
-                      job={job}
-                      sourceLocation={sourceLocation}
-                      destinationLocation={destinationLocation}
-                      isAdmin={isAdmin}
-                    />
-                  )}
+                  <LogisticsJobTransferSection 
+                    job={job}
+                    sourceLocation={sourceLocation}
+                    destinationLocation={destinationLocation}
+                    isAdmin={isAdmin}
+                  />
 
                   {/* Sample Outcome Selector - Only for sample_pickup jobs */}
                   {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose === 'sample_pickup' && (
@@ -2392,6 +2389,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                           Where should samples go after pickup?
                         </Label>
                         <Select value={job.sample_outcome || 'return_to_storage'} onValueChange={(val) => {
+                          // Store sample_outcome on job when selected
                           updateJobMutation.mutate({ field: 'sample_outcome', value: val });
                         }}>
                           <SelectTrigger className="h-11 text-sm border-2 border-purple-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
@@ -2406,8 +2404,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </Card>
                   )}
 
-                  {/* Stock Outcome Selector - Only for stock logistics jobs */}
-                  {isStockLogisticsJob && !activeCheckIn && job.status !== 'Completed' && (
+                  {/* Logistics Outcome Selector */}
+                  {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose !== 'sample_pickup' && (
                     <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                       <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                         <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
@@ -2432,37 +2430,25 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </Card>
                   )}
 
-                  {/* Show applied outcome for completed sample jobs */}
-                  {job.status === 'Completed' && job.logistics_purpose === 'sample_pickup' && (
+                  {/* Show applied outcome for completed jobs */}
+                  {job.status === 'Completed' && job.sample_outcome && job.sample_outcome !== 'return_to_storage' && job.logistics_purpose === 'sample_pickup' && (
                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-purple-700">
                         <Package className="w-4 h-4" />
                         <span className="text-sm font-semibold">
-                          Sample Outcome: {job.sample_outcome === 'move_to_vehicle' ? 'Moved to Vehicle' : 'Returned to Storage'}
-                          {job.samples_transfer_status !== 'completed' && ' (processing...)'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  {job.status === 'Completed' && job.logistics_purpose === 'sample_dropoff' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-green-700">
-                        <Package className="w-4 h-4" />
-                        <span className="text-sm font-semibold">
-                          Samples Checked Out to Project
-                          {job.samples_transfer_status !== 'completed' && ' (processing...)'}
+                          Samples moved to {job.sample_outcome === 'move_to_vehicle' ? 'vehicle' : 'storage'} (transferring...)
                         </span>
                       </div>
                     </div>
                   )}
 
                   {/* Show applied outcome for completed stock jobs */}
-                  {isStockLogisticsJob && job.status === 'Completed' && job.logistics_outcome && job.logistics_outcome !== 'none' && (
+                  {job.status === 'Completed' && job.logistics_outcome && job.logistics_outcome !== 'none' && job.logistics_purpose !== 'sample_pickup' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-green-700">
                         <Package className="w-4 h-4" />
                         <span className="text-sm font-semibold">
-                          Stock Outcome: {job.logistics_outcome === 'in_storage' ? 'Moved to Storage' : 'Moved to Vehicle'}
+                          Outcome applied: {job.logistics_outcome === 'in_storage' ? 'In Storage' : 'In Vehicle'} (PO updated & parts moved)
                         </span>
                       </div>
                     </div>
