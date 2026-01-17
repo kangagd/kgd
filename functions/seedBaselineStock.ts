@@ -66,7 +66,11 @@ Deno.serve(async (req) => {
     let totalLocationQtys = 0;
     let changesCount = 0;
 
-    // Process each SKU and location
+    // Collect all operations to batch them and avoid rate limiting
+    const inventoryOps = [];
+    const movementOps = [];
+
+    // Build operation lists (don't execute yet)
     for (const skuEntry of seedData) {
       if (!skuEntry.price_list_item_id || !skuEntry.locations) continue;
 
@@ -77,52 +81,78 @@ Deno.serve(async (req) => {
         const counted = locEntry.counted || 0;
         const delta = counted - current;
 
-        // 1. Upsert InventoryQuantity (always set to counted value)
-        const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
-          price_list_item_id: skuEntry.price_list_item_id,
-          location_id: locEntry.location_id
+        inventoryOps.push({
+          skuId: skuEntry.price_list_item_id,
+          locationId: locEntry.location_id,
+          itemName: skuEntry.item_name,
+          locationName: locEntry.location_name,
+          quantity: counted
         });
 
-        if (existing.length > 0) {
-          // Update existing record to exact counted value
-          await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
-            quantity: counted
-          });
-        } else {
-          // Create new record
-          await base44.asServiceRole.entities.InventoryQuantity.create({
-            price_list_item_id: skuEntry.price_list_item_id,
-            location_id: locEntry.location_id,
-            quantity: counted,
-            item_name: skuEntry.item_name,
-            location_name: locEntry.location_name
-          });
-        }
-
-        // 2. Only create StockMovement if value changed
         if (delta !== 0) {
-          await base44.asServiceRole.entities.StockMovement.create({
-            job_id: seedBatchId,
-            sku_id: skuEntry.price_list_item_id,
-            item_name: skuEntry.item_name,
-            quantity: delta,
-            from_location_id: delta < 0 ? locEntry.location_id : null,
-            to_location_id: delta > 0 ? locEntry.location_id : null,
-            to_location_name: delta > 0 ? locEntry.location_name : null,
-            from_location_name: delta < 0 ? locEntry.location_name : null,
-            performed_by_user_id: user.id,
-            performed_by_user_email: user.email,
-            performed_by_user_name: user.full_name || user.display_name,
-            performed_at: now,
-            source: 'baseline_seed',
-            notes: `Baseline stocktake seed (set exact: ${current} → ${counted})`
+          movementOps.push({
+            skuId: skuEntry.price_list_item_id,
+            itemName: skuEntry.item_name,
+            delta,
+            locationId: locEntry.location_id,
+            locationName: locEntry.location_name,
+            current,
+            counted
           });
-          changesCount++;
         }
 
         totalQtySeeded += counted;
         totalLocationQtys++;
       }
+    }
+
+    // Execute inventory operations with throttling
+    for (const op of inventoryOps) {
+      const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
+        price_list_item_id: op.skuId,
+        location_id: op.locationId
+      });
+
+      if (existing.length > 0) {
+        await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
+          quantity: op.quantity
+        });
+      } else {
+        await base44.asServiceRole.entities.InventoryQuantity.create({
+          price_list_item_id: op.skuId,
+          location_id: op.locationId,
+          quantity: op.quantity,
+          item_name: op.itemName,
+          location_name: op.locationName
+        });
+      }
+
+      // Throttle to avoid rate limiting
+      await new Promise(r => setTimeout(r, 10));
+    }
+
+    // Execute movement operations with throttling
+    for (const op of movementOps) {
+      await base44.asServiceRole.entities.StockMovement.create({
+        job_id: seedBatchId,
+        sku_id: op.skuId,
+        item_name: op.itemName,
+        quantity: op.delta,
+        from_location_id: op.delta < 0 ? op.locationId : null,
+        to_location_id: op.delta > 0 ? op.locationId : null,
+        to_location_name: op.delta > 0 ? op.locationName : null,
+        from_location_name: op.delta < 0 ? op.locationName : null,
+        performed_by_user_id: user.id,
+        performed_by_user_email: user.email,
+        performed_by_user_name: user.full_name || user.display_name,
+        performed_at: now,
+        source: 'baseline_seed',
+        notes: `Baseline stocktake seed (set exact: ${op.current} → ${op.counted})`
+      });
+      changesCount++;
+
+      // Throttle to avoid rate limiting
+      await new Promise(r => setTimeout(r, 10));
     }
 
     // 3. Record the baseline seed run
