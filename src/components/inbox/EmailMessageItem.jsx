@@ -206,6 +206,10 @@ export default function EmailMessageItem({
             attachment_id: cidInfo.attachment_id,
           });
         }
+      },
+      onUnmatchedCid: (cid) => {
+        // Log unmatched CIDs for debugging
+        console.debug(`[EmailMessage] Unmatched inline image CID: ${cid}`);
       }
     });
     return html;
@@ -233,9 +237,9 @@ export default function EmailMessageItem({
     const container = document.querySelector('[class*="gmail-email-body"]');
     if (!container) return;
 
-    const images = container.querySelectorAll('img[data-cid-pending], img[data-inline-cid], img[data-attachment-pending="true"]');
+    const images = container.querySelectorAll('img[data-cid-pending], img[data-attachment-pending="true"]');
     images.forEach((img) => {
-      const contentId = img.getAttribute('data-cid-pending') || img.getAttribute('data-inline-cid') || img.getAttribute('data-cid');
+      const contentId = img.getAttribute('data-cid-pending');
       
       // Track successful loads
       const handleLoad = () => {
@@ -263,6 +267,12 @@ export default function EmailMessageItem({
         img.removeEventListener('load', handleLoad);
         img.removeEventListener('error', handleError);
       };
+    });
+
+    // Also hide any unmatched inline images (data-cid-unmatched) gracefully
+    const unmatched = container.querySelectorAll('img[data-cid-unmatched]');
+    unmatched.forEach((img) => {
+      img.style.display = 'none';
     });
 
     hideUnresolvedInlineImages();
