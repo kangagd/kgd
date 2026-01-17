@@ -10,7 +10,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { getPhysicalAvailableLocations, normalizeLocationType } from "@/components/utils/inventoryLocationUtils";
-import { v4 as uuidv4 } from "npm:uuid@9.0.0";
 
 export default function StockAdjustmentModal({ item, open, onClose, locations = [] }) {
   const [location, setLocation] = useState("");
@@ -58,7 +57,6 @@ export default function StockAdjustmentModal({ item, open, onClose, locations = 
       }
 
       // Create StockMovement audit record
-      const batchId = uuidv4();
       await base44.asServiceRole.entities.StockMovement.create({
         sku_id: item.id,
         item_name: item.item,
