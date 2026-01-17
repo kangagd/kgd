@@ -1,262 +1,144 @@
 /**
- * Helpers for createProjectFromEmail
- * - Customer extraction
- * - Category classification
- * - Address extraction
- * - Email body cleaning
+ * Email Project Creation Helper Functions
+ * Extracted utilities for parsing email content, extracting data, and classifying projects
  */
 
 /**
- * Extract external customer email from message
- * Prefers from_address if inbound, else to/cc if outbound
- * Filters out internal org emails
+ * Extract customer email from EmailMessage
+ * Prioritizes: to_addresses (if team), else from_address (external)
  */
-export function extractCustomerEmail(message, internalDomains = ['kangaroogd.com.au']) {
-  const isInternalDomain = (email) => {
-    if (!email) return false;
-    const domain = email.toLowerCase().split('@')[1];
-    return internalDomains.some(d => domain === d.toLowerCase());
-  };
+export function extractCustomerEmail(emailMessage) {
+  if (!emailMessage) return null;
 
-  // Prefer from if inbound
-  if (!message.is_outbound && message.from_address && !isInternalDomain(message.from_address)) {
-    return message.from_address;
+  // Assume from_address is the external customer
+  return emailMessage.from_address?.toLowerCase() || null;
+}
+
+/**
+ * Extract customer name from display name or email
+ */
+export function extractCustomerName(displayName, email) {
+  if (displayName && displayName.trim().length > 0) {
+    return displayName.trim();
   }
-
-  // Check to addresses if outbound or from is internal
-  if (message.to_addresses) {
-    const external = message.to_addresses.find(addr => !isInternalDomain(addr));
-    if (external) return external;
+  if (email) {
+    const name = email.split('@')[0];
+    return name.replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
-
-  // Check cc addresses
-  if (message.cc_addresses) {
-    const external = message.cc_addresses.find(addr => !isInternalDomain(addr));
-    if (external) return external;
-  }
-
   return null;
 }
 
 /**
- * Extract customer name from email display name
- * Strips company suffixes, ignores generic names
+ * Extract phone number from email body
  */
-export function extractCustomerName(fromName = '', fromEmail = '') {
-  if (!fromName && !fromEmail) return '';
-
-  // Start with display name
-  let name = fromName.trim();
-
-  // Fall back to email local part if no display name
-  if (!name && fromEmail) {
-    name = fromEmail.split('@')[0].replace(/[._-]/g, ' ').trim();
-  }
-
-  // Strip company suffixes
-  name = name
-    .replace(/\s*(?:Co\.?|Ltd\.?|Inc\.?|LLC|Pty|Limited|Corporation|Corp|Company)$/i, '')
-    .replace(/\s*(?:Support|Sales|Team|Admin|Noreply|No-reply|Help|Contact|Support Team)$/i, '')
-    .trim();
-
-  // Ensure capitalization
-  return name
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+export function extractPhoneFromBody(text) {
+  if (!text) return null;
+  // Simple phone regex: (XXX) XXX-XXXX, XXX-XXX-XXXX, or 10+ digits
+  const phoneRegex = /(?:\+?1[-.\s]?)?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/;
+  const match = text.match(phoneRegex);
+  return match ? match[0] : null;
 }
 
 /**
- * Extract phone from email body/signature
- * Looks for AU format or E.164
- */
-export function extractPhoneFromBody(bodyText = '') {
-  if (!bodyText) return null;
-
-  // AU patterns: 02 1234 5678, (02) 1234 5678, +61 2 1234 5678, 0412 345 678
-  const patterns = [
-    /(?:\+61|0)(?:2|3|7|8)\s?(?:\d{4}\s?\d{4}|\d{3}\s?\d{3}\s?\d{3})/,
-    /(?:\+61|0)4\d{2}\s?\d{3}\s?\d{3}/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = bodyText.match(pattern);
-    if (match) return match[0];
-  }
-
-  return null;
-}
-
-/**
- * Extract address from cleaned email body
+ * Extract address from email body
  * Returns: { street, suburb, postcode, fullAddress }
  */
-export function extractAddressFromBody(bodyText = '') {
-  if (!bodyText) return null;
+export function extractAddressFromBody(text) {
+  if (!text) return null;
 
-  // AU address pattern: number street suburb postcode
-  const patterns = [
-    /(\d+)\s+([A-Za-z\s]+(?:St|Street|Road|Rd|Ave|Avenue|Lane|Ln|Drive|Dr|Court|Ct|Close|Cl|Crescent|Cres|Boulevard|Blvd|Park|Pde)\.?)\s*,?\s+([A-Za-z\s]+)\s+(\d{4})/i,
-    /([A-Za-z\s]+)\s+(\d{4})/i, // Suburb + postcode only
-  ];
+  // Simple Australian address pattern
+  // Look for lines with postcode + state abbreviation
+  const addressRegex = /(\d+\s+[a-zA-Z\s]+)[,]?\s+([A-Za-z\s]+)\s+([A-Z]{2})\s+(\d{4})/;
+  const match = text.match(addressRegex);
 
-  for (const pattern of patterns) {
-    const match = bodyText.match(pattern);
-    if (match) {
-      if (match.length === 5) {
-        return {
-          street: `${match[1]} ${match[2]}`.trim(),
-          suburb: match[3].trim(),
-          postcode: match[4],
-          fullAddress: `${match[1]} ${match[2]}, ${match[3]} ${match[4]}`.trim(),
-        };
-      } else if (match.length === 3) {
-        return { suburb: match[1].trim(), postcode: match[2], fullAddress: `${match[1]} ${match[2]}` };
-      }
-    }
+  if (match) {
+    return {
+      street: match[1].trim(),
+      suburb: match[2].trim(),
+      state: match[3],
+      postcode: match[4],
+      fullAddress: `${match[1].trim()}, ${match[2].trim()} ${match[3]} ${match[4]}`,
+    };
   }
 
   return null;
 }
 
 /**
- * Format short address for project name
- * Returns: "28 Boronia Rd, Randwick" or "Randwick (address pending)" or "Address pending"
+ * Format short address for display
  */
-export function formatShortAddress(address = null) {
-  if (!address) return 'Address pending';
-
-  if (address.street && address.suburb) {
-    return `${address.street}, ${address.suburb}`;
-  } else if (address.suburb) {
-    return `${address.suburb} (address pending)`;
+export function formatShortAddress(addressObj) {
+  if (!addressObj) return 'Address Unknown';
+  if (addressObj.suburb && addressObj.postcode) {
+    return `${addressObj.suburb} ${addressObj.postcode}`;
   }
-
-  return 'Address pending';
+  if (addressObj.suburb) return addressObj.suburb;
+  if (addressObj.fullAddress) return addressObj.fullAddress;
+  return 'Address Unknown';
 }
 
 /**
- * Classify category from email subject + body
- * Returns: { category, doorType, confidence }
+ * Classify project category from subject + body
+ * Returns: { category, confidence }
  */
-export function classifyCategory(subject = '', bodyText = '', overrideCategory = null) {
+export function classifyCategory(subject, body, overrideCategory = null) {
   if (overrideCategory) {
-    return { category: overrideCategory, confidence: 'user_selected' };
+    return { category: overrideCategory, confidence: 'user-selected' };
   }
 
-  const combined = `${subject} ${bodyText}`.toLowerCase();
+  const combined = `${subject} ${body}`.toLowerCase();
 
-  // Door types
-  const doorTypes = {
-    'sectional': ['sectional', 'section door'],
-    'roller shutter': ['roller shutter', 'roller door', 'shutter'],
-    'tilt': ['tilt door', 'tilt', 'tilting'],
-    'sliding': ['sliding door', 'sliding'],
-    'swing': ['swing door', 'swing'],
-    'garage door': ['garage door', 'garage', 'overhead'],
-    'automated gate': ['automated gate', 'gate', 'sliding gate'],
-    'custom': ['custom', 'bespoke'],
+  const categories = {
+    'Sectional Door Repair': ['garage door repair', 'broken door', 'door stuck', 'door broken'],
+    'Sectional Door Install': ['garage door install', 'new door', 'install garage door'],
+    'Roller Shutter Repair': ['roller shutter repair', 'shutter broken', 'shutter stuck'],
+    'Roller Shutter Install': ['roller shutter install', 'new shutter', 'install shutter'],
+    'Maintenance Service': ['maintenance', 'service call', 'regular service'],
+    'General Enquiry': ['enquiry', 'inquiry', 'quote', 'more info'],
   };
 
-  let detectedDoorType = 'Garage Door'; // default
-  let doorTypeConfidence = 0;
-
-  for (const [type, keywords] of Object.entries(doorTypes)) {
-    const matches = keywords.filter(kw => combined.includes(kw)).length;
-    if (matches > doorTypeConfidence) {
-      detectedDoorType = type.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      doorTypeConfidence = matches;
+  for (const [category, keywords] of Object.entries(categories)) {
+    if (keywords.some(keyword => combined.includes(keyword))) {
+      return { category, confidence: 'high' };
     }
   }
 
-  // Service types
-  const isRepair = /repair|fix|stuck|won't open|fault|broken|malfunction|issue/i.test(combined);
-  const isInstall = /install|new door|replace|supply|upgrade|add/i.test(combined);
-  const isMaintenance = /maintenance|service|clean|lubricate/i.test(combined);
-
-  let category = 'General Enquiry';
-  let categoryConfidence = 'low';
-
-  if (isRepair && doorTypeConfidence > 0) {
-    category = `${detectedDoorType} Repair`;
-    categoryConfidence = 'high';
-  } else if (isInstall && doorTypeConfidence > 0) {
-    category = `${detectedDoorType} Install`;
-    categoryConfidence = 'high';
-  } else if (isMaintenance) {
-    category = 'Maintenance Service';
-    categoryConfidence = 'medium';
-  } else if (doorTypeConfidence > 0) {
-    category = `${detectedDoorType} Enquiry`;
-    categoryConfidence = 'medium';
-  }
-
-  return { category, doorType: detectedDoorType, confidence: categoryConfidence };
+  // Default
+  return { category: 'General Enquiry', confidence: 'low' };
 }
 
 /**
- * Clean email body: remove quotes, signatures, tracking pixels
+ * Clean email body: strip HTML, remove signatures, normalize whitespace
  */
-export function cleanEmailBody(htmlBody = '', textBody = '') {
+export function cleanEmailBody(htmlBody, textBody) {
   let body = htmlBody || textBody || '';
 
-  // Remove quoted history markers
-  body = body.replace(/<div class="gmail_quote"[\s\S]*?<\/div>/gi, '');
-  body = body.replace(/<blockquote[\s\S]*?<\/blockquote>/gi, '');
+  // Strip HTML tags
+  body = body.replace(/<[^>]*>/g, ' ');
 
-  // Remove "On <date> ... wrote:" pattern
-  body = body.replace(/on\s+.*?wrote:?[\s\n]*/i, '');
+  // Remove signature (often starts with "--" or "Sent from")
+  body = body.split(/^--\s*$/m)[0];
+  body = body.split(/^Sent from/m)[0];
 
-  // Remove common signature separators
-  body = body.replace(/^--+\s*/gm, '\n');
-  body = body.replace(/kind regards[\s\S]*/i, '');
-  body = body.replace(/best regards[\s\S]*/i, '');
+  // Normalize whitespace
+  body = body.replace(/\s+/g, ' ').trim();
 
-  // Remove tracking pixels (1x1 images)
-  body = body.replace(/<img[^>]*width=['"]?1['"]?[^>]*>/gi, '');
-
-  // Remove remote logos (https:// img that are likely logos)
-  // More conservative: keep images that might be relevant
-
-  // Strip HTML tags to text for processing
-  const text = body.replace(/<[^>]*>/g, '').trim();
-
-  return text;
+  return body;
 }
 
 /**
- * Generate bullet points from email body
- * Max 8 bullets with key facts/requests
+ * Generate bullet-point description from email body
+ * Splits sentences and returns array
  */
-export function generateBulletDescription(cleanedText = '') {
-  if (!cleanedText) return [];
+export function generateBulletDescription(text) {
+  if (!text || text.length === 0) return [];
 
-  // Split into sentences
-  const sentences = cleanedText
-    .split(/[.!?\n]+/)
+  // Split by period, question mark, or newline
+  const sentences = text
+    .split(/[.!?]\s+/)
     .map(s => s.trim())
-    .filter(s => s.length > 10); // Min 10 chars per bullet
+    .filter(s => s.length > 10 && s.length < 200) // Reasonable length bullets
+    .slice(0, 5); // Max 5 bullets
 
-  // Extract key patterns
-  const bullets = [];
-  const seenBullets = new Set();
-
-  for (const sentence of sentences) {
-    // Skip generic greetings
-    if (/^(hello|hi|dear|thank|regards)/i.test(sentence)) continue;
-
-    // Skip very short or duplicate
-    if (sentence.length < 10 || seenBullets.has(sentence)) continue;
-
-    // Truncate to ~100 chars for readability
-    const bullet = sentence.substring(0, 120) + (sentence.length > 120 ? '…' : '');
-    if (!seenBullets.has(bullet)) {
-      bullets.push(bullet);
-      seenBullets.add(bullet);
-    }
-
-    if (bullets.length >= 8) break;
-  }
-
-  return bullets.length > 0 ? bullets : ['Email received from customer'];
+  return sentences.length > 0 ? sentences : ['Email received from customer'];
 }
