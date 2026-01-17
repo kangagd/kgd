@@ -25,6 +25,7 @@ export default function BaselineStockSeed() {
   const [filterEmpty, setFilterEmpty] = useState(false);
   const [skuSearch, setSkuSearch] = useState('');
   const [expandedVehicles, setExpandedVehicles] = useState({});
+  const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const queryClient = useQueryClient();
 
   // Load user
@@ -58,7 +59,7 @@ export default function BaselineStockSeed() {
   }
 
   // Fetch locations
-  const { data: allLocations = [], isPending: locsPending } = useQuery({
+  const { data: allLocations = [] } = useQuery({
     queryKey: ['locations-for-baseline'],
     queryFn: () => base44.entities.InventoryLocation.filter({}),
     staleTime: 60000,
@@ -76,7 +77,7 @@ export default function BaselineStockSeed() {
   }, [locations]);
 
   // Fetch SKUs with name mapping
-  const { data: skus = [], isPending: skusPending } = useQuery({
+  const { data: skus = [] } = useQuery({
     queryKey: ['price-list-items-for-baseline'],
     queryFn: () => base44.entities.PriceListItem.list('item'),
     staleTime: 60000,
@@ -91,19 +92,15 @@ export default function BaselineStockSeed() {
   }, [skus]);
 
   // Fetch current InventoryQuantity (new ledger only)
-  const { data: currentQuantities = [], isPending: qtysPending } = useQuery({
+  const { data: currentQuantities = [] } = useQuery({
     queryKey: ['inventory-quantities-for-baseline'],
     queryFn: () => base44.entities.InventoryQuantity.list(),
     staleTime: 30000,
   });
 
-  // Compute overall loading state from query pending flags
-  const isLoadingInventory = locsPending || skusPending || qtysPending;
-
   // Auto-populate seedRows from existing InventoryQuantities on load
   React.useEffect(() => {
-    // Only run when queries are done loading
-    if (!isLoadingInventory && warehouseLocation && vehicleLocations.length > 0) {
+    if (warehouseLocation && vehicleLocations.length > 0) {
       const bySkuMap = {};
 
       currentQuantities.forEach(qty => {
@@ -135,8 +132,9 @@ export default function BaselineStockSeed() {
       });
 
       setSeedRows(Object.values(bySkuMap));
+      setIsLoadingInventory(false);
     }
-  }, [currentQuantities, warehouseLocation, vehicleLocations, skuById, isLoadingInventory]);
+  }, [currentQuantities, warehouseLocation, vehicleLocations, skuById]);
 
   // Filter displayed rows
   const displayedRows = useMemo(() => {
