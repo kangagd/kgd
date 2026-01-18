@@ -21,26 +21,16 @@ export default function AddCustomItemModal({ open, onClose, onAdd, itemType: ini
   const handleConfirm = () => {
     if (!label.trim()) return;
 
-    const uuid = generateUUID();
     const item = {
-      key: `job:${itemType}:${uuid}`,
       label: label.trim(),
-      source: 'job',
-      ref_id: null,
-      status: 'unknown'
+      type: itemType,
+      ...(itemType === 'part' && qty && { qty })
     };
 
-    if (itemType === 'part' && qty) {
-      item.qty = qty;
-    }
-
-    const patch = {
-      [itemType === 'part' ? 'parts' : itemType === 'trade' ? 'trades' : 'requirements']: [item]
-    };
-
-    onAdd(patch);
+    onAdd(item);
     setLabel('');
     setQty(1);
+    onClose();
   };
 
   return (
