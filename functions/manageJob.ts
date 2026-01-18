@@ -286,8 +286,8 @@ Deno.serve(async (req) => {
                     jobData.customer_type = project.customer_type;
                 }
                 
-                // Inherit address fields if missing
-                if (!jobData.address_full && (project.address_full || project.address)) {
+                // Inherit address fields if missing or empty
+                if ((!jobData.address_full || jobData.address_full.trim() === '') && (project.address_full || project.address)) {
                     jobData.address = project.address_full || project.address;
                     jobData.address_full = project.address_full || project.address;
                     jobData.address_street = project.address_street;
