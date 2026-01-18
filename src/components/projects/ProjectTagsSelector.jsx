@@ -55,7 +55,7 @@ export default function ProjectTagsSelector({ value = [], onChange }) {
               <Badge
                 key={tag.id}
                 style={{ backgroundColor: tag.color }}
-                className="text-white font-medium px-2.5 py-0.5 rounded-lg text-[12px] hover:opacity-100"
+                className="text-white font-medium px-2.5 py-0.5 rounded-lg text-[12px] border-0 shadow-none hover:opacity-100"
               >
                 {tag.name}
               </Badge>
@@ -92,7 +92,7 @@ export default function ProjectTagsSelector({ value = [], onChange }) {
                   />
                   <Badge
                     style={{ backgroundColor: tag.color }}
-                    className="text-white font-medium text-[11px]"
+                    className="text-white font-medium text-[12px] px-2.5 py-0.5 rounded-lg border-0 shadow-none"
                   >
                     {tag.name}
                   </Badge>
