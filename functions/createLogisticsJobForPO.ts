@@ -90,25 +90,27 @@ Deno.serve(async (req) => {
         const jobNumber = await generateJobNumber(base44, po.project_id);
 
         // Create the Job
-        const jobData = {
-            job_number: jobNumber,
-            job_type_id: jobTypeId,
-            job_type: jobTypeName,
-            job_type_name: jobTypeName,
-            project_id: po.project_id || null,
-            purchase_order_id: po.id,
-            status: "Open",
-            scheduled_date: scheduled_date || new Date().toISOString().split('T')[0],
-            assigned_to: technician_id ? [technician_id] : [],
-            notes: `Logistics job for PO from ${supplierName}`,
-            address: jobAddressFull,
-            address_full: jobAddressFull,
-            customer_name: jobTitle,
-            is_logistics_job: true,
-            logistics_purpose: logisticsPurpose,
-            origin_address: originAddress,
-            destination_address: destinationAddress,
-        };
+         const jobData = {
+             job_number: jobNumber,
+             job_type_id: jobTypeId,
+             job_type: jobTypeName,
+             job_type_name: jobTypeName,
+             project_id: po.project_id || null,
+             purchase_order_id: po.id,
+             status: "Open",
+             scheduled_date: scheduled_date || new Date().toISOString().split('T')[0],
+             assigned_to: technician_id ? [technician_id] : [],
+             notes: `Logistics job for PO from ${supplierName}`,
+             address: jobAddressFull,
+             address_full: jobAddressFull,
+             customer_name: jobTitle,
+             is_logistics_job: true,
+             logistics_purpose: logisticsPurpose,
+             origin_address: originAddress,
+             destination_address: destinationAddress,
+             reference_type: 'purchase_order',
+             reference_id: po.id,
+         };
 
         const job = await base44.asServiceRole.entities.Job.create(jobData);
 
