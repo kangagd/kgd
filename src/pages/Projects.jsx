@@ -639,13 +639,6 @@ export default function Projects() {
                     </SelectContent>
                   </Select>
 
-                  <div className="w-full md:w-auto">
-                    <ProjectTagsSelector
-                      value={tagFilter}
-                      onChange={setTagFilter}
-                    />
-                  </div>
-
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="w-full md:w-[200px] h-10">
                       <SelectValue placeholder="Sort by" />
