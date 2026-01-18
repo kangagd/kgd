@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -48,18 +49,33 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
     return matchesSearch && matchesCategory;
   });
 
-  const handleSelect = (item) => {
-    onSelect({
-      label: item.item,
-      type: 'part',
-      price_list_item_id: item.id,
-      qty: 1
-    });
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setQuantity(1);
+  };
+
+  const handleConfirm = () => {
+    if (selectedItem) {
+      onSelect({
+        label: selectedItem.item,
+        type: 'part',
+        price_list_item_id: selectedItem.id,
+        qty: quantity
+      });
+      setSelectedItem(null);
+      setQuantity(1);
+      onClose();
+    }
+  };
+
+  const handleCancel = () => {
+    setSelectedItem(null);
+    setQuantity(1);
     onClose();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleCancel}>
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-[18px] font-semibold text-[#111827]">
