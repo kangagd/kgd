@@ -38,8 +38,9 @@ import EntityLink from "../components/common/EntityLink";
 import BackButton from "../components/common/BackButton";
 import { useNavigate } from "react-router-dom";
 import { QUERY_CONFIG } from "../components/api/queryConfig";
-import { projectKeys, jobKeys } from "../components/api/queryKeys";
+import { projectKeys, jobKeys, inboxKeys } from "../components/api/queryKeys";
 import { getProjectDisplayTitle, getProjectDisplayAddress, getProjectCustomerLabel } from "../components/projects/projectDisplay";
+import ProjectTagsDisplay from "../components/projects/ProjectTagsDisplay";
 
 export default function Projects() {
   const location = useLocation();
@@ -59,6 +60,7 @@ export default function Projects() {
   const [modalProject, setModalProject] = useState(null);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [tagFilter, setTagFilter] = useState([]);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -152,6 +154,13 @@ export default function Projects() {
     queryFn: () => base44.entities.EmailThread.list(),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    ...QUERY_CONFIG.reference,
+  });
+
+  const { data: projectTags = [] } = useQuery({
+    queryKey: ['projectTags'],
+    queryFn: () => base44.entities.ProjectTagDefinition.list(),
+    staleTime: 5 * 60 * 1000,
     ...QUERY_CONFIG.reference,
   });
 
@@ -360,6 +369,9 @@ export default function Projects() {
         const matchesPartsStatus = partsStatusFilter === "all" || 
           projectParts.some(p => p.status === partsStatusFilter);
         
+        const matchesTags = tagFilter.length === 0 || 
+          (project.project_tag_ids || []).some(tagId => tagFilter.includes(tagId));
+        
         let matchesDateRange = true;
         if (startDate || endDate) {
           const createdAt = project.created_at || project.created_date || project.createdDate;
@@ -370,7 +382,7 @@ export default function Projects() {
 
         const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
         
-        return matchesSearch && matchesStage && matchesPartsStatus && matchesDateRange && matchesDuplicateFilter;
+        return matchesSearch && matchesStage && matchesPartsStatus && matchesTags && matchesDateRange && matchesDuplicateFilter;
       })
       .sort((a, b) => {
         if (sortBy === "created_date") {
@@ -386,7 +398,7 @@ export default function Projects() {
     
     console.timeEnd('[Projects] Filter & sort');
     return filtered;
-  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
+  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
 
         const getJobCount = useCallback((projectId) => {
           return (indexes.jobsByProjectId.get(projectId) || []).length;
@@ -530,19 +542,63 @@ export default function Projects() {
             </Tabs>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="project-duplicates-filter"
-              checked={showDuplicatesOnly}
-              onCheckedChange={setShowDuplicatesOnly}
-            />
-            <label
-              htmlFor="project-duplicates-filter"
-              className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
-            >
-              <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
-              Show only potential duplicates
-            </label>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="project-duplicates-filter"
+                checked={showDuplicatesOnly}
+                onCheckedChange={setShowDuplicatesOnly}
+              />
+              <label
+                htmlFor="project-duplicates-filter"
+                className="text-sm text-[#4B5563] cursor-pointer flex items-center gap-1.5"
+              >
+                <AlertTriangle className="w-3.5 h-3.5 text-[#D97706]" />
+                Show only potential duplicates
+              </label>
+            </div>
+            
+            {projectTags.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-[#4B5563]">Filter by tag:</Label>
+                <div className="flex flex-wrap gap-1">
+                  {projectTags.filter(t => t.is_active).map(tag => (
+                    <button
+                      key={tag.id}
+                      onClick={() => {
+                        if (tagFilter.includes(tag.id)) {
+                          setTagFilter(tagFilter.filter(id => id !== tag.id));
+                        } else {
+                          setTagFilter([...tagFilter, tag.id]);
+                        }
+                      }}
+                      className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                        tagFilter.includes(tag.id)
+                          ? 'ring-2 ring-offset-1'
+                          : 'opacity-60 hover:opacity-100'
+                      }`}
+                      style={{ 
+                        backgroundColor: tag.color,
+                        color: 'white',
+                        ringColor: tag.color
+                      }}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                  {tagFilter.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setTagFilter([])}
+                      className="h-7 text-[11px] px-2"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {showFilters && (
