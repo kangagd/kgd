@@ -81,6 +81,7 @@ import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
 import ProjectTagsDisplay from "./ProjectTagsDisplay";
+import ProjectTagsSelector from "./ProjectTagsSelector";
 
 import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
@@ -1689,7 +1690,28 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 )}
               />
             )}
-            <ProjectTagsDisplay tags={projectTagsSnapshot} />
+            <ProjectTagsSelector 
+              value={project.project_tag_ids || []}
+              onChange={async (tagIds) => {
+                const allTags = await base44.entities.ProjectTagDefinition.list();
+                const selectedTags = allTags.filter(t => tagIds.includes(t.id));
+                const snapshot = selectedTags.map(t => ({
+                  id: t.id,
+                  name: t.name,
+                  slug: t.slug,
+                  color: t.color
+                }));
+                
+                await base44.entities.Project.update(project.id, {
+                  project_tag_ids: tagIds,
+                  project_tags_snapshot: snapshot
+                });
+                
+                queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+                queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+                queryClient.invalidateQueries({ queryKey: projectKeys.list() });
+              }}
+            />
           </div>
         </div>
 
