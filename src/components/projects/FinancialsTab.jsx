@@ -1039,26 +1039,28 @@ export default function FinancialsTab({ project, onUpdate }) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {invoice.pdf_url && (
-                        <a 
-                          href={invoice.pdf_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline whitespace-nowrap"
-                        >
-                          PDF <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
-                      {(invoice.online_payment_url || invoice.online_invoice_url) && (
-                        <a 
-                          href={invoice.online_payment_url || invoice.online_invoice_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline whitespace-nowrap"
-                        >
-                          View <ExternalLink className="w-3 h-3" />
-                        </a>
-                      )}
+                       <Button
+                         type="button"
+                         variant="ghost"
+                         size="sm"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           handleDownloadInvoice(invoice);
+                         }}
+                         className="h-6 text-xs text-[#2563EB] hover:text-[#1D4ED8] hover:bg-blue-50 gap-1"
+                       >
+                         PDF <ExternalLink className="w-3 h-3" />
+                       </Button>
+                       {(invoice.online_payment_url || invoice.online_invoice_url) && (
+                         <a 
+                           href={invoice.online_payment_url || invoice.online_invoice_url} 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="flex items-center gap-1 text-[13px] text-[#2563EB] hover:underline whitespace-nowrap"
+                         >
+                           View <ExternalLink className="w-3 h-3" />
+                         </a>
+                       )}
                       <Button
                         variant="ghost"
                         size="icon"
