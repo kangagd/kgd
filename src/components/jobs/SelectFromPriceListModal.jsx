@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [quantity, setQuantity] = useState(1);
 
   const { data: priceListItems = [], isLoading } = useQuery({
     queryKey: ['priceListItems'],
@@ -143,6 +145,34 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
             )}
           </div>
         </div>
+
+        {selectedItem && (
+          <div className="border-t border-slate-200 p-4 bg-slate-50">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="text-[14px] font-semibold text-[#111827]">{selectedItem.item}</div>
+                <div className="text-[12px] text-[#6B7280]">${selectedItem.price?.toFixed(2)} each</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Label htmlFor="quantity" className="text-[13px] font-medium text-[#6B7280]">Quantity:</Label>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-20 border-2 border-slate-300"
+                />
+              </div>
+              <Button
+                onClick={handleConfirm}
+                className="bg-[#fae008] hover:bg-[#e5d007] text-[#000000] font-bold"
+              >
+                Add Item
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
