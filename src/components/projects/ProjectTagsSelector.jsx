@@ -8,16 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Search, X } from "lucide-react";
 
-export default function ProjectTagsSelector({ value = [], onChange }) {
+export default function ProjectTagsSelector({ value = [], onChange, tagsSnapshot = [] }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: allTags = [] } = useQuery({
+  const { data: allTags = [], isLoading } = useQuery({
     queryKey: ['projectTags-active'],
     queryFn: () => base44.entities.ProjectTagDefinition.filter({ is_active: true }, 'name'),
+    staleTime: 60000, // Cache for 1 minute
   });
 
-  const selectedTags = allTags.filter(tag => value.includes(tag.id));
+  // Use snapshot as fallback while loading or if tags aren't found
+  const selectedTags = React.useMemo(() => {
+    if (isLoading || allTags.length === 0) {
+      return tagsSnapshot.filter(tag => value.includes(tag.id));
+    }
+    return allTags.filter(tag => value.includes(tag.id));
+  }, [allTags, value, tagsSnapshot, isLoading]);
 
   const filteredTags = allTags.filter(tag =>
     !searchTerm || tag.name.toLowerCase().includes(searchTerm.toLowerCase())

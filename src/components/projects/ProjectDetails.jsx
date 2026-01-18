@@ -1692,6 +1692,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             )}
             <ProjectTagsSelector 
               value={project.project_tag_ids || []}
+              tagsSnapshot={project.project_tags_snapshot || []}
               onChange={async (tagIds) => {
                 const allTags = await base44.entities.ProjectTagDefinition.list();
                 const selectedTags = allTags.filter(t => tagIds.includes(t.id));
