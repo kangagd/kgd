@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
 
         // Get existing Parts on this PO
         const parts = await base44.asServiceRole.entities.Part.filter({
-            purchase_order_id: po.id
+            primary_purchase_order_id: po.id
         });
 
         // Get PO lines to ensure we have Parts for all line items
