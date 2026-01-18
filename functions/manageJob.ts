@@ -299,6 +299,20 @@ Deno.serve(async (req) => {
                     jobData.latitude = project.latitude;
                     jobData.longitude = project.longitude;
                 }
+
+                // SCHEMA NORMALIZER: Convert project other_documents (objects) to job format (strings)
+                if (project.other_documents && Array.isArray(project.other_documents)) {
+                    jobData.other_documents = project.other_documents.map(doc => 
+                        typeof doc === 'string' ? doc : doc.url
+                    );
+                }
+
+                // SCHEMA NORMALIZER: Inherit image_urls but ensure it's array of strings
+                if (project.image_urls && Array.isArray(project.image_urls) && !jobData.image_urls) {
+                    jobData.image_urls = project.image_urls.map(img => 
+                        typeof img === 'string' ? img : img.url || img
+                    );
+                }
             }
 
             // Auto-assign job number (skip for logistics jobs)
