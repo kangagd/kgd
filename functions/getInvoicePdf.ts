@@ -78,12 +78,18 @@ Deno.serve(async (req) => {
 
     const pdfBytes = await pdfResponse.arrayBuffer();
 
-    return new Response(pdfBytes, {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename=invoice-${xero_invoice_id}.pdf`
-      }
+    // Create a File object from the PDF bytes
+    const uint8Array = arrayBufferToUint8Array(pdfBytes);
+    const filename = `invoice-${xero_invoice_id}.pdf`;
+    const file = new File([uint8Array], filename, { type: 'application/pdf' });
+
+    // Upload to Base44 and get public file_url
+    const uploadResponse = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+
+    return Response.json({
+      success: true,
+      file_url: uploadResponse.file_url,
+      filename: filename
     });
 
   } catch (error) {
