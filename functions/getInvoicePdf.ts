@@ -48,8 +48,9 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
+    const isAuthorized = user && (user.role === 'admin' || user.extended_role === 'manager');
+    if (!isAuthorized) {
+      return Response.json({ error: 'Unauthorized - Admin or Manager access required' }, { status: 403 });
     }
 
     const { xero_invoice_id } = await req.json();
