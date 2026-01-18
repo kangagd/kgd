@@ -34,9 +34,20 @@ export default function CreateProjectFromEmailModal({ open, onClose, thread, ema
     setError(null);
     
     try {
+      // Fetch messages if we don't have one
+      let messageId = emailMessage?.id;
+      if (!messageId) {
+        const messages = await base44.entities.EmailMessage.filter({ thread_id: thread.id });
+        if (messages.length === 0) {
+          throw new Error('No messages found in this thread');
+        }
+        // Use the most recent message
+        messageId = messages[messages.length - 1].id;
+      }
+
       const response = await base44.functions.invoke('createProjectFromEmail', {
         email_thread_id: thread.id,
-        email_message_id: emailMessage?.id || thread.id,
+        email_message_id: messageId,
       });
 
       if (response.data?.error) throw new Error(response.data.error);
