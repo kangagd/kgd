@@ -649,6 +649,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         data: {
           project_id: project.id,
           project_name: project.title,
+          project_number: project.project_number,
           customer_id: project.customer_id,
           customer_name: project.customer_name,
           customer_phone: project.customer_phone,
@@ -669,8 +670,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           additional_info: project.description || "",
           notes: project.notes || "",
           image_urls: project.image_urls || [],
-          quote_url: project.quote_url || null,
-          invoice_url: project.invoice_url || null
+          other_documents: project.other_documents || [],
         }
       });
       

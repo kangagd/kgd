@@ -305,8 +305,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       additional_info: project.description || "",
       measurements: null,
       image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
-      quote_url: project.quote_url || "",
-      invoice_url: project.invoice_url || "",
+      other_documents: Array.isArray(project.other_documents) ? [...project.other_documents] : [],
       scheduled_visits: [],
       });
       }, [preselectedProjectId, projectIdFromUrl, projects, job]);
