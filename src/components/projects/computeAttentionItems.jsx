@@ -96,20 +96,26 @@ export function computeAttentionItems({
   const now = new Date();
 
   // RULE 0 — Client not confirmed but job scheduled within 24 hours (CRITICAL, Ops)
-  if (!project.client_confirmed) {
+  // Skip this rule for logistics jobs (they don't require client confirmation)
+  if (!project.client_confirmed && project.project_type !== 'Logistics') {
     const upcomingJobs = jobs.filter(job => {
       if (!job.scheduled_date || job.status === 'Completed' || job.status === 'Cancelled') {
         return false;
       }
-      
+
       // Skip if this job's visit has client_confirmed_at set
       if (job.client_confirmed_at) {
         return false;
       }
-      
+
+      // Skip logistics jobs (they don't require confirmation)
+      if (job.is_logistics_job) {
+        return false;
+      }
+
       const scheduledDateTime = new Date(job.scheduled_date);
       const hoursUntil = (scheduledDateTime - now) / (1000 * 60 * 60);
-      
+
       return hoursUntil >= 0 && hoursUntil <= 24;
     });
 
@@ -117,9 +123,9 @@ export function computeAttentionItems({
       const earliestJob = upcomingJobs.sort((a, b) => 
         new Date(a.scheduled_date) - new Date(b.scheduled_date)
       )[0];
-      
+
       const hoursUntil = Math.round((new Date(earliestJob.scheduled_date) - now) / (1000 * 60 * 60));
-      
+
       items.push({
         id: 'CLIENT_NOT_CONFIRMED_UPCOMING_JOB',
         reasonCode: 'CLIENT_NOT_CONFIRMED_UPCOMING_JOB',
