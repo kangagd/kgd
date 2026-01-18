@@ -102,6 +102,23 @@ export default function FinancialsTab({ project, onUpdate }) {
       setUnlinkingInvoice(null);
     }
   };
+
+  const handleDownloadInvoice = async (invoice) => {
+    try {
+      const response = await base44.functions.invoke('getInvoicePdf', { 
+        xero_invoice_id: invoice.xero_invoice_id 
+      });
+      
+      if (response.data?.file_url) {
+        window.open(response.data.file_url, '_blank');
+      } else {
+        toast.error('Failed to download invoice');
+      }
+    } catch (error) {
+      console.error('Failed to download invoice:', error);
+      toast.error('Failed to download invoice');
+    }
+  };
   const [newPayment, setNewPayment] = useState({
     payment_name: "",
     payment_status: "Pending",
