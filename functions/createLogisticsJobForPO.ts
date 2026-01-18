@@ -168,21 +168,22 @@ Deno.serve(async (req) => {
             }
 
             // No Part exists for this line - create one
-            const newPart = await base44.asServiceRole.entities.Part.create({
-                project_id: po.project_id || null,
-                item_name: line.item_name || line.description || 'Item',
-                category: "Other",
-                quantity_required: line.qty_ordered || 1,
-                status: "on_order",
-                location: "supplier",
-                purchase_order_id: po.id,
-                supplier_id: po.supplier_id,
-                supplier_name: po.supplier_name,
-                po_number: po.po_reference,
-                order_reference: po.po_reference,
-                order_date: po.order_date,
-                eta: po.expected_date,
-            });
+             const newPart = await base44.asServiceRole.entities.Part.create({
+                 project_id: po.project_id || null,
+                 item_name: line.item_name || line.description || 'Item',
+                 category: "Other",
+                 quantity_required: line.qty_ordered || 1,
+                 status: "on_order",
+                 location: "at_supplier",
+                 primary_purchase_order_id: po.id,
+                 purchase_order_ids: [po.id],
+                 supplier_id: po.supplier_id,
+                 supplier_name: po.supplier_name,
+                 po_number: po.po_reference,
+                 order_reference: po.po_reference,
+                 order_date: po.order_date,
+                 eta: po.expected_date,
+             });
             allParts.push(newPart);
 
             // Update the PO line with the new part_id
