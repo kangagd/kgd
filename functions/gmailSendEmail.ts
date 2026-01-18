@@ -568,7 +568,10 @@ Deno.serve(async (req) => {
       success: true,
       gmailMessageId: result.id,
       gmailThreadId: result.threadId,
+      email_thread_id: resolvedThreadId,
+      email_message_id: emailMessageId,
       baseThreadId: resolvedThreadId,
+      project_id,
       labelIds: result.labelIds,
       attachment_persist: attachmentPersistResult
     });
