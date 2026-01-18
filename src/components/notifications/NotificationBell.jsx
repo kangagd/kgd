@@ -85,7 +85,7 @@ function NotificationItem({ notification, onClose, onMarkRead }) {
     }
 
     if (notification.related_entity_type && notification.related_entity_id) {
-      const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id);
+      const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id, notification.type);
       if (url) {
         onClose();
         navigate(url);
