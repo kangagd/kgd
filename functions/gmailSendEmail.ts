@@ -435,27 +435,44 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create EmailMessage record for sent email
+    // Create or upsert EmailMessage record for sent email (idempotent by gmail_message_id)
     let emailMessageId = null;
     if (resolvedThreadId) {
       try {
-        const createdMessage = await base44.asServiceRole.entities.EmailMessage.create({
-           thread_id: resolvedThreadId,
-           gmail_message_id: result.id,
-           gmail_thread_id: result.threadId || gmail_thread_id,
-           from_address: from || user.email,
-           to_addresses: to || [],
-           cc_addresses: cc || [],
-           bcc_addresses: bcc || [],
-           subject: subject || '',
-           body_html: canonicalBodyHtml,
-           body_text: canonicalBodyText || canonicalBodyHtml.replace(/<[^>]*>/g, ''),
-           is_outbound: true,
-           sent_at: new Date().toISOString(),
-           performed_by_user_id: user.id,
-           performed_by_user_email: user.email,
-           performed_at: new Date().toISOString()
-         });
+        // Idempotent upsert: try to get existing message by gmail_message_id first
+        const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
+          gmail_message_id: result.id
+        });
+
+        let createdMessage;
+        if (existingMessages.length > 0) {
+          // Message already exists; use it
+          createdMessage = existingMessages[0];
+          console.log(`[gmailSendEmail] Reused existing EmailMessage ${createdMessage.id}`);
+        } else {
+          // Create new message
+          createdMessage = await base44.asServiceRole.entities.EmailMessage.create({
+             thread_id: resolvedThreadId,
+             gmail_message_id: result.id,
+             gmail_thread_id: result.threadId || gmail_thread_id,
+             from_address: from || user.email,
+             to_addresses: to || [],
+             cc_addresses: cc || [],
+             bcc_addresses: bcc || [],
+             subject: subject || '',
+             body_html: canonicalBodyHtml,
+             body_text: canonicalBodyText || canonicalBodyHtml.replace(/<[^>]*>/g, ''),
+             is_outbound: true,
+             sent_at: new Date().toISOString(),
+             performed_by_user_id: user.id,
+             performed_by_user_email: user.email,
+             performed_at: new Date().toISOString(),
+             // Link to project/contract if provided (deterministic linking at send time)
+             ...(project_id && { project_id }),
+             ...(contract_id && { contract_id })
+           });
+          console.log(`[gmailSendEmail] Created new EmailMessage ${createdMessage.id}`);
+        }
         emailMessageId = createdMessage.id;
 
         // Update thread last_message_date + auto-link to Project/Contract if provided (for existing threads)
