@@ -98,14 +98,19 @@ Deno.serve(async (req) => {
 
     // Create notifications for mentioned users (non-blocking)
     if (mentionedEmails.length > 0) {
+      // Map entity type to proper notification format
+      const entityTypeMap = {
+        'job': 'Job',
+        'project': 'Project'
+      };
+
       const notifications = mentionedEmails.map(email => ({
         user_email: email,
-        title: `${user.full_name || user.display_name} mentioned you`,
-        description: message.substring(0, 100),
-        type: 'mention',
-        entity_type: type,
-        entity_id: entityId,
-        related_user_email: user.email,
+        title: `${user.full_name || user.display_name} mentioned you in ${type === 'job' ? 'Job' : 'Project'} chat`,
+        body: message.substring(0, 100),
+        type: 'info',
+        related_entity_type: entityTypeMap[type],
+        related_entity_id: entityId,
         is_read: false
       }));
 
