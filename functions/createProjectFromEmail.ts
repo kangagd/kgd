@@ -251,22 +251,29 @@ Deno.serve(async (req) => {
     const descriptionBullets = `• ${description}`;
 
     // ============================================================================
-    // 6. CREATE PROJECT
+    // 6. CREATE PROJECT (use manageProject for auto project_number)
     // ============================================================================
-    const project = await base44.entities.Project.create({
-      title: projectName,
-      description: descriptionBullets,
-      customer_id: customer.id,
-      customer_name: customer.name,
-      status: 'Lead',
-      project_type: 'Repair', // Default; can be inferred more if needed
-      address_street: extractedAddress?.street,
-      address_suburb: extractedAddress?.suburb,
-      address_postcode: extractedAddress?.postcode,
-      address_full: extractedAddress?.fullAddress,
-      source_email_thread_id: email_thread_id,
-      opened_date: new Date().toISOString().split('T')[0],
+    const createResponse = await base44.functions.invoke('manageProject', {
+      action: 'create',
+      data: {
+        title: projectName,
+        description: descriptionBullets,
+        customer_id: customer.id,
+        customer_name: customer.name,
+        customer_phone: customer.phone,
+        customer_email: customer.email,
+        status: 'Lead',
+        project_type: 'Repair', // Default; can be inferred more if needed
+        address_street: extractedAddress?.street,
+        address_suburb: extractedAddress?.suburb,
+        address_postcode: extractedAddress?.postcode,
+        address_full: extractedAddress?.fullAddress,
+        source_email_thread_id: email_thread_id,
+        opened_date: new Date().toISOString().split('T')[0],
+      }
     });
+    
+    const project = createResponse.data.project;
 
     // ============================================================================
     // 7. LINK EMAIL TO PROJECT (immediate)
