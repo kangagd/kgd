@@ -103,14 +103,16 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
   );
 
   // Filter bookings for this day
-  const dayBookings = bookings.filter(booking => {
-    if (!booking?.start_at) return false;
-    try {
-      return isSameDay(new Date(booking.start_at), currentDate);
-    } catch {
-      return false;
-    }
-  });
+  const dayBookings = React.useMemo(() => {
+    return (bookings || []).filter(booking => {
+      if (!booking?.start_at) return false;
+      try {
+        return isSameDay(new Date(booking.start_at), currentDate);
+      } catch {
+        return false;
+      }
+    });
+  }, [bookings, currentDate]);
 
   // For technicians, filter to only their jobs
   const myJobs = isTechnician 
