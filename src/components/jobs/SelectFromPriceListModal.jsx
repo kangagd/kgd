@@ -18,6 +18,21 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
     enabled: open,
   });
 
+  const { data: inventoryQuantities = [] } = useQuery({
+    queryKey: ['inventoryQuantities'],
+    queryFn: () => base44.entities.InventoryQuantity.list(),
+    enabled: open,
+  });
+
+  // Calculate total stock per item
+  const stockByItemId = {};
+  inventoryQuantities.forEach(iq => {
+    if (!stockByItemId[iq.price_list_item_id]) {
+      stockByItemId[iq.price_list_item_id] = 0;
+    }
+    stockByItemId[iq.price_list_item_id] += (iq.quantity || 0);
+  });
+
   const categories = ["all", "Accessories", "Arms", "Door", "Gate", "Motor", "Posts", "Rails", "Remotes", "Service", "Springs"];
 
   const filteredItems = priceListItems.filter(item => {
@@ -115,9 +130,9 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
                         <div className="text-[14px] font-bold text-[#111827]">
                           ${item.price?.toFixed(2)}
                         </div>
-                        {item.stock_level !== undefined && (
+                        {stockByItemId[item.id] !== undefined && (
                           <div className="text-[11px] text-[#6B7280] mt-0.5">
-                            Stock: {item.stock_level}
+                            Stock: {stockByItemId[item.id] || 0}
                           </div>
                         )}
                       </div>
