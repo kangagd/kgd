@@ -29,6 +29,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Line items are required' }, { status: 400 });
     }
 
+    // Normalize line item fields (handle camelCase, snake_case, capitalized variants)
+    const normalizeLineItem = (item) => {
+      const quantityRaw = item.quantity ?? item.qty ?? item.Quantity ?? 1;
+      const amountRaw = item.amount ?? item.unit_amount ?? item.UnitAmount ?? 0;
+      
+      return {
+        description: item.description ?? item.Description ?? "",
+        quantity: Number(quantityRaw) || 1,
+        amount: Number(amountRaw) || 0,
+        price_list_item_id: item.price_list_item_id ?? item.priceListItemId ?? null,
+        sku: item.sku ?? item.SKU ?? item.ItemCode ?? "",
+        discount_amount: Number(item.discount_amount ?? item.discount ?? item.DiscountAmount ?? 0) || 0,
+        discount_rate: Number(item.discount_rate ?? item.discountRate ?? item.DiscountRate ?? 0) || 0
+      };
+    };
+
+    const normalizedItems = (lineItems || []).map(normalizeLineItem);
+
     // Get job and related data
     const job = await base44.asServiceRole.entities.Job.get(job_id);
     if (!job) {
