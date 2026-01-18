@@ -1847,7 +1847,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
             }}
           />
 
-          <Tabs defaultValue="details" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="w-full justify-start mb-3 overflow-x-auto flex-nowrap">
               <TabsTrigger value="details" className="flex-1">Details</TabsTrigger>
               {!isLogisticsJob && (
