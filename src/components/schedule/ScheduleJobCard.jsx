@@ -110,15 +110,12 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
           {/* Technicians below */}
           {job.assigned_to && job.assigned_to.length > 0 && (
             <div className="flex items-center gap-2 pt-1">
-              <TechnicianAvatarGroup
-                technicians={job.assigned_to.map((email) => {
-                  const normalized = email.toLowerCase();
-                  const tech = techniciansLookup?.[normalized];
-                  return tech || { email, display_name: email.split('@')[0], id: email };
-                })}
-                maxDisplay={3}
-                size="xs"
-              />
+              <div className="text-xs text-[#6B7280] font-medium">
+                Assigned: {job.assigned_to.map(email => {
+                  const tech = techniciansLookup?.[email.toLowerCase()];
+                  return tech?.display_name || email.split('@')[0];
+                }).join(', ')}
+              </div>
             </div>
           )}
         </div>
