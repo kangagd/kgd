@@ -158,6 +158,15 @@ const getAvatarColor = (name) => {
 export default function JobDetails({ job: initialJob, onClose, onStatusChange, onDelete }) {
   const navigate = useNavigate();
   const visitsEnabled = isFeatureEnabled('visits_enabled');
+  const [defaultTab, setDefaultTab] = useState("details");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab && ["details", "visit", "form", "files", "chat", "map", "invoicing"].includes(tab)) {
+      setDefaultTab(tab);
+    }
+  }, []);
   
   const { data: job = initialJob } = useQuery({
     queryKey: ['job', initialJob.id],
