@@ -53,12 +53,15 @@ const entityIcons = {
 };
 
 // Helper to get navigation URL for entity
-const getEntityUrl = (entityType, entityId) => {
+const getEntityUrl = (entityType, entityId, notificationType) => {
+  const isMention = notificationType === 'mention';
+  const chatParam = isMention ? '&tab=chat' : '';
+  
   switch (entityType) {
     case 'Job':
-      return `${createPageUrl("Jobs")}?jobId=${entityId}`;
+      return `${createPageUrl("Jobs")}?jobId=${entityId}${chatParam}`;
     case 'Project':
-      return `${createPageUrl("Projects")}?projectId=${entityId}`;
+      return `${createPageUrl("Projects")}?projectId=${entityId}${chatParam}`;
     case 'Customer':
       return `${createPageUrl("Customers")}?customerId=${entityId}`;
     case 'Email':
