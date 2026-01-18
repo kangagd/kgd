@@ -366,12 +366,13 @@ Deno.serve(async (req) => {
     }
 
     // Resolve or create EmailThread for outbound email
-    let resolvedThreadId = thread_id;
+    let resolvedThreadId = thread_id || email_thread_id;
 
     // ============================================================================
-    // NEW BEHAVIOR: Auto-link outbound emails to Project/Contract when no thread_id
+    // IMMEDIATE LINKING: Link sent emails to Project/Contract at send time
+    // When origin="project", link immediately via deterministic upsert
     // ============================================================================
-    if (!resolvedThreadId && result.threadId && (project_id || contract_id)) {
+    if (result.threadId && (project_id || contract_id)) {
       try {
         // Check for existing EmailThread with same gmail_thread_id
         const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
