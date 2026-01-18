@@ -122,6 +122,9 @@ Deno.serve(async (req) => {
              destination_address: destinationAddress,
              reference_type: 'purchase_order',
              reference_id: po.id,
+             source_location_id: null,
+             destination_location_id: warehouseLocationId,
+             stock_transfer_status: 'not_started',
          };
 
         const job = await base44.asServiceRole.entities.Job.create(jobData);
