@@ -884,6 +884,12 @@ export default function UnifiedEmailComposer({
           linkTarget?.type === "contract"
             ? linkTarget.id
             : thread?.contract_id || undefined,
+
+        // Project-sent email context (for immediate linking at send time)
+        origin: linkTarget?.type === "project" ? "project" : undefined,
+        project_customer_id: linkedProject?.customer_id || undefined,
+        project_address: linkedProject?.address_full || undefined,
+        email_thread_id: thread?.id || null,
       };
 
       // Reply headers
