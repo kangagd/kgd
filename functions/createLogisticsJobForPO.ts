@@ -68,9 +68,21 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Set addresses and job details based on delivery method
-        const warehouseAddress = "866 Bourke Street, Waterloo";
-        let jobTitle, jobAddressFull;
+        // Fetch the warehouse location
+         let warehouseLocation = null;
+         try {
+             const warehouseLocations = await base44.asServiceRole.entities.InventoryLocation.filter({ 
+                 type: 'warehouse',
+                 is_active: true
+             });
+             warehouseLocation = warehouseLocations.length > 0 ? warehouseLocations[0] : null;
+         } catch (err) {
+             console.error('Error fetching warehouse location:', err);
+         }
+
+         const warehouseAddress = warehouseLocation?.address || "866 Bourke Street, Waterloo";
+         const warehouseLocationId = warehouseLocation?.id || null;
+         let jobTitle, jobAddressFull;
         
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
             // Pickup from supplier
