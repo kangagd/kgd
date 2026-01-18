@@ -22,17 +22,35 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 function extractCustomerEmail(emailMessage) {
   if (!emailMessage) return null;
-  return emailMessage.from_address?.toLowerCase() || null;
+  
+  // Handle "Name <email@example.com>" format
+  const fromAddress = emailMessage.from_address || '';
+  const emailMatch = fromAddress.match(/<([^>]+)>/);
+  if (emailMatch) {
+    return emailMatch[1].toLowerCase();
+  }
+  
+  return fromAddress.toLowerCase() || null;
 }
 
 function extractCustomerName(displayName, email) {
-  if (displayName && displayName.trim().length > 0) {
-    return displayName.trim();
+  // Handle "Name <email@example.com>" format in displayName
+  if (displayName) {
+    const nameMatch = displayName.match(/^([^<]+)</);
+    if (nameMatch) {
+      return nameMatch[1].trim();
+    }
+    if (displayName.trim().length > 0 && !displayName.includes('@')) {
+      return displayName.trim();
+    }
   }
+  
+  // Fallback: extract from email
   if (email) {
-    const name = email.split('@')[0];
-    return name.replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const cleanEmail = email.replace(/<|>/g, '').split('@')[0];
+    return cleanEmail.replace(/[._-]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
+  
   return null;
 }
 
