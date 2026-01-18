@@ -258,16 +258,16 @@ export default function NotificationBell({ isMobile = false }) {
         : toast.info;
 
       toastFn(notification.title, {
-        description: notification.body,
-        action: notification.related_entity_type && notification.related_entity_id ? {
-          label: "View",
-          onClick: () => {
-            markReadMutation.mutate({ notificationId: notification.id });
-            const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id);
-            if (url) navigate(url);
-          }
-        } : undefined,
-        duration: 5000
+      description: notification.body,
+      action: notification.related_entity_type && notification.related_entity_id ? {
+        label: "View",
+        onClick: () => {
+          markReadMutation.mutate({ notificationId: notification.id });
+          const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id, notification.type);
+          if (url) navigate(url);
+        }
+      } : undefined,
+      duration: 5000
       });
     });
 
