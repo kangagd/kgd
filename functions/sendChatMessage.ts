@@ -104,23 +104,33 @@ Deno.serve(async (req) => {
         'project': 'Project'
       };
 
-      const notifications = mentionedEmails.map(email => ({
-        user_email: email,
-        title: `${user.full_name || user.display_name} mentioned you in ${type === 'job' ? 'Job' : 'Project'} chat`,
-        body: message.substring(0, 100),
-        type: 'info',
-        related_entity_type: entityTypeMap[type],
-        related_entity_id: entityId,
-        is_read: false
-      }));
+      const notificationPromises = mentionedEmails.map(async email => {
+        try {
+          // Get mentioned user to link user_id if available
+          const mentionedUser = await base44.asServiceRole.entities.User.filter({ email });
+          const userId = mentionedUser?.[0]?.id || null;
 
-      Promise.all(
-        notifications.map(notif =>
-          base44.asServiceRole.entities.Notification.create(notif).catch(err =>
-            console.error('Failed to create notification for', notif.user_email, ':', err)
-          )
-        )
-      ).catch(err => console.error('Notification batch error:', err));
+          const notif = await base44.asServiceRole.entities.Notification.create({
+            user_email: email,
+            user_id: userId,
+            title: `${user.full_name || user.display_name} mentioned you in ${type === 'job' ? 'Job' : 'Project'} chat`,
+            body: message.substring(0, 100),
+            type: 'info',
+            related_entity_type: entityTypeMap[type],
+            related_entity_id: entityId,
+            is_read: false
+          });
+          console.log(`[sendChatMessage] Created notification ${notif.id} for ${email}, entity=${entityTypeMap[type]}/${entityId}`);
+          return notif;
+        } catch (err) {
+          console.error('Failed to create notification for', email, ':', err);
+          return null;
+        }
+      });
+
+      Promise.all(notificationPromises).catch(err => 
+        console.error('Notification batch error:', err)
+      );
     }
 
     return Response.json({
