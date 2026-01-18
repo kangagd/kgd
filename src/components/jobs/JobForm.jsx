@@ -841,31 +841,75 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
             </div>
 
-            {/* Supplier field for logistics jobs, Customer for normal jobs */}
+            {/* Supplier & Locations for logistics jobs, Customer for normal jobs */}
             {isLogisticsJob ? (
-              <div className="space-y-2">
-                <Label htmlFor="supplier_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Supplier *</Label>
-                <Select 
-                  value={formData.supplier_id || formData.customer_id} 
-                  onValueChange={handleSupplierChange} 
-                  required
-                  disabled={!!formData.project_id}
-                >
-                  <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formData.project_id && (
-                  <p className="text-[12px] text-slate-500 leading-[1.35]">Supplier from project</p>
-                )}
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="supplier_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Supplier *</Label>
+                  <Select 
+                    value={formData.supplier_id || formData.customer_id} 
+                    onValueChange={handleSupplierChange} 
+                    required
+                    disabled={!!formData.project_id}
+                  >
+                    <SelectTrigger className="flex-1 border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 transition-all">
+                      <SelectValue placeholder="Select supplier" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map((supplier) => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.project_id && (
+                    <p className="text-[12px] text-slate-500 leading-[1.35]">Supplier from project</p>
+                  )}
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                  <div className="space-y-2">
+                    <Label htmlFor="source_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">From Location (Source) *</Label>
+                    <Select 
+                      value={formData.source_location_id || ""} 
+                      onValueChange={(val) => setFormData({ ...formData, source_location_id: val })}
+                      required
+                    >
+                      <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
+                        <SelectValue placeholder="Select warehouse or supplier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allLocations.filter(loc => loc.type === 'warehouse').map((loc) => (
+                          <SelectItem key={loc.id} value={loc.id}>
+                            {loc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="destination_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">To Location (Destination) *</Label>
+                    <Select 
+                      value={formData.destination_location_id || ""} 
+                      onValueChange={(val) => setFormData({ ...formData, destination_location_id: val })}
+                      required
+                    >
+                      <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
+                        <SelectValue placeholder="Select vehicle or destination" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allLocations.filter(loc => loc.type === 'vehicle').map((loc) => (
+                          <SelectItem key={loc.id} value={loc.id}>
+                            {loc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
             ) : (
               <div className="space-y-2">
                 <Label htmlFor="customer_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">Customer *</Label>
