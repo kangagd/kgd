@@ -119,9 +119,8 @@ export default function DraggableJobCard({
                   technicians={job.assigned_to.map((email) => {
                     const normalized = email.toLowerCase();
                     const tech = techniciansLookup?.[normalized];
-                    // If technician not found in lookup, return null to skip render
-                    return tech || null;
-                  }).filter(Boolean)}
+                    return tech || { email, display_name: email.split('@')[0], id: email };
+                  })}
                   maxDisplay={3}
                   size="xs"
                 />
