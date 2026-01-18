@@ -102,6 +102,11 @@ export function computeAttentionItems({
         return false;
       }
       
+      // Skip if this job's visit has client_confirmed_at set
+      if (job.client_confirmed_at) {
+        return false;
+      }
+      
       const scheduledDateTime = new Date(job.scheduled_date);
       const hoursUntil = (scheduledDateTime - now) / (1000 * 60 * 60);
       
