@@ -11,6 +11,31 @@ export function decodeEmailText(input) {
 
   let text = String(input);
 
+  // HTML entity decodings (common special characters)
+  const entityReplacements = [
+    ['&rsquo;', "'"],     // right single quotation mark
+    ['&lsquo;', "'"],     // left single quotation mark
+    ['&rdquo;', '"'],     // right double quotation mark
+    ['&ldquo;', '"'],     // left double quotation mark
+    ['&ndash;', '–'],     // en dash
+    ['&mdash;', '—'],     // em dash
+    ['&hellip;', '…'],    // ellipsis
+    ['&bull;', '•'],      // bullet
+    ['&nbsp;', ' '],      // non-breaking space
+    ['&raquo;', '»'],     // right-pointing double angle quotation mark
+    ['&laquo;', '«'],     // left-pointing double angle quotation mark
+    ['&rang;', '›'],      // single right-pointing angle quotation mark
+    ['&lang;', '‹'],      // single left-pointing angle quotation mark
+    ['&trade;', '™'],     // trade mark
+    ['&reg;', '®'],       // registered sign
+    ['&copy;', '©'],      // copyright sign
+    ['&euro;', '€'],      // euro sign
+  ];
+
+  for (const [entity, char] of entityReplacements) {
+    text = text.split(entity).join(char);
+  }
+
   // Most common Gmail/UTF-8 mojibake sequences - prioritize longer sequences first
   const replacements = [
     // Em/en dashes (most common - matches the screenshot issue)
