@@ -146,19 +146,20 @@ export default function CreateInvoiceModal({
   };
 
   const handleConfirm = () => {
-    const validItems = lineItems.filter(item => item.description && parseFloat(item.amount) > 0);
-    
-    onConfirm({ 
-      lineItems: validItems.map(item => ({
-        description: item.description,
-        amount: parseFloat(item.amount),
-        discount: parseFloat(item.discount) || 0,
-        quantity: parseFloat(item.quantity) || 1,
-        sku: item.sku || "",
-        isCustom: item.isCustom || false
-      })),
-      total: calculateTotal()
-    });
+   const validItems = lineItems.filter(item => item.description && parseFloat(item.amount) > 0);
+
+   onConfirm({ 
+     lineItems: validItems.map(item => ({
+       description: item.description,
+       amount: parseFloat(item.amount),
+       discount_amount: parseFloat(item.discount) || 0,
+       quantity: parseFloat(item.quantity) || 1,
+       sku: item.sku || "",
+       price_list_item_id: item.priceListItemId || null,
+       isCustom: item.isCustom || false
+     })),
+     total: calculateTotal()
+   });
   };
 
   const handleClose = () => {
