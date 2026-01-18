@@ -122,8 +122,8 @@ Deno.serve(async (req) => {
              destination_address: destinationAddress,
              reference_type: 'purchase_order',
              reference_id: po.id,
-             source_location_id: null,
-             destination_location_id: warehouseLocationId,
+             source_location_id: null, // Supplier is not an InventoryLocation; origin_address captures supplier location
+             destination_location_id: warehouseLocationId, // Warehouse InventoryLocation
              stock_transfer_status: 'not_started',
          };
 
