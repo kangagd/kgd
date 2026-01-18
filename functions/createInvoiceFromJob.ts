@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     const dueDate = new Date(Date.now() + (xeroSettings.payment_terms_days || 7) * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     // Fetch price list items for SKU/ItemCode mapping
-    const itemIds = lineItems.filter(item => item.price_list_item_id).map(item => item.price_list_item_id);
+    const itemIds = normalizedItems.filter(item => item.price_list_item_id).map(item => item.price_list_item_id);
     const priceListItems = itemIds.length > 0 
       ? await base44.asServiceRole.entities.PriceListItem.filter({ id: { $in: itemIds } })
       : [];
@@ -120,23 +120,26 @@ Deno.serve(async (req) => {
     });
 
     // Convert line items to Xero format (with discounts applied to line items)
-    const xeroLineItems = lineItems.map((item) => {
+    const xeroLineItems = normalizedItems.map((n) => {
       const lineItem = {
-        Description: item.description,
-        Quantity: item.quantity || 1,
-        UnitAmount: item.amount,
+        Description: n.description,
+        Quantity: n.quantity,
+        UnitAmount: n.amount,
         AccountCode: xeroSettings.default_account_code,
         TaxType: xeroSettings.default_tax_type
       };
 
-      // Link to Xero item by SKU if available
-      if (item.price_list_item_id && skuMap[item.price_list_item_id]) {
-        lineItem.ItemCode = skuMap[item.price_list_item_id];
+      // Link to Xero item by SKU: prefer price list, fallback to manual SKU (truncate to 30 chars)
+      const itemCode = skuMap[n.price_list_item_id] || n.sku || "";
+      if (itemCode) {
+        lineItem.ItemCode = String(itemCode).substring(0, 30);
       }
 
-      // Add discount to line item if applicable
-      if (item.discount && item.discount > 0) {
-        lineItem.DiscountAmount = item.discount;
+      // Discount mapping (guardrailed - never set both)
+      if (n.discount_rate > 0) {
+        lineItem.DiscountRate = n.discount_rate;
+      } else if (n.discount_amount > 0) {
+        lineItem.DiscountAmount = n.discount_amount;
       }
 
       return lineItem;
