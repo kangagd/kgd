@@ -47,21 +47,28 @@ Deno.serve(async (req) => {
 
     const oldProjectId = quote.project_id;
 
-    // STEP 1: If linked to a different project, unlink from old project
-    if (oldProjectId && oldProjectId !== project_id) {
-      const oldProject = await base44.asServiceRole.entities.Project.get(oldProjectId);
-      
-      if (oldProject) {
-        const updates = {};
+    // STEP 1: If linked to a different project, unlink from old project (STRING normalization)
+    if (oldProjectId && String(oldProjectId) !== String(project_id)) {
+      try {
+        const oldProject = await base44.asServiceRole.entities.Project.get(oldProjectId);
         
-        // Remove from quote_ids array
-        if (oldProject.quote_ids && oldProject.quote_ids.includes(quoteId)) {
-          updates.quote_ids = oldProject.quote_ids.filter(id => id !== quoteId);
+        if (oldProject) {
+          // Normalize to string array for comparison
+          const currentQuoteIds = (oldProject.quote_ids || []).map(String);
+          const quoteIdStr = String(quoteId);
+          
+          // Only update if quote is actually in the array
+          if (currentQuoteIds.includes(quoteIdStr)) {
+            const updatedQuoteIds = currentQuoteIds.filter(id => String(id) !== quoteIdStr);
+            await base44.asServiceRole.entities.Project.update(oldProjectId, {
+              quote_ids: updatedQuoteIds
+            });
+            console.log('[linkQuote] Unlinked from old project:', oldProjectId);
+          }
         }
-        
-        if (Object.keys(updates).length > 0) {
-          await base44.asServiceRole.entities.Project.update(oldProjectId, updates);
-        }
+      } catch (e) {
+        console.error('[linkQuote] Error unlinking from old project:', e);
+        // Continue anyway - link to new project
       }
     }
 
@@ -73,14 +80,15 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.entities.Quote.update(quoteId, quoteUpdates);
 
-    // STEP 3: Add to project's quote_ids array and optionally set as primary
+    // STEP 3: Add to project's quote_ids array (STRING ID normalization)
     if (project_id) {
       const project = await base44.asServiceRole.entities.Project.get(project_id);
       
-      const currentQuoteIds = project.quote_ids || [];
+      // Normalize to string array for comparison
+      const currentQuoteIds = (project.quote_ids || []).map(String);
       const quoteIdStr = String(quoteId);
       
-      // Only add if not already in the array
+      // Only add if not already in the array (idempotent)
       const updatedQuoteIds = currentQuoteIds.includes(quoteIdStr)
         ? currentQuoteIds
         : [...currentQuoteIds, quoteIdStr];
@@ -91,7 +99,7 @@ Deno.serve(async (req) => {
       
       console.log('[linkQuote] Updating project array:', { 
         project_id, 
-        before: currentQuoteIds, 
+        before: project.quote_ids, 
         after: updatedQuoteIds 
       });
       

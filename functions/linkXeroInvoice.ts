@@ -1,17 +1,39 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { normalizeParams } from './shared/parameterNormalizer.js';
+
+/**
+ * Parameter normalization helper (inlined to avoid deployment issues)
+ */
+function normalizeParams(params) {
+  if (!params) return {};
+  
+  return {
+    project_id: params.project_id || params.projectId || null,
+    job_id: params.job_id || params.jobId || null,
+    quote_id: params.quote_id || params.quoteId || null,
+    invoice_id: params.invoice_id || params.invoiceId || null,
+    customer_id: params.customer_id || params.customerId || null,
+    organisation_id: params.organisation_id || params.organisationId || null,
+    pandadoc_document_id: params.pandadoc_document_id || params.pandadocDocumentId || null,
+    xero_invoice_id: params.xero_invoice_id || params.xeroInvoiceId || null,
+    template_id: params.template_id || params.templateId || null,
+    vehicle_id: params.vehicle_id || params.vehicleId || null,
+    supplier_id: params.supplier_id || params.supplierId || null,
+    purchase_order_id: params.purchase_order_id || params.purchaseOrderId || null,
+    ...params
+  };
+}
 
 /**
  * Links a Xero invoice to a project
  * 
  * CRITICAL: Properly handles unlinking from previous project to prevent stale references
+ * ALL IDs stored as STRINGS ONLY in arrays
  * 
  * Flow:
- * 1. Find the XeroInvoice entity (by xero_invoice_id or entity id)
- * 2. If already linked to a different project, unlink it (remove from array + clear primary)
+ * 1. Find or create the XeroInvoice entity (by xero_invoice_id or entity id)
+ * 2. If already linked to a different project, unlink it (remove from array)
  * 3. Update XeroInvoice.project_id to new project
- * 4. Add invoice to new project's xero_invoices array
- * 5. Optionally set as primary invoice
+ * 4. Add invoice to new project's xero_invoices array (string IDs only)
  */
 
 Deno.serve(async (req) => {
@@ -24,8 +46,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const normalized = normalizeParams(body);
-    const { project_id, xero_invoice_id } = normalized;
+    const { project_id, xero_invoice_id } = normalizeParams(body);
     const invoiceEntityId = body.invoiceEntityId || body.invoice_entity_id;
     const invoiceSnapshot = body.invoice_snapshot || body.invoice;
     

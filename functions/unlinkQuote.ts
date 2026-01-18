@@ -37,45 +37,50 @@ Deno.serve(async (req) => {
       job_id: null
     });
 
-    // STEP 2: Remove from project's quote_ids array and clear primary if needed
+    // STEP 2: Remove from project's quote_ids array (STRING normalization)
     if (projectId) {
       const project = await base44.asServiceRole.entities.Project.get(projectId);
       
       if (project) {
-        const updates = {};
+        // Normalize to string array for comparison
+        const currentQuoteIds = (project.quote_ids || []).map(String);
+        const quoteIdStr = String(quoteId);
         
-        // Remove from quote_ids array
-        if (project.quote_ids && project.quote_ids.includes(quoteId)) {
-          updates.quote_ids = project.quote_ids.filter(id => id !== quoteId);
-        }
-        
-        // Clear primary if this was the primary quote
-        if (project.primary_quote_id === quoteId) {
-          updates.primary_quote_id = null;
-        }
-        
-        if (Object.keys(updates).length > 0) {
+        // Only update if quote is actually in the array
+        if (currentQuoteIds.includes(quoteIdStr)) {
+          const updates = {
+            quote_ids: currentQuoteIds.filter(id => String(id) !== quoteIdStr)
+          };
+          
+          // Clear primary if this was the primary quote
+          if (project.primary_quote_id && String(project.primary_quote_id) === quoteIdStr) {
+            updates.primary_quote_id = null;
+          }
+          
           await base44.asServiceRole.entities.Project.update(projectId, updates);
         }
       }
     }
 
-    // STEP 3: Scan for any other projects that might reference this quote (ghost links)
+    // STEP 3: Scan for any other projects that might reference this quote (STRING normalization)
     const allProjects = await base44.asServiceRole.entities.Project.filter({});
     
     for (const proj of allProjects) {
       if (proj.id !== projectId) {
+        const currentQuoteIds = (proj.quote_ids || []).map(String);
+        const quoteIdStr = String(quoteId);
+        
         let needsUpdate = false;
         const updates = {};
         
         // Check quote_ids array
-        if (proj.quote_ids && proj.quote_ids.includes(quoteId)) {
-          updates.quote_ids = proj.quote_ids.filter(id => id !== quoteId);
+        if (currentQuoteIds.includes(quoteIdStr)) {
+          updates.quote_ids = currentQuoteIds.filter(id => String(id) !== quoteIdStr);
           needsUpdate = true;
         }
         
         // Check primary_quote_id
-        if (proj.primary_quote_id === quoteId) {
+        if (proj.primary_quote_id && String(proj.primary_quote_id) === quoteIdStr) {
           updates.primary_quote_id = null;
           needsUpdate = true;
         }

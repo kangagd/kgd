@@ -1,5 +1,4 @@
 import { createClientFromRequest } from './shared/sdk.js';
-import { normalizeParams } from './shared/parameterNormalizer.js';
 
 Deno.serve(async (req) => {
   try {
@@ -25,6 +24,7 @@ Deno.serve(async (req) => {
 
     const projectId = invoice.project_id;
 
+    // Clear invoice's project reference
     await base44.asServiceRole.entities.XeroInvoice.update(invoiceEntityId, {
       project_id: null,
       job_id: null,
@@ -32,47 +32,45 @@ Deno.serve(async (req) => {
       customer_name: null
     });
 
+    // Remove from linked project (STRING ID normalization)
     if (projectId) {
       const project = await base44.asServiceRole.entities.Project.get(projectId);
       
       if (project) {
-        const updates = {};
+        // Normalize to string array for comparison
+        const currentInvoices = (project.xero_invoices || []).map(String);
+        const invoiceIdStr = String(invoiceEntityId);
         
-        if (project.xero_invoices && project.xero_invoices.includes(invoiceEntityId)) {
-          updates.xero_invoices = project.xero_invoices.filter(id => id !== invoiceEntityId);
+        // Only update if invoice is actually in the array
+        if (currentInvoices.includes(invoiceIdStr)) {
+          const updates = {
+            xero_invoices: currentInvoices.filter(id => String(id) !== invoiceIdStr)
+          };
           
+          // Clear payment URL if no invoices left
           if (updates.xero_invoices.length === 0) {
             updates.xero_payment_url = null;
           }
-        }
-        
-        if (project.primary_xero_invoice_id === invoiceEntityId) {
-          updates.primary_xero_invoice_id = updates.xero_invoices && updates.xero_invoices.length > 0 
-            ? updates.xero_invoices[0] 
-            : null;
-        }
-        
-        if (Object.keys(updates).length > 0) {
+          
           await base44.asServiceRole.entities.Project.update(projectId, updates);
         }
       }
     }
     
-    // Scan for and fix any ghost links in other projects
+    // Scan for and fix any ghost links in other projects (STRING normalization)
     const allProjects = await base44.asServiceRole.entities.Project.filter({
       xero_invoices: { $in: [invoiceEntityId] }
     });
     
     for (const proj of allProjects) {
       if (proj.id !== projectId) {
-        const cleanedInvoices = (proj.xero_invoices || []).filter(id => id !== invoiceEntityId);
-        const updates = { xero_invoices: cleanedInvoices };
+        const currentInvoices = (proj.xero_invoices || []).map(String);
+        const invoiceIdStr = String(invoiceEntityId);
+        const cleanedInvoices = currentInvoices.filter(id => String(id) !== invoiceIdStr);
         
-        if (proj.primary_xero_invoice_id === invoiceEntityId) {
-          updates.primary_xero_invoice_id = cleanedInvoices.length > 0 ? cleanedInvoices[0] : null;
-        }
-        
-        await base44.asServiceRole.entities.Project.update(proj.id, updates);
+        await base44.asServiceRole.entities.Project.update(proj.id, {
+          xero_invoices: cleanedInvoices
+        });
       }
     }
 
