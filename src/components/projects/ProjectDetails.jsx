@@ -1899,7 +1899,22 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
             </Card>
 
             {/* Row 3: Unified Visits Timeline */}
-            <VisitsTimeline visits={jobs} projectId={project.id} />
+            <Card className="border border-[#E5E7EB] shadow-sm">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#E5E7EB]">
+                <h3 className="text-[16px] font-semibold text-[#111827]">
+                  Visits {jobs.length > 0 && <span className="text-[#6B7280] font-normal ml-1">({jobs.length})</span>}
+                </h3>
+                {canCreateJobs && (
+                  <AddIconButton
+                    onClick={() => navigate(createPageUrl("Jobs") + `?action=create&projectId=${project.id}`)}
+                    title="Add Visit"
+                  />
+                )}
+              </div>
+              <div className="p-4">
+                <VisitsTimeline visits={jobs} projectId={project.id} />
+              </div>
+            </Card>
 
             {/* Row 5: Collapsible Project Info */}
             <Collapsible open={projectInfoOpen} onOpenChange={setProjectInfoOpen}>
