@@ -688,6 +688,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       }
   };
 
+  // Helper to invalidate attention items when visits are confirmed
+  const handleVisitConfirmed = async (jobId) => {
+    // Invalidate project data to recalculate attention items immediately
+    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+    queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+    toast.success('Visit confirmed - attention items updated');
+  };
+
   const handleJobClick = (jobId) => {
     navigate(createPageUrl("Jobs") + `?jobId=${jobId}`);
   };
