@@ -236,8 +236,21 @@ Deno.serve(async (req) => {
       references,
       attachments,
       project_id,
-      contract_id
+      contract_id,
+      // Project-sent email context
+      origin,
+      project_customer_id,
+      project_address,
+      email_thread_id
     } = await req.json();
+
+    // GUARDRAIL: If origin="project", project_id is required
+    if (origin === "project" && !project_id) {
+      return Response.json(
+        { error: 'project_id is required when origin="project"' },
+        { status: 400 }
+      );
+    }
 
     // Normalize body fields: use canonical body_html/body_text with backwards-compat
     const canonicalBodyHtml = body_html ?? htmlBody ?? '';
