@@ -29,6 +29,30 @@ Deno.serve(async (req) => {
                 projectData.project_number = lastProjectNumber + 1;
             }
 
+            // Snapshot tags for historical reporting
+            if (projectData.project_tag_ids && Array.isArray(projectData.project_tag_ids) && projectData.project_tag_ids.length > 0) {
+                try {
+                    const tags = await Promise.all(
+                        projectData.project_tag_ids.map(tagId => 
+                            base44.asServiceRole.entities.ProjectTagDefinition.get(tagId)
+                        )
+                    );
+                    projectData.project_tags_snapshot = tags
+                        .filter(tag => tag) // Filter out nulls
+                        .map(tag => ({
+                            id: tag.id,
+                            name: tag.name,
+                            slug: tag.slug,
+                            color: tag.color
+                        }));
+                } catch (e) {
+                    console.error('Error snapshotting tags:', e);
+                    projectData.project_tags_snapshot = [];
+                }
+            } else {
+                projectData.project_tags_snapshot = [];
+            }
+
             // Auto-link contract logic
             if (projectData.customer_id) {
                 try {
@@ -81,6 +105,32 @@ Deno.serve(async (req) => {
             
             // PERMISSION CHECK: Validate restricted fields not being updated
             validateUpdate(user, 'Project', data);
+            
+            // Snapshot tags for historical reporting
+            if (data.project_tag_ids !== undefined) {
+                if (Array.isArray(data.project_tag_ids) && data.project_tag_ids.length > 0) {
+                    try {
+                        const tags = await Promise.all(
+                            data.project_tag_ids.map(tagId => 
+                                base44.asServiceRole.entities.ProjectTagDefinition.get(tagId)
+                            )
+                        );
+                        data.project_tags_snapshot = tags
+                            .filter(tag => tag) // Filter out nulls
+                            .map(tag => ({
+                                id: tag.id,
+                                name: tag.name,
+                                slug: tag.slug,
+                                color: tag.color
+                            }));
+                    } catch (e) {
+                        console.error('Error snapshotting tags:', e);
+                        data.project_tags_snapshot = [];
+                    }
+                } else {
+                    data.project_tags_snapshot = [];
+                }
+            }
             
             const oldProjectNumber = oldProject?.project_number;
             const newProjectNumber = data.project_number;
