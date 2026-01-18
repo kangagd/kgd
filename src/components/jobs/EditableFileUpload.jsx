@@ -173,14 +173,14 @@ export default function EditableFileUpload({
           )}
         </div>
         <input
-           ref={fileInputRef}
-           type="file"
-           accept={accept}
-           multiple={multiple}
-           capture={accept.includes('image') ? "environment" : undefined}
-           className="hidden"
-           onChange={handleFileSelect}
-         />
+          ref={fileInputRef}
+          type="file"
+          accept={accept}
+          multiple={multiple}
+          capture={accept.includes('image') || accept.includes('video') ? "environment" : undefined}
+          className="hidden"
+          onChange={handleFileSelect}
+        />
       </div>
 
       <div
@@ -229,6 +229,8 @@ export default function EditableFileUpload({
                         src={url}
                         className="w-full h-full object-cover rounded"
                         controls={!isSelectionMode}
+                        preload="metadata"
+                        playsInline
                       />
                       <div className="absolute top-2 left-2 bg-black/70 rounded px-2 py-1">
                         <Video className="w-3 h-3 text-white" />
