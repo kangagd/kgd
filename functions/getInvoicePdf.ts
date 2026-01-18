@@ -1,5 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
+// Helper to convert ArrayBuffer to Uint8Array for File creation
+const arrayBufferToUint8Array = (buffer) => new Uint8Array(buffer);
+
 async function refreshAndGetConnection(base44) {
   const connections = await base44.asServiceRole.entities.XeroConnection.list();
   if (connections.length === 0) throw new Error('No Xero connection found');
