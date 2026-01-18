@@ -25,6 +25,7 @@ import { handleEnterToNextField } from "../common/formNavigator";
 import MergeCustomersModal from "../customers/MergeCustomersModal";
 import { toast } from "sonner";
 import GlobalCustomerOrgSearch from "../common/GlobalCustomerOrgSearch";
+import ProjectTagsSelector from "./ProjectTagsSelector";
 
 export default function ProjectForm({ project, initialData, onSubmit, onCancel, isSubmitting }) {
   const navigate = useNavigate();
@@ -59,7 +60,8 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
     invoice_url: "",
     doors: [],
     contract_id: "",
-    opened_date: ""
+    opened_date: "",
+    project_tag_ids: []
   });
 
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
@@ -586,6 +588,14 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tags</Label>
+              <ProjectTagsSelector
+                value={formData.project_tag_ids || []}
+                onChange={(tagIds) => setFormData({ ...formData, project_tag_ids: tagIds })}
+              />
             </div>
 
             {isInstallType && (
