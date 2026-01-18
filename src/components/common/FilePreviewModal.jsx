@@ -278,6 +278,8 @@ export default function FilePreviewModal({
                 src={currentUrl}
                 controls
                 autoPlay
+                playsInline
+                preload="auto"
                 className="max-w-full max-h-[95vh] object-contain rounded-lg"
               />
             ) : isPDF ? (
