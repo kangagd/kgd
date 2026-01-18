@@ -77,6 +77,17 @@ export default function VisitCard({ visit, index, isLatest }) {
                     <span className="text-xs truncate">{technicianNames[0]}</span>
                   </div>
                 )}
+
+                {/* Confirmation Status Badge */}
+                {showConfirmationStatus && (
+                  <Badge variant={isConfirmed ? "default" : "outline"} className={`text-xs flex-shrink-0 ${
+                    isConfirmed 
+                      ? 'bg-green-100 text-green-800 border-green-200' 
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                  }`}>
+                    {isConfirmed ? 'Confirmed' : 'Unconfirmed'}
+                  </Badge>
+                )}
               </div>
 
               {/* Indicators */}
