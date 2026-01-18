@@ -120,10 +120,12 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
             ) : (
               <div className="space-y-2 pr-2">
                 {filteredItems.map(item => (
-                  <div
+                  <button
                     key={item.id}
-                    onClick={() => handleSelect(item)}
-                    className="border border-[#E5E7EB] rounded-lg p-3 hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer"
+                    onClick={() => handleItemClick(item)}
+                    className={`w-full border border-[#E5E7EB] rounded-lg p-3 hover:bg-[#F9FAFB] hover:border-[#FAE008] transition-all cursor-pointer text-left ${
+                      selectedItem?.id === item.id ? 'bg-[#FAE008]/10 border-[#FAE008] border-2' : ''
+                    }`}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
@@ -155,7 +157,7 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
