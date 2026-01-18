@@ -260,7 +260,7 @@ export default function NotificationBell({ isMobile = false }) {
         label: "View",
         onClick: () => {
           markReadMutation.mutate({ notificationId: notification.id });
-          const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id, notification.type);
+          const url = getEntityUrl(notification.related_entity_type, notification.related_entity_id);
           if (url) navigate(url);
         }
       } : undefined,
