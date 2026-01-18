@@ -130,9 +130,14 @@ export default function ProjectEmailSection({ project, onThreadLinked }) {
     setSelectedMessage(null);
     setEditingDraft(null);
     
-    // Invalidate and refetch to show updated threads/messages
+    // Immediately invalidate and refetch project email queries
+    // This shows the new sent email in project activity within seconds
     await queryClient.invalidateQueries({ queryKey: ['projectEmailThreads', project.id] });
+    await queryClient.invalidateQueries({ queryKey: ['projectEmailMessages', project.id] });
+    await queryClient.invalidateQueries({ queryKey: ['projectActivity', project.id] });
     await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
+    
+    // Refetch to show updated threads/messages immediately
     await queryClient.refetchQueries({ queryKey: ['projectEmailThreads', project.id] });
     await refetchMessages();
     await refetchDrafts();
