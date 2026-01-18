@@ -192,12 +192,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Try to match existing customer
+    // Search for existing customer by email (case-insensitive)
     let customer = null;
-    const existingCustomers = await base44.entities.Customer.filter({});
-    customer = existingCustomers.find(
-      c => c.email?.toLowerCase() === customerEmail.toLowerCase()
-    );
+    const existingCustomers = await base44.entities.Customer.filter({
+      email: customerEmail
+    });
+    
+    if (existingCustomers.length > 0) {
+      customer = existingCustomers[0];
+    }
 
     // Create new customer if not found
     if (!customer) {
