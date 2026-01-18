@@ -64,7 +64,7 @@ export default function VisitRequirementsPanel({
         // Save to Visit.visit_covers_items
         const response = await base44.functions.invoke('manageVisit', {
           action: 'update',
-          id: activeVisit.id,
+          visit_id: activeVisit.id,
           data: { visit_covers_items: itemsData }
         });
         return response.data;
