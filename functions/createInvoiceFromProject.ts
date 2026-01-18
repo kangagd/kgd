@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       : "200";
 
     // Fetch price list items for SKU/ItemCode mapping
-    const itemIds = lineItems.filter(item => item.price_list_item_id).map(item => item.price_list_item_id);
+    const itemIds = normalizedItems.filter(item => item.price_list_item_id).map(item => item.price_list_item_id);
     const priceListItems = itemIds.length > 0 
       ? await base44.asServiceRole.entities.PriceListItem.filter({ id: { $in: itemIds } })
       : [];
@@ -69,23 +69,26 @@ Deno.serve(async (req) => {
     });
 
     // Build Xero invoice payload with SKU linking
-    const xeroLineItems = lineItems.map(item => {
+    const xeroLineItems = normalizedItems.map(n => {
       const lineItem = {
-        Description: item.description,
-        Quantity: item.quantity || 1,
-        UnitAmount: item.amount,
+        Description: n.description,
+        Quantity: n.quantity,
+        UnitAmount: n.amount,
         AccountCode: accountCode,
         TaxType: "OUTPUT" // GST on Output (10%)
       };
 
-      // Link to Xero item by SKU if available
-      if (item.price_list_item_id && skuMap[item.price_list_item_id]) {
-        lineItem.ItemCode = skuMap[item.price_list_item_id];
+      // Link to Xero item by SKU: prefer price list, fallback to manual SKU (truncate to 30 chars)
+      const itemCode = skuMap[n.price_list_item_id] || n.sku || "";
+      if (itemCode) {
+        lineItem.ItemCode = String(itemCode).substring(0, 30);
       }
 
-      // Add discount if applicable
-      if (item.discount || 0 > 0) {
-        lineItem.DiscountAmount = item.discount;
+      // Discount mapping (guardrailed - never set both)
+      if (n.discount_rate > 0) {
+        lineItem.DiscountRate = n.discount_rate;
+      } else if (n.discount_amount > 0) {
+        lineItem.DiscountAmount = n.discount_amount;
       }
 
       return lineItem;
