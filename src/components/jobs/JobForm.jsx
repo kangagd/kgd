@@ -271,6 +271,16 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     const autoProduct = productMapping[project.project_type] || "";
 
     // Populate form with all project data including files
+    // SCHEMA NORMALIZER: Convert project other_documents (objects) to job format (strings)
+    const normalizedOtherDocuments = Array.isArray(project.other_documents)
+      ? project.other_documents.map(doc => typeof doc === 'string' ? doc : doc.url)
+      : [];
+
+    // SCHEMA NORMALIZER: Ensure image_urls are strings
+    const normalizedImageUrls = Array.isArray(project.image_urls)
+      ? project.image_urls.map(img => typeof img === 'string' ? img : img.url || img)
+      : [];
+
     setFormData({
       job_number: null,
       project_id: projectId,
@@ -304,8 +314,8 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       pricing_provided: "",
       additional_info: project.description || "",
       measurements: null,
-      image_urls: Array.isArray(project.image_urls) ? [...project.image_urls] : [],
-      other_documents: Array.isArray(project.other_documents) ? [...project.other_documents] : [],
+      image_urls: normalizedImageUrls,
+      other_documents: normalizedOtherDocuments,
       scheduled_visits: [],
       });
       }, [preselectedProjectId, projectIdFromUrl, projects, job]);
@@ -437,6 +447,15 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         
         const autoProduct = productMapping[project.project_type] || formData.product;
         
+        // SCHEMA NORMALIZER: Convert project documents for job schema
+        const normalizedOtherDocuments = Array.isArray(project.other_documents)
+          ? project.other_documents.map(doc => typeof doc === 'string' ? doc : doc.url)
+          : formData.other_documents || [];
+
+        const normalizedImageUrls = Array.isArray(project.image_urls)
+          ? project.image_urls.map(img => typeof img === 'string' ? img : img.url || img)
+          : formData.image_urls || [];
+
         setFormData({
           ...formData,
           project_id: projectId,
@@ -455,7 +474,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
           google_place_id: project.google_place_id || formData.google_place_id,
           latitude: project.latitude || formData.latitude,
           longitude: project.longitude || formData.longitude,
-          product: autoProduct
+          product: autoProduct,
+          other_documents: normalizedOtherDocuments,
+          image_urls: normalizedImageUrls
         });
       }
     }
