@@ -80,6 +80,7 @@ import ActivityTimeline from "./ActivityTimeline";
 import ActivityTab from "./ActivityTab";
 import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
+import ProjectTagsDisplay from "./ProjectTagsDisplay";
 
 import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
@@ -294,6 +295,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const projectEmails = projectData?.projectEmails || [];
   const handoverReports = projectData?.handoverReports || [];
   const customer = projectData?.customer || null;
+  const projectTagsSnapshot = project?.project_tags_snapshot || [];
 
   // DEV-ONLY: Diagnostic logging for quote pipeline
   useEffect(() => {
@@ -1653,18 +1655,19 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
-                {getProjectDisplayTitle(project)}
-              </h2>
-              {project.project_number && (
-                <Badge variant="outline" className="text-[13px] font-semibold px-2.5 py-1">
-                  #{project.project_number}
-                </Badge>
-              )}
-              <DuplicateBadge record={project} />
-            </div>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2]">
+              {getProjectDisplayTitle(project)}
+            </h2>
+            {project.project_number && (
+              <Badge variant="outline" className="text-[13px] font-semibold px-2.5 py-1">
+                #{project.project_number}
+              </Badge>
+            )}
+            <DuplicateBadge record={project} />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
             {project.contract_id && (
               <Link to={createPageUrl("Contracts")}>
                 <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer border-purple-200 font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg">
@@ -1693,7 +1696,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 )}
               />
             )}
+            <ProjectTagsDisplay tags={projectTagsSnapshot} />
           </div>
+        </div>
 
 
 
