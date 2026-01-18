@@ -22,6 +22,12 @@ export default function VisitCard({ visit, index, isLatest }) {
   );
   const partsLinked = visit.linked_logistics_jobs?.length > 0 || false;
 
+  // Check if visit is in future and not a logistics visit
+  const isFuture = visit.scheduled_date && new Date(visit.scheduled_date) > new Date();
+  const isLogisticsType = (visit.job_type_name || '').toLowerCase().match(/(delivery|pickup|logistics|return)/);
+  const showConfirmationStatus = isFuture && !isLogisticsType;
+  const isConfirmed = visit.client_confirmed_at;
+
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <Card className={`border-2 rounded-lg overflow-hidden transition-all ${
