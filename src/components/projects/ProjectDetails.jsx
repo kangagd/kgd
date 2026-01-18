@@ -586,36 +586,29 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
       let invoiceEntityId = allExisting[0]?.id;
 
-      // If entity exists, use linkXeroInvoice to handle unlinking from old project
-      if (invoiceEntityId) {
-        await base44.functions.invoke('linkXeroInvoice', {
-          project_id: project.id,
-          invoiceEntityId: invoiceEntityId
-        });
-      } else {
-        // Create new entity and link it
-        const newInvoice = await base44.entities.XeroInvoice.create({
+      // Use linkXeroInvoice to handle creation/linking/unlinking
+      await base44.functions.invoke('linkXeroInvoice', {
+        project_id: project.id,
+        xero_invoice_id: invoice.xero_invoice_id,
+        invoiceEntityId: invoiceEntityId || undefined,
+        invoice_snapshot: {
           xero_invoice_id: invoice.xero_invoice_id,
           xero_invoice_number: invoice.xero_invoice_number,
+          invoice_number: invoice.invoice_number,
+          contact_name: invoice.contact_name,
+          reference: invoice.reference,
           status: invoice.status,
           total: invoice.total,
-          total_amount: invoice.total,
           amount_due: invoice.amount_due,
           amount_paid: invoice.amount_paid,
           date: invoice.date,
+          issue_date: invoice.issue_date,
           due_date: invoice.due_date,
-          contact_name: invoice.contact_name,
-          contact_id: invoice.contact_id,
-          pdf_url: invoice.pdf_url,
-          online_payment_url: invoice.online_payment_url,
-          project_id: project.id
-        });
-
-        await base44.functions.invoke('linkXeroInvoice', {
-         project_id: project.id,
-         invoiceEntityId: newInvoice.id
-        });
-      }
+          online_payment_url: invoice.online_payment_url || invoice.online_invoice_url,
+          online_invoice_url: invoice.online_invoice_url,
+          pdf_url: invoice.pdf_url
+        }
+      });
 
       // Invalidate with a small delay to ensure backend has processed
       await new Promise(resolve => setTimeout(resolve, 500));
