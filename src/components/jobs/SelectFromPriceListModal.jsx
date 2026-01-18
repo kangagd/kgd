@@ -165,14 +165,14 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
         </div>
 
         {selectedItem && (
-          <div className="border-t border-slate-200 p-4 bg-slate-50">
+          <div className="border-t border-slate-200 p-4 bg-slate-50 flex-shrink-0">
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <div className="text-[14px] font-semibold text-[#111827]">{selectedItem.item}</div>
-                <div className="text-[12px] text-[#6B7280]">${selectedItem.price?.toFixed(2)} each</div>
+                <div className="text-[12px] text-[#6B7280]">${selectedItem.price?.toFixed(2)} each • Total: ${(selectedItem.price * quantity).toFixed(2)}</div>
               </div>
               <div className="flex items-center gap-3">
-                <Label htmlFor="quantity" className="text-[13px] font-medium text-[#6B7280]">Quantity:</Label>
+                <Label htmlFor="quantity" className="text-[13px] font-medium text-[#6B7280]">Qty:</Label>
                 <Input
                   id="quantity"
                   type="number"
@@ -180,6 +180,7 @@ export default function SelectFromPriceListModal({ open, onClose, onSelect }) {
                   value={quantity}
                   onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                   className="w-20 border-2 border-slate-300"
+                  autoFocus
                 />
               </div>
               <Button
