@@ -155,12 +155,20 @@ Deno.serve(async (req) => {
             return [];
           });
 
-          console.log(`[getProjectWithRelations] Found ${quotes?.length || 0} quotes for project ${project_id}`);
+          console.log(`[getProjectWithRelations] Raw quotes fetched:`, quotes?.length || 0, 'quotes');
+          console.log(`[getProjectWithRelations] Quote details:`, JSON.stringify(quotes?.map(q => ({
+            id: q.id,
+            project_id: q.project_id,
+            deleted_at: q.deleted_at,
+            status: q.status
+          }))));
 
-          // Filter out soft-deleted quotes
+          // Filter out soft-deleted quotes (only check for explicit deleted_at value, not falsy)
           const activeQuotes = Array.isArray(quotes) 
-            ? quotes.filter(q => q && !q.deleted_at)
+            ? quotes.filter(q => q && (q.deleted_at === null || q.deleted_at === undefined || q.deleted_at === ''))
             : [];
+
+          console.log(`[getProjectWithRelations] Active quotes after filtering:`, activeQuotes.length);
 
           return activeQuotes;
         } catch (err) {
