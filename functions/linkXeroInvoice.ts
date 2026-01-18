@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { project_id, xero_invoice_id } = normalizeParams(body);
+    const normalized = normalizeParams(body);
+    const { project_id, xero_invoice_id } = normalized;
     const invoiceEntityId = body.invoiceEntityId || body.invoice_entity_id;
     const invoiceSnapshot = body.invoice_snapshot || body.invoice;
     
