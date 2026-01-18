@@ -17,9 +17,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import AddCustomItemModal from "./AddCustomItemModal";
+import SelectFromPriceListModal from "./SelectFromPriceListModal";
 
 /**
  * Dual-mode Requirements UI for Jobs/Visits
+ * 
+ * DUAL MODE SUPPORT:
+ * - If activeVisit exists → save to Visit.visit_covers_items
+ * - If no activeVisit → save to Job.visit_scope (fallback)
  * 
  * COMPLETED CONTEXT (no active visit):
  * - Shows "Product Requirements" (read-only, from Project)
@@ -39,10 +44,11 @@ export default function VisitRequirementsPanel({
   const queryClient = useQueryClient();
   const [showConfirmFromProject, setShowConfirmFromProject] = useState(false);
   const [showAddCustom, setShowAddCustom] = useState(false);
+  const [showPriceListPicker, setShowPriceListPicker] = useState(false);
   const [customItemType, setCustomItemType] = useState(null);
 
   const hasActiveVisit = !!activeVisit;
-  const visitCovers = activeVisit?.visit_covers_items || [];
+  const visitCovers = activeVisit?.visit_covers_items || job?.visit_scope || [];
   const hasVisitItems = visitCovers.length > 0;
 
   // Calculate project requirements
@@ -51,27 +57,42 @@ export default function VisitRequirementsPanel({
   const hasProjectRequirements = !!project?.special_requirements;
   const hasAnyProjectContent = hasProjectParts || hasProjectTrades || hasProjectRequirements;
 
-  const updateVisitMutation = useMutation({
-    mutationFn: async (visitData) => {
-      const response = await base44.functions.invoke('manageVisit', {
-        action: 'update',
-        id: activeVisit.id,
-        data: visitData
-      });
-      return response.data;
+  // DUAL-MODE MUTATION: Save to Visit if exists, otherwise Job
+  const updateRequirementsMutation = useMutation({
+    mutationFn: async (itemsData) => {
+      if (activeVisit) {
+        // Save to Visit.visit_covers_items
+        const response = await base44.functions.invoke('manageVisit', {
+          action: 'update',
+          id: activeVisit.id,
+          data: { visit_covers_items: itemsData }
+        });
+        return response.data;
+      } else {
+        // Fallback: Save to Job.visit_scope
+        const response = await base44.functions.invoke('manageJob', {
+          action: 'update',
+          id: job.id,
+          data: { visit_scope: itemsData }
+        });
+        return response.data;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activeVisits', job.id] });
-      toast.success('Visit updated');
+      if (activeVisit) {
+        queryClient.invalidateQueries({ queryKey: ['activeVisits', job.id] });
+      }
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      toast.success('Requirements updated');
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.error || error.message || 'Failed to update visit');
+      toast.error(error?.response?.data?.error || error.message || 'Failed to update requirements');
     }
   });
 
   const handlePopulateFromProject = () => {
-    if (!project || !activeVisit) {
-      toast.error('No project or active visit found');
+    if (!project) {
+      toast.error('No project found');
       return;
     }
 
@@ -113,18 +134,14 @@ export default function VisitRequirementsPanel({
       return;
     }
 
-    updateVisitMutation.mutate({
-      visit_covers_items: allItems
-    });
+    updateRequirementsMutation.mutate(allItems);
 
     setShowConfirmFromProject(false);
   };
 
   const handleRemoveItem = (key) => {
     const updatedItems = visitCovers.filter(item => item.key !== key);
-    updateVisitMutation.mutate({
-      visit_covers_items: updatedItems
-    });
+    updateRequirementsMutation.mutate(updatedItems);
   };
 
   const handleAddCustomItem = (item) => {
@@ -133,17 +150,29 @@ export default function VisitRequirementsPanel({
       label: item.label,
       type: item.type,
       source: 'job',
-      ref_id: null,
+      ref_id: item.price_list_item_id || null,
       status: 'required',
       ...(item.qty && { qty: item.qty })
     };
 
-    updateVisitMutation.mutate({
-      visit_covers_items: [...visitCovers, newItem]
-    });
+    updateRequirementsMutation.mutate([...visitCovers, newItem]);
 
     setShowAddCustom(false);
     setCustomItemType(null);
+  };
+
+  const handlePriceListSelect = (item) => {
+    const newItem = {
+      key: `job:part:${Date.now()}`,
+      label: item.label,
+      type: 'part',
+      source: 'job',
+      ref_id: item.price_list_item_id || null,
+      status: 'required',
+      qty: item.qty || 1
+    };
+
+    updateRequirementsMutation.mutate([...visitCovers, newItem]);
   };
 
   const getStatusBadge = (status) => {
@@ -167,23 +196,25 @@ export default function VisitRequirementsPanel({
     );
   };
 
-  // ACTIVE VISIT CONTEXT: Show This Visit Covers (editable)
-  if (hasActiveVisit) {
+  // EDITABLE CONTEXT: Show requirements (editable for active visit OR when no visit exists)
+  const isEditable = hasActiveVisit || !hasActiveVisit;
+  
+  if (isEditable) {
     return (
       <>
         <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
         <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
           <div className="flex items-center justify-between">
             <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-              This Visit Covers
+              {hasActiveVisit ? 'This Visit Covers' : 'Requirements'}
             </CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {job.project_id && hasAnyProjectContent && (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setShowConfirmFromProject(true)}
-                  disabled={updateVisitMutation.isPending}
+                  disabled={updateRequirementsMutation.isPending}
                   className="h-8 text-xs border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
@@ -193,11 +224,21 @@ export default function VisitRequirementsPanel({
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setShowPriceListPicker(true)}
+                disabled={updateRequirementsMutation.isPending}
+                className="h-8 text-xs border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Price List
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   setCustomItemType('part');
                   setShowAddCustom(true);
                 }}
-                disabled={updateVisitMutation.isPending}
+                disabled={updateRequirementsMutation.isPending}
                 className="h-8 text-xs border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5]"
               >
                 <Plus className="w-3.5 h-3.5 mr-1" />
@@ -259,7 +300,7 @@ export default function VisitRequirementsPanel({
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRemoveItem(item.key)}
-                              disabled={updateVisitMutation.isPending}
+                              disabled={updateRequirementsMutation.isPending}
                               className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -294,10 +335,10 @@ export default function VisitRequirementsPanel({
             <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handlePopulateFromProject}
-              disabled={updateVisitMutation.isPending}
+              disabled={updateRequirementsMutation.isPending}
               className="rounded-xl font-semibold bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
             >
-              {updateVisitMutation.isPending ? 'Populating...' : 'Populate from Project'}
+              {updateRequirementsMutation.isPending ? 'Populating...' : 'Populate from Project'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -315,6 +356,13 @@ export default function VisitRequirementsPanel({
           itemType={customItemType}
         />
       )}
+
+      {/* Price List Picker Modal */}
+      <SelectFromPriceListModal
+        open={showPriceListPicker}
+        onClose={() => setShowPriceListPicker(false)}
+        onSelect={handlePriceListSelect}
+      />
       </>
     );
   }
