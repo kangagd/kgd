@@ -66,13 +66,12 @@ export default function Inbox() {
    const mountedRef = useRef(true);
    const syncInFlightRef = useRef(false);
    const [user, setUser] = useState(null);
-   const [selectedThreadId, setSelectedThreadId] = useState(null);
-   const [searchTerm, setSearchTerm] = useState("");
-   const [activeFilters, setActiveFilters] = useState({});
-   const [allThreads, setAllThreads] = useState([]);
-   const [cursor, setCursor] = useState(null);
-   const [hasMore, setHasMore] = useState(true);
-   const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [selectedThreadId, setSelectedThreadId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [activeFilters, setActiveFilters] = useState({});
+    const [cursor, setCursor] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // NOTE: `showComposer`/`composerMessage` removed (GUARDRAIL: use composerOpen/composerMode instead - controls both visibility and mode)
   // Composer state consolidated into: composerOpen, composerMode, composerThreadId, composerDraftId, composerLastMessage
