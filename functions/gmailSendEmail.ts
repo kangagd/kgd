@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { persistAttachmentsToEntity } from './shared/emailAttachmentPersistence.js';
+import { normalizeUtf8, hasEncodingCorruption } from './shared/utf8Normalizer.js';
 
 // Helper to build RFC 2822 MIME message with attachments
 function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inReplyTo, references, threadId, attachments }) {
@@ -305,6 +306,16 @@ Deno.serve(async (req) => {
         return await response.json();
       });
     } else {
+      // ===== FINAL UTF-8 NORMALIZATION BOUNDARY (before Gmail API) =====
+      const finalizedSubject = normalizeUtf8(subject || '');
+      const finalizedBodyHtml = normalizeUtf8(canonicalBodyHtml);
+      const finalizedBodyText = normalizeUtf8(canonicalBodyText);
+
+      // DEBUG GUARDRAIL: Log if corruption detected
+      if (hasEncodingCorruption(finalizedBodyHtml) || hasEncodingCorruption(finalizedBodyText)) {
+        console.warn(`[gmailSendEmail UTF8] Encoding corruption detected in outbound email (origin=${origin}, project_id=${project_id})`);
+      }
+
       // Build and send new message
        let encodedMessage = rawMimeBase64Url;
        if (!encodedMessage) {
@@ -313,9 +324,9 @@ Deno.serve(async (req) => {
                 to: to || [],
                 cc,
                 bcc,
-                subject: subject || '',
-                textBody: canonicalBodyText,
-                htmlBody: canonicalBodyHtml,
+                subject: finalizedSubject,
+                textBody: finalizedBodyText,
+                htmlBody: finalizedBodyHtml,
                 inReplyTo,
                 references,
                 threadId: thread_id || gmail_thread_id,
@@ -323,13 +334,13 @@ Deno.serve(async (req) => {
               });
 
               // Ensure body is not empty
-              if (!subject || !to || to.length === 0) {
-                throw new Error('Subject and at least one recipient (To) are required');
-              }
+                    if (!finalizedSubject || !to || to.length === 0) {
+                      throw new Error('Subject and at least one recipient (To) are required');
+                    }
 
-              if (!(canonicalBodyHtml || canonicalBodyText).trim()) {
-                throw new Error('Message body cannot be empty');
-              }
+                    if (!(finalizedBodyHtml || finalizedBodyText).trim()) {
+                      throw new Error('Message body cannot be empty');
+                    }
 
               encodedMessage = base64UrlEncode(mimeMessage);
        }
@@ -459,9 +470,9 @@ Deno.serve(async (req) => {
              to_addresses: to || [],
              cc_addresses: cc || [],
              bcc_addresses: bcc || [],
-             subject: subject || '',
-             body_html: canonicalBodyHtml,
-             body_text: canonicalBodyText || canonicalBodyHtml.replace(/<[^>]*>/g, ''),
+             subject: finalizedSubject,
+             body_html: finalizedBodyHtml,
+             body_text: finalizedBodyText || finalizedBodyHtml.replace(/<[^>]*>/g, ''),
              is_outbound: true,
              sent_at: new Date().toISOString(),
              performed_by_user_id: user.id,
