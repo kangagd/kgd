@@ -1098,9 +1098,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   };
 
-  // GUARDRAIL: Only count Parts and Samples, not PO lines (Parts/Samples are the source of truth)
+  // DYNAMIC GUARDRAIL: Count Parts/Samples for project POs, PO Lines for non-project POs
   const allItemsChecked = () => {
-    const totalItems = jobParts.length + jobSamples.length;
+    const totalItems = job.project_id 
+      ? (jobParts.length + jobSamples.length)
+      : purchaseOrderLines.length;
     if (totalItems === 0) return true;
     const checkedCount = Object.values(checkedItems).filter(Boolean).length;
     return checkedCount === totalItems;
@@ -2212,15 +2214,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               {isLogisticsJob ? (
                 <>
                   {/* Order Items Checklist for Logistics Jobs */}
-                  {/* CRITICAL GUARDRAIL: Only show Parts and Samples, NOT PurchaseOrderLines */}
-                  {/* Parts are the canonical source - PO lines are already converted to Parts */}
-                  {/* Showing both causes duplicates. DO NOT ADD purchaseOrderLines back here. */}
+                  {/* DYNAMIC GUARDRAIL: Show Parts for project POs, PO Lines for non-project POs */}
                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                        Pickup Checklist ({jobParts.length + jobSamples.length})
+                        Pickup Checklist ({job.project_id ? (jobParts.length + jobSamples.length) : purchaseOrderLines.length})
                       </CardTitle>
-                      {!activeCheckIn && job.status !== 'Completed' && (
+                      {!activeCheckIn && job.status !== 'Completed' && job.project_id && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -2231,7 +2231,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                             
                             try {
                               await base44.entities.Part.create({
-                                project_id: job.project_id || null,
+                                project_id: job.project_id,
                                 item_name: itemName,
                                 category: "Other",
                                 quantity_required: quantity,
@@ -2255,64 +2255,93 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       )}
                     </CardHeader>
                     <CardContent className="p-4 space-y-2">
-                      {jobParts.length === 0 && jobSamples.length === 0 ? (
-                        <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
-                          No items in checklist
-                        </div>
+                      {/* For project POs: show Parts and Samples */}
+                      {job.project_id ? (
+                        jobParts.length === 0 && jobSamples.length === 0 ? (
+                          <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
+                            No items in checklist
+                          </div>
+                        ) : (
+                          <>
+                            {jobParts.map((part) => (
+                              <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                                <Checkbox
+                                  checked={checkedItems[part.id] || false}
+                                  onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
+                                />
+                                <div className="flex-1">
+                                  <span className={`text-[14px] font-medium ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
+                                    {part.item_name || 'Unnamed Item'}
+                                  </span>
+                                  {part.quantity_required && (
+                                    <span className={`text-[14px] ml-2 ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
+                                      × {part.quantity_required}
+                                    </span>
+                                  )}
+                                </div>
+                                {!activeCheckIn && job.status !== 'Completed' && (
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      if (confirm('Delete this item from checklist?')) {
+                                        base44.entities.Part.delete(part.id).then(() => {
+                                          queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
+                                          toast.success('Item removed');
+                                        }).catch(() => {
+                                          toast.error('Failed to remove item');
+                                        });
+                                      }
+                                    }}
+                                    className="h-7 w-7 text-red-500 hover:text-red-700"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                            {jobSamples.map((sample) => (
+                              <div key={sample.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                                <Checkbox
+                                  checked={checkedItems[sample.id] || false}
+                                  onCheckedChange={(checked) => handleItemCheck(sample.id, checked)}
+                                />
+                                <div className="flex-1">
+                                  <span className={`text-[14px] font-medium ${checkedItems[sample.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
+                                    {sample.name || 'Unnamed Sample'}
+                                  </span>
+                                  <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        )
                       ) : (
-                        <>
-                          {jobParts.map((part) => (
-                            <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                        /* For non-project POs: show PO Lines directly */
+                        purchaseOrderLines.length === 0 ? (
+                          <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
+                            No items in checklist
+                          </div>
+                        ) : (
+                          purchaseOrderLines.map((line) => (
+                            <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
                               <Checkbox
-                                checked={checkedItems[part.id] || false}
-                                onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
+                                checked={checkedItems[line.id] || false}
+                                onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
                               />
                               <div className="flex-1">
-                                <span className={`text-[14px] font-medium ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
-                                  {part.item_name || 'Unnamed Item'}
+                                <span className={`text-[14px] font-medium ${checkedItems[line.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
+                                  {line.item_name || 'Unnamed Item'}
                                 </span>
-                                {part.quantity_required && (
-                                  <span className={`text-[14px] ml-2 ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
-                                    × {part.quantity_required}
+                                {line.qty_ordered && (
+                                  <span className={`text-[14px] ml-2 ${checkedItems[line.id] ? 'line-through text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
+                                    × {line.qty_ordered}
                                   </span>
                                 )}
                               </div>
-                              {!activeCheckIn && job.status !== 'Completed' && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    if (confirm('Delete this item from checklist?')) {
-                                      base44.entities.Part.delete(part.id).then(() => {
-                                        queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
-                                        toast.success('Item removed');
-                                      }).catch(() => {
-                                        toast.error('Failed to remove item');
-                                      });
-                                    }
-                                  }}
-                                  className="h-7 w-7 text-red-500 hover:text-red-700"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </Button>
-                              )}
                             </div>
-                          ))}
-                          {jobSamples.map((sample) => (
-                            <div key={sample.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
-                              <Checkbox
-                                checked={checkedItems[sample.id] || false}
-                                onCheckedChange={(checked) => handleItemCheck(sample.id, checked)}
-                              />
-                              <div className="flex-1">
-                                <span className={`text-[14px] font-medium ${checkedItems[sample.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
-                                  {sample.name || 'Unnamed Sample'}
-                                </span>
-                                <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </>
+                          ))
+                        )
                       )}
                     </CardContent>
                   </Card>
