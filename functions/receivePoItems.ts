@@ -25,6 +25,12 @@ Deno.serve(async (req) => {
       purchase_order_id: po_id
     });
 
+    // Fetch destination location to determine canonical status
+    const destLocation = await base44.asServiceRole.entities.InventoryLocation.get(location_id);
+    if (!destLocation) {
+      return Response.json({ error: 'Destination location not found' }, { status: 404 });
+    }
+
     // Process each item being received
     let allItemsFullyReceived = true;
     let totalItemsReceived = 0;
@@ -55,20 +61,19 @@ Deno.serve(async (req) => {
       });
 
       // Create StockMovement record (standardized schema)
-      const locName = (await base44.asServiceRole.entities.InventoryLocation.get(location_id))?.name || '';
       await base44.asServiceRole.entities.StockMovement.create({
         price_list_item_id: poLine.price_list_item_id,
         item_name: poLine.item_name || 'Unknown Item',
         quantity: qtyReceived,
         to_location_id: location_id,
-        to_location_name: locName,
+        to_location_name: destLocation.name,
         performed_by_user_email: user.email,
         performed_by_user_name: user.full_name || user.display_name || user.email,
         performed_at: receive_date_time,
         source: 'po_receipt',
         reference_type: 'purchase_order',
         reference_id: po_id,
-        notes: notes ? `PO ${po.po_number || po.id}: ${notes}` : `Received from PO ${po.po_number || po.id}`
+        notes: notes ? `PO ${po.po_reference || po.id}: ${notes}` : `Received from PO ${po.po_reference || po.id}`
       });
 
       // Upsert InventoryQuantity (add to on-hand)
@@ -90,7 +95,7 @@ Deno.serve(async (req) => {
           location_id: location_id,
           quantity: newQty,
           item_name: poLine.item_name,
-          location_name: (await base44.asServiceRole.entities.InventoryLocation.get(location_id))?.name || ''
+          location_name: destLocation.name
         });
       }
 
@@ -102,29 +107,34 @@ Deno.serve(async (req) => {
       totalItemsReceived++;
     }
 
-    // Update PO status if requested and all items fully received
-    if (mark_po_received && allItemsFullyReceived) {
-      await base44.asServiceRole.entities.PurchaseOrder.update(po_id, {
-        status: 'received'
-      });
-    } else if (totalItemsReceived > 0) {
-      // Mark as partially received if not all items received
-      const allLinesReceived = poLines.every(line => {
+    // Update PO status to canonical values based on receiving state and destination location
+    if (totalItemsReceived > 0) {
+      let newStatus;
+
+      // Check if all PO lines are fully received
+      const allLinesFullyReceived = poLines.every(line => {
         const updated = items.find(i => i.po_line_id === line.id);
         const newQty = (line.qty_received || 0) + (updated?.qty_received || 0);
         return newQty >= (line.qty_ordered || 0);
       });
 
-      if (allLinesReceived) {
-        await base44.asServiceRole.entities.PurchaseOrder.update(po_id, {
-          status: 'received'
-        });
+      if (allLinesFullyReceived) {
+        // All items fully received - determine final status by location type
+        if (destLocation.type === 'vehicle') {
+          newStatus = 'in_vehicle';
+        } else if (destLocation.type === 'warehouse') {
+          newStatus = 'in_storage';
+        } else {
+          newStatus = 'in_storage'; // Default to warehouse storage
+        }
       } else {
-        // Update to partially_received if any line has some qty received
-        await base44.asServiceRole.entities.PurchaseOrder.update(po_id, {
-          status: 'partially_received'
-        });
+        // Partially received - use in_loading_bay for partial receives
+        newStatus = 'in_loading_bay';
       }
+
+      await base44.asServiceRole.entities.PurchaseOrder.update(po_id, {
+        status: newStatus
+      });
     }
 
     // Determine success status
