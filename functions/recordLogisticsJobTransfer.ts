@@ -39,14 +39,8 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Missing source location. Set PO supplier or create supplier InventoryLocation.' }, { status: 400 });
     }
 
-    // Fetch job details
-    const job = await base44.asServiceRole.entities.Job.get(job_id);
-    if (!job) {
-      return Response.json({ error: 'Job not found' }, { status: 404 });
-    }
-
     // Fetch locations
-    const sourceLocation = await base44.asServiceRole.entities.InventoryLocation.get(source_location_id);
+    const sourceLocation = await base44.asServiceRole.entities.InventoryLocation.get(finalSourceLocationId);
     const destLocation = await base44.asServiceRole.entities.InventoryLocation.get(destination_location_id);
 
     if (!sourceLocation || !destLocation) {
@@ -64,7 +58,7 @@ Deno.serve(async (req) => {
       // Validate source has stock
       const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
         price_list_item_id,
-        location_id: source_location_id
+        location_id: finalSourceLocationId
       });
 
       const currentQty = sourceQty[0]?.quantity || 0;
