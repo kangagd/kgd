@@ -158,7 +158,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           <Button
             onClick={() => setShowTransferModal(true)}
             className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-            disabled={!sourceLocation || !destinationLocation}
+            disabled={!(sourceLocation || job.origin_address) || !destinationLocation}
           >
             Record Transfer
           </Button>
