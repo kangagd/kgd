@@ -350,23 +350,29 @@ export default function Inbox() {
       );
     }
 
-    // Filters
-    if (Object.keys(activeFilters).length === 0) {
+    // Filters - apply all active filters (not just first one)
+    const hasFilters = Object.values(activeFilters).some(v => v === true);
+    
+    if (!hasFilters) {
+      // No filters: show all non-closed
       result = result.filter((t) => t.userStatus !== "closed");
-    } else if (activeFilters["assigned-to-me"]) {
-      result = result.filter((t) => t.assigned_to === user.email && t.userStatus !== "closed");
-    } else if (activeFilters["sent"]) {
-      result = result.filter((t) => t.inferredDirection === "sent" && t.userStatus !== "closed");
-    } else if (activeFilters["received"]) {
-      result = result.filter((t) => t.inferredDirection === "received" && t.userStatus !== "closed");
-    } else if (activeFilters["closed"]) {
-      result = result.filter((t) => t.userStatus === "closed");
-    } else if (activeFilters["pinned"]) {
-      result = result.filter((t) => t.pinnedAt && t.userStatus !== "closed");
-    } else if (activeFilters["linked"]) {
-      result = result.filter((t) => t.project_id || t.contract_id);
-    } else if (activeFilters["unlinked"]) {
-      result = result.filter((t) => !t.project_id && !t.contract_id && t.userStatus !== "closed");
+    } else {
+      // Filters are active: apply them
+      if (activeFilters["assigned-to-me"]) {
+        result = result.filter((t) => t.assigned_to === user.email && t.userStatus !== "closed");
+      } else if (activeFilters["sent"]) {
+        result = result.filter((t) => t.inferredDirection === "sent" && t.userStatus !== "closed");
+      } else if (activeFilters["received"]) {
+        result = result.filter((t) => t.inferredDirection === "received" && t.userStatus !== "closed");
+      } else if (activeFilters["closed"]) {
+        result = result.filter((t) => t.userStatus === "closed");
+      } else if (activeFilters["pinned"]) {
+        result = result.filter((t) => t.pinnedAt && t.userStatus !== "closed");
+      } else if (activeFilters["linked"]) {
+        result = result.filter((t) => t.project_id || t.contract_id);
+      } else if (activeFilters["unlinked"]) {
+        result = result.filter((t) => !t.project_id && !t.contract_id && t.userStatus !== "closed");
+      }
     }
 
     // Sorting: pinned > unread > by date
