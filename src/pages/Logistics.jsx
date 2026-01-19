@@ -149,6 +149,15 @@ export default function Logistics() {
     retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
+  const { data: inventoryLocations = [] } = useQuery({
+    queryKey: ["inventoryLocations"],
+    queryFn: () => base44.entities.InventoryLocation.list(),
+    enabled: showAdvancedParts,
+    staleTime: 120_000,
+    refetchOnWindowFocus: false,
+    retry: (count, err) => err?.status !== 429 && count < 2,
+  });
+
   const { data: inventoryQuantities = [] } = useQuery({
     queryKey: ["inventoryQuantities"],
     queryFn: () => base44.entities.InventoryQuantity.list(),
@@ -375,21 +384,43 @@ export default function Logistics() {
     [vehicles]
   );
 
-  const inventoryByItem = useMemo(() => {
+  const locationById = useMemo(() => {
     const map = {};
-    // Warehouse from PriceList
-    for (const item of priceListItems) {
-      map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
-    }
-    // Vehicles from InventoryQuantity
-    for (const iq of inventoryQuantities) {
-      if (iq.price_list_item_id && iq.location_type === "vehicle") {
-        map[iq.price_list_item_id] =
-          (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
-      }
+    for (const loc of inventoryLocations) {
+      map[loc.id] = loc;
     }
     return map;
-  }, [priceListItems, inventoryQuantities]);
+  }, [inventoryLocations]);
+
+  const inventoryByItem = useMemo(() => {
+    const map = {};
+    
+    // Aggregate all InventoryQuantity records by price_list_item_id
+    for (const iq of inventoryQuantities) {
+      if (!iq.price_list_item_id || !iq.location_id) continue;
+      
+      const location = locationById[iq.location_id];
+      const quantity = iq.quantity || 0;
+      
+      if (!map[iq.price_list_item_id]) {
+        map[iq.price_list_item_id] = {
+          totalOnHand: 0,
+          warehouseOnHand: 0,
+          vehicleOnHand: 0
+        };
+      }
+      
+      map[iq.price_list_item_id].totalOnHand += quantity;
+      
+      if (location?.type === "warehouse") {
+        map[iq.price_list_item_id].warehouseOnHand += quantity;
+      } else if (location?.type === "vehicle") {
+        map[iq.price_list_item_id].vehicleOnHand += quantity;
+      }
+    }
+    
+    return map;
+  }, [inventoryQuantities, locationById]);
 
 
 
