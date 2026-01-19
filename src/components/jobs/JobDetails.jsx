@@ -30,6 +30,7 @@ import { determineJobStatus } from "./jobStatusHelper";
 import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAvatar";
 import { PO_STATUS, LOGISTICS_LOCATION, getPoStatusLabel, normaliseLegacyPoStatus } from "../domain/logisticsConfig";
 import { getNormalizedPartStatus, PART_STATUS } from "../domain/partConfig";
+import { getLoadingBayLocationId } from "../utils/inventoryLocationLookup";
 
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
@@ -523,6 +524,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnWindowFocus: false,
   });
 
+  // Fetch all inventory locations for logistics outcome resolution
+  const { data: allLocations = [] } = useQuery({
+    queryKey: ['inventoryLocations'],
+    queryFn: () => base44.entities.InventoryLocation.filter({ is_active: true }),
+    enabled: isLogisticsJob,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+  });
+
   const { data: xeroInvoice } = useQuery({
     queryKey: ['xeroInvoice', job.xero_invoice_id],
     queryFn: () => base44.entities.XeroInvoice.get(job.xero_invoice_id),
@@ -628,28 +638,45 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 status: newPoStatus,
               });
 
-              // 2. Move parts from Loading Bay (using primary_purchase_order_id for all POs)
+              // 2. Move parts from Loading Bay using canonical location_id
               const linkedParts = await base44.entities.Part.filter({
                 primary_purchase_order_id: job.purchase_order_id
               });
 
-              const partsInLoadingBay = linkedParts.filter(p => 
-                p.location === LOGISTICS_LOCATION.LOADING_BAY || 
-                p.location === "At Delivery Bay"
-              );
+              // Get Loading Bay location ID from active inventory locations
+              const loadingBayLocationId = getLoadingBayLocationId(allLocations);
 
-              if (partsInLoadingBay.length > 0) {
-                const targetLocation = logisticsOutcome === 'in_storage' 
-                  ? LOGISTICS_LOCATION.STORAGE 
-                  : LOGISTICS_LOCATION.VEHICLE;
+              if (loadingBayLocationId) {
+                const partsInLoadingBay = linkedParts.filter(p => 
+                  p.location_id === loadingBayLocationId
+                );
 
-                await base44.functions.invoke("movePartsByIds", {
-                  part_ids: partsInLoadingBay.map(p => p.id),
-                  from_location_id: null,
-                  to_location_id: targetLocation,
-                  physical_move: true,
-                  notes: `Logistics job completed - moved to ${targetLocation}`
-                });
+                if (partsInLoadingBay.length > 0) {
+                  // Resolve target location: in_storage → warehouse, in_vehicle → vehicle
+                  let targetLocationId;
+                  if (logisticsOutcome === 'in_storage') {
+                    // Target main warehouse
+                    targetLocationId = allLocations.find(loc => 
+                      loc.type === 'warehouse' && loc.is_active !== false
+                    )?.id;
+                  } else {
+                    // Target assigned vehicle if available
+                    if (job.vehicle_id) {
+                      targetLocationId = allLocations.find(loc => 
+                        loc.type === 'vehicle' && loc.vehicle_id === job.vehicle_id && loc.is_active !== false
+                      )?.id;
+                    }
+                  }
+
+                  if (targetLocationId) {
+                    await base44.functions.invoke("movePartsByIds", {
+                      part_ids: partsInLoadingBay.map(p => p.id),
+                      to_location_id: targetLocationId,
+                      physical_move: true,
+                      notes: `Logistics job completed - moved to ${logisticsOutcome === 'in_storage' ? 'warehouse' : 'vehicle'}`
+                    });
+                  }
+                }
               }
 
               queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
