@@ -672,8 +672,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     await base44.functions.invoke("movePartsByIds", {
                       part_ids: partsInLoadingBay.map(p => p.id),
                       to_location_id: targetLocationId,
-                      physical_move: true,
-                      notes: `Logistics job completed - moved to ${logisticsOutcome === 'in_storage' ? 'warehouse' : 'vehicle'}`
+                      physical_move: false,
+                      notes: `Moved from Loading Bay to ${logisticsOutcome === 'in_storage' ? 'Storage' : 'Vehicle'} (logical move)`
                     });
                   }
                 }
