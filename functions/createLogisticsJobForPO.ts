@@ -214,8 +214,9 @@ Deno.serve(async (req) => {
 
         return Response.json({
             success: true,
-            job: updatedJob,
-            purchaseOrder: updatedPO
+            job: job,
+            purchaseOrder: updatedPO,
+            partsCreated: allParts.length
         });
 
     } catch (error) {
