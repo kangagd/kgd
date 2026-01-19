@@ -386,7 +386,7 @@ export default function Inbox() {
 
     console.log('[FILTER DEBUG] FINAL result.length=', result.length);
     return result;
-  }, [threads, searchTerm, activeFilters, user?.email, orgEmails, allThreads]);
+  }, [threads, searchTerm, activeFilters, user?.email, orgEmails]);
 
   const selectedThread = useMemo(() => {
     return selectedThreadId ? threads.find((t) => t.id === selectedThreadId) : null;
