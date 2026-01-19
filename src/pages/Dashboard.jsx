@@ -150,7 +150,7 @@ export default function Dashboard() {
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 5),
-    enabled: !!user,
+    enabled: !!user && isAdminOrManager, // Only admins need this
     ...QUERY_CONFIG.reference,
   });
 
@@ -161,12 +161,8 @@ export default function Dashboard() {
     po.status !== 'in_storage'
   ).slice(0, 5);
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list(),
-    enabled: !!user,
-    ...QUERY_CONFIG.reference,
-  });
+  // Reuse allProjects from earlier query instead of fetching again
+  const projects = allProjects;
 
 
 
