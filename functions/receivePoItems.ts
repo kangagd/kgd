@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { checkInventoryTrackability } from './shared/inventoryTrackingGuardrails.js';
 
 Deno.serve(async (req) => {
   try {
@@ -43,11 +44,14 @@ Deno.serve(async (req) => {
       const qtyReceived = receiveItem.qty_received || 0;
       if (qtyReceived <= 0) continue;
 
-      // Validate price_list_item_id exists (Bug #6 hardening)
-      if (!poLine.price_list_item_id) {
+      // GUARDRAIL: Check if line is inventory-tracked
+      const trackCheck = checkInventoryTrackability(poLine);
+      if (!trackCheck.isInventoryTracked) {
         skippedLines.push({
           po_line_id: receiveItem.po_line_id,
-          reason: 'Missing price_list_item_id; cannot receive into inventory'
+          item_name: poLine.item_name || 'Unknown',
+          warning_badge: 'Not inventory-tracked',
+          reason: trackCheck.reason
         });
         continue;
       }
