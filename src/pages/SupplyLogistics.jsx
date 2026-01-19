@@ -118,21 +118,21 @@ export default function SupplyLogistics() {
 
   const handleCreatePO = async () => {
     try {
-      if (!suppliers[0]?.id) {
+      if (suppliers.length === 0) {
         toast.error('Please add a supplier first');
         return;
       }
 
       const newPO = await base44.entities.PurchaseOrder.create({
-        supplier_id: suppliers[0].id,
-        supplier_name: suppliers[0].name,
+        supplier_id: null,
+        supplier_name: null,
         status: 'draft',
         delivery_method: 'delivery',
         order_date: new Date().toISOString().split('T')[0]
       });
 
       setActivePoId(newPO.id);
-      toast.success('Draft Purchase Order created');
+      toast.success('Draft Purchase Order created - select a supplier');
     } catch (error) {
       console.error('Error creating PO:', error);
       toast.error('Failed to create Purchase Order');
