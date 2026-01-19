@@ -19,6 +19,7 @@ import Organisations from './pages/Organisations';
 import OutstandingBalances from './pages/OutstandingBalances';
 import PartsHardwareAdmin from './pages/PartsHardwareAdmin';
 import Photos from './pages/Photos';
+import PriceList from './pages/PriceList';
 import ProjectTags from './pages/ProjectTags';
 import Projects from './pages/Projects';
 import PurchaseOrders from './pages/PurchaseOrders';
@@ -33,8 +34,6 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
-import PriceList from './pages/PriceList';
-import AdminRegressionGuard from './pages/AdminRegressionGuard';
 import __Layout from './Layout.jsx';
 
 
@@ -60,6 +59,7 @@ export const PAGES = {
     "OutstandingBalances": OutstandingBalances,
     "PartsHardwareAdmin": PartsHardwareAdmin,
     "Photos": Photos,
+    "PriceList": PriceList,
     "ProjectTags": ProjectTags,
     "Projects": Projects,
     "PurchaseOrders": PurchaseOrders,
@@ -74,8 +74,6 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
-    "PriceList": PriceList,
-    "AdminRegressionGuard": AdminRegressionGuard,
 }
 
 export const pagesConfig = {
