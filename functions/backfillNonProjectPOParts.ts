@@ -14,8 +14,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const body = await req.json().catch(() => ({}));
-    const { dry_run = false } = body;
+    let dry_run = false;
+    try {
+      const body = await req.json();
+      dry_run = body.dry_run || false;
+    } catch {
+      dry_run = false;
+    }
 
     // Fetch all non-project POs
     const allPOs = await base44.asServiceRole.entities.PurchaseOrder.list();
