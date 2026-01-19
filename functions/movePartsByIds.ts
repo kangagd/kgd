@@ -32,18 +32,48 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Must provide to_location_id or to_vehicle_location_id' }, { status: 400 });
     }
 
-    // Load destination location to validate and get name
-    const destLocation = await base44.entities.InventoryLocation.get(destination);
-    if (!destLocation) {
-      return Response.json({ error: 'Destination location not found' }, { status: 404 });
+    // Guardrail: Physical moves MUST have a source location
+    if (physical_move && !from_location_id) {
+      return Response.json({ 
+        error: 'Physical moves require from_location_id. To move parts logically (without inventory transfer), set physical_move=false' 
+      }, { status: 400 });
     }
 
-    // Load source location if provided
+    // Load destination location to validate it's a real InventoryLocation
+    let destLocation;
+    try {
+      destLocation = await base44.entities.InventoryLocation.get(destination);
+    } catch (e) {
+      // ID doesn't exist in database
+      destLocation = null;
+    }
+
+    if (!destLocation) {
+      return Response.json({ 
+        error: `to_location_id must be a valid InventoryLocation.id. Provided: ${destination}` 
+      }, { status: 400 });
+    }
+
+    // Load and validate source location (required for physical moves)
     let sourceLocation = null;
     if (from_location_id) {
-      sourceLocation = await base44.entities.InventoryLocation.get(from_location_id);
+      try {
+        sourceLocation = await base44.entities.InventoryLocation.get(from_location_id);
+      } catch (e) {
+        sourceLocation = null;
+      }
+
       if (!sourceLocation) {
-        return Response.json({ error: 'Source location not found' }, { status: 404 });
+        return Response.json({ 
+          error: `Source location not found. from_location_id must be a valid InventoryLocation.id. Provided: ${from_location_id}` 
+        }, { status: 404 });
+      }
+
+      // For physical moves, ensure source location is active
+      if (physical_move && sourceLocation.is_active === false) {
+        return Response.json({ 
+          error: `Cannot move from inactive location: ${sourceLocation.name}` 
+        }, { status: 400 });
       }
     }
 
@@ -101,9 +131,16 @@ Deno.serve(async (req) => {
         }
 
         // Update Part.location_id (both logical and physical moves)
-        await base44.entities.Part.update(part.id, {
+        const partUpdate = {
           location_id: destination
-        });
+        };
+
+        // When moving to a vehicle location, also update assigned_vehicle_id
+        if (destLocation.type === 'vehicle' && destLocation.vehicle_id) {
+          partUpdate.assigned_vehicle_id = destLocation.vehicle_id;
+        }
+
+        await base44.entities.Part.update(part.id, partUpdate);
 
         moved_count++;
 
