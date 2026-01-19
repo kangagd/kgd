@@ -128,6 +128,7 @@ export default function Inbox() {
   const { data: initialThreads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
     queryKey: inboxKeys.threads(),
     queryFn: async () => {
+      devLog(`[Inbox] queryFn STARTED - user=${user?.email}`);
       setLastThreadFetchTime(Date.now());
       devLog('[Inbox] Fetch threads (viewers skipped)');
       const fetchedThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
@@ -139,7 +140,7 @@ export default function Inbox() {
           viewers: [],
         }));
 
-      devLog(`[Inbox] Loaded ${result.length} threads`);
+      devLog(`[Inbox] queryFn RETURNING ${result.length} threads`);
       return result;
     },
     enabled: !!user,
