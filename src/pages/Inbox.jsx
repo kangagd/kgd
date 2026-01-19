@@ -168,7 +168,7 @@ export default function Inbox() {
         .slice(0, 100);
 
       if (filtered.length > 0) {
-        setAllThreads([...allThreads, ...filtered]);
+        await refetchThreads();
         setCursor(filtered[filtered.length - 1].last_message_date);
         setHasMore(filtered.length === 100);
       } else {
