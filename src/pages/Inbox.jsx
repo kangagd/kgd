@@ -337,6 +337,10 @@ export default function Inbox() {
         inferredDirection: inferThreadDirection(t, orgEmails),
       }));
 
+    if (result.length > 0 && result.length <= 5) {
+      devLog('[Inbox] Sample threads before filter:', result.map(t => ({ id: t.id, userStatus: t.userStatus, isUnread: t.isUnread })));
+    }
+
     // Text search
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
