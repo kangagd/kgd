@@ -36,7 +36,7 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
     if (!newDoor.height && !newDoor.width && !newDoor.type) return;
     const currentDoors = project.doors || [];
     onUpdateProject({ doors: [...currentDoors, newDoor] });
-    setNewDoor({ height: "", width: "", type: "", style: "" });
+    setNewDoor({ height: "", width: "", type: "", style: "", measurement_type: "initial" });
     setShowAddDoor(false);
   };
 
@@ -100,6 +100,9 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
                   {project.doors.map((door, idx) => (
                     <div key={idx} className="relative group">
                       <Badge variant="outline" className="bg-blue-50 border-blue-200 text-blue-700 font-medium px-3 py-1.5 text-sm pr-8">
+                        <span className="text-[10px] font-semibold uppercase mr-2 text-blue-600">
+                          {door.measurement_type === "initial" ? "Initial" : door.measurement_type === "quote" ? "Quote" : door.measurement_type === "order" ? "Order" : "Initial"}
+                        </span>
                         Door {idx + 1}: {door.height && door.width ? `${door.height} × ${door.width}` : 'Pending specs'}
                         {door.type && ` • ${door.type}`}
                         {door.style && ` • ${door.style}`}
@@ -123,6 +126,22 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
               
               {showAddDoor && canEdit && (
                 <div className="border border-[#E5E7EB] rounded-lg p-3 bg-[#F8F9FA] mt-3">
+                  <div className="mb-3">
+                    <label className="text-xs font-medium text-gray-700 mb-1 block">Measurement Type</label>
+                    <Select
+                      value={newDoor.measurement_type || "initial"}
+                      onValueChange={(value) => setNewDoor({ ...newDoor, measurement_type: value })}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="initial">Initial (Rough Measurements)</SelectItem>
+                        <SelectItem value="quote">Quote (Final Measure)</SelectItem>
+                        <SelectItem value="order">Order (For Manufacturer)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
                     <Input
                       placeholder="Height"
@@ -160,6 +179,50 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
           )}
         </CardContent>
       </Card>
+      )}
+
+      {/* Quote Preparation Checklist - Only for install projects */}
+      {isInstallProject && (
+        <Card className="border border-[#E5E7EB] shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[16px] font-semibold text-[#111827]">Quote Preparation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(!project.quote_checklist || project.quote_checklist.length === 0) ? (
+              <div className="text-sm text-[#6B7280]">
+                Checklist will appear when project moves to "Create Quote" stage
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {project.quote_checklist.map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleChecklistToggle(idx)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                      canEdit ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
+                    } ${item.checked ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-white'}`}
+                  >
+                    {item.checked ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <div className={`text-sm font-medium ${item.checked ? 'text-green-900' : 'text-gray-900'}`}>
+                        {item.item}
+                      </div>
+                      {item.checked && item.checked_at && (
+                        <div className="text-xs text-green-700 mt-0.5">
+                          Checked by {item.checked_by?.split('@')[0] || 'user'} on {new Date(item.checked_at).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Special Requirements - Only show for install projects */}
