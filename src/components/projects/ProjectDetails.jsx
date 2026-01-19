@@ -1782,10 +1782,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                   Overview
                 </TabsTrigger>
                 <TabsTrigger value="activity" className="flex-1 whitespace-nowrap">Activity</TabsTrigger>
-                <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 {showRequirementsTab && (
                   <TabsTrigger value="requirements" className="flex-1 whitespace-nowrap">Requirements</TabsTrigger>
                 )}
+                <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
                 <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
                 {(user?.role === 'admin' || user?.role === 'manager') && (
