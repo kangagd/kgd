@@ -184,8 +184,8 @@ export default function Inbox() {
   const threads = allThreads;
 
   useEffect(() => {
-    devLog('[Inbox] threads updated:', threads.length, 'activeFilters:', activeFilters);
-  }, [threads, activeFilters]);
+    console.log('[INBOX DEBUG] threads.length =', threads?.length, 'allThreads.length =', allThreads?.length);
+  }, [threads, allThreads]);
 
   // Real-time subscription for EmailThread updates (debounced with staleTime gating)
   useEffect(() => {
