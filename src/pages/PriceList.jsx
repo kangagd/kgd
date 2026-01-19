@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, DollarSign, Plus, Pencil, Trash2, PackagePlus, PackageMinus, AlertCircle, Package, Warehouse, RefreshCw } from "lucide-react";
+import { Search, DollarSign, Plus, Pencil, Trash2, PackagePlus, PackageMinus, AlertCircle, Package, Warehouse } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import PriceListItemForm from "../components/pricelist/PriceListItemForm";
@@ -45,12 +45,10 @@ export default function PriceList() {
     loadUser();
   }, []);
 
-  const { data: priceItems = [], isLoading, refetch } = useQuery({
+  const { data: priceItems = [], isLoading } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list('category'),
-    staleTime: 600000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchInterval: 15000, // Refetch every 15 seconds
   });
 
   const { data: vehicles = [] } = useQuery({
@@ -230,14 +228,6 @@ export default function PriceList() {
           </div>
           {canEditPriceList && (
             <div className="flex gap-2 w-full md:w-auto flex-col sm:flex-row">
-              <Button
-                onClick={() => refetch()}
-                variant="outline"
-                className="h-10 px-4 text-sm rounded-xl"
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
               <Button
                 onClick={() => navigate(createPageUrl("WarehouseInventory"))}
                 variant="outline"
