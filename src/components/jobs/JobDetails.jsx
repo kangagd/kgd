@@ -643,10 +643,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   ? LOGISTICS_LOCATION.STORAGE 
                   : LOGISTICS_LOCATION.VEHICLE;
 
-                await base44.functions.invoke("recordStockMovement", {
+                await base44.functions.invoke("movePartsByIds", {
                   part_ids: partsInLoadingBay.map(p => p.id),
-                  from_location: LOGISTICS_LOCATION.LOADING_BAY,
-                  to_location: targetLocation,
+                  from_location_id: null,
+                  to_location_id: targetLocation,
+                  physical_move: true,
+                  notes: `Logistics job completed - moved to ${targetLocation}`
                 });
               }
 

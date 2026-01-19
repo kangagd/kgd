@@ -414,16 +414,18 @@ export default function Logistics() {
 
 
   const movePartMutation = useMutation({
-    mutationFn: ({ part_ids, from_location, to_location }) =>
-      base44.functions.invoke("recordStockMovement", {
+    mutationFn: ({ part_ids, from_location_id, to_location_id, physical_move = false }) =>
+      base44.functions.invoke("movePartsByIds", {
         part_ids,
-        from_location,
-        to_location,
+        from_location_id,
+        to_location_id,
+        physical_move,
+        notes: "Moved from Logistics page"
       }),
     onSuccess: (response) => {
       if (response.data?.success) {
         queryClient.invalidateQueries({ queryKey: ["parts"] });
-        toast.success("Part moved successfully");
+        toast.success(response.data?.message || "Part moved successfully");
       } else {
         toast.error(response.data?.error || "Failed to move part");
       }
@@ -456,10 +458,12 @@ export default function Logistics() {
 
   const handleMoveLoadingBayPart = async (part, destination) => {
     try {
-      const response = await base44.functions.invoke("recordStockMovement", {
+      const response = await base44.functions.invoke("movePartsByIds", {
         part_ids: [part.id],
-        from_location: PART_LOCATION.LOADING_BAY,
-        to_location: destination,
+        from_location_id: null,
+        to_location_id: destination,
+        physical_move: true,
+        notes: `Moved from Loading Bay to ${destination}`
       });
 
       if (!response?.data?.success) {
@@ -467,7 +471,7 @@ export default function Logistics() {
         return;
       }
 
-      toast.success(`Part moved to ${destination}`);
+      toast.success(response.data?.message || `Part moved to ${destination}`);
       queryClient.invalidateQueries({ queryKey: ["parts"] });
     } catch (error) {
       toast.error("Error moving part");

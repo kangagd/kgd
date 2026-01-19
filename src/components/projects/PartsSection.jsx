@@ -127,17 +127,18 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
   });
 
   const movePartMutation = useMutation({
-    mutationFn: ({ part_ids, from_location, to_location }) => 
-      base44.functions.invoke('recordStockMovement', {
+    mutationFn: ({ part_ids, from_location_id, to_location_id, physical_move = true }) => 
+      base44.functions.invoke('movePartsByIds', {
         part_ids,
-        from_location,
-        to_location,
-        project_id: projectId
+        from_location_id,
+        to_location_id,
+        physical_move,
+        notes: `Moved from Parts Section - Project ${projectId}`
       }),
     onSuccess: (response) => {
       if (response.data?.success) {
         queryClient.invalidateQueries({ queryKey: ['parts', projectId] });
-        toast.success("Part moved successfully");
+        toast.success(response.data?.message || "Part moved successfully");
       } else {
         toast.error(response.data?.error || "Failed to move part");
       }
@@ -203,8 +204,9 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
     const fromLocation = normaliseLegacyPartLocation(part.location) || PART_LOCATION.DELIVERY_BAY;
     movePartMutation.mutate({
       part_ids: [part.id],
-      from_location: fromLocation,
-      to_location: toLocation
+      from_location_id: null,
+      to_location_id: toLocation,
+      physical_move: true
     });
   };
 
