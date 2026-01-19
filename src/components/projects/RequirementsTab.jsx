@@ -4,18 +4,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AddIconButton } from "@/components/ui/AddIconButton";
-import { Plus, X } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MeasurementsForm from "../jobs/MeasurementsForm";
 import ThirdPartyTradesPanel from "./ThirdPartyTradesPanel";
 import ProjectContactsPanel from "./ProjectContactsPanel";
 import RichTextField from "../common/RichTextField";
+import { base44 } from "@/api/base44Client";
 
 export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
   const [showAddDoor, setShowAddDoor] = React.useState(false);
-  const [newDoor, setNewDoor] = React.useState({ height: "", width: "", type: "", style: "" });
+  const [newDoor, setNewDoor] = React.useState({ height: "", width: "", type: "", style: "", measurement_type: "initial" });
   const [specialRequirements, setSpecialRequirements] = React.useState(project.special_requirements || "");
 
   const isRepairOrMaintenance = project.project_type === "Repair" || project.project_type === "Maintenance";
+  const isInstallProject = ["Garage Door Install", "Gate Install", "Roller Shutter Install", "Multiple"].includes(project.project_type);
+
+  // Initialize checklist if empty and project is in Create Quote stage
+  React.useEffect(() => {
+    if (isInstallProject && project.status === "Create Quote" && (!project.quote_checklist || project.quote_checklist.length === 0)) {
+      onUpdateProject({
+        quote_checklist: [
+          { item: "Pricing Requested", checked: false },
+          { item: "Pricing Received", checked: false }
+        ]
+      });
+    }
+  }, [project.status, project.quote_checklist, isInstallProject]);
 
   const handleAddDoor = () => {
     if (!newDoor.height && !newDoor.width && !newDoor.type) return;
@@ -34,6 +49,24 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
     if (specialRequirements !== (project.special_requirements || "")) {
       onUpdateProject({ special_requirements: specialRequirements });
     }
+  };
+
+  const handleChecklistToggle = async (index) => {
+    if (!canEdit) return;
+    
+    const user = await base44.auth.me();
+    const currentChecklist = project.quote_checklist || [];
+    const updatedChecklist = [...currentChecklist];
+    const item = updatedChecklist[index];
+    
+    updatedChecklist[index] = {
+      ...item,
+      checked: !item.checked,
+      checked_at: !item.checked ? new Date().toISOString() : null,
+      checked_by: !item.checked ? user.email : null
+    };
+    
+    onUpdateProject({ quote_checklist: updatedChecklist });
   };
 
   return (
