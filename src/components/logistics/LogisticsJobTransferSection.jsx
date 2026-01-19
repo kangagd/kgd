@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertCircle, CheckCircle2, Clock, ArrowRight, Loader2, Lock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, ArrowRight, Loader2, Lock, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const transferStatusConfig = {
@@ -22,11 +23,36 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedItems, setSelectedItems] = useState({});
   const [notes, setNotes] = useState('');
+  const [editingLocations, setEditingLocations] = useState(false);
+
+  // Fetch all inventory locations for the dropdowns
+  const { data: allLocations = [] } = useQuery({
+    queryKey: ['inventoryLocations'],
+    queryFn: () => base44.entities.InventoryLocation.filter({ is_active: true }),
+    enabled: editingLocations,
+  });
 
   const status = job.stock_transfer_status || 'not_started';
   const config = transferStatusConfig[status];
   const Icon = config.icon;
   const isLegacy = job.legacy_flag === true;
+
+  const updateLocationsMutation = useMutation({
+    mutationFn: async ({ sourceLocationId, destinationLocationId }) => {
+      await base44.entities.Job.update(job.id, {
+        source_location_id: sourceLocationId,
+        destination_location_id: destinationLocationId
+      });
+    },
+    onSuccess: () => {
+      toast.success('Locations updated');
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      setEditingLocations(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update locations');
+    }
+  });
 
   const recordTransferMutation = useMutation({
     mutationFn: async () => {
@@ -84,26 +110,106 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Location Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <div className="text-xs text-gray-600 mb-1">From Location</div>
-            <div className="font-medium text-gray-900">
-              {sourceLocation?.name || '—'}
+        {!editingLocations ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium text-gray-700">Transfer Route</div>
+              {isAdmin && status !== 'completed' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingLocations(true)}
+                  className="h-8 gap-1"
+                >
+                  <Edit2 className="w-3 h-3" />
+                  Edit
+                </Button>
+              )}
             </div>
-            {sourceLocation?.address && (
-              <div className="text-xs text-gray-500 mt-1">{sourceLocation.address}</div>
-            )}
-          </div>
-          <div className="flex items-center justify-center">
-            <ArrowRight className="w-5 h-5 text-gray-400" />
-          </div>
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <div className="text-xs text-gray-600 mb-1">To Location</div>
-            <div className="font-medium text-gray-900">
-              {destinationLocation?.name || '—'}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-xs text-gray-600 mb-1">From Location</div>
+                <div className="font-medium text-gray-900">
+                  {sourceLocation?.name || '—'}
+                </div>
+                {sourceLocation?.address && (
+                  <div className="text-xs text-gray-500 mt-1">{sourceLocation.address}</div>
+                )}
+              </div>
+              <div className="flex items-center justify-center">
+                <ArrowRight className="w-5 h-5 text-gray-400" />
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-xs text-gray-600 mb-1">To Location</div>
+                <div className="font-medium text-gray-900">
+                  {destinationLocation?.name || '—'}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
+            <div className="text-sm font-medium text-blue-900">Edit Transfer Route</div>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">From Location</Label>
+                <Select
+                  value={job.source_location_id || ''}
+                  onValueChange={(value) => {
+                    const destId = job.destination_location_id;
+                    updateLocationsMutation.mutate({ 
+                      sourceLocationId: value || null, 
+                      destinationLocationId: destId || null 
+                    });
+                  }}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select source location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allLocations.map(loc => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name} ({loc.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">To Location</Label>
+                <Select
+                  value={job.destination_location_id || ''}
+                  onValueChange={(value) => {
+                    const srcId = job.source_location_id;
+                    updateLocationsMutation.mutate({ 
+                      sourceLocationId: srcId || null, 
+                      destinationLocationId: value || null 
+                    });
+                  }}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select destination location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allLocations.map(loc => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.name} ({loc.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditingLocations(false)}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Status Message */}
         {status === 'completed' && (
