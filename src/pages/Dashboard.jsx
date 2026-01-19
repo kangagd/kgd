@@ -59,12 +59,14 @@ export default function Dashboard() {
     queryKey: ['checkIns'],
     queryFn: () => base44.entities.CheckInOut.list('-created_date', 10),
     ...QUERY_CONFIG.reference,
+    enabled: !!user, // Defer until user loads
   });
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-updated_date', 5),
     ...QUERY_CONFIG.reference,
+    enabled: !!user, // Defer until user loads
   });
 
   const recentProjects = allProjects.filter(p => !p.deleted_at).slice(0, 5);
