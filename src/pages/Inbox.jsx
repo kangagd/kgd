@@ -388,8 +388,7 @@ export default function Inbox() {
       return bTime - aTime;
     });
 
-    devLog('[Inbox] Filter & sort threads');
-    devLog(`[Inbox] Filtered to ${result.length} threads`);
+    console.log('[FILTER DEBUG] FINAL result.length=', result.length);
     return result;
   }, [threads, searchTerm, activeFilters, user?.email, orgEmails]);
 
