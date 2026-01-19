@@ -59,7 +59,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       
       messages.forEach(msg => {
         if (msg.message_type !== 'manual_activity') {
-          console.warn('[ActivityTab] Non-communication message detected:', msg.id, msg.message_type);
+          devLog('[ActivityTab] Non-communication message detected:', msg.id, msg.message_type);
         }
       });
       
@@ -80,7 +80,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       
       threads.forEach(thread => {
         if (!thread.project_id) {
-          console.warn('[ActivityTab] Email thread rendered without project_id link:', thread.id);
+          devLog('[ActivityTab] Email thread rendered without project_id link:', thread.id);
         }
       });
       
@@ -128,9 +128,9 @@ export default function ActivityTab({ project, onComposeEmail }) {
 
       allDrafts.forEach(draft => {
         if (!draft.thread_id) {
-          console.log('[ActivityTab] Skipping draft without thread_id:', draft.id);
+          devLog('[ActivityTab] Skipping draft without thread_id:', draft.id);
         } else if (!threadIds.has(draft.thread_id)) {
-          console.log('[ActivityTab] Skipping draft with unlinked thread:', draft.id, draft.thread_id);
+          devLog('[ActivityTab] Skipping draft with unlinked thread:', draft.id, draft.thread_id);
         }
       });
 
@@ -148,7 +148,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       const thread = await base44.entities.EmailThread.get(threadId);
       
       if (thread.project_id && thread.project_id !== project.id) {
-        console.warn('[ActivityTab] Relinking thread from project', thread.project_id, 'to', project.id);
+        devLog('[ActivityTab] Relinking thread from project', thread.project_id, 'to', project.id);
       }
       
       await base44.functions.invoke('linkEmailThreadToProject', {
@@ -174,7 +174,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
   // This removes EmailThread.project_id, the canonical link
   const unlinkEmailMutation = useMutation({
     mutationFn: async (threadId) => {
-      console.log('[ActivityTab] Unlinking thread', threadId, 'from project', project.id);
+      devLog('[ActivityTab] Unlinking thread', threadId, 'from project', project.id);
       
       await base44.entities.EmailThread.update(threadId, {
         project_id: null,
@@ -204,16 +204,16 @@ export default function ActivityTab({ project, onComposeEmail }) {
     
     // ASSERTION: Verify no system entities leaked into this component
     if (typeof quotes !== 'undefined') {
-      console.error('[ActivityTab] SCOPE VIOLATION: Quote data detected. Quotes belong in ActivityTimeline.');
+      devLog('[ActivityTab] SCOPE VIOLATION: Quote data detected. Quotes belong in ActivityTimeline.');
     }
     if (typeof jobs !== 'undefined') {
-      console.error('[ActivityTab] SCOPE VIOLATION: Job data detected. Jobs belong in ActivityTimeline.');
+      devLog('[ActivityTab] SCOPE VIOLATION: Job data detected. Jobs belong in ActivityTimeline.');
     }
     if (typeof invoices !== 'undefined') {
-      console.error('[ActivityTab] SCOPE VIOLATION: Invoice data detected. Invoices belong in ActivityTimeline.');
+      devLog('[ActivityTab] SCOPE VIOLATION: Invoice data detected. Invoices belong in ActivityTimeline.');
     }
     if (typeof changeHistory !== 'undefined') {
-      console.error('[ActivityTab] SCOPE VIOLATION: ChangeHistory detected. System history belongs in ActivityTimeline.');
+      devLog('[ActivityTab] SCOPE VIOLATION: ChangeHistory detected. System history belongs in ActivityTimeline.');
     }
 
     // Add email messages - ONLY from threads with project_id set
@@ -222,7 +222,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
       
       // Defensive check: ensure thread has project_id
       if (!thread || !thread.project_id) {
-        console.warn('[ActivityTab] Email message rendered without linked thread:', msg.id, msg.thread_id);
+        devLog('[ActivityTab] Email message rendered without linked thread:', msg.id, msg.thread_id);
         return;
       }
       
@@ -244,14 +244,14 @@ export default function ActivityTab({ project, onComposeEmail }) {
     draftEmails.forEach(draft => {
       // Defensive: skip if no thread_id (should never happen due to query filter)
       if (!draft.thread_id) {
-        console.error('[ActivityTab] Draft without thread_id in filtered results:', draft.id);
+        devLog('[ActivityTab] Draft without thread_id in filtered results:', draft.id);
         return;
       }
       
       // Defensive: verify thread is actually linked
       const thread = linkedThreads.find(t => t.id === draft.thread_id);
       if (!thread) {
-        console.error('[ActivityTab] Draft thread not found in linked threads:', draft.id, draft.thread_id);
+        devLog('[ActivityTab] Draft thread not found in linked threads:', draft.id, draft.thread_id);
         return;
       }
       
@@ -291,7 +291,7 @@ export default function ActivityTab({ project, onComposeEmail }) {
     const validTypes = new Set(['email', 'draft', 'manual']);
     activities.forEach(activity => {
       if (!validTypes.has(activity.type)) {
-        console.error('[ActivityTab] SCOPE VIOLATION: Invalid activity type detected:', activity.type, activity.id);
+        devLog('[ActivityTab] SCOPE VIOLATION: Invalid activity type detected:', activity.type, activity.id);
       }
     });
     

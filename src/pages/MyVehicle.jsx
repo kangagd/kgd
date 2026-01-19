@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { devLog } from "@/components/utils/devLog";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -111,10 +112,10 @@ export default function MyVehicle() {
     queryKey: ['myVehicle', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      console.log('MyVehicle - User ID:', user.id);
-      console.log('MyVehicle - User object:', user);
+      devLog('MyVehicle - User ID:', user.id);
+      devLog('MyVehicle - User object:', user);
       const vehicles = await base44.entities.Vehicle.filter({ assigned_user_id: user.id });
-      console.log('MyVehicle - Vehicles found:', vehicles);
+      devLog('MyVehicle - Vehicles found:', vehicles);
       return vehicles[0] || null;
     },
     enabled: !!user

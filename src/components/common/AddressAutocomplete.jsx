@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { devLog } from "@/components/utils/devLog";
 import { Input } from "@/components/ui/input";
 import { Loader2, AlertCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -31,11 +32,11 @@ export default function AddressAutocomplete({
   }, [value]);
 
   useEffect(() => {
-    console.log('🗺️ [AddressAutocomplete] Initializing component');
+    devLog('🗺️ [AddressAutocomplete] Initializing component');
     
     // Check if Google Maps script is already loaded
     if (window.google && window.google.maps && window.google.maps.places) {
-      console.log('✅ [AddressAutocomplete] Google Maps already loaded');
+      devLog('✅ [AddressAutocomplete] Google Maps already loaded');
       setIsScriptLoaded(true);
       return;
     }
@@ -43,11 +44,11 @@ export default function AddressAutocomplete({
     // Check if script is already being loaded
     const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
     if (existingScript) {
-      console.log('⏳ [AddressAutocomplete] Google Maps script already in DOM, waiting...');
+      devLog('⏳ [AddressAutocomplete] Google Maps script already in DOM, waiting...');
       setIsScriptLoading(true);
       const checkInterval = setInterval(() => {
         if (window.google && window.google.maps && window.google.maps.places) {
-          console.log('✅ [AddressAutocomplete] Google Maps loaded successfully');
+          devLog('✅ [AddressAutocomplete] Google Maps loaded successfully');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
           clearInterval(checkInterval);
@@ -56,7 +57,7 @@ export default function AddressAutocomplete({
       
       setTimeout(() => {
         if (!window.google || !window.google.maps || !window.google.maps.places) {
-          console.error('❌ [AddressAutocomplete] Google Maps load timeout');
+          devLog('❌ [AddressAutocomplete] Google Maps load timeout');
           setError('Address autocomplete timed out');
           setIsScriptLoading(false);
           clearInterval(checkInterval);
@@ -70,46 +71,46 @@ export default function AddressAutocomplete({
     const loadGoogleMapsScript = async () => {
       setIsScriptLoading(true);
       try {
-        console.log('🔑 [AddressAutocomplete] Fetching API key...');
+        devLog('🔑 [AddressAutocomplete] Fetching API key...');
         const response = await base44.functions.invoke('getGoogleMapsKey', {});
         const apiKey = response.data?.apiKey;
         
         if (!apiKey) {
-          console.error('❌ [AddressAutocomplete] No API key received');
+          devLog('❌ [AddressAutocomplete] No API key received');
           setError('Google Maps API key not configured');
           setIsScriptLoading(false);
           return;
         }
         
-        console.log('🔑 [AddressAutocomplete] API key retrieved (length:', apiKey?.length, ')');
+        devLog('🔑 [AddressAutocomplete] API key retrieved (length:', apiKey?.length, ')');
         
         // Validate API key format (should be 39 characters)
         if (apiKey.length < 30) {
-          console.error('❌ [AddressAutocomplete] API key seems invalid (too short)');
+          devLog('❌ [AddressAutocomplete] API key seems invalid (too short)');
           setError('Invalid Google Maps API key');
           setIsScriptLoading(false);
           return;
         }
         
-        console.log('📦 [AddressAutocomplete] Loading Google Maps script...');
+        devLog('📦 [AddressAutocomplete] Loading Google Maps script...');
         
         // Define global callback before adding script
         window.initGoogleMaps = () => {
-          console.log('✅ [AddressAutocomplete] Google Maps initialized via callback');
+          devLog('✅ [AddressAutocomplete] Google Maps initialized via callback');
           setIsScriptLoaded(true);
           setIsScriptLoading(false);
         };
         
         // Listen for Google Maps errors (must be set before script loads)
         window.gm_authFailure = () => {
-          console.error('❌ [Google Maps] Authentication failed!');
-          console.error('Common causes:');
-          console.error('1. Invalid API key');
-          console.error('2. Maps JavaScript API not enabled');
-          console.error('3. Places API not enabled');
-          console.error('4. Billing not enabled on Google Cloud project');
-          console.error('5. HTTP referrer restrictions blocking this domain');
-          console.error('6. API restrictions preventing these APIs');
+          devLog('❌ [Google Maps] Authentication failed!');
+          devLog('Common causes:');
+          devLog('1. Invalid API key');
+          devLog('2. Maps JavaScript API not enabled');
+          devLog('3. Places API not enabled');
+          devLog('4. Billing not enabled on Google Cloud project');
+          devLog('5. HTTP referrer restrictions blocking this domain');
+          devLog('6. API restrictions preventing these APIs');
           setError('Google Maps authentication failed - check console for details');
           setIsScriptLoading(false);
         };
@@ -120,14 +121,14 @@ export default function AddressAutocomplete({
         script.defer = true;
         
         script.onerror = (e) => {
-          console.error('❌ [AddressAutocomplete] Script load error:', e);
+          devLog('❌ [AddressAutocomplete] Script load error:', e);
           setError('Failed to load Google Maps');
           setIsScriptLoading(false);
         };
         
         document.head.appendChild(script);
       } catch (error) {
-        console.error('❌ [AddressAutocomplete] Error loading script:', error);
+        devLog('❌ [AddressAutocomplete] Error loading script:', error);
         setError('Could not load address autocomplete');
         setIsScriptLoading(false);
       }
@@ -140,7 +141,7 @@ export default function AddressAutocomplete({
     if (!isScriptLoaded || !inputRef.current) return;
 
     try {
-      console.log('🚀 [AddressAutocomplete] Initializing Autocomplete widget...');
+      devLog('🚀 [AddressAutocomplete] Initializing Autocomplete widget...');
       
       // Create autocomplete widget
       const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
@@ -155,11 +156,11 @@ export default function AddressAutocomplete({
         const place = autocomplete.getPlace();
         
         if (!place || !place.formatted_address) {
-          console.warn('⚠️ [AddressAutocomplete] No place details received');
+          devLog('⚠️ [AddressAutocomplete] No place details received');
           return;
         }
         
-        console.log('📍 [AddressAutocomplete] Place selected:', place.formatted_address);
+        devLog('📍 [AddressAutocomplete] Place selected:', place.formatted_address);
         
         // Parse address components
         const components = {};
@@ -206,7 +207,7 @@ export default function AddressAutocomplete({
           longitude: lng || null
         };
 
-        console.log('✅ [AddressAutocomplete] Address data:', addressData);
+        devLog('✅ [AddressAutocomplete] Address data:', addressData);
         setInputValue(place.formatted_address);
         onChangeRef.current(addressData);
         
@@ -221,7 +222,7 @@ export default function AddressAutocomplete({
         });
       });
       
-      console.log('✅ [AddressAutocomplete] Autocomplete widget initialized');
+      devLog('✅ [AddressAutocomplete] Autocomplete widget initialized');
 
       // Cleanup
       return () => {
@@ -234,7 +235,7 @@ export default function AddressAutocomplete({
       };
 
     } catch (err) {
-      console.error('❌ [AddressAutocomplete] Error initializing widget:', err);
+      devLog('❌ [AddressAutocomplete] Error initializing widget:', err);
       setError('Failed to initialize autocomplete');
     }
   }, [isScriptLoaded]);

@@ -131,14 +131,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   // Helper: Apply returned PO to both cache and formData
   const applyReturnedPO = (returnedPO) => {
     if (!returnedPO?.id) {
-      console.warn("[applyReturnedPO] No PO returned");
+      devLog("[applyReturnedPO] No PO returned");
       return;
     }
 
-    console.log("[applyReturnedPO]", {
-      returned_po_reference: returnedPO.po_reference,
-      returned_name: returnedPO.name
-    });
+    devLog("[applyReturnedPO]", {
+           returned_po_reference: returnedPO.po_reference,
+           returned_name: returnedPO.name
+         });
 
     // 1) Update the query cache so `po` in render updates immediately
     queryClient.setQueryData(["purchaseOrder", poId], returnedPO);
@@ -291,13 +291,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
     const handleSave = async () => {
     // Debug: Confirm save handler runs
-    console.log("[PO SAVE - START]", {
-      po_id: po?.id,
-      form_po_reference: formData.po_reference,
-      form_name: formData.name,
-      loaded_po_reference: po?.po_reference,
-      loaded_name: po?.name
-    });
+    devLog("[PO SAVE - START]", {
+           po_id: po?.id,
+           form_po_reference: formData.po_reference,
+           form_name: formData.name,
+           loaded_po_reference: po?.po_reference,
+           loaded_name: po?.name
+         });
 
     // Validate identity fields
     const validation = validatePoIdentityFields({
@@ -322,22 +322,22 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       attachments: formData.attachments || [],
     };
 
-    console.log("[PO SAVE - PAYLOAD]", {
-      po_reference: updateFields.po_reference,
-      name: updateFields.name
-    });
+    devLog("[PO SAVE - PAYLOAD]", {
+           po_reference: updateFields.po_reference,
+           name: updateFields.name
+         });
 
     try {
       // Direct entity update for reliable persistence
       await base44.entities.PurchaseOrder.update(poId, updateFields);
 
       // Refetch to get persisted values
-      console.log("[PO SAVE - Refetching PO]");
+      devLog("[PO SAVE - Refetching PO]");
       const refetchedPO = await base44.entities.PurchaseOrder.get(poId);
-      console.log("[PO SAVE - SUCCESS]", {
-        po_reference: refetchedPO?.po_reference,
-        name: refetchedPO?.name
-      });
+      devLog("[PO SAVE - SUCCESS]", {
+               po_reference: refetchedPO?.po_reference,
+               name: refetchedPO?.name
+             });
 
       applyReturnedPO(refetchedPO);
 
@@ -363,7 +363,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
       toast.success("Purchase Order saved");
     } catch (error) {
-      console.error("[PO SAVE - ERROR]", error);
+      devLog("[PO SAVE - ERROR]", error);
       toast.error("Failed to save Purchase Order");
     }
   };
@@ -398,7 +398,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       // Reset input to allow uploading same file again
       e.target.value = '';
     } catch (error) {
-      console.error('Upload error:', error);
+      devLog('Upload error:', error);
       toast.error('Failed to upload files');
       e.target.value = '';
     } finally {
@@ -456,7 +456,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       };
 
       await base44.entities.PurchaseOrder.update(poId, updateFields);
-      console.log("[Send to Supplier - fields persisted]");
+      devLog("[Send to Supplier - fields persisted]");
       
       // Then update status using managePurchaseOrder for side effects
       const response = await base44.functions.invoke('managePurchaseOrder', {
@@ -468,10 +468,10 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       
       if (response?.data?.success) {
         const statusUpdatedPO = response.data.purchaseOrder;
-        console.log("[Send to Supplier - after status update]", {
-          po_reference: statusUpdatedPO?.po_reference,
-          name: statusUpdatedPO?.name
-        });
+        devLog("[Send to Supplier - after status update]", {
+                   po_reference: statusUpdatedPO?.po_reference,
+                   name: statusUpdatedPO?.name
+                 });
 
         // Write status update to cache
         queryClient.setQueryData(['purchaseOrder', poId], statusUpdatedPO);
@@ -504,7 +504,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         toast.error('Failed to update status');
       }
     } catch (error) {
-      console.error('[Send to Supplier - ERROR]', error);
+      devLog('[Send to Supplier - ERROR]', error);
       toast.error('Failed to send Purchase Order');
     }
   };
@@ -743,11 +743,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   }
 
   // Debug: Pinpoint render-time data source
-  console.log("[PO DETAIL]", {
-    po_ref_from_query: po?.po_reference ?? null,
-    po_ref_from_form: formData.po_reference ?? '',
-    display: getPoDisplayReference(po),
-  });
+  devLog("[PO DETAIL]", {
+       po_ref_from_query: po?.po_reference ?? null,
+       po_ref_from_form: formData.po_reference ?? '',
+       display: getPoDisplayReference(po),
+     });
 
   const isDraft = po.status === PO_STATUS.DRAFT;
   const isProjectPO = !!formData.project_id;

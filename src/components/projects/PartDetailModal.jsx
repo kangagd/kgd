@@ -33,6 +33,7 @@ import { getPoStatusLabel } from "@/components/domain/purchaseOrderStatusConfig"
 import { getPoIdentity } from "@/components/domain/poDisplayHelpers";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
+import { devLog } from "@/components/utils/devLog";
 
 export default function PartDetailModal({ open, part, onClose, onSave, isSubmitting, projectId }) {
   // Initialize with defaults to avoid blank fields
@@ -134,7 +135,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
     };
 
     if (part) {
-      console.log("PartDetailModal received part:", part);
+      devLog("PartDetailModal received part:", part);
 
       // Prefer linked PO data where appropriate
       const po = linkedPO || {};
@@ -331,7 +332,7 @@ export default function PartDetailModal({ open, part, onClose, onSave, isSubmitt
         attachments: [...(prev.attachments || []), ...newUrls]
       }));
     } catch (error) {
-      console.error("Error uploading files:", error);
+      devLog("Error uploading files:", error);
     }
     setUploading(false);
   };

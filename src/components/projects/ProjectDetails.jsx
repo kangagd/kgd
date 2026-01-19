@@ -263,17 +263,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         // DEV-ONLY: Log API response structure
         if (typeof import.meta !== "undefined" && import.meta.env?.DEV && activeTab === "overview") {
           const data = response.data;
-          console.group("[QuotePipeline-API] getProjectWithRelations response");
-          console.log("Response top-level keys:", Object.keys(data || {}));
+          devLog("[QuotePipeline-API] getProjectWithRelations response");
+          devLog("Response top-level keys:", Object.keys(data || {}));
           const quoteKeysInResponse = Object.keys(data || {}).filter(k => k.toLowerCase().includes('quote'));
           if (quoteKeysInResponse.length > 0) {
-            console.log("Quote-related keys in response:", quoteKeysInResponse);
+            devLog("Quote-related keys in response:", quoteKeysInResponse);
             quoteKeysInResponse.forEach(key => console.log(`  ${key}:`, data[key]));
           } else {
-            console.log("⚠️  No quote-related keys found in response");
+            devLog("⚠️  No quote-related keys found in response");
           }
-          console.log("data.quotes:", data?.quotes);
-          console.groupEnd();
+          devLog("data.quotes:", data?.quotes);
+          
         }
 
         return response.data;
@@ -301,33 +301,33 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   // DEV-ONLY: Diagnostic logging for quote pipeline
   useEffect(() => {
     if (typeof import.meta !== "undefined" && import.meta.env?.DEV && activeTab === "overview") {
-      console.group("[QuotePipeline-Overview] Diagnostics");
-      console.log("project.id:", project?.id);
-      console.log("project keys:", Object.keys(project || {}));
+      devLog("[QuotePipeline-Overview] Diagnostics");
+      devLog("project.id:", project?.id);
+      devLog("project keys:", Object.keys(project || {}));
       
       // Check for quote fields at project level
       const quoteFieldGuesses = ['quotes', 'project_quotes', 'projectQuotes', 'quote_ids'];
       const foundQuoteFields = quoteFieldGuesses.filter(key => key in (project || {}));
       if (foundQuoteFields.length > 0) {
-        console.log("Found quote fields on project:", foundQuoteFields);
+        devLog("Found quote fields on project:", foundQuoteFields);
         foundQuoteFields.forEach(key => console.log(`  ${key}:`, project[key]));
       }
       
       // Check projectData keys
-      console.log("projectData top-level keys:", Object.keys(projectData || {}));
+      devLog("projectData top-level keys:", Object.keys(projectData || {}));
       const quoteKeysInData = Object.keys(projectData || {}).filter(k => k.toLowerCase().includes('quote'));
       if (quoteKeysInData.length > 0) {
-        console.log("Quote-related keys in projectData:", quoteKeysInData);
+        devLog("Quote-related keys in projectData:", quoteKeysInData);
         quoteKeysInData.forEach(key => console.log(`  projectData.${key}:`, projectData[key]));
       }
       
       // Log the actual quotes passed to CommercialStatusCard
-      console.log("quotes (array) passed to CommercialStatusCard:", {
-        isArray: Array.isArray(quotes),
-        length: quotes?.length || 0,
-        value: quotes
-      });
-      console.groupEnd();
+      devLog("quotes (array) passed to CommercialStatusCard:", {
+               isArray: Array.isArray(quotes),
+               length: quotes?.length || 0,
+               value: quotes
+             });
+      
     }
   }, [project?.id, activeTab, quotes, projectData]);
 
@@ -619,7 +619,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       toast.success(`Invoice #${invoice.xero_invoice_number} linked to project`);
       setShowLinkInvoiceModal(false);
     } catch (error) {
-      console.error('Failed to link invoice:', error);
+      devLog('Failed to link invoice:', error);
       toast.error('Failed to link invoice');
     } finally {
       setIsLinkingInvoice(false);
@@ -1840,11 +1840,11 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 
                 // DEV-ONLY: Verify quotes array shape before render
                 if (typeof import.meta !== "undefined" && import.meta.env?.DEV && activeTab === "overview") {
-                  console.log("[CommercialStatusCard-SafeQuotes] Verified quotes", {
-                    isArray: Array.isArray(safeQuotes),
-                    length: safeQuotes.length,
-                    responseQuotesLength: projectData?.quotes?.length
-                  });
+                  devLog("[CommercialStatusCard-SafeQuotes] Verified quotes", {
+                                       isArray: Array.isArray(safeQuotes),
+                                       length: safeQuotes.length,
+                                       responseQuotesLength: projectData?.quotes?.length
+                                     });
                 }
 
                 return (
