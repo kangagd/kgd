@@ -378,8 +378,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       map[item.id] = (map[item.id] || 0) + (item.stock_level || 0);
     }
     for (const iq of inventoryQuantities) {
-      if (iq.price_list_item_id && iq.location_type === 'vehicle') {
-        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity_on_hand || 0);
+      if (iq.price_list_item_id) {
+        map[iq.price_list_item_id] = (map[iq.price_list_item_id] || 0) + (iq.quantity || 0);
       }
     }
     return map;
