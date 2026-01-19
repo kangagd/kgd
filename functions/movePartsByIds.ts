@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { checkInventoryTrackability } from './shared/inventoryTrackingGuardrails.js';
 
 Deno.serve(async (req) => {
   try {
@@ -62,13 +63,18 @@ Deno.serve(async (req) => {
     // Process each part
     for (const part of validParts) {
       try {
-        // If physical move, validate price_list_item_id
-        if (physical_move && !part.price_list_item_id) {
-          errors.push({
-            part_id: part.id,
-            reason: 'Missing price_list_item_id - cannot perform physical inventory move'
-          });
-          continue;
+        // If physical move, check inventory trackability
+        if (physical_move) {
+          const trackCheck = checkInventoryTrackability(part);
+          if (!trackCheck.isInventoryTracked) {
+            errors.push({
+              part_id: part.id,
+              item_name: part.item_name || part.category || 'Unknown',
+              warning_badge: 'Not inventory-tracked',
+              reason: trackCheck.reason
+            });
+            continue;
+          }
         }
 
         // Physical move: update inventory quantities
