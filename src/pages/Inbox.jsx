@@ -325,11 +325,11 @@ export default function Inbox() {
 
   // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
-    devLog('[Inbox] Filter & sort threads START', 'threads.length:', threads?.length);
+    console.log('[FILTER DEBUG] START threads.length=', threads?.length);
     let result = (threads || [])
       .filter((t) => !t.is_deleted);
     
-    devLog('[Inbox] After is_deleted filter:', result.length);
+    console.log('[FILTER DEBUG] After is_deleted filter:', result.length);
     
     result = result.map((t) => ({
       ...t,
