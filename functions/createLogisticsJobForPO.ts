@@ -101,31 +101,99 @@ Deno.serve(async (req) => {
         // Generate job number using shared utility
         const jobNumber = await generateJobNumber(base44, po.project_id);
 
-        // Create the Job
-         const jobData = {
-             job_number: jobNumber,
-             job_type_id: jobTypeId,
-             job_type: jobTypeName,
-             job_type_name: jobTypeName,
-             project_id: po.project_id || null,
-             purchase_order_id: po.id,
-             status: "Open",
-             scheduled_date: scheduled_date || new Date().toISOString().split('T')[0],
-             assigned_to: technician_id ? [technician_id] : [],
-             notes: `Logistics job for PO from ${supplierName}`,
-             address: jobAddressFull,
-             address_full: jobAddressFull,
-             customer_name: jobTitle,
-             is_logistics_job: true,
-             logistics_purpose: logisticsPurpose,
-             origin_address: originAddress,
-             destination_address: destinationAddress,
-             reference_type: 'purchase_order',
-             reference_id: po.id,
-             source_location_id: null, // Supplier is not an InventoryLocation; origin_address captures supplier location
-             destination_location_id: warehouseLocationId, // Warehouse InventoryLocation
-             stock_transfer_status: 'not_started',
-         };
+        // Get PO lines and create Parts first (before Job creation)
+        const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
+            purchase_order_id: po.id
+        });
+
+        // Create/update Parts from PO lines
+        const existingParts = await base44.asServiceRole.entities.Part.filter({
+            primary_purchase_order_id: po.id
+        });
+
+        const existingPartsByLineId = new Map();
+        for (const part of existingParts) {
+            if (part.part_id) {
+                existingPartsByLineId.set(part.part_id, part);
+            }
+        }
+
+        const allParts = [...existingParts];
+        for (const line of poLines) {
+            // Check if Part already exists for this PO line
+            if (line.part_id && existingPartsByLineId.has(line.part_id)) {
+                const part = existingPartsByLineId.get(line.part_id);
+                // Ensure item_name is populated from PO line
+                if (!part.item_name && line.item_name) {
+                    await base44.asServiceRole.entities.Part.update(part.id, {
+                        item_name: line.item_name
+                    });
+                    part.item_name = line.item_name;
+                }
+                continue;
+            }
+
+            // No Part exists - create one
+            const newPart = await base44.asServiceRole.entities.Part.create({
+                project_id: po.project_id || undefined,
+                item_name: line.item_name || line.description || 'Item',
+                category: "Other",
+                quantity_required: line.qty_ordered || 1,
+                status: "on_order",
+                location: "at_supplier",
+                primary_purchase_order_id: po.id,
+                purchase_order_ids: [po.id],
+                supplier_id: po.supplier_id,
+                supplier_name: po.supplier_name,
+                po_number: po.po_reference,
+                order_reference: po.po_reference,
+                order_date: po.order_date,
+                eta: po.expected_date,
+            });
+            allParts.push(newPart);
+
+            // Update PO line with the new part_id
+            await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
+                part_id: newPart.id
+            });
+        }
+
+        // Build checked_items object for the job
+        const checkedItems = {};
+        for (const part of allParts) {
+            checkedItems[part.id] = false;
+        }
+
+        // Create the Job with checked_items
+        const jobData = {
+            job_number: jobNumber,
+            job_type_id: jobTypeId,
+            job_type: jobTypeName,
+            job_type_name: jobTypeName,
+            purchase_order_id: po.id,
+            status: "Open",
+            scheduled_date: scheduled_date || new Date().toISOString().split('T')[0],
+            assigned_to: technician_id ? [technician_id] : [],
+            notes: `Logistics job for PO from ${supplierName}`,
+            address: jobAddressFull,
+            address_full: jobAddressFull,
+            customer_name: jobTitle,
+            is_logistics_job: true,
+            logistics_purpose: logisticsPurpose,
+            origin_address: originAddress,
+            destination_address: destinationAddress,
+            reference_type: 'purchase_order',
+            reference_id: po.id,
+            source_location_id: null,
+            destination_location_id: warehouseLocationId,
+            stock_transfer_status: 'not_started',
+            checked_items: checkedItems,
+        };
+
+        // Add project_id only if it exists
+        if (po.project_id) {
+            jobData.project_id = po.project_id;
+        }
 
         const job = await base44.asServiceRole.entities.Job.create(jobData);
 
