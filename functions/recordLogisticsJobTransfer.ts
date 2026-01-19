@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.js';
 
 Deno.serve(async (req) => {
   try {
