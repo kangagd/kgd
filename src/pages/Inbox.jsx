@@ -325,13 +325,18 @@ export default function Inbox() {
 
   // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
-    devLog('[Inbox] Filter & sort threads');
+    devLog('[Inbox] Filter & sort threads START', 'threads.length:', threads?.length);
     let result = (threads || [])
-      .filter((t) => !t.is_deleted)
-      .map((t) => ({
-        ...t,
-        inferredDirection: inferThreadDirection(t, orgEmails),
-      }));
+      .filter((t) => !t.is_deleted);
+    
+    devLog('[Inbox] After is_deleted filter:', result.length);
+    
+    result = result.map((t) => ({
+      ...t,
+      inferredDirection: inferThreadDirection(t, orgEmails),
+    }));
+
+    devLog('[Inbox] After inferredDirection map:', result.length);
 
     if (result.length > 0 && result.length <= 5) {
       devLog('[Inbox] Sample threads before filter:', result.map(t => ({ id: t.id, userStatus: t.userStatus, isUnread: t.isUnread })));
@@ -348,10 +353,12 @@ export default function Inbox() {
           t.to_addresses?.some((addr) => addr?.toLowerCase().includes(search)) ||
           t.last_message_snippet?.toLowerCase().includes(search)
       );
+      devLog('[Inbox] After search filter:', result.length);
     }
 
     // If NO filters are active, return all threads
     const hasActiveFilters = Object.values(activeFilters).some(v => v === true);
+    devLog('[Inbox] hasActiveFilters:', hasActiveFilters, 'result.length before filter:', result.length);
     if (!hasActiveFilters) {
       // No filters: return all non-deleted threads (already filtered above)
     } else if (activeFilters["closed"]) {
