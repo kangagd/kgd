@@ -61,13 +61,17 @@ const inferThreadDirection = (thread, orgEmails = []) => {
 };
 
 export default function Inbox() {
-  const queryClient = useQueryClient();
-  const mountedRef = useRef(true);
-  const syncInFlightRef = useRef(false);
-  const [user, setUser] = useState(null);
-  const [selectedThreadId, setSelectedThreadId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilters, setActiveFilters] = useState({});
+   const queryClient = useQueryClient();
+   const mountedRef = useRef(true);
+   const syncInFlightRef = useRef(false);
+   const [user, setUser] = useState(null);
+   const [selectedThreadId, setSelectedThreadId] = useState(null);
+   const [searchTerm, setSearchTerm] = useState("");
+   const [activeFilters, setActiveFilters] = useState({});
+   const [allThreads, setAllThreads] = useState([]);
+   const [cursor, setCursor] = useState(null);
+   const [hasMore, setHasMore] = useState(true);
+   const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   // NOTE: `showComposer`/`composerMessage` removed (GUARDRAIL: use composerOpen/composerMode instead - controls both visibility and mode)
   // Composer state consolidated into: composerOpen, composerMode, composerThreadId, composerDraftId, composerLastMessage
@@ -120,46 +124,71 @@ export default function Inbox() {
     }
   }, []);
 
-  const { data: threads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
+  const { data: initialThreads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
     queryKey: inboxKeys.threads(),
     queryFn: async () => {
       setLastThreadFetchTime(Date.now());
       console.time('[Inbox] Fetch threads + viewers');
-      const allThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
+      const fetchedThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
       const viewers = await base44.entities.EmailThreadViewer.list();
-      
+
       const viewersMap = new Map();
       for (const v of viewers) {
         if (!viewersMap.has(v.thread_id)) viewersMap.set(v.thread_id, []);
         viewersMap.get(v.thread_id).push(v);
       }
 
-      const result = allThreads
+      const result = fetchedThreads
         .filter((t) => !t.is_deleted)
         .map((thread) => ({
           ...thread,
           viewers: viewersMap.get(thread.id) || [],
         }));
-      
+
       console.timeEnd('[Inbox] Fetch threads + viewers');
       console.log(`[Inbox] Loaded ${result.length} threads`);
       return result;
     },
     enabled: !!user,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
     ...QUERY_CONFIG.reference,
     onSuccess: (newThreads) => {
+      setAllThreads(newThreads);
+      setCursor(newThreads.length > 0 ? newThreads[newThreads.length - 1].last_message_date : null);
+      setHasMore(newThreads.length === 100);
       if (selectedThreadId && !newThreads.find((t) => t.id === selectedThreadId)) {
-        const currentIndex = threads.findIndex((t) => t.id === selectedThreadId);
+        const currentIndex = newThreads.findIndex((t) => t.id === selectedThreadId);
         const nextThread = newThreads[Math.min(currentIndex, newThreads.length - 1)];
         setSelectedThreadId(nextThread?.id || null);
-        console.log(
-          `[Inbox] Thread selection reset: ${selectedThreadId} not found, selected ${nextThread?.id || "null"}`
-        );
       }
     },
   });
+
+  const handleLoadMore = async () => {
+    if (!cursor || isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const moreThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
+      const filtered = moreThreads
+        .filter((t) => !t.is_deleted && new Date(t.last_message_date).getTime() < new Date(cursor).getTime())
+        .slice(0, 100);
+
+      if (filtered.length > 0) {
+        setAllThreads([...allThreads, ...filtered]);
+        setCursor(filtered[filtered.length - 1].last_message_date);
+        setHasMore(filtered.length === 100);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Failed to load more threads:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const threads = allThreads;
 
   // Real-time subscription for EmailThread updates (debounced with staleTime gating)
   useEffect(() => {
@@ -742,7 +771,7 @@ export default function Inbox() {
           </div>
 
           {/* List */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
             {activeView === "drafts" ? (
               <div className="p-3">
                 <DraftsList
@@ -766,19 +795,39 @@ export default function Inbox() {
                 </div>
               </div>
             ) : (
-              filteredThreads.map((thread) => (
-                <ThreadRow
-                  key={thread.id}
-                  thread={thread} // includes inferredDirection
-                  isSelected={selectedThreadId === thread.id}
-                  onClick={() => !selectionMode && setSelectedThreadId(thread.id)}
-                  currentUser={user}
-                  onThreadUpdate={() => refetchThreads()}
-                  selectionMode={selectionMode}
-                  isSelectedForBulk={selectedThreadIds.has(thread.id)}
-                  onBulkSelect={handleBulkSelect}
-                />
-              ))
+              <>
+                <div className="flex-1 overflow-y-auto">
+                  {filteredThreads.map((thread) => (
+                    <ThreadRow
+                      key={thread.id}
+                      thread={thread}
+                      isSelected={selectedThreadId === thread.id}
+                      onClick={() => !selectionMode && setSelectedThreadId(thread.id)}
+                      currentUser={user}
+                      onThreadUpdate={() => refetchThreads()}
+                      selectionMode={selectionMode}
+                      isSelectedForBulk={selectedThreadIds.has(thread.id)}
+                      onBulkSelect={handleBulkSelect}
+                    />
+                  ))}
+                </div>
+                {hasMore && (
+                  <div className="p-3 border-t border-[#E5E7EB]">
+                    <Button
+                      onClick={handleLoadMore}
+                      disabled={isLoadingMore}
+                      variant="outline"
+                      className="w-full text-xs"
+                    >
+                      {isLoadingMore ? (
+                        <><Loader className="w-3 h-3 mr-2 animate-spin" />Loading...</>
+                      ) : (
+                        "Load More Emails"
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

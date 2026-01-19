@@ -1,3 +1,4 @@
+import AdminDuplicates from './pages/AdminDuplicates';
 import BaselineStockSeed from './pages/BaselineStockSeed';
 import CheckIn from './pages/CheckIn';
 import Contracts from './pages/Contracts';
@@ -33,11 +34,11 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
-import AdminDuplicates from './pages/AdminDuplicates';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AdminDuplicates": AdminDuplicates,
     "BaselineStockSeed": BaselineStockSeed,
     "CheckIn": CheckIn,
     "Contracts": Contracts,
@@ -73,7 +74,6 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
-    "AdminDuplicates": AdminDuplicates,
 }
 
 export const pagesConfig = {
