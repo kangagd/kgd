@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { PART_STATUS, PART_LOCATION, getPartStatusLabel, getPartLocationLabel, normaliseLegacyPartStatus, normaliseLegacyPartLocation, isPartAvailable } from "@/components/domain/partConfig";
+import { getMainWarehouseLocationId, getVehicleLocationIdForVehicle } from "@/components/utils/inventoryLocationLookup";
 import {
   Dialog,
   DialogContent,
@@ -69,11 +70,16 @@ const FLOW_STEPS = [
 ];
 
 export default function PartsSection({ projectId, autoExpand = false, registerAddPartTrigger }) {
-  const [showModal, setShowModal] = useState(false);
-  const [editingPart, setEditingPart] = useState(null);
-  const [selectedPoId, setSelectedPoId] = useState(null);
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
+   const [showModal, setShowModal] = useState(false);
+   const [editingPart, setEditingPart] = useState(null);
+   const [selectedPoId, setSelectedPoId] = useState(null);
+   const queryClient = useQueryClient();
+   const navigate = useNavigate();
+
+   const { data: allLocations = [] } = useQuery({
+     queryKey: ['inventoryLocations'],
+     queryFn: () => base44.entities.InventoryLocation.list()
+   });
 
   const { data: allParts = [] } = useQuery({
     queryKey: ['parts', projectId],
@@ -199,14 +205,28 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
 
 
-  const handleMovePart = (e, part, toLocation) => {
+  const handleMovePart = (e, part, targetLocation) => {
     e.stopPropagation();
-    const fromLocation = normaliseLegacyPartLocation(part.location) || PART_LOCATION.DELIVERY_BAY;
+    
+    let to_location_id = null;
+    if (targetLocation === PART_LOCATION.WAREHOUSE_STORAGE) {
+      to_location_id = getMainWarehouseLocationId(allLocations);
+    } else if (targetLocation === PART_LOCATION.VEHICLE) {
+      // For now, use first available vehicle location (can be enhanced with vehicle selection)
+      const vehicleLoc = allLocations.find(loc => loc.type === 'vehicle' && loc.is_active !== false);
+      to_location_id = vehicleLoc?.id || null;
+    }
+    
+    if (!to_location_id) {
+      toast.error(`No destination location found for ${targetLocation}`);
+      return;
+    }
+    
     movePartMutation.mutate({
       part_ids: [part.id],
       from_location_id: null,
-      to_location_id: toLocation,
-      physical_move: true
+      to_location_id,
+      physical_move: false
     });
   };
 
