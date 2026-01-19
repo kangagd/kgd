@@ -8,6 +8,7 @@ import EmailTemplates from './pages/EmailTemplates';
 import Fleet from './pages/Fleet';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
+import InventoryDebugger from './pages/InventoryDebugger';
 import Jobs from './pages/Jobs';
 import Logistics from './pages/Logistics';
 import ModelHealth from './pages/ModelHealth';
@@ -32,7 +33,7 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
-import InventoryDebugger from './pages/InventoryDebugger';
+import AdminDuplicates from './pages/AdminDuplicates';
 import __Layout from './Layout.jsx';
 
 
@@ -47,6 +48,7 @@ export const PAGES = {
     "Fleet": Fleet,
     "Home": Home,
     "Inbox": Inbox,
+    "InventoryDebugger": InventoryDebugger,
     "Jobs": Jobs,
     "Logistics": Logistics,
     "ModelHealth": ModelHealth,
@@ -71,7 +73,7 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
-    "InventoryDebugger": InventoryDebugger,
+    "AdminDuplicates": AdminDuplicates,
 }
 
 export const pagesConfig = {
