@@ -3,8 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, RotateCw, Copy, Download } from 'lucide-react';
+import { AlertTriangle, RotateCw, Copy, Download, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import ContractEmailSection from '@/components/contracts/ContractEmailSection';
 
 export default function AdminDuplicates() {
   const [user, setUser] = useState(null);

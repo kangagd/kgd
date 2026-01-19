@@ -1,23 +1,19 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Mail, LinkIcon, ExternalLink, Reply, FileEdit, Trash2, Sparkles } from "lucide-react";
+import { Mail, LinkIcon, ExternalLink, Reply } from "lucide-react";
 import { toast } from "sonner";
 import { createPageUrl } from "@/utils";
 import EmailMessageView from "../inbox/EmailMessageView";
 import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
-import LinkEmailThreadModalContract from "./LinkEmailThreadModalContract";
+import LinkEmailThreadModal from "../projects/LinkEmailThreadModal";
 
 export default function ContractEmailSection({ contract, onThreadLinked }) {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [composerMode, setComposerMode] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [editingDraft, setEditingDraft] = useState(null);
 
   // Load user for permission checks
   const { data: currentUser } = useQuery({
@@ -26,7 +22,7 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
     staleTime: Infinity
   });
 
-  // ONLY fetch threads explicitly linked to this contract
+  // Fetch threads linked to this contract
   const { data: linkedThreads = [], isLoading: threadLoading, refetch: refetchThreads } = useQuery({
     queryKey: ['contractEmailThreads', contract.id],
     queryFn: async () => {
@@ -40,7 +36,7 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
     refetchOnMount: true
   });
 
-  // Fetch messages ONLY for linked threads
+  // Fetch messages for linked threads
   const { data: messages = [], isLoading: messagesLoading, refetch: refetchMessages } = useQuery({
     queryKey: ['contractEmailMessages', contract.id, linkedThreads.map(t => t.id).join(',')],
     queryFn: async () => {
@@ -60,17 +56,14 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
   // Link thread mutation
   const linkThreadMutation = useMutation({
     mutationFn: async (threadId) => {
-      const response = await base44.functions.invoke('linkEmailThreadToContract', {
-        threadId: threadId,
-        contractId: contract.id,
-        set_as_primary: linkedThreads.length === 0
+      await base44.entities.EmailThread.update(threadId, {
+        contract_id: contract.id,
+        linked_to_contract_at: new Date().toISOString(),
+        linked_to_contract_by: currentUser.email
       });
-      return response.data;
     },
     onSuccess: async () => {
-      // CRITICAL: Invalidate all email queries to ensure inbox shows updated link status
       await queryClient.invalidateQueries({ queryKey: ['contractEmailThreads', contract.id] });
-      await queryClient.invalidateQueries({ queryKey: ['contract', contract.id] });
       await queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
       await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
       await queryClient.refetchQueries({ queryKey: ['contractEmailThreads', contract.id] });
@@ -83,12 +76,11 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
     }
   });
 
-  // Unlink thread mutation (requires admin/manager)
+  // Unlink thread mutation
   const unlinkThreadMutation = useMutation({
     mutationFn: async (threadId) => {
-      const userRole = currentUser?.role;
-      const isManager = currentUser?.extended_role === 'manager';
-      if (userRole !== 'admin' && !isManager) {
+      const canUnlink = currentUser?.role === 'admin' || currentUser?.extended_role === 'manager';
+      if (!canUnlink) {
         throw new Error('Insufficient permissions to unlink threads');
       }
       await base44.entities.EmailThread.update(threadId, {
@@ -97,12 +89,7 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
         contract_status: null,
         contract_type: null,
         linked_to_contract_at: null,
-        linked_to_contract_by: null,
-        project_id: null,
-        project_number: null,
-        project_title: null,
-        linked_to_project_at: null,
-        linked_to_project_by: null
+        linked_to_contract_by: null
       });
     },
     onSuccess: () => {
@@ -114,48 +101,23 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
     }
   });
 
-  const handleRefresh = async () => {
-    await refetchThreads();
-    await refetchMessages();
-    toast.success('Emails refreshed');
-  };
-
   const handleReply = (message, thread) => {
     setSelectedMessage(message);
     setComposerMode({ type: 'reply', thread: thread });
   };
 
-  const handleEmailSent = async (threadId) => {
+  const handleEmailSent = async () => {
     setComposerMode(null);
     setSelectedMessage(null);
-    setEditingDraft(null);
-    
-    // Invalidate and refetch to show updated threads/messages
     await queryClient.invalidateQueries({ queryKey: ['contractEmailThreads', contract.id] });
-    await queryClient.invalidateQueries({ queryKey: ['myEmailThreads'] });
+    await queryClient.invalidateQueries({ queryKey: ['contractEmailMessages', contract.id] });
     await queryClient.refetchQueries({ queryKey: ['contractEmailThreads', contract.id] });
     await refetchMessages();
-    await refetchDrafts();
-  };
-
-  const handleEditDraft = (draft) => {
-    setEditingDraft(draft);
-    setComposerMode('compose');
-  };
-
-  const handleDraftSaved = () => {
-    refetchDrafts();
   };
 
   const isLoading = threadLoading || messagesLoading;
   const canUnlink = currentUser?.role === 'admin' || currentUser?.extended_role === 'manager';
   const canReply = currentUser?.role !== 'viewer';
-
-  // Fetch drafts hook
-  const { data: drafts = [], refetch: refetchDrafts } = useLinkThreadDrafts(contract, linkedThreads);
-
-  // Derive default email recipient
-  const defaultTo = contract.contact_email || contract.organisation_email || '';
 
   // No linked threads - show option to link
   if (linkedThreads.length === 0) {
@@ -174,8 +136,7 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
           Link Email Thread
         </Button>
 
-        {/* Link Thread Modal */}
-        <LinkEmailThreadModalContract
+        <LinkEmailThreadModal
           open={showLinkModal}
           onClose={() => setShowLinkModal(false)}
           contractId={contract.id}
@@ -189,23 +150,20 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
   return (
     <div className="space-y-4">
       {/* Composer */}
-       {composerMode && (
-          <UnifiedEmailComposer
-            variant="inline"
-            mode={composerMode.type || composerMode}
-            thread={composerMode.thread || null}
-            message={selectedMessage}
-            existingDraft={editingDraft}
-            defaultTo={defaultTo}
-            linkTarget={{ type: "contract", id: contract.id }}
-            onClose={() => {
-              setComposerMode(null);
-              setSelectedMessage(null);
-            }}
-            onSent={handleEmailSent}
-            onDraftSaved={handleDraftSaved}
-          />
-        )}
+      {composerMode && (
+        <UnifiedEmailComposer
+          variant="inline"
+          mode={composerMode.type || composerMode}
+          thread={composerMode.thread || null}
+          message={selectedMessage}
+          linkTarget={{ type: "contract", id: contract.id, name: contract.name }}
+          onClose={() => {
+            setComposerMode(null);
+            setSelectedMessage(null);
+          }}
+          onSent={handleEmailSent}
+        />
+      )}
 
       {/* Loading State */}
       {isLoading ? (
@@ -284,46 +242,12 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
                         onReply={canReply ? handleReply : null}
                         thread={thread}
                       />
-                      {/* AI Summary - optional */}
-                      {message.ai_summary && (
-                        <div className="ml-12 p-2 bg-blue-50 rounded-lg flex gap-2 mt-2">
-                          <Sparkles className="w-3 h-3 text-blue-600 flex-shrink-0 mt-0.5" />
-                          <p className="text-[12px] text-blue-700">{message.ai_summary}</p>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
               </div>
             );
           })}
-
-          {/* Draft Emails */}
-          {drafts.length > 0 && (
-            <div className="space-y-2 mb-4">
-              <div className="text-xs font-medium text-[#6B7280]">Drafts</div>
-              {drafts.map(draft => (
-                <div
-                  key={draft.id}
-                  onClick={() => handleEditDraft(draft)}
-                  className="p-3 bg-amber-50 border border-amber-200 rounded-lg cursor-pointer hover:bg-amber-100 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-medium text-amber-800">Draft</span>
-                    <span className="text-xs text-amber-600">
-                      {new Date(draft.updated_date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {draft.subject && (
-                    <div className="text-sm font-medium text-[#111827] mb-1">{draft.subject}</div>
-                  )}
-                  <div className="text-xs text-[#6B7280] line-clamp-2">
-                    {draft.body_text?.substring(0, 150) || 'No content'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Button to link more threads */}
           <Button
@@ -338,31 +262,13 @@ export default function ContractEmailSection({ contract, onThreadLinked }) {
       )}
 
       {/* Link Thread Modal */}
-      <LinkEmailThreadModalContract
+      <LinkEmailThreadModal
         open={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         contractId={contract.id}
         onLink={(threadId) => linkThreadMutation.mutate(threadId)}
         isLinking={linkThreadMutation.isPending}
       />
-      </div>
-      );
-      }
-
-      // Fetch drafts for linked threads
-      function useLinkThreadDrafts(contract, linkedThreads) {
-      return useQuery({
-        queryKey: ['contractEmailDrafts', contract.id, linkedThreads.map(t => t.id).join(',')],
-        queryFn: async () => {
-          if (linkedThreads.length === 0) return [];
-          const user = await base44.auth.me();
-          const allDrafts = await base44.entities.EmailDraft.filter({ 
-            created_by: user.email,
-            status: 'draft'
-          }, '-updated_date');
-          const threadIds = linkedThreads.map(t => t.id);
-          return allDrafts.filter(d => threadIds.includes(d.thread_id));
-        },
-        enabled: linkedThreads.length > 0
-      });
-      }
+    </div>
+  );
+}

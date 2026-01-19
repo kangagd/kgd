@@ -12,6 +12,8 @@ import JobCard from "../jobs/JobCard";
 import { createPageUrl } from "@/utils";
 import { Link } from "react-router-dom";
 import BackButton from "../common/BackButton";
+import ContractEmailSection from "./ContractEmailSection";
+import { Mail } from "lucide-react";
 
 export default function ContractDetails({ contract, onClose, onEdit }) {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -92,6 +94,10 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="emails" className="flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            Emails
+          </TabsTrigger>
           <TabsTrigger value="stations">Stations ({stations.length})</TabsTrigger>
           <TabsTrigger value="jobs">All Jobs ({jobs.length})</TabsTrigger>
         </TabsList>
@@ -247,6 +253,20 @@ export default function ContractDetails({ contract, onClose, onEdit }) {
               </div>
             )}
           </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="emails" className="space-y-6">
+          <Card className="border-2 border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-500" />
+                Email Communications
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ContractEmailSection contract={contract} onThreadLinked={() => {}} />
+            </CardContent>
           </Card>
         </TabsContent>
 
