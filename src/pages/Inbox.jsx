@@ -190,6 +190,11 @@ export default function Inbox() {
     console.log('[INBOX DEBUG] threads.length =', threads?.length, 'allThreads.length =', allThreads?.length);
   }, [threads, allThreads]);
 
+  // DEBUG: Watch initialThreads from React Query
+  useEffect(() => {
+    devLog(`[Inbox] initialThreads changed - length=${initialThreads.length}`, initialThreads.slice(0, 1));
+  }, [initialThreads]);
+
   // Real-time subscription for EmailThread updates (debounced with staleTime gating)
   useEffect(() => {
     if (!user) return;
