@@ -354,16 +354,25 @@ export default function Inbox() {
       );
     }
 
-    // Filters - apply filters (default: show non-closed unless specifically viewing closed)
-    const isClosed = activeFilters["closed"];
-    if (isClosed) {
+    // If NO filters are active, return all threads
+    const hasActiveFilters = Object.values(activeFilters).some(v => v === true);
+    if (!hasActiveFilters) {
+      // No filters: return all non-deleted threads (already filtered above)
+    } else if (activeFilters["closed"]) {
       result = result.filter((t) => t.userStatus === "closed");
-    } else {
-      // Show all non-closed threads (regardless of other filters being off)
-      result = result.filter((t) => t.userStatus !== "closed" && !t.is_deleted);
+    } else if (activeFilters["assigned-to-me"]) {
+      result = result.filter((t) => t.assigned_to === user.email);
+    } else if (activeFilters["sent"]) {
+      result = result.filter((t) => t.inferredDirection === "sent");
+    } else if (activeFilters["received"]) {
+      result = result.filter((t) => t.inferredDirection === "received");
+    } else if (activeFilters["pinned"]) {
+      result = result.filter((t) => t.pinnedAt);
+    } else if (activeFilters["linked"]) {
+      result = result.filter((t) => t.project_id || t.contract_id);
+    } else if (activeFilters["unlinked"]) {
+      result = result.filter((t) => !t.project_id && !t.contract_id);
     }
-    
-    devLog('[Inbox] After userStatus filter:', result.length, 'activeFilters:', activeFilters);
 
     // Sorting: pinned > unread > by date
     result.sort((a, b) => {
