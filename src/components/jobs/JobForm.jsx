@@ -1429,6 +1429,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     type="file"
                     multiple
                     accept="image/*"
+                    capture="environment"
                     className="hidden"
                     onChange={handleImageUpload}
                   />
