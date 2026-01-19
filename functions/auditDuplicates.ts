@@ -132,18 +132,15 @@ Deno.serve(async (req) => {
         vehicleNameMap.get(nameKey).push(loc);
       }
 
-      // Add locations with missing vehicle_id to the list
-      for (const loc of vehicleLocsMissingId) {
-        inventoryLocationDuplicates.vehicleLocationsMissingVehicleId.push({
-          id: loc.id,
-          name: loc.name,
-          type: loc.type,
-          vehicle_id: loc.vehicle_id || null,
-          is_active: loc.is_active,
-        });
-      }
+      // Build consistent structure: array of all missing, plus name duplicates
+      const missingLocations = vehicleLocsMissingId.map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        type: loc.type,
+        vehicle_id: loc.vehicle_id || null,
+        is_active: loc.is_active,
+      }));
 
-      // Also flag cases where multiple vehicle locations share the same name (even without vehicle_id)
       const nameDupsList = [];
       for (const [nameKey, locs] of vehicleNameMap.entries()) {
         if (locs.length > 1) {
@@ -160,12 +157,11 @@ Deno.serve(async (req) => {
         }
       }
 
-      if (nameDupsList.length > 0) {
-        inventoryLocationDuplicates.vehicleLocationsMissingVehicleId = {
-          missingVehicleId: inventoryLocationDuplicates.vehicleLocationsMissingVehicleId,
-          byNameDuplicates: nameDupsList,
-        };
-      }
+      // Always use consistent structure
+      inventoryLocationDuplicates.vehicleLocationsMissingVehicleId = {
+        all: missingLocations,
+        byNameDuplicates: nameDupsList,
+      };
     }
 
     // Group by name + type
@@ -199,9 +195,7 @@ Deno.serve(async (req) => {
     }
 
     // Calculate summary
-    const vehiclesMissingCount = Array.isArray(inventoryLocationDuplicates.vehicleLocationsMissingVehicleId)
-      ? inventoryLocationDuplicates.vehicleLocationsMissingVehicleId.length
-      : inventoryLocationDuplicates.vehicleLocationsMissingVehicleId?.missingVehicleId?.length || 0;
+    const vehiclesMissingCount = inventoryLocationDuplicates.vehicleLocationsMissingVehicleId?.all?.length || 0;
 
     const summary = {
       totalPriceListItems: allItems.length,
