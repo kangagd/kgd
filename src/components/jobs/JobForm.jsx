@@ -361,7 +361,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       ...formData,
       assigned_to: Array.isArray(formData.assigned_to) ? formData.assigned_to : [],
       assigned_to_name: Array.isArray(formData.assigned_to_name) ? formData.assigned_to_name : [],
-      logistics_checklist_items: isLogisticsJob ? checklistItems : undefined
+      visit_scope: isLogisticsJob && checklistItems.length > 0 ? checklistItems.map(item => ({
+        key: item.part_id ? `project:part:${item.part_id}` : `manual:${Date.now()}_${Math.random()}`,
+        label: item.name,
+        type: "part",
+        source: item.part_id ? "project" : "job",
+        ref_id: item.part_id,
+        qty: item.quantity
+      })) : undefined
     };
 
     // Remove empty string values for enum fields
@@ -491,12 +498,45 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
   const handleJobTypeChange = async (jobTypeId) => {
     const jobType = jobTypes.find(jt => jt.id === jobTypeId);
     if (jobType) {
-      setFormData(prev => ({
-        ...prev,
+      // Map job type names to logistics_purpose
+      let logisticsPurpose = "";
+      if (jobType.name.toLowerCase().includes("material pick")) {
+        logisticsPurpose = "part_pickup_for_install";
+        if (jobType.name.toLowerCase().includes("warehouse")) {
+          logisticsPurpose = "part_pickup_for_install";
+        }
+      } else if (jobType.name.toLowerCase().includes("delivery")) {
+        logisticsPurpose = "po_delivery_to_warehouse";
+      } else if (jobType.name.toLowerCase().includes("sample")) {
+        if (jobType.name.toLowerCase().includes("pickup")) {
+          logisticsPurpose = "sample_pickup";
+        } else {
+          logisticsPurpose = "sample_dropoff";
+        }
+      }
+
+      const newFormData = {
+        ...formData,
         job_type_id: jobTypeId,
         job_type: jobType.name,
-        expected_duration: jobType.estimated_duration || prev.expected_duration
-      }));
+        expected_duration: jobType.estimated_duration || formData.expected_duration
+      };
+
+      // Auto-set warehouse address for material pickup jobs
+      if (logisticsPurpose === "part_pickup_for_install" && allLocations.length > 0) {
+        const warehouseLoc = allLocations.find(loc => loc.type === "warehouse");
+        if (warehouseLoc && warehouseLoc.address) {
+          newFormData.address = warehouseLoc.address;
+          newFormData.address_full = warehouseLoc.address;
+          newFormData.source_location_id = warehouseLoc.id;
+        }
+      }
+
+      if (logisticsPurpose) {
+        newFormData.logistics_purpose = logisticsPurpose;
+      }
+
+      setFormData(newFormData);
 
       // Generate notes if we have a project and notes are currently empty
       if (formData.project_id && !job && !formData.notes) {
