@@ -464,9 +464,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ['jobParts', job.id, job.purchase_order_id],
     queryFn: async () => {
       if (job.purchase_order_id) {
-        // For PO-based logistics jobs, fetch parts by purchase_order_id
+        // For PO-based logistics jobs, fetch parts by primary_purchase_order_id
         return await base44.entities.Part.filter({ 
-          purchase_order_id: job.purchase_order_id 
+          primary_purchase_order_id: job.purchase_order_id 
         });
       } else {
         // For other logistics jobs, fetch by linked_logistics_jobs
@@ -628,11 +628,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 status: newPoStatus,
               });
 
-              // 2. Move parts from Loading Bay
+              // 2. Move parts from Loading Bay (using primary_purchase_order_id for all POs)
               const linkedParts = await base44.entities.Part.filter({
-                purchase_order_id: job.purchase_order_id
+                primary_purchase_order_id: job.purchase_order_id
               });
-              
+
               const partsInLoadingBay = linkedParts.filter(p => 
                 p.location === LOGISTICS_LOCATION.LOADING_BAY || 
                 p.location === "At Delivery Bay"
@@ -1098,11 +1098,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   };
 
-  // DYNAMIC GUARDRAIL: Count Parts/Samples for project POs, PO Lines for non-project POs
+  // UNIFIED: Always count Parts and Samples (Parts exist for all POs now)
   const allItemsChecked = () => {
-    const totalItems = job.project_id 
-      ? (jobParts.length + jobSamples.length)
-      : purchaseOrderLines.length;
+    const totalItems = jobParts.length + jobSamples.length;
     if (totalItems === 0) return true;
     const checkedCount = Object.values(checkedItems).filter(Boolean).length;
     return checkedCount === totalItems;
@@ -2231,12 +2229,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                             
                             try {
                               await base44.entities.Part.create({
-                                project_id: job.project_id,
+                                project_id: job.project_id || null,
+                                part_scope: job.project_id ? "project" : "general",
                                 item_name: itemName,
                                 category: "Other",
                                 quantity_required: quantity,
                                 status: "pending",
-                                linked_logistics_jobs: [job.id]
+                                linked_logistics_jobs: [job.id],
+                                primary_purchase_order_id: job.purchase_order_id || null
                               });
                               
                               await queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
@@ -2255,93 +2255,65 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       )}
                     </CardHeader>
                     <CardContent className="p-4 space-y-2">
-                      {/* For project POs: show Parts and Samples */}
-                      {job.project_id ? (
-                        jobParts.length === 0 && jobSamples.length === 0 ? (
-                          <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
-                            No items in checklist
-                          </div>
-                        ) : (
-                          <>
-                            {jobParts.map((part) => (
-                              <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
-                                <Checkbox
-                                  checked={checkedItems[part.id] || false}
-                                  onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
-                                />
-                                <div className="flex-1">
-                                  <span className={`text-[14px] font-medium ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
-                                    {part.item_name || 'Unnamed Item'}
-                                  </span>
-                                  {part.quantity_required && (
-                                    <span className={`text-[14px] ml-2 ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
-                                      × {part.quantity_required}
-                                    </span>
-                                  )}
-                                </div>
-                                {!activeCheckIn && job.status !== 'Completed' && (
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => {
-                                      if (confirm('Delete this item from checklist?')) {
-                                        base44.entities.Part.delete(part.id).then(() => {
-                                          queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
-                                          toast.success('Item removed');
-                                        }).catch(() => {
-                                          toast.error('Failed to remove item');
-                                        });
-                                      }
-                                    }}
-                                    className="h-7 w-7 text-red-500 hover:text-red-700"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </Button>
-                                )}
-                              </div>
-                            ))}
-                            {jobSamples.map((sample) => (
-                              <div key={sample.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
-                                <Checkbox
-                                  checked={checkedItems[sample.id] || false}
-                                  onCheckedChange={(checked) => handleItemCheck(sample.id, checked)}
-                                />
-                                <div className="flex-1">
-                                  <span className={`text-[14px] font-medium ${checkedItems[sample.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
-                                    {sample.name || 'Unnamed Sample'}
-                                  </span>
-                                  <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
-                                </div>
-                              </div>
-                            ))}
-                          </>
-                        )
+                      {/* UNIFIED: Always show Parts and Samples (Parts exist for all POs now) */}
+                      {jobParts.length === 0 && jobSamples.length === 0 ? (
+                        <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
+                          No items in checklist
+                        </div>
                       ) : (
-                        /* For non-project POs: show PO Lines directly */
-                        purchaseOrderLines.length === 0 ? (
-                          <div className="text-center py-6 text-[14px] text-[#9CA3AF]">
-                            No items in checklist
-                          </div>
-                        ) : (
-                          purchaseOrderLines.map((line) => (
-                            <div key={line.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                        <>
+                          {jobParts.map((part) => (
+                            <div key={part.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
                               <Checkbox
-                                checked={checkedItems[line.id] || false}
-                                onCheckedChange={(checked) => handleItemCheck(line.id, checked)}
+                                checked={checkedItems[part.id] || false}
+                                onCheckedChange={(checked) => handleItemCheck(part.id, checked)}
                               />
                               <div className="flex-1">
-                                <span className={`text-[14px] font-medium ${checkedItems[line.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
-                                  {line.item_name || 'Unnamed Item'}
+                                <span className={`text-[14px] font-medium ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
+                                  {part.item_name || 'Unnamed Item'}
                                 </span>
-                                {line.qty_ordered && (
-                                  <span className={`text-[14px] ml-2 ${checkedItems[line.id] ? 'line-through text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
-                                    × {line.qty_ordered}
+                                {part.quantity_required && (
+                                  <span className={`text-[14px] ml-2 ${checkedItems[part.id] ? 'line-through text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
+                                    × {part.quantity_required}
                                   </span>
                                 )}
                               </div>
+                              {!activeCheckIn && job.status !== 'Completed' && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm('Delete this item from checklist?')) {
+                                      base44.entities.Part.delete(part.id).then(() => {
+                                        queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
+                                        toast.success('Item removed');
+                                      }).catch(() => {
+                                        toast.error('Failed to remove item');
+                                      });
+                                    }
+                                  }}
+                                  className="h-7 w-7 text-red-500 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
                             </div>
-                          ))
-                        )
+                          ))}
+                          {jobSamples.map((sample) => (
+                            <div key={sample.id} className="flex items-center gap-3 p-2 hover:bg-[#F9FAFB] rounded-lg transition-colors">
+                              <Checkbox
+                                checked={checkedItems[sample.id] || false}
+                                onCheckedChange={(checked) => handleItemCheck(sample.id, checked)}
+                              />
+                              <div className="flex-1">
+                                <span className={`text-[14px] font-medium ${checkedItems[sample.id] ? 'line-through text-[#9CA3AF]' : 'text-[#111827]'}`}>
+                                  {sample.name || 'Unnamed Sample'}
+                                </span>
+                                <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
+                              </div>
+                            </div>
+                          ))}
+                        </>
                       )}
                     </CardContent>
                   </Card>

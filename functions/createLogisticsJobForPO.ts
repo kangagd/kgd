@@ -122,68 +122,65 @@ Deno.serve(async (req) => {
         // Build checked_items - use PO line IDs for non-project POs, Part IDs for project POs
         const checkedItems = {};
 
-        if (po.project_id) {
-            // Project PO: Create/update Parts from PO lines
-            const existingParts = await base44.asServiceRole.entities.Part.filter({
-                primary_purchase_order_id: po.id
+        // ALWAYS create Parts for ALL PO lines (project and non-project)
+        const existingParts = await base44.asServiceRole.entities.Part.filter({
+            primary_purchase_order_id: po.id
+        });
+
+        // Map existing parts by po_line_id
+        const existingPartsByLineId = new Map();
+        for (const part of existingParts) {
+            if (part.po_line_id) {
+                existingPartsByLineId.set(part.po_line_id, part);
+            }
+        }
+
+        const allParts = [...existingParts];
+        for (const line of poLines) {
+            // Check if Part already exists for this PO line
+            if (existingPartsByLineId.has(line.id)) {
+                const part = existingPartsByLineId.get(line.id);
+                // Ensure item_name is populated from PO line
+                if (!part.item_name && line.item_name) {
+                    await base44.asServiceRole.entities.Part.update(part.id, {
+                        item_name: line.item_name
+                    });
+                    part.item_name = line.item_name;
+                }
+                continue;
+            }
+
+            // No Part exists - create one
+            const newPart = await base44.asServiceRole.entities.Part.create({
+                project_id: po.project_id || null,
+                part_scope: po.project_id ? "project" : "general",
+                po_line_id: line.id,
+                item_name: line.item_name || line.description || 'Item',
+                category: line.category || "Other",
+                quantity_required: line.qty_ordered || 1,
+                status: "on_order",
+                location: "supplier",
+                primary_purchase_order_id: po.id,
+                purchase_order_ids: [po.id],
+                supplier_id: po.supplier_id,
+                supplier_name: po.supplier_name,
+                po_number: po.po_reference,
+                order_reference: po.po_reference,
+                order_date: po.order_date,
+                eta: po.expected_date,
+                price_list_item_id: line.price_list_item_id || line.source_id || null,
             });
+            allParts.push(newPart);
 
-            const existingPartsByLineId = new Map();
-            for (const part of existingParts) {
-                if (part.part_id) {
-                    existingPartsByLineId.set(part.part_id, part);
-                }
-            }
+            // Update PO line with the new part_id
+            await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
+                part_id: newPart.id
+            });
+        }
 
-            const allParts = [...existingParts];
-            for (const line of poLines) {
-                // Check if Part already exists for this PO line
-                if (line.part_id && existingPartsByLineId.has(line.part_id)) {
-                    const part = existingPartsByLineId.get(line.part_id);
-                    // Ensure item_name is populated from PO line
-                    if (!part.item_name && line.item_name) {
-                        await base44.asServiceRole.entities.Part.update(part.id, {
-                            item_name: line.item_name
-                        });
-                        part.item_name = line.item_name;
-                    }
-                    continue;
-                }
-
-                // No Part exists - create one
-                const newPart = await base44.asServiceRole.entities.Part.create({
-                    project_id: po.project_id,
-                    item_name: line.item_name || line.description || 'Item',
-                    category: line.category || "Other",
-                    quantity_required: line.qty_ordered || 1,
-                    status: "on_order",
-                    location: "at_supplier",
-                    primary_purchase_order_id: po.id,
-                    purchase_order_ids: [po.id],
-                    supplier_id: po.supplier_id,
-                    supplier_name: po.supplier_name,
-                    po_number: po.po_reference,
-                    order_reference: po.po_reference,
-                    order_date: po.order_date,
-                    eta: po.expected_date,
-                });
-                allParts.push(newPart);
-
-                // Update PO line with the new part_id
-                await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
-                    part_id: newPart.id
-                });
-            }
-
-            // Use Part IDs in checked_items for project POs
-            for (const part of allParts) {
-                checkedItems[part.id] = false;
-            }
-        } else {
-            // Non-project PO: Use PO line IDs directly
-            for (const line of poLines) {
-                checkedItems[line.id] = false;
-            }
+        // ALWAYS use Part IDs in checked_items (for both project and non-project POs)
+        for (const part of allParts) {
+            checkedItems[part.id] = false;
         }
 
         // Create the Job with checked_items and proper locations
@@ -238,7 +235,8 @@ Deno.serve(async (req) => {
             success: true,
             job: job,
             purchaseOrder: updatedPO,
-            partsCreated: allParts.length
+            partsCreated: allParts.length,
+            supplierLocationCreated: !!supplierLocation
         });
 
     } catch (error) {

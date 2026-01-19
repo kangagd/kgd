@@ -68,8 +68,8 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   // Show different UI based on job type
   const isWarehouseTransfer = destinationLocation?.type === 'vehicle' && sourceLocation?.type === 'warehouse';
-  // Allow transfer if: (sourceLocation OR origin_address exists) AND destinationLocation exists
-  const canTransfer = (sourceLocation || job.origin_address) && destinationLocation && status !== 'completed' && !isLegacy;
+  // Require both locations (supplier locations now exist as InventoryLocations)
+  const canTransfer = sourceLocation && destinationLocation && status !== 'completed' && !isLegacy;
 
   return (
     <Card>
@@ -88,10 +88,10 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           <div className="p-3 bg-gray-50 rounded-lg">
             <div className="text-xs text-gray-600 mb-1">From Location</div>
             <div className="font-medium text-gray-900">
-              {sourceLocation?.name || (job.origin_address ? 'Supplier' : '—')}
+              {sourceLocation?.name || '—'}
             </div>
-            {!sourceLocation && job.origin_address && (
-              <div className="text-xs text-gray-500 mt-1">{job.origin_address}</div>
+            {sourceLocation?.address && (
+              <div className="text-xs text-gray-500 mt-1">{sourceLocation.address}</div>
             )}
           </div>
           <div className="flex items-center justify-center">
@@ -128,10 +128,10 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           </div>
         )}
 
-        {!sourceLocation && !job.origin_address && (
+        {!sourceLocation && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-2">
             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800">Source location not configured. Cannot record transfer.</p>
+            <p className="text-sm text-amber-800">Source location not configured. Run backfill migration to create supplier locations.</p>
           </div>
         )}
 
@@ -158,7 +158,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           <Button
             onClick={() => setShowTransferModal(true)}
             className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-            disabled={!(sourceLocation || job.origin_address) || !destinationLocation}
+            disabled={!sourceLocation || !destinationLocation}
           >
             Record Transfer
           </Button>

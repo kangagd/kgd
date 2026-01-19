@@ -11,8 +11,12 @@ Deno.serve(async (req) => {
 
     const { job_id, source_location_id, destination_location_id, items, notes } = await req.json();
 
-    if (!job_id || !source_location_id || !destination_location_id || !items || items.length === 0) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!job_id || !destination_location_id || !items || items.length === 0) {
+      return Response.json({ error: 'Missing required fields (job_id, destination_location_id, items)' }, { status: 400 });
+    }
+
+    if (!source_location_id) {
+      return Response.json({ error: 'Source location is required. Ensure supplier has an InventoryLocation created.' }, { status: 400 });
     }
 
     // Fetch job details
