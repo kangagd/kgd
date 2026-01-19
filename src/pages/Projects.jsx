@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { devLog } from "@/components/utils/devLog";
 import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/components/common/useDebounce";
 import { sameId } from "@/components/utils/id";
@@ -69,7 +70,7 @@ export default function Projects() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        devLog("Error loading user:", error);
       }
     };
     loadUser();
@@ -88,7 +89,7 @@ export default function Projects() {
     queryKey: [...projectKeys.all, pageNum],
     queryFn: async () => {
       const response = await base44.functions.invoke('getMyProjects');
-      console.log(`[Projects Page] Received ${response.data?.projects?.length || 0} projects from backend`);
+      devLog(`[Projects Page] Received ${response.data?.projects?.length || 0} projects from backend`);
       return response.data?.projects || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -102,7 +103,7 @@ export default function Projects() {
   });
 
   const projects = allProjects.filter(p => !p.deleted_at && p.status !== "Lost");
-  console.log(`[Projects Page] Displaying ${projects.length} projects after filtering out deleted/lost`);
+  devLog(`[Projects Page] Displaying ${projects.length} projects after filtering out deleted/lost`);
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: jobKeys.all,
@@ -166,7 +167,7 @@ export default function Projects() {
 
   // Build indexes for O(1) lookups instead of per-row scans
   const indexes = useMemo(() => {
-    console.time('[Projects] Build indexes');
+    devLog('[Projects] Build indexes');
     
     const jobsByProjectId = new Map();
     const partsByProjectId = new Map();
@@ -217,7 +218,7 @@ export default function Projects() {
       }
     }
 
-    console.timeEnd('[Projects] Build indexes');
+    devLog('[Projects] Build indexes');
     
     return {
       jobsByProjectId,
@@ -352,7 +353,7 @@ export default function Projects() {
   }, [navigate]);
 
   const filteredProjects = useMemo(() => {
-    console.time('[Projects] Filter & sort');
+    devLog('[Projects] Filter & sort');
     const baseProjects = projects;
     
     const filtered = baseProjects
@@ -396,7 +397,7 @@ export default function Projects() {
         return 0;
       });
     
-    console.timeEnd('[Projects] Filter & sort');
+    devLog('[Projects] Filter & sort');
     return filtered;
   }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { devLog } from "@/components/utils/devLog";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { QUERY_CONFIG } from "@/components/api/queryConfig";
@@ -109,7 +110,7 @@ export default function Inbox() {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error loading user:", error);
+        devLog("Error loading user:", error);
       }
     };
     loadUser();
@@ -128,7 +129,7 @@ export default function Inbox() {
     queryKey: inboxKeys.threads(),
     queryFn: async () => {
       setLastThreadFetchTime(Date.now());
-      console.time('[Inbox] Fetch threads + viewers');
+      devLog('[Inbox] Fetch threads + viewers');
       const fetchedThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
       const viewers = await base44.entities.EmailThreadViewer.list();
 
@@ -145,8 +146,8 @@ export default function Inbox() {
           viewers: viewersMap.get(thread.id) || [],
         }));
 
-      console.timeEnd('[Inbox] Fetch threads + viewers');
-      console.log(`[Inbox] Loaded ${result.length} threads`);
+      devLog('[Inbox] Fetch threads + viewers');
+      devLog(`[Inbox] Loaded ${result.length} threads`);
       return result;
     },
     enabled: !!user,
@@ -216,20 +217,20 @@ export default function Inbox() {
   const syncGmailInbox = async () => {
     // Check if sync already in flight (component-level)
     if (syncInFlightRef.current) {
-      console.log('[Inbox] Sync already in flight');
+      devLog('[Inbox] Sync already in flight');
       return;
     }
 
     // Check local state
     if (isSyncing) {
-      console.log('[Inbox] Sync already in progress locally');
+      devLog('[Inbox] Sync already in progress locally');
       return;
     }
 
     const now = Date.now();
     // Throttle: do not sync more frequently than every 60 seconds
     if (lastSyncTime && now - new Date(lastSyncTime).getTime() < 60000) {
-      console.log(`[Inbox] Sync throttled: last sync ${Math.round((now - new Date(lastSyncTime).getTime()) / 1000)}s ago`);
+      devLog(`[Inbox] Sync throttled: last sync ${Math.round((now - new Date(lastSyncTime).getTime()) / 1000)}s ago`);
       return;
     }
 
@@ -242,15 +243,15 @@ export default function Inbox() {
 
       // Handle sync lock (already in progress on backend)
       if (result?.skipped && result?.reason === 'locked') {
-        console.log(`[Inbox] Sync already running, locked until ${result.locked_until}`);
+        devLog(`[Inbox] Sync already running, locked until ${result.locked_until}`);
         if (mountedRef.current) toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
         return;
       }
 
       if (result?.summary) {
-        console.log(
-          `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
-        );
+        devLog(
+                   `[Inbox] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
+                 );
       }
 
       if (mountedRef.current) {
@@ -258,9 +259,9 @@ export default function Inbox() {
         setLastSyncTime(new Date());
       }
 
-      if (result?.errors?.length) console.warn("Sync completed with errors:", result.errors);
+      if (result?.errors?.length) devLog("Sync completed with errors:", result.errors);
     } catch (error) {
-      console.error("Sync failed:", error);
+      devLog("Sync failed:", error);
       if (mountedRef.current) toast.error("Failed to sync emails");
     } finally {
       if (mountedRef.current) setIsSyncing(false);
@@ -328,7 +329,7 @@ export default function Inbox() {
 
   // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
-    console.time('[Inbox] Filter & sort threads');
+    devLog('[Inbox] Filter & sort threads');
     let result = (threads || [])
       .filter((t) => !t.is_deleted)
       .map((t) => ({
@@ -379,8 +380,8 @@ export default function Inbox() {
       return bTime - aTime;
     });
 
-    console.timeEnd('[Inbox] Filter & sort threads');
-    console.log(`[Inbox] Filtered to ${result.length} threads`);
+    devLog('[Inbox] Filter & sort threads');
+    devLog(`[Inbox] Filtered to ${result.length} threads`);
     return result;
   }, [threads, searchTerm, activeFilters, user?.email, orgEmails]);
 
