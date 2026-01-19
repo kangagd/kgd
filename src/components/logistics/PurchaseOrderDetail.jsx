@@ -241,9 +241,17 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       }
       return response.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
-      queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+    onSuccess: async (data) => {
+      // Invalidate all relevant queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] }),
+        queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] }),
+        queryClient.invalidateQueries({ queryKey: ['allJobs'] }),
+        queryClient.invalidateQueries({ queryKey: ['poLogisticsJobs', poId] }),
+        queryClient.invalidateQueries({ queryKey: ['linkedJob', data.job?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['parts'] }),
+      ]);
+      
       toast.success('Logistics job created');
       if (data.job?.id) {
         navigate(`${createPageUrl("Jobs")}?jobId=${data.job.id}`);
