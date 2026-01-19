@@ -11,12 +11,31 @@ Deno.serve(async (req) => {
 
     const { job_id, source_location_id, destination_location_id, items, notes } = await req.json();
 
+    let finalSourceLocationId = source_location_id;
+
     if (!job_id || !destination_location_id || !items || items.length === 0) {
       return Response.json({ error: 'Missing required fields (job_id, destination_location_id, items)' }, { status: 400 });
     }
 
-    if (!source_location_id) {
-      return Response.json({ error: 'Source location is required. Ensure supplier has an InventoryLocation created.' }, { status: 400 });
+    const job = await base44.asServiceRole.entities.Job.get(job_id);
+    if (!job) {
+        return Response.json({ error: 'Job not found' }, { status: 404 });
+    }
+
+    if (!finalSourceLocationId && job.purchase_order_id) {
+        try {
+            const po = await base44.asServiceRole.entities.PurchaseOrder.get(job.purchase_order_id);
+            if (po && po.supplier_id) {
+                const supplierLocation = await getOrCreateSupplierInventoryLocation(base44, po.supplier_id);
+                finalSourceLocationId = supplierLocation.id;
+            }
+        } catch (err) {
+            console.error(`Failed to find fallback source location for job ${job_id}:`, err);
+        }
+    }
+
+    if (!finalSourceLocationId) {
+        return Response.json({ error: 'Missing source location. Set PO supplier or create supplier InventoryLocation.' }, { status: 400 });
     }
 
     // Fetch job details

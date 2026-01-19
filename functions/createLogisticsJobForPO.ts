@@ -29,6 +29,26 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
+        // GUARDRAIL: For supplier-based logistics, PO must have a supplier
+        if (
+            (po.delivery_method === PO_DELIVERY_METHOD.PICKUP || po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) &&
+            !po.supplier_id
+        ) {
+            return Response.json({ 
+                success: false, 
+                error: 'PO supplier is required for supplier pickup/delivery logistics jobs.' 
+            }, { status: 400 });
+        }
+
+        // Fetch the PO
+        const po = await base44.asServiceRole.entities.PurchaseOrder.get(purchase_order_id);
+        if (!po) {
+            return Response.json({ 
+                success: false, 
+                error: 'Purchase Order not found' 
+            }, { status: 404 });
+        }
+
         // Determine logistics purpose and job type based on delivery method
         let logisticsPurpose, jobTypeName, originAddress, destinationAddress;
         
