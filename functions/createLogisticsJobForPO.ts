@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { PO_DELIVERY_METHOD, LOGISTICS_PURPOSE } from './shared/constants.js';
 import { generateJobNumber } from './shared/jobNumberGenerator.js';
+import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.js';
 
 Deno.serve(async (req) => {
     try {
@@ -82,6 +83,18 @@ Deno.serve(async (req) => {
 
          const warehouseAddress = warehouseLocation?.address || "866 Bourke Street, Waterloo";
          const warehouseLocationId = warehouseLocation?.id || null;
+
+         // Get or create supplier inventory location
+         let supplierLocation = null;
+         let supplierLocationId = null;
+         if (po.supplier_id) {
+             try {
+                 supplierLocation = await getOrCreateSupplierInventoryLocation(base44, po.supplier_id);
+                 supplierLocationId = supplierLocation.id;
+             } catch (err) {
+                 console.error('Error creating supplier location:', err);
+             }
+         }
          let jobTitle, jobAddressFull;
         
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
@@ -173,7 +186,7 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Create the Job with checked_items
+        // Create the Job with checked_items and proper locations
         const jobData = {
             job_number: jobNumber,
             job_type_id: jobTypeId,
@@ -193,7 +206,7 @@ Deno.serve(async (req) => {
             destination_address: destinationAddress,
             reference_type: 'purchase_order',
             reference_id: po.id,
-            source_location_id: null,
+            source_location_id: supplierLocationId,
             destination_location_id: warehouseLocationId,
             stock_transfer_status: 'not_started',
             checked_items: checkedItems,
