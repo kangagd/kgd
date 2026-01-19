@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
 
     // Build queries for database-level filtering
     const jobQuery = {
+      deleted_at: null,
       $or: [
         { job_number: { $regex: term, $options: 'i' } },
         { customer_name: { $regex: term, $options: 'i' } },
@@ -50,6 +51,7 @@ Deno.serve(async (req) => {
     }
 
     const customerQuery = {
+      deleted_at: null,
       $or: [
         { name: { $regex: term, $options: 'i' } },
         { phone: { $regex: term, $options: 'i' } },
@@ -58,6 +60,7 @@ Deno.serve(async (req) => {
     };
 
     const projectQuery = {
+      deleted_at: null,
       $or: [
         { project_number: parseInt(term) || -1 },
         { title: { $regex: term, $options: 'i' } },
@@ -74,6 +77,7 @@ Deno.serve(async (req) => {
     }
 
     const organisationQuery = {
+      deleted_at: null,
       $or: [
         { name: { $regex: term, $options: 'i' } },
         { phone: { $regex: term, $options: 'i' } }
