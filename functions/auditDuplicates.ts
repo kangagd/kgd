@@ -77,6 +77,7 @@ Deno.serve(async (req) => {
     const inventoryLocationDuplicates = {
       multipleWarehousesActive: [],
       vehicleLocationDuplicates: [],
+      vehicleLocationsMissingVehicleId: [],
       nameTypeDuplicates: [],
     };
 
@@ -115,6 +116,58 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Flag vehicle locations missing vehicle_id
+    const vehicleLocsMissingId = allLocations.filter(
+      (loc) => normalize(loc.type) === 'vehicle' && (!loc.vehicle_id || loc.vehicle_id.trim() === '')
+    );
+
+    if (vehicleLocsMissingId.length > 0) {
+      // Group by normalized name to catch duplicates even without vehicle_id
+      const vehicleNameMap = new Map();
+      for (const loc of vehicleLocsMissingId) {
+        const nameKey = normalize(loc.name);
+        if (!vehicleNameMap.has(nameKey)) {
+          vehicleNameMap.set(nameKey, []);
+        }
+        vehicleNameMap.get(nameKey).push(loc);
+      }
+
+      // Add locations with missing vehicle_id to the list
+      for (const loc of vehicleLocsMissingId) {
+        inventoryLocationDuplicates.vehicleLocationsMissingVehicleId.push({
+          id: loc.id,
+          name: loc.name,
+          type: loc.type,
+          vehicle_id: loc.vehicle_id || null,
+          is_active: loc.is_active,
+        });
+      }
+
+      // Also flag cases where multiple vehicle locations share the same name (even without vehicle_id)
+      const nameDupsList = [];
+      for (const [nameKey, locs] of vehicleNameMap.entries()) {
+        if (locs.length > 1) {
+          nameDupsList.push({
+            name: nameKey,
+            count: locs.length,
+            location_ids: locs.map((l) => l.id),
+            locations: locs.map((l) => ({
+              id: l.id,
+              name: l.name,
+              is_active: l.is_active,
+            })),
+          });
+        }
+      }
+
+      if (nameDupsList.length > 0) {
+        inventoryLocationDuplicates.vehicleLocationsMissingVehicleId = {
+          missingVehicleId: inventoryLocationDuplicates.vehicleLocationsMissingVehicleId,
+          byNameDuplicates: nameDupsList,
+        };
+      }
+    }
+
     // Group by name + type
     const nameTypeMap = new Map();
     for (const loc of allLocations) {
@@ -146,6 +199,10 @@ Deno.serve(async (req) => {
     }
 
     // Calculate summary
+    const vehiclesMissingCount = Array.isArray(inventoryLocationDuplicates.vehicleLocationsMissingVehicleId)
+      ? inventoryLocationDuplicates.vehicleLocationsMissingVehicleId.length
+      : inventoryLocationDuplicates.vehicleLocationsMissingVehicleId?.missingVehicleId?.length || 0;
+
     const summary = {
       totalPriceListItems: allItems.length,
       priceListSkuDuplicates: priceListDuplicates.bySku.length,
@@ -153,6 +210,7 @@ Deno.serve(async (req) => {
       totalLocations: allLocations.length,
       multipleActiveWarehouses: inventoryLocationDuplicates.multipleWarehousesActive.length > 0 ? 1 : 0,
       vehicleLocationDuplicates: inventoryLocationDuplicates.vehicleLocationDuplicates.length,
+      vehicleLocationsMissingVehicleId: vehiclesMissingCount,
       nameTypeDuplicates: inventoryLocationDuplicates.nameTypeDuplicates.length,
     };
 
