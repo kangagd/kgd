@@ -34,6 +34,7 @@ import { poDbToUi, getPoDisplaySupplierName } from "@/components/domain/purchase
 import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/supplierDeliveryConfig";
 import { PART_LOCATION } from "@/components/domain/partConfig";
 import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
+import { getMainWarehouseLocationId, getVehicleLocationIdForVehicle } from "@/components/utils/inventoryLocationLookup";
 
 
 
@@ -450,7 +451,7 @@ export default function Logistics() {
         part_ids,
         from_location_id,
         to_location_id,
-        physical_move,
+        physical_move: false,
         notes: "Moved from Logistics page"
       }),
     onSuccess: (response) => {
@@ -489,11 +490,25 @@ export default function Logistics() {
 
   const handleMoveLoadingBayPart = async (part, destination) => {
     try {
+      let to_location_id = null;
+      
+      if (destination === PART_LOCATION.WAREHOUSE_STORAGE) {
+        to_location_id = getMainWarehouseLocationId(inventoryLocations);
+      } else if (destination === PART_LOCATION.VEHICLE) {
+        const vehicleLoc = inventoryLocations.find(loc => loc.type === 'vehicle' && loc.is_active !== false);
+        to_location_id = vehicleLoc?.id;
+      }
+      
+      if (!to_location_id) {
+        toast.error(`No destination location found for ${destination}`);
+        return;
+      }
+      
       const response = await base44.functions.invoke("movePartsByIds", {
         part_ids: [part.id],
         from_location_id: null,
-        to_location_id: destination,
-        physical_move: true,
+        to_location_id,
+        physical_move: false,
         notes: `Moved from Loading Bay to ${destination}`
       });
 
@@ -533,8 +548,10 @@ export default function Logistics() {
           if (part.status !== statusFilter) return false;
         }
 
-        if (locationFilter !== "all" && part.location !== locationFilter)
-          return false;
+        if (locationFilter !== "all") {
+          // Compare against location_id (inventory location ID)
+          if (part.location_id !== locationFilter) return false;
+        }
 
         if (vehicleFilter !== "all") {
           if (!sameId(part.assigned_vehicle_id, vehicleFilter)) return false;
