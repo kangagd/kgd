@@ -65,10 +65,9 @@ export function getLogisticsJobs(jobs) {
     };
   }
 
-  // Filter to only logistics jobs
+  // Filter to only logistics jobs (using is_logistics_job flag)
   const logisticsJobs = jobs.filter(job => {
-    const jobTypeName = job.job_type_name || job.job_type || job.job_type?.name;
-    return jobTypeName === LOGISTICS_JOB_TYPE_NAME;
+    return job.is_logistics_job === true;
   });
 
   // Group by status
