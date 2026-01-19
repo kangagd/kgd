@@ -147,9 +147,7 @@ export default function Inbox() {
     refetchOnWindowFocus: true,
     ...QUERY_CONFIG.reference,
     onSuccess: (newThreads) => {
-      devLog(`[Inbox] onSuccess FIRED: newThreads.length=${newThreads.length}`, newThreads.slice(0, 2));
-      setAllThreads(newThreads);
-      devLog(`[Inbox] After setAllThreads - allThreads state queued for update`);
+      devLog(`[Inbox] onSuccess - newThreads.length=${newThreads.length}`);
       setCursor(newThreads.length > 0 ? newThreads[newThreads.length - 1].last_message_date : null);
       setHasMore(newThreads.length === 100);
       if (selectedThreadId && !newThreads.find((t) => t.id === selectedThreadId)) {
