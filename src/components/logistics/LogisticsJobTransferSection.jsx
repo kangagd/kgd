@@ -68,7 +68,8 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   // Show different UI based on job type
   const isWarehouseTransfer = destinationLocation?.type === 'vehicle' && sourceLocation?.type === 'warehouse';
-  const canTransfer = sourceLocation && destinationLocation && status !== 'completed' && !isLegacy;
+  // Allow transfer if: (sourceLocation OR origin_address exists) AND destinationLocation exists
+  const canTransfer = (sourceLocation || job.origin_address) && destinationLocation && status !== 'completed' && !isLegacy;
 
   return (
     <Card>
@@ -87,8 +88,11 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           <div className="p-3 bg-gray-50 rounded-lg">
             <div className="text-xs text-gray-600 mb-1">From Location</div>
             <div className="font-medium text-gray-900">
-              {sourceLocation?.name || '—'}
+              {sourceLocation?.name || (job.origin_address ? 'Supplier' : '—')}
             </div>
+            {!sourceLocation && job.origin_address && (
+              <div className="text-xs text-gray-500 mt-1">{job.origin_address}</div>
+            )}
           </div>
           <div className="flex items-center justify-center">
             <ArrowRight className="w-5 h-5 text-gray-400" />
@@ -124,7 +128,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           </div>
         )}
 
-        {!sourceLocation && (
+        {!sourceLocation && !job.origin_address && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-2">
             <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-800">Source location not configured. Cannot record transfer.</p>
