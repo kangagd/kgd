@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/popover";
 import ReceivePoItemsModal from "./ReceivePoItemsModal";
 import POLogisticsJobsSection from "./POLogisticsJobsSection";
+import { devLog } from "@/components/utils/devLog";
 
 export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const navigate = useNavigate();
@@ -976,7 +977,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     queryClient.invalidateQueries({ queryKey: ['purchaseOrder', poId] });
                     toast.success("Delivery method updated");
                   } catch (error) {
-                    console.error("Failed to update delivery method:", error);
+                    devLog("Failed to update delivery method:", error);
                     toast.error("Failed to update delivery method");
                   }
                 }}

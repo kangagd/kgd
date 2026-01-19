@@ -35,6 +35,7 @@ import { inboxKeys } from "@/components/api/queryKeys";
 import SmartComposeHelper, { SmartComposeSuggestionUI } from "./SmartComposeHelper";
 import RecipientAutocomplete from "./RecipientAutocomplete";
 import MergeFieldsHelper from "./MergeFieldsHelper";
+import { devLog } from "@/components/utils/devLog";
 
 // ============================================================================
 // Signature Marker & Helpers (Private)
@@ -330,21 +331,21 @@ export default function UnifiedEmailComposer({
 
         const user = { ...authUser, email_signature: signature };
 
-        console.log("[UnifiedEmailComposer] Loaded user signature:", { 
-          hasSignature: !!signature, 
-          signatureLength: signature?.length || 0,
-          availableFields: {
-            email_signature: authUser?.email_signature,
-            emailSignature: authUser?.emailSignature,
-            signature: authUser?.signature
-          }
-        });
+        devLog("[UnifiedEmailComposer] Loaded user signature:", { 
+                   hasSignature: !!signature, 
+                   signatureLength: signature?.length || 0,
+                   availableFields: {
+                     email_signature: authUser?.email_signature,
+                     emailSignature: authUser?.emailSignature,
+                     signature: authUser?.signature
+                   }
+                 });
 
         if (!unmountedRef.current) {
           setCurrentUser(user);
         }
       } catch (err) {
-        console.error("[UnifiedEmailComposer] Error loading user:", err);
+        devLog("[UnifiedEmailComposer] Error loading user:", err);
       }
     };
 
@@ -375,12 +376,12 @@ export default function UnifiedEmailComposer({
       parseISO
     );
 
-    console.log("[UnifiedEmailComposer] Init body for mode='" + mode + "':", {
-      initialBodyLength: initialBody?.length,
-      initialBodyPreview: initialBody?.substring(0, 100),
-      hasSignatureMarker: (initialBody || '').includes(SIGNATURE_MARKER),
-      userSignatureLength: currentUser?.email_signature?.length || 0
-    });
+    devLog("[UnifiedEmailComposer] Init body for mode='" + mode + "':", {
+           initialBodyLength: initialBody?.length,
+           initialBodyPreview: initialBody?.substring(0, 100),
+           hasSignatureMarker: (initialBody || '').includes(SIGNATURE_MARKER),
+           userSignatureLength: currentUser?.email_signature?.length || 0
+         });
 
     setBody(initialBody);
     didInitBodyRef.current = true;
@@ -408,7 +409,7 @@ export default function UnifiedEmailComposer({
         setDraftId(fullDraft.id);
         composeInitializedRef.current = true;
       }).catch(err => {
-        console.error("Failed to fetch draft:", err);
+        devLog("Failed to fetch draft:", err);
       });
       return;
     }
@@ -625,7 +626,7 @@ export default function UnifiedEmailComposer({
         }
         if (onDraftSaved) onDraftSaved();
       } catch (error) {
-        console.error("Failed to save draft:", error);
+        devLog("Failed to save draft:", error);
       } finally {
         if (!editorFocusedRef.current) {
           setIsSavingDraft(false);
@@ -668,7 +669,7 @@ export default function UnifiedEmailComposer({
             new Promise((_, reject) => setTimeout(() => reject(new Error('Save timeout')), 800))
           ]);
         } catch (err) {
-          console.warn('[UnifiedEmailComposer] Unmount final save timeout or failed:', err.message);
+          devLog('[UnifiedEmailComposer] Unmount final save timeout or failed:', err.message);
         }
       }
     };
@@ -692,7 +693,7 @@ export default function UnifiedEmailComposer({
         linkedProject.customer_id
       );
     } catch (error) {
-      console.log("Could not fetch customer:", error);
+      devLog("Could not fetch customer:", error);
     }
   }
 
@@ -761,7 +762,7 @@ export default function UnifiedEmailComposer({
         try {
           fileInputRef.current?.click();
         } catch (error) {
-          console.error("Could not auto-open file picker:", error);
+          devLog("Could not auto-open file picker:", error);
         }
       }, 100);
     }
@@ -828,7 +829,7 @@ export default function UnifiedEmailComposer({
               linkedProject.customer_id
             );
           } catch (error) {
-            console.log("Could not fetch customer for merge fields:", error);
+            devLog("Could not fetch customer for merge fields:", error);
           }
         }
 
@@ -851,7 +852,7 @@ export default function UnifiedEmailComposer({
         const bodyTokens = (renderedBodyHtml.match(tokenRegex) || []).map(t => t.slice(1, -1));
         unresolvedTokens = [...new Set([...subjectTokens, ...bodyTokens])];
       } catch (err) {
-        console.error('Merge field rendering error:', err);
+        devLog('Merge field rendering error:', err);
         // Gracefully fallback to original content on error
         renderedSubject = subject;
         renderedBodyHtml = body;
@@ -913,7 +914,7 @@ export default function UnifiedEmailComposer({
         try {
           await base44.entities.EmailDraft.delete(draftId);
         } catch (err) {
-          console.error("Failed to delete draft:", err);
+          devLog("Failed to delete draft:", err);
         }
       }
 
@@ -924,7 +925,7 @@ export default function UnifiedEmailComposer({
           await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(baseThreadId) });
           await queryClient.refetchQueries({ queryKey: inboxKeys.messages(baseThreadId) });
         } catch (err) {
-          console.error("[UnifiedEmailComposer] Failed to refetch messages:", err);
+          devLog("[UnifiedEmailComposer] Failed to refetch messages:", err);
         }
 
         // If linked to project, also refetch project activity/emails
@@ -934,7 +935,7 @@ export default function UnifiedEmailComposer({
             await queryClient.invalidateQueries({ queryKey: ["project", projId] });
             await queryClient.refetchQueries({ queryKey: ["projectActivity", projId] });
           } catch (err) {
-            console.error("[UnifiedEmailComposer] Failed to refetch project activity:", err);
+            devLog("[UnifiedEmailComposer] Failed to refetch project activity:", err);
           }
         }
       }
@@ -963,7 +964,7 @@ export default function UnifiedEmailComposer({
           new Promise((_, reject) => setTimeout(() => reject(new Error('Save timeout')), 800))
         ]);
       } catch (err) {
-        console.warn('[UnifiedEmailComposer] Final save timeout or failed, closing anyway:', err.message);
+        devLog('[UnifiedEmailComposer] Final save timeout or failed, closing anyway:', err.message);
       }
     }
 
@@ -1045,7 +1046,7 @@ export default function UnifiedEmailComposer({
       .catch((err) => {
         if (!unmountedRef.current) {
           setSyncError(err.message || 'Failed to sync messages');
-          console.error('[UnifiedEmailComposer] Auto-sync error:', err);
+          devLog('[UnifiedEmailComposer] Auto-sync error:', err);
         }
       })
       .finally(() => {

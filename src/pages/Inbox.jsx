@@ -183,7 +183,7 @@ export default function Inbox() {
         setHasMore(false);
       }
     } catch (error) {
-      console.error('Failed to load more threads:', error);
+      devLog('Failed to load more threads:', error);
     } finally {
       setIsLoadingMore(false);
     }

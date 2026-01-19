@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
+import { devLog } from "@/components/utils/devLog";
 
 export default function LinkThreadModal({ 
   open, 
@@ -59,14 +60,14 @@ export default function LinkThreadModal({
   const handleSelect = async (item) => {
     try {
       if (isProject) {
-        console.log('Linking to project:', item.id, item.title);
+        devLog('Linking to project:', item.id, item.title);
         await onLinkProject(item.id);
       } else if (isContract) {
-        console.log('Linking to contract:', item.id, item.name);
+        devLog('Linking to contract:', item.id, item.name);
         await onLinkContract(item.id);
       }
     } catch (error) {
-      console.error('Error in handleSelect:', error);
+      devLog('Error in handleSelect:', error);
     }
   };
 

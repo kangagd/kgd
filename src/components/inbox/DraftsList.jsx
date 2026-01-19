@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Mail, Trash2, AlertCircle, Clock, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { devLog } from "@/components/utils/devLog";
 import { inboxKeys } from "@/components/api/queryKeys";
 
 export default function DraftsList({ onOpenDraft }) {
@@ -77,7 +78,7 @@ export default function DraftsList({ onOpenDraft }) {
     },
     onError: (error) => {
       toast.error("Failed to delete draft");
-      console.error(error);
+      devLog(error);
     },
   });
 

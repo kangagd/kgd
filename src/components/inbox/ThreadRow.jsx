@@ -26,6 +26,7 @@ import {
   isThreadPinned,
   getThreadLinkChip,
 } from "@/components/inbox/threadStatusChip";
+import { devLog } from "@/components/utils/devLog";
 import { pinThread, unpinThread } from "@/components/inbox/threadPinActions";
 import { closeThread, reopenThread } from "@/components/inbox/threadCloseActions";
 

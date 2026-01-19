@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { devLog } from "@/components/utils/devLog";
 
 /**
  * Normalise any entity list / filter response into an array.
@@ -22,7 +23,7 @@ async function safeEntitySearch(entityName, query, fallbackFields = []) {
   try {
     const entity = base44?.entities?.[entityName];
     if (!entity) {
-      console.warn(`Global search: entity "${entityName}" is not available`);
+      devLog(`Global search: entity "${entityName}" is not available`);
       return [];
     }
 
@@ -45,7 +46,7 @@ async function safeEntitySearch(entityName, query, fallbackFields = []) {
 
         // continue below to list() if necessary
       } catch (e) {
-        console.warn(`Global search: filter() failed for ${entityName}, falling back to list()`, e);
+        devLog(`Global search: filter() failed for ${entityName}, falling back to list()`, e);
       }
     }
 
@@ -70,12 +71,12 @@ async function safeEntitySearch(entityName, query, fallbackFields = []) {
       );
     }
 
-    console.warn(
-      `Global search: neither filter() nor list() available for entity "${entityName}"`
-    );
+    devLog(
+           `Global search: neither filter() nor list() available for entity "${entityName}"`
+         );
     return [];
   } catch (err) {
-    console.error(`Error searching ${entityName}:`, err);
+    devLog(`Error searching ${entityName}:`, err);
     return [];
   }
 }
@@ -122,7 +123,7 @@ export async function searchAll(query) {
     devLog("searchAll results:", { jobs, projects, customers });
     return { jobs, projects, customers };
   } catch (error) {
-    console.error("Global search error:", error);
+    devLog("Global search error:", error);
     return { jobs: [], projects: [], customers: [] };
   }
 }

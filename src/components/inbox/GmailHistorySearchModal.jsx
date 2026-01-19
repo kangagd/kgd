@@ -11,6 +11,7 @@ import GmailHistoryThreadPreview from './GmailHistoryThreadPreview';
 import { normalizeGmailHistoryThread } from './gmailHistoryThreadShape';
 import { QUERY_CONFIG } from '@/components/api/queryConfig';
 import { inboxKeys, projectKeys, jobKeys } from '@/components/api/queryKeys';
+import { devLog } from "@/components/utils/devLog";
 
 // Debounce hook
 function useDebounce(value, delay) {
@@ -142,7 +143,7 @@ export default function GmailHistorySearchModal({
 
         return { threads: normalized, nextPageToken: response.data.nextPageToken };
       } catch (error) {
-        console.error('Search error:', error);
+        devLog('Search error:', error);
         
         // Build error message from Axios/network error
         let errorDetail = 'Unknown error';
@@ -248,7 +249,7 @@ export default function GmailHistorySearchModal({
 
         setImportProgress(prev => ({ ...prev, current: i + 1 }));
       } catch (error) {
-        console.error('Failed to import thread:', threadId, error);
+        devLog('Failed to import thread:', threadId, error);
         failures.push({ threadId, error: error.message || 'Unknown error' });
         setImportProgress(prev => ({ ...prev, current: i + 1, failures }));
       }

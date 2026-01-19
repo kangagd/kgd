@@ -1840,11 +1840,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 
                 // DEV-ONLY: Verify quotes array shape before render
                 if (typeof import.meta !== "undefined" && import.meta.env?.DEV && activeTab === "overview") {
-                  devLog("[CommercialStatusCard-SafeQuotes] Verified quotes", {
-                                       isArray: Array.isArray(safeQuotes),
-                                       length: safeQuotes.length,
-                                       responseQuotesLength: projectData?.quotes?.length
-                                     });
+
                 }
 
                 return (

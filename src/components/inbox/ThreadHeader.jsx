@@ -17,6 +17,7 @@ import { computeInferredStateWithAutoClear } from '@/components/inbox/inferredSt
 import { closeThread, reopenThread } from '@/components/inbox/threadCloseActions';
 import LinkThreadModal from './LinkThreadModal';
 import CreateProjectFromEmailModal from './CreateProjectFromEmailModal';
+import { devLog } from "@/components/utils/devLog";
 import ThreadInternalNotesModal from './ThreadInternalNotesModal';
 import DeleteThreadConfirmModal from './DeleteThreadConfirmModal';
 
@@ -83,7 +84,7 @@ export default function ThreadHeader({
       setShowLinkModal(false);
       onThreadUpdate?.();
     } catch (error) {
-      console.error('Failed to link:', error);
+      devLog('Failed to link:', error);
       toast.error('Failed to link thread to project');
     }
   };
@@ -97,7 +98,7 @@ export default function ThreadHeader({
       setShowLinkModal(false);
       onThreadUpdate?.();
     } catch (error) {
-      console.error('Failed to link:', error);
+      devLog('Failed to link:', error);
       toast.error('Failed to link thread to contract');
     }
   };
@@ -118,7 +119,7 @@ export default function ThreadHeader({
       setShowLinkModal(false);
       onThreadUpdate?.();
     } catch (error) {
-      console.error('Failed to unlink:', error);
+      devLog('Failed to unlink:', error);
     }
   };
 

@@ -8,6 +8,7 @@ import { inboxKeys } from "@/components/api/queryKeys";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
+import { devLog } from "@/components/utils/devLog";
 
 import EmailMessageItem from "./EmailMessageItem";
 
@@ -79,7 +80,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
         );
         return msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
       } catch (err) {
-        console.error("EmailDetailView messages fetch failed", { threadId: thread?.id, err });
+        devLog("EmailDetailView messages fetch failed", { threadId: thread?.id, err });
         throw err;
       }
     },
@@ -113,7 +114,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
           toast.error('Failed to sync messages');
         }
     } catch (error) {
-      console.error('Error syncing messages:', error);
+      devLog('Error syncing messages:', error);
       toast.error('Error syncing messages');
     } finally {
       setIsSyncing(false);
