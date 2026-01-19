@@ -129,30 +129,22 @@ export default function Inbox() {
     queryKey: inboxKeys.threads(),
     queryFn: async () => {
       setLastThreadFetchTime(Date.now());
-      devLog('[Inbox] Fetch threads + viewers');
+      devLog('[Inbox] Fetch threads (viewers skipped)');
       const fetchedThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
-      const viewers = await base44.entities.EmailThreadViewer.list();
-
-      const viewersMap = new Map();
-      for (const v of viewers) {
-        if (!viewersMap.has(v.thread_id)) viewersMap.set(v.thread_id, []);
-        viewersMap.get(v.thread_id).push(v);
-      }
 
       const result = fetchedThreads
         .filter((t) => !t.is_deleted)
         .map((thread) => ({
           ...thread,
-          viewers: viewersMap.get(thread.id) || [],
+          viewers: [],
         }));
 
-      devLog('[Inbox] Fetch threads + viewers');
       devLog(`[Inbox] Loaded ${result.length} threads`);
       return result;
     },
     enabled: !!user,
     staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     ...QUERY_CONFIG.reference,
     onSuccess: (newThreads) => {
       setAllThreads(newThreads);
