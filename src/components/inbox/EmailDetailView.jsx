@@ -242,6 +242,8 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
                         getSenderInitials={getSenderInitials}
                         isNew={newStartIndex !== -1 && idx >= newStartIndex}
                         threadId={thread.id}
+                        linkedJobId={thread?.job_id}
+                        linkedProjectId={thread?.project_id}
                         onResyncMessage={() => {
                            queryClient.invalidateQueries({ queryKey: inboxKeys.messages(thread.id) });
                          }}
