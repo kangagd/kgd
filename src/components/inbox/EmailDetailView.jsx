@@ -36,7 +36,6 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
     initialLastReadAtRef.current = thread?.lastReadAt || null;
   }, [thread?.id]);
 
-  /* ---------- getSenderInitials (REQUIRED by EmailMessageItem) ---------- */
   const getSenderInitials = (name, email) => {
     if (name && typeof name === "string") {
       const parts = name.trim().split(" ").filter(Boolean);
