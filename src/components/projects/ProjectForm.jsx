@@ -116,8 +116,10 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         return await base44.entities.Customer.list();
       }
     },
-    staleTime: 30000, // Cache for 30 seconds
-    refetchOnWindowFocus: false
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false,
   });
 
   const customers = allCustomers

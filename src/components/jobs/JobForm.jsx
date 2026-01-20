@@ -112,8 +112,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         return Array.isArray(fallback) ? fallback : [];
       }
     },
-    staleTime: 30000,
+    staleTime: 60000,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false,
   });
 
   // ✅ safer filter: only remove deleted customers, and treat "active" loosely
@@ -131,7 +133,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list()
+    queryFn: () => base44.entities.Project.list(),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const projects = allProjects.filter(p => !p.deleted_at);
