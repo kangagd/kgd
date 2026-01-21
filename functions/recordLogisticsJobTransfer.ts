@@ -57,28 +57,45 @@ Deno.serve(async (req) => {
 
     // PHASE 1: Validate all items and prepare operations
     for (const item of items) {
-      const { price_list_item_id, quantity } = item;
+      let { price_list_item_id, quantity, part_id } = item;
       
-      if (!price_list_item_id) {
-        validationErrors.push('Item missing price_list_item_id');
+      // Support both price_list_item_id and part_id (fallback for parts created from PO lines)
+      const itemId = price_list_item_id || part_id;
+      
+      if (!itemId) {
+        validationErrors.push('Item missing price_list_item_id or part_id');
         continue;
       }
 
       // Try to get item name for better error messages
       let itemName = 'Unknown Item';
-      try {
-        const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
-        if (priceItem) {
-          itemName = priceItem.item || 'Unknown Item';
+      
+      // Try price list first if available
+      if (price_list_item_id) {
+        try {
+          const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
+          if (priceItem) {
+            itemName = priceItem.item || 'Unknown Item';
+          }
+        } catch (err) {
+          // Continue with generic name
         }
-      } catch (err) {
-        // Continue with generic name
+      } else if (part_id) {
+        // Fallback to part's item_name
+        try {
+          const part = await base44.asServiceRole.entities.Part.get(part_id);
+          if (part) {
+            itemName = part.item_name || 'Unknown Item';
+          }
+        } catch (err) {
+          // Continue with generic name
+        }
       }
 
       // Validate stock availability for non-supplier sources
       if (!isSupplierSource) {
         const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
-          price_list_item_id,
+          price_list_item_id: itemId,
           location_id: finalSourceLocationId
         });
 
@@ -89,7 +106,8 @@ Deno.serve(async (req) => {
         }
 
         itemsToProcess.push({
-          price_list_item_id,
+          itemId: itemId,
+          price_list_item_id: itemId,
           quantity,
           itemName,
           sourceQtyRecord: sourceQty[0]
@@ -97,7 +115,8 @@ Deno.serve(async (req) => {
       } else {
         // Supplier source - no validation needed
         itemsToProcess.push({
-          price_list_item_id,
+          itemId: itemId,
+          price_list_item_id: itemId,
           quantity,
           itemName,
           sourceQtyRecord: null
