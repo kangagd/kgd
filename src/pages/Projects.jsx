@@ -462,15 +462,6 @@ export default function Projects() {
         return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
         }, []);
 
-        const hasRequiredTrades = useCallback((projectId) => {
-          return (indexes.tradeReqByProjectId.get(projectId) || []).some(t => t.is_required);
-        }, [indexes]);
-
-        const hasCustomerIssue = useCallback((project) => {
-          if (!project) return false;
-          return !project.customer_id || (!project.customer_phone && !project.customer_email);
-        }, []);
-
         const getPricingStatus = useCallback((project) => {
           if (!project?.quote_checklist || !Array.isArray(project.quote_checklist)) {
             return 'none';
@@ -488,6 +479,15 @@ export default function Projects() {
             return 'requested';
           }
           return 'none';
+        }, []);
+
+        const hasRequiredTrades = useCallback((projectId) => {
+          return (indexes.tradeReqByProjectId.get(projectId) || []).some(t => t.is_required);
+        }, [indexes]);
+
+        const hasCustomerIssue = useCallback((project) => {
+          if (!project) return false;
+          return !project.customer_id || (!project.customer_phone && !project.customer_email);
         }, []);
 
   if (showForm) {
