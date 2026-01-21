@@ -34,71 +34,71 @@ Deno.serve(async (req) => {
         const processedIds = new Set();
 
         // HOT: Sent within last 24 hours
-          for (const quote of allQuotes) {
+          for (const quote of sentQuotes) {
             const sentDate = quote.sent_at ? new Date(quote.sent_at) : null;
             if (!sentDate) continue;
             if (sentDate >= oneDayAgo && sentDate <= now) {
-            const project = projectMap.get(quote.project_id);
-            if (!project) continue;
+              const project = projectMap.get(quote.project_id);
+              if (!project) continue;
 
-            hotQuotes.push({
-              id: quote.id,
-              project_id: project.id,
-              project_number: project.project_number,
-              project_title: project.title,
-              customer_name: project.customer_name,
-              sent_at: quote.sent_at,
-              quote_viewed: quote.quote_viewed || false,
-              hours_since_sent: Math.round((now - sentDate) / (1000 * 60 * 60))
-            });
-            processedIds.add(quote.id);
+              hotQuotes.push({
+                id: quote.id,
+                project_id: project.id,
+                project_number: project.project_number,
+                project_title: project.title,
+                customer_name: project.customer_name,
+                sent_at: quote.sent_at,
+                quote_viewed: quote.quote_viewed || false,
+                hours_since_sent: Math.round((now - sentDate) / (1000 * 60 * 60))
+              });
+              processedIds.add(quote.id);
+            }
           }
-        }
 
-        // WARM: Sent 1-5 days ago (no activity check - assume needs follow-up)
-          for (const quote of allQuotes) {
+          // WARM: Sent 1-5 days ago (no activity check - assume needs follow-up)
+          for (const quote of sentQuotes) {
             if (processedIds.has(quote.id)) continue;
 
             const sentDate = quote.sent_at ? new Date(quote.sent_at) : null;
             if (!sentDate) continue;
             if (sentDate >= fiveDaysAgo && sentDate < oneDayAgo) {
-            const project = projectMap.get(quote.project_id);
-            if (!project) continue;
+              const project = projectMap.get(quote.project_id);
+              if (!project) continue;
 
-            warmQuotes.push({
-              id: quote.id,
-              project_id: project.id,
-              project_number: project.project_number,
-              project_title: project.title,
-              customer_name: project.customer_name,
-              sent_at: quote.sent_at,
-              hours_since_sent: Math.round((now - sentDate) / (1000 * 60 * 60))
-            });
-            processedIds.add(quote.id);
+              warmQuotes.push({
+                id: quote.id,
+                project_id: project.id,
+                project_number: project.project_number,
+                project_title: project.title,
+                customer_name: project.customer_name,
+                sent_at: quote.sent_at,
+                hours_since_sent: Math.round((now - sentDate) / (1000 * 60 * 60))
+              });
+              processedIds.add(quote.id);
+            }
           }
-        }
 
-        // COLD: Expiring within 5 days
-        for (const quote of allQuotes) {
-          if (processedIds.has(quote.id)) continue;
+          // COLD: Expiring within 5 days
+          for (const quote of sentQuotes) {
+            if (processedIds.has(quote.id)) continue;
 
-          const expiryDate = quote.expires_at ? new Date(quote.expires_at) : null;
-          if (expiryDate && expiryDate >= now && expiryDate <= fiveDaysFromNow) {
-            const project = projectMap.get(quote.project_id);
-            if (!project) continue;
+            const expiryDate = quote.expires_at ? new Date(quote.expires_at) : null;
+            if (expiryDate && expiryDate >= now && expiryDate <= fiveDaysFromNow) {
+              const project = projectMap.get(quote.project_id);
+              if (!project) continue;
 
-            coldQuotes.push({
-              id: quote.id,
-              project_id: project.id,
-              project_number: project.project_number,
-              project_title: project.title,
-              customer_name: project.customer_name,
-              sent_at: quote.sent_at,
-              quote_expires_at: quote.expires_at,
-              days_until_expiry: Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
-            });
+              coldQuotes.push({
+                id: quote.id,
+                project_id: project.id,
+                project_number: project.project_number,
+                project_title: project.title,
+                customer_name: project.customer_name,
+                sent_at: quote.sent_at,
+                quote_expires_at: quote.expires_at,
+                days_until_expiry: Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24))
+              });
+            }
           }
-        }
 
     return Response.json({
       success: true,
