@@ -52,6 +52,7 @@ export default function Projects() {
   const debouncedSearchTerm = useDebounce(searchTerm, 250);
   const [stageFilter, setStageFilter] = useState("all");
   const [partsStatusFilter, setPartsStatusFilter] = useState("all");
+  const [pricingStatusFilter, setPricingStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [sortBy, setSortBy] = useState("created_date");
@@ -384,10 +385,43 @@ export default function Projects() {
 
         const matchesDuplicateFilter = !showDuplicatesOnly || project.is_potential_duplicate;
         
-        return matchesSearch && matchesStage && matchesPartsStatus && matchesTags && matchesDateRange && matchesDuplicateFilter;
+        let matchesPricingStatus = true;
+        if (stageFilter === "Create Quote" && pricingStatusFilter !== "all") {
+          const pricingStatus = getPricingStatus(project);
+          if (pricingStatusFilter === "pricing_requested" && pricingStatus !== "requested") matchesPricingStatus = false;
+          if (pricingStatusFilter === "pricing_received" && pricingStatus !== "received") matchesPricingStatus = false;
+          if (pricingStatusFilter === "no_pricing" && pricingStatus !== "none") matchesPricingStatus = false;
+        }
+        
+        return matchesSearch && matchesStage && matchesPartsStatus && matchesTags && matchesDateRange && matchesDuplicateFilter && matchesPricingStatus;
       })
       .sort((a, b) => {
-        if (sortBy === "created_date") {
+        if (sortBy === "pricing_status") {
+          const pricingOrder = { 'received': 0, 'requested': 1, 'none': 2 };
+          const pricingStatusA = getPricingStatus(a);
+          const pricingStatusB = getPricingStatus(b);
+          const orderA = pricingOrder[pricingStatusA];
+          const orderB = pricingOrder[pricingStatusB];
+          
+          if (orderA !== orderB) {
+            return orderA - orderB;
+          }
+          
+          // Secondary sort by timestamp within same status
+          if (pricingStatusA === 'received' || pricingStatusA === 'requested') {
+            const itemName = pricingStatusA === 'received' ? 'Pricing Received' : 'Pricing Requested';
+            const itemA = a.quote_checklist?.find(item => item.item === itemName && item.checked);
+            const itemB = b.quote_checklist?.find(item => item.item === itemName && item.checked);
+            const timeA = itemA?.checked_at ? new Date(itemA.checked_at) : new Date(0);
+            const timeB = itemB?.checked_at ? new Date(itemB.checked_at) : new Date(0);
+            return timeB - timeA; // Descending
+          }
+          
+          // Fallback to creation date
+          const dateA = a.created_at || a.created_date || a.createdDate;
+          const dateB = b.created_at || b.created_date || b.createdDate;
+          return new Date(dateB) - new Date(dateA);
+        } else if (sortBy === "created_date") {
           const dateA = a.created_at || a.created_date || a.createdDate;
           const dateB = b.created_at || b.created_date || b.createdDate;
           return new Date(dateB) - new Date(dateA);
@@ -400,7 +434,7 @@ export default function Projects() {
     
     devLog('[Projects] Filter & sort');
     return filtered;
-  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
+  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, pricingStatusFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes, getPricingStatus]);
 
         const getJobCount = useCallback((projectId) => {
           return (indexes.jobsByProjectId.get(projectId) || []).length;
@@ -435,6 +469,25 @@ export default function Projects() {
         const hasCustomerIssue = useCallback((project) => {
           if (!project) return false;
           return !project.customer_id || (!project.customer_phone && !project.customer_email);
+        }, []);
+
+        const getPricingStatus = useCallback((project) => {
+          if (!project?.quote_checklist || !Array.isArray(project.quote_checklist)) {
+            return 'none';
+          }
+          const pricingReceived = project.quote_checklist.find(
+            item => item.item === "Pricing Received" && item.checked === true
+          );
+          if (pricingReceived) {
+            return 'received';
+          }
+          const pricingRequested = project.quote_checklist.find(
+            item => item.item === "Pricing Requested" && item.checked === true
+          );
+          if (pricingRequested) {
+            return 'requested';
+          }
+          return 'none';
         }, []);
 
   if (showForm) {
@@ -641,6 +694,20 @@ export default function Projects() {
                     </SelectContent>
                   </Select>
 
+                  {stageFilter === "Create Quote" && (
+                    <Select value={pricingStatusFilter} onValueChange={setPricingStatusFilter}>
+                      <SelectTrigger className="w-full md:w-[180px] h-10">
+                        <SelectValue placeholder="Pricing Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Pricing</SelectItem>
+                        <SelectItem value="pricing_received">Pricing Received</SelectItem>
+                        <SelectItem value="pricing_requested">Pricing Requested</SelectItem>
+                        <SelectItem value="no_pricing">No Pricing Status</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="w-full md:w-[200px] h-10">
                       <SelectValue placeholder="Sort by" />
@@ -648,6 +715,9 @@ export default function Projects() {
                     <SelectContent>
                       <SelectItem value="created_date">Order Date (Newest)</SelectItem>
                       <SelectItem value="stage">Project Stage</SelectItem>
+                      {stageFilter === "Create Quote" && (
+                        <SelectItem value="pricing_status">Pricing Status</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
 
@@ -667,12 +737,13 @@ export default function Projects() {
                     className="w-full md:w-[160px] h-10"
                   />
 
-                  {(stageFilter !== "all" || partsStatusFilter !== "all" || startDate || endDate || sortBy !== "created_date") && (
+                  {(stageFilter !== "all" || partsStatusFilter !== "all" || pricingStatusFilter !== "all" || startDate || endDate || sortBy !== "created_date") && (
                     <Button
                       variant="outline"
                       onClick={() => {
                         setStageFilter("all");
                         setPartsStatusFilter("all");
+                        setPricingStatusFilter("all");
                         setStartDate("");
                         setEndDate("");
                         setSortBy("created_date");
