@@ -50,6 +50,13 @@ export default function SupplyLogistics() {
     retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
+  const hasLoadingBayPOs = React.useMemo(() => {
+    return purchaseOrders.some(po => {
+      const normalized = normaliseLegacyPoStatus(po.status);
+      return normalized === PO_STATUS.IN_LOADING_BAY;
+    });
+  }, [purchaseOrders]);
+
   const { data: parts = [] } = useQuery({
     queryKey: ['parts'],
     queryFn: () => base44.entities.Part.list(),
@@ -58,13 +65,6 @@ export default function SupplyLogistics() {
     refetchOnWindowFocus: false,
     retry: (count, err) => err?.status !== 429 && count < 2,
   });
-
-  const hasLoadingBayPOs = React.useMemo(() => {
-    return purchaseOrders.some(po => {
-      const normalized = normaliseLegacyPoStatus(po.status);
-      return normalized === PO_STATUS.IN_LOADING_BAY;
-    });
-  }, [purchaseOrders]);
 
   const { data: purchaseOrderLines = [] } = useQuery({
     queryKey: ['purchaseOrderLines'],
