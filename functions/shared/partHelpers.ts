@@ -59,6 +59,7 @@ export function determinePartStatus(toLocation) {
 
 // Link Parts to Purchase Order
 // GUARDRAIL: If part already has a primary PO, add to array but don't overwrite primary
+// CRITICAL: Syncs item_name from PurchaseOrderLine to Part to ensure display consistency
 export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
     const today = new Date().toISOString().split('T')[0];
     const partIds = lineItems.map(item => item.part_id).filter(Boolean);
@@ -66,6 +67,12 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
     if (partIds.length === 0) return;
 
     const uniquePartIds = [...new Set(partIds)];
+    
+    // Fetch all PurchaseOrderLines for this PO to get item_name
+    const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ 
+        purchase_order_id: purchaseOrderId 
+    });
+    const poLineMap = new Map(poLines.map(line => [line.part_id, line]));
 
     for (const partId of uniquePartIds) {
         try {
@@ -76,6 +83,12 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
                 last_synced_from_po_at: new Date().toISOString(),
                 synced_by: 'system:linkPartsToPO'
             };
+
+            // CRITICAL: Sync item_name from PurchaseOrderLine to Part
+            const poLine = poLineMap.get(partId);
+            if (poLine?.item_name) {
+                updateData.item_name = poLine.item_name;
+            }
 
             // Build purchase_order_ids array
             const existingPoIds = part.purchase_order_ids || [];
@@ -117,7 +130,7 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
             }
 
             await base44.asServiceRole.entities.Part.update(partId, updateData);
-            console.log(`[linkPartsToPO] Linked part ${partId} to PO ${purchaseOrderId} (primary=${updateData.primary_purchase_order_id})`);
+            console.log(`[linkPartsToPO] Linked part ${partId} to PO ${purchaseOrderId} (primary=${updateData.primary_purchase_order_id}, item_name=${updateData.item_name})`);
         } catch (error) {
             console.error(`Error linking part ${partId} to PO ${purchaseOrderId}:`, error);
         }
