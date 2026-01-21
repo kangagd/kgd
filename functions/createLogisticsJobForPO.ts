@@ -92,8 +92,16 @@ Deno.serve(async (req) => {
              console.error('Error fetching warehouse location:', err);
          }
 
-         const warehouseAddress = warehouseLocation?.address || "866 Bourke Street, Waterloo";
-         const warehouseLocationId = warehouseLocation?.id || null;
+         // GUARDRAIL: Validate warehouse location exists (no hard-coded fallback)
+         if (!warehouseLocation) {
+             return Response.json({ 
+                 success: false, 
+                 error: 'No active warehouse location found. Please create a warehouse InventoryLocation first.' 
+             }, { status: 400 });
+         }
+         
+         const warehouseAddress = warehouseLocation.address;
+         const warehouseLocationId = warehouseLocation.id;
 
          // Get or create supplier inventory location
          let supplierLocation = null;
