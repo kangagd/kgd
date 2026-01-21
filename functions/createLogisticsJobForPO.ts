@@ -184,6 +184,7 @@ Deno.serve(async (req) => {
             }
 
             // No Part exists - create one
+            console.log(`Creating Part for PO line ${line.id}: ${line.item_name}`);
             const newPart = await base44.asServiceRole.entities.Part.create({
                 project_id: po.project_id || null,
                 part_scope: po.project_id ? "project" : "general",
@@ -205,12 +206,15 @@ Deno.serve(async (req) => {
                 price_list_item_id: line.price_list_item_id || line.source_id || null,
             });
             allParts.push(newPart);
+            console.log(`Created Part ${newPart.id} for PO line ${line.id}`);
 
             // Update PO line with the new part_id
             await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
                 part_id: newPart.id
             });
         }
+        
+        console.log(`Total Parts for PO ${po.id}: ${allParts.length} (${existingParts.length} existing, ${allParts.length - existingParts.length} created)`);
 
         // ALWAYS use Part IDs in checked_items (for both project and non-project POs)
         for (const part of allParts) {
