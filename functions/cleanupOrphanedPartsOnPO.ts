@@ -45,12 +45,45 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Get PO lines and create parts for any missing ones
+    const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
+      purchase_order_id: po.id
+    });
+
+    // Map existing parts by po_line_id
+    const partsWithLineIds = allParts.filter(p => p.po_line_id);
+    const existingLineIds = new Set(partsWithLineIds.map(p => p.po_line_id));
+
+    // Create parts for missing PO lines
+    const createdIds = [];
+    for (const line of poLines) {
+      if (!existingLineIds.has(line.id)) {
+        try {
+          const newPart = await base44.asServiceRole.entities.Part.create({
+            po_line_id: line.id,
+            item_name: line.item_name,
+            category: 'Other',
+            quantity_required: line.qty_ordered,
+            status: 'pending',
+            source_type: 'supplier_delivery',
+            location: 'supplier',
+            purchase_order_ids: [po.id],
+            primary_purchase_order_id: po.id
+          });
+          createdIds.push(newPart.id);
+        } catch (err) {
+          console.error(`Failed to create part for PO line ${line.id}:`, err.message);
+        }
+      }
+    }
+
     return Response.json({
       po_id: po.id,
       po_reference: po.po_reference,
       orphaned_parts_deleted: deletedIds.length,
       deleted_part_ids: deletedIds,
-      remaining_parts_count: allParts.length - deletedIds.length
+      missing_parts_created: createdIds.length,
+      created_part_ids: createdIds
     });
 
   } catch (error) {
