@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       total_parts: parts.length,
+      parts_without_po_line: noPoLine,
       updated,
       skipped,
       errors: errors.length > 0 ? errors : undefined
