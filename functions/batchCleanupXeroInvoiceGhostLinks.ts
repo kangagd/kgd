@@ -104,8 +104,9 @@ Deno.serve(async (req) => {
             project_id: invoice.project_id
           });
           console.log(`[batchCleanupXeroInvoiceGhostLinks] Unlinked invoice ${invoice.xero_invoice_number} from deleted project`);
-        } else if (!project.xero_invoices || !project.xero_invoices.includes(invoice.id)) {
+        } else if (project.xero_invoices && !project.xero_invoices.includes(invoice.id)) {
           // GHOST LINK: Invoice claims to be linked to project, but project doesn't reference it
+          // (only unlink if project.xero_invoices exists but doesn't contain it - avoids race conditions)
           await base44.asServiceRole.entities.XeroInvoice.update(invoice.id, {
             project_id: null
           });
