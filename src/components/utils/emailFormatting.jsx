@@ -95,6 +95,10 @@ export function decodeEmailText(input) {
   // Remove invisible characters
   text = text.replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g, '');
 
+  // Decode numeric HTML entities (&#39;, &#34;, etc.)
+  text = text.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(parseInt(dec, 10)));
+  text = text.replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+
   // Decode basic HTML entities (safe)
   // (Browser only; if this runs server-side, skip)
   if (typeof window !== 'undefined') {
