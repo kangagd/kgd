@@ -51,11 +51,11 @@ Deno.serve(async (req) => {
     // CRITICAL: Suppliers have unlimited stock - skip validation for supplier type
     const isSupplierSource = sourceLocation.type === 'supplier';
 
-    // Process each item
-    let itemsTransferred = 0;
-    const batchId = `logistics_job_${job_id}_${Date.now()}`;
-    const stockMovementIds = [];
+    // GUARDRAIL: Validate ALL items BEFORE executing any transfers (transaction-like pattern)
+    const validationErrors = [];
+    const itemsToProcess = [];
 
+    // PHASE 1: Validate all items and prepare operations
     for (const item of items) {
       const { price_list_item_id, quantity } = item;
 
@@ -63,8 +63,7 @@ Deno.serve(async (req) => {
       const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
       const itemName = priceItem?.item || 'Unknown Item';
 
-      // Supplier sources: unlimited stock, no validation or deduction
-      // Non-supplier sources: validate and deduct from inventory
+      // Validate stock availability for non-supplier sources
       if (!isSupplierSource) {
         const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
           price_list_item_id,
@@ -73,14 +72,48 @@ Deno.serve(async (req) => {
 
         const currentQty = sourceQty[0]?.quantity || 0;
         if (currentQty < quantity) {
-          return Response.json({
-            error: `Insufficient stock at ${sourceLocation.name}. Available: ${currentQty}, Requested: ${quantity}`
-          }, { status: 400 });
+          validationErrors.push(`${itemName}: Insufficient stock. Available: ${currentQty}, Requested: ${quantity}`);
+          continue;
         }
 
-        // Deduct from source
-        await base44.asServiceRole.entities.InventoryQuantity.update(sourceQty[0].id, {
-          quantity: currentQty - quantity
+        // Store for execution phase
+        itemsToProcess.push({
+          price_list_item_id,
+          quantity,
+          itemName,
+          sourceQtyRecord: sourceQty[0]
+        });
+      } else {
+        // Supplier source - no validation needed
+        itemsToProcess.push({
+          price_list_item_id,
+          quantity,
+          itemName,
+          sourceQtyRecord: null
+        });
+      }
+    }
+
+    // GUARDRAIL: If ANY validation failed, abort BEFORE making changes
+    if (validationErrors.length > 0) {
+      return Response.json({
+        error: `Transfer validation failed:\n${validationErrors.join('\n')}`,
+        validation_errors: validationErrors
+      }, { status: 400 });
+    }
+
+    // PHASE 2: Execute all transfers (validation passed)
+    let itemsTransferred = 0;
+    const batchId = `logistics_job_${job_id}_${Date.now()}`;
+    const stockMovementIds = [];
+
+    for (const item of itemsToProcess) {
+      const { price_list_item_id, quantity, itemName, sourceQtyRecord } = item;
+
+      // Deduct from source (if not supplier)
+      if (!isSupplierSource && sourceQtyRecord) {
+        await base44.asServiceRole.entities.InventoryQuantity.update(sourceQtyRecord.id, {
+          quantity: sourceQtyRecord.quantity - quantity
         });
       }
 
