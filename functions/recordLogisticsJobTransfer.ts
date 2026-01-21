@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.js';
+import { getOrCreateSupplierInventoryLocation } from '/functions/shared/supplierLocationHelper.js';
 
 // Suppliers have unlimited stock - no validation needed when source is supplier
 Deno.serve(async (req) => {
