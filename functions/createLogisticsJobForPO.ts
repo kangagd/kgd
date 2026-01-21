@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
             }
         }
 
-        const allParts = [...existingParts];
+        const newlyCreatedParts = [];
         for (const line of poLines) {
             // Check if Part already exists for this PO line
             if (existingPartsByLineId.has(line.id)) {
@@ -204,7 +204,7 @@ Deno.serve(async (req) => {
                 eta: po.expected_date,
                 price_list_item_id: line.price_list_item_id || line.source_id || null,
             });
-            allParts.push(newPart);
+            newlyCreatedParts.push(newPart);
             console.log(`Created Part ${newPart.id} for PO line ${line.id}`);
 
             // Update PO line with the new part_id
@@ -213,10 +213,13 @@ Deno.serve(async (req) => {
             });
         }
         
-        console.log(`Total Parts for PO ${po.id}: ${allParts.length} (${existingParts.length} existing, ${allParts.length - existingParts.length} created)`);
+        console.log(`Total Parts for PO ${po.id}: ${existingParts.length + newlyCreatedParts.length} (${existingParts.length} existing, ${newlyCreatedParts.length} created)`);
 
-        // ALWAYS use Part IDs in checked_items (for both project and non-project POs)
-        for (const part of allParts) {
+        // ALWAYS use Part IDs in checked_items (deduplicated: existing + newly created)
+        for (const part of existingParts) {
+            checkedItems[part.id] = false;
+        }
+        for (const part of newlyCreatedParts) {
             checkedItems[part.id] = false;
         }
 
