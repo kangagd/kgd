@@ -229,9 +229,14 @@ Deno.serve(async (req) => {
           const hasRelevantSubject = normalizedSubject.length > 3 && !/^(no subject|fwd|re)$/i.test(normalizedSubject);
           
           if (hasRelevantSubject) {
-            const allThreads = await base44.asServiceRole.entities.EmailThread.list();
+            // PERFORMANCE GUARDRAIL: Only scan recent threads (last 90 days) to prevent O(n) scaling
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            const recentThreads = await base44.asServiceRole.entities.EmailThread.filter({
+              last_message_date: { $gte: ninetyDaysAgo.toISOString() }
+            });
             
-            existingThreads = allThreads.filter(t => {
+            existingThreads = recentThreads.filter(t => {
               const threadSubject = (t.subject || '').replace(/^(Re:|Fwd?:|Fw:)\s*/gi, '').trim().toLowerCase();
               if (threadSubject !== normalizedSubject) return false;
               
