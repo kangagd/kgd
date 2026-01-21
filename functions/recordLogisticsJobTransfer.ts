@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
       // Validate stock availability for non-supplier sources
       if (!isSupplierSource) {
         const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
-          price_list_item_id: priceListId,
+          price_list_item_id,
           location_id: finalSourceLocationId
         });
 
@@ -88,22 +88,21 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Store for execution phase
         itemsToProcess.push({
-          price_list_item_id: priceListId,
+          price_list_item_id,
           quantity,
           itemName,
           sourceQtyRecord: sourceQty[0]
         });
-        } else {
-          // Supplier source - no validation needed
-          itemsToProcess.push({
-            price_list_item_id: priceListId,
-            quantity,
-            itemName,
-            sourceQtyRecord: null
-          });
-        }
+      } else {
+        // Supplier source - no validation needed
+        itemsToProcess.push({
+          price_list_item_id,
+          quantity,
+          itemName,
+          sourceQtyRecord: null
+        });
+      }
     }
 
     // GUARDRAIL: If ANY validation failed, abort BEFORE making changes
