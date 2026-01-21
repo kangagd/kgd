@@ -51,31 +51,34 @@ Deno.serve(async (req) => {
     let itemsTransferred = 0;
     const batchId = `logistics_job_${job_id}_${Date.now()}`;
     const stockMovementIds = [];
+    const isSupplierSource = sourceLocation.type === 'supplier';
 
     for (const item of items) {
       const { price_list_item_id, quantity } = item;
-
-      // Validate source has stock
-      const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
-        price_list_item_id,
-        location_id: finalSourceLocationId
-      });
-
-      const currentQty = sourceQty[0]?.quantity || 0;
-      if (currentQty < quantity) {
-        return Response.json({
-          error: `Insufficient stock at ${sourceLocation.name}. Available: ${currentQty}, Requested: ${quantity}`
-        }, { status: 400 });
-      }
 
       // Get item name
       const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
       const itemName = priceItem?.item || 'Unknown Item';
 
-      // Deduct from source
-      await base44.asServiceRole.entities.InventoryQuantity.update(sourceQty[0].id, {
-        quantity: currentQty - quantity
-      });
+      // Only validate and deduct stock for non-supplier sources
+      if (!isSupplierSource) {
+        const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
+          price_list_item_id,
+          location_id: finalSourceLocationId
+        });
+
+        const currentQty = sourceQty[0]?.quantity || 0;
+        if (currentQty < quantity) {
+          return Response.json({
+            error: `Insufficient stock at ${sourceLocation.name}. Available: ${currentQty}, Requested: ${quantity}`
+          }, { status: 400 });
+        }
+
+        // Deduct from source
+        await base44.asServiceRole.entities.InventoryQuantity.update(sourceQty[0].id, {
+          quantity: currentQty - quantity
+        });
+      }
 
       // Add to destination
       const destQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
@@ -102,7 +105,7 @@ Deno.serve(async (req) => {
         price_list_item_id: price_list_item_id,
         item_name: itemName,
         quantity: quantity,
-        from_location_id: source_location_id,
+        from_location_id: finalSourceLocationId,
         from_location_name: sourceLocation.name,
         to_location_id: destination_location_id,
         to_location_name: destLocation.name,
