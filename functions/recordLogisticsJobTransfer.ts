@@ -88,10 +88,15 @@ Deno.serve(async (req) => {
                 }
               }
 
+      // Skip items without valid price_list_item_id (legacy parts from suppliers)
+      if (!priceListId) {
+        continue;
+      }
+
       // Validate stock availability for non-supplier sources
       if (!isSupplierSource) {
         const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
-          price_list_item_id,
+          price_list_item_id: priceListId,
           location_id: finalSourceLocationId
         });
 
