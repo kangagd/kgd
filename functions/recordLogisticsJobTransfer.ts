@@ -56,12 +56,37 @@ Deno.serve(async (req) => {
     const itemsToProcess = [];
 
     // PHASE 1: Validate all items and prepare operations
-    for (const item of items) {
-      const { price_list_item_id, quantity } = item;
+            for (const item of items) {
+              const { price_list_item_id, quantity } = item;
 
-      // Get item name
-      const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
-      const itemName = priceItem?.item || 'Unknown Item';
+              // Get item name - handle both price_list_item_id and part_id references
+              let priceListId = price_list_item_id;
+              let itemName = 'Unknown Item';
+
+              try {
+                const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
+                if (priceItem) {
+                  itemName = priceItem.item || 'Unknown Item';
+                } else {
+                  // If not found as price list item, try as part
+                  const part = await base44.asServiceRole.entities.Part.get(price_list_item_id);
+                  if (part) {
+                    priceListId = part.price_list_item_id;
+                    itemName = part.item_name || 'Unknown Part';
+                  }
+                }
+              } catch (err) {
+                // If lookup fails, try as part ID
+                try {
+                  const part = await base44.asServiceRole.entities.Part.get(price_list_item_id);
+                  if (part) {
+                    priceListId = part.price_list_item_id;
+                    itemName = part.item_name || 'Unknown Part';
+                  }
+                } catch (e) {
+                  // Continue with fallback
+                }
+              }
 
       // Validate stock availability for non-supplier sources
       if (!isSupplierSource) {
