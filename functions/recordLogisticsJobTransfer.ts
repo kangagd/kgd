@@ -49,6 +49,11 @@ Deno.serve(async (req) => {
 
     // Check if source is a supplier (suppliers have unlimited stock)
     const isSupplierSource = sourceLocation.type === 'supplier';
+    console.log('Source location check:', { 
+      name: sourceLocation.name, 
+      type: sourceLocation.type, 
+      isSupplierSource 
+    });
 
     // Process each item
     let itemsTransferred = 0;
@@ -61,6 +66,8 @@ Deno.serve(async (req) => {
       // Get item name
       const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
       const itemName = priceItem?.item || 'Unknown Item';
+
+      console.log('Processing item:', { itemName, quantity, isSupplierSource });
 
       // Only validate and deduct stock for non-supplier sources
       if (!isSupplierSource) {
