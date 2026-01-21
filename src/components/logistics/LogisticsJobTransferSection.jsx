@@ -34,20 +34,32 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   // Fetch parts for this logistics job
   const { data: jobParts = [] } = useQuery({
-    queryKey: ['jobParts', job.id, job.purchase_order_id],
+    queryKey: ['jobParts', job.id, job.purchase_order_id, job.visit_scope],
     queryFn: async () => {
+      // Method 1: PO-based lookup (for supplier pickup jobs)
       if (job.purchase_order_id) {
         return await base44.entities.Part.filter({ 
           primary_purchase_order_id: job.purchase_order_id 
         });
-      } else {
-        const allParts = await base44.entities.Part.list();
-        return allParts.filter(p => 
-          p.linked_logistics_jobs && 
-          Array.isArray(p.linked_logistics_jobs) && 
-          p.linked_logistics_jobs.includes(job.id)
-        );
       }
+      
+      // Method 2: Extract part IDs from visit_scope (warehouse pickups, etc)
+      const partIdsFromScope = (job.visit_scope || [])
+        .filter(item => item.type === 'part' && item.ref_id)
+        .map(item => item.ref_id);
+      
+      if (partIdsFromScope.length > 0) {
+        const allParts = await base44.entities.Part.list();
+        return allParts.filter(p => partIdsFromScope.includes(p.id));
+      }
+      
+      // Method 3: Fallback to linked_logistics_jobs (backward compatibility)
+      const allParts = await base44.entities.Part.list();
+      return allParts.filter(p => 
+        p.linked_logistics_jobs && 
+        Array.isArray(p.linked_logistics_jobs) && 
+        p.linked_logistics_jobs.includes(job.id)
+      );
     },
     enabled: showTransferModal,
   });
