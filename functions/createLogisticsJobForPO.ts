@@ -142,12 +142,20 @@ Deno.serve(async (req) => {
         // Build checked_items - use PO line IDs for non-project POs, Part IDs for project POs
         const checkedItems = {};
 
-        // ALWAYS create Parts for ALL PO lines (project and non-project)
-        const existingParts = await base44.asServiceRole.entities.Part.filter({
+        // ALWAYS fetch existing Parts for this PO (both by primary_purchase_order_id AND purchase_order_id to catch all)
+        const partsByPrimary = await base44.asServiceRole.entities.Part.filter({
             primary_purchase_order_id: po.id
         });
+        const partsByLegacy = await base44.asServiceRole.entities.Part.filter({
+            purchase_order_id: po.id
+        });
+        
+        // Merge and deduplicate
+        const existingPartsMap = new Map();
+        [...partsByPrimary, ...partsByLegacy].forEach(p => existingPartsMap.set(p.id, p));
+        const existingParts = Array.from(existingPartsMap.values());
 
-        // Map existing parts by po_line_id
+        // Map existing parts by po_line_id for quick lookup
         const existingPartsByLineId = new Map();
         for (const part of existingParts) {
             if (part.po_line_id) {
@@ -160,12 +168,17 @@ Deno.serve(async (req) => {
             // Check if Part already exists for this PO line
             if (existingPartsByLineId.has(line.id)) {
                 const part = existingPartsByLineId.get(line.id);
-                // Ensure item_name is populated from PO line
+                // Ensure item_name and primary_purchase_order_id are populated
+                const updates = {};
                 if (!part.item_name && line.item_name) {
-                    await base44.asServiceRole.entities.Part.update(part.id, {
-                        item_name: line.item_name
-                    });
-                    part.item_name = line.item_name;
+                    updates.item_name = line.item_name;
+                }
+                if (!part.primary_purchase_order_id) {
+                    updates.primary_purchase_order_id = po.id;
+                }
+                if (Object.keys(updates).length > 0) {
+                    await base44.asServiceRole.entities.Part.update(part.id, updates);
+                    Object.assign(part, updates);
                 }
                 continue;
             }
@@ -181,6 +194,7 @@ Deno.serve(async (req) => {
                 status: "on_order",
                 location: "supplier",
                 primary_purchase_order_id: po.id,
+                purchase_order_id: po.id,
                 purchase_order_ids: [po.id],
                 supplier_id: po.supplier_id,
                 supplier_name: po.supplier_name,
