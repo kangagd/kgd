@@ -103,13 +103,13 @@ export function computeAttentionItems({
         return false;
       }
 
-      // Skip if this job's visit has client_confirmed_at set
-      if (job.client_confirmed_at) {
+      // Skip logistics jobs (they don't require confirmation)
+      if (job.is_logistics_job) {
         return false;
       }
 
-      // Skip logistics jobs (they don't require confirmation)
-      if (job.is_logistics_job) {
+      // Skip if this job's visit has client_confirmed_at set
+      if (job.client_confirmed_at) {
         return false;
       }
 
