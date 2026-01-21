@@ -3,6 +3,7 @@ import { updateProjectActivity } from './updateProjectActivity.js';
 import { PO_STATUS, PART_STATUS, PART_LOCATION, PO_DELIVERY_METHOD } from './shared/constants.js';
 import { mapPoStatusToPartStatus, linkPartsToPO } from './shared/partHelpers.js';
 import { normaliseLegacyPoStatus, resolvePoRef, firstNonEmpty } from './shared/poHelpers.js';
+import { validatePartStatusTransition } from './shared/partStatusTransitions.js';
 
 // Helper: Sync Parts with PurchaseOrder status
 // CRITICAL: Only syncs parts where primary_purchase_order_id matches (prevents circular references)
@@ -25,6 +26,13 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
         const targetPartStatus = mapPoStatusToPartStatus(normalizedStatus);
 
         for (const part of relevantParts) {
+            // GUARDRAIL: Validate status transition before applying
+            const validation = validatePartStatusTransition(part.status, targetPartStatus);
+            if (!validation.valid) {
+                console.warn(`[syncParts] Blocked invalid transition for part ${part.id}: ${validation.error}`);
+                continue; // Skip this part, continue with others
+            }
+
             const updateData = {
                 status: targetPartStatus,
                 last_synced_from_po_at: new Date().toISOString(),
