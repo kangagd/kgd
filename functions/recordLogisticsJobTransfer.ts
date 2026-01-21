@@ -48,8 +48,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Location not found' }, { status: 404 });
     }
 
-    // CRITICAL: Suppliers have unlimited stock - skip validation for any non-warehouse/vehicle location
-    const isSupplierSource = sourceLocation.type !== 'warehouse' && sourceLocation.type !== 'vehicle';
+    // CRITICAL: Suppliers have unlimited stock - skip validation for supplier sources
+    // Check if source is a supplier location (either by type or by supplier_id field)
+    const isSupplierSource = sourceLocation.type === 'supplier' || sourceLocation.supplier_id;
+    
+    console.log(`[Transfer] Source location: ${sourceLocation.name}, type: ${sourceLocation.type}, has supplier_id: ${!!sourceLocation.supplier_id}, isSupplier: ${isSupplierSource}`);
 
     // GUARDRAIL: Validate ALL items BEFORE executing any transfers (transaction-like pattern)
     const validationErrors = [];
