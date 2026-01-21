@@ -41,80 +41,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
         }
 
-        // TRIGGER B: When Part is marked Delivered at Delivery Bay → create “Delivery – At Warehouse” job
-        if (part.status === 'Delivered' && part.location === 'At Delivery Bay') {
-            const wasTriggered = previousPart && 
-                                previousPart.status === 'Delivered' && 
-                                previousPart.location === 'At Delivery Bay';
-            
-            if (!wasTriggered) {
-                const project = await base44.asServiceRole.entities.Project.get(part.project_id);
-                if (project) {
-                    const otherParts = await base44.asServiceRole.entities.Part.filter({
-                        project_id: part.project_id,
-                        status: 'Delivered',
-                        location: 'At Delivery Bay'
-                    });
-
-                    const jobTypeName = "Delivery – At Warehouse";
-                    let jobTypes = await base44.asServiceRole.entities.JobType.filter({ name: jobTypeName });
-                    let jobTypeId = jobTypes.length > 0 ? jobTypes[0].id : null;
-                    
-                    if (!jobTypeId) {
-                         const newJobType = await base44.asServiceRole.entities.JobType.create({
-                             name: jobTypeName,
-                             description: "Logistics: Delivery of parts at warehouse",
-                             color: "#3b82f6",
-                             estimated_duration: 0.5,
-                             is_active: true
-                         });
-                         jobTypeId = newJobType.id;
-                    }
-
-                    const existingJobs = await base44.asServiceRole.entities.Job.filter({
-                        project_id: part.project_id,
-                        job_type: jobTypeName,
-                        status: { $in: ['Open', 'Scheduled'] }
-                    });
-
-                    let logisticsJob;
-
-                    if (existingJobs.length > 0) {
-                        logisticsJob = existingJobs[0];
-                    } else {
-                        const customerId = project.customer_id;
-                        const warehouseAddress = "Warehouse Delivery Bay";
-
-                        logisticsJob = await base44.asServiceRole.entities.Job.create({
-                            job_type: jobTypeName,
-                            job_type_id: jobTypeId,
-                            job_type_name: jobTypeName,
-                            project_id: part.project_id,
-                            project_name: project.title,
-                            customer_id: customerId,
-                            customer_name: project.customer_name,
-                            address: warehouseAddress,
-                            address_full: warehouseAddress,
-                            status: "Open",
-                            notes: `Logistics job generated for parts: ${otherParts.map(p => p.category).join(', ')}`
-                        });
-                    }
-
-                    const partIdsToUpdate = otherParts.map(p => p.id);
-                    if (!partIdsToUpdate.includes(part.id)) partIdsToUpdate.push(part.id);
-
-                    for (const pId of partIdsToUpdate) {
-                        const p = otherParts.find(op => op.id === pId) || part;
-                        const currentLinks = p.linked_logistics_jobs || [];
-                        if (!currentLinks.includes(logisticsJob.id)) {
-                             await base44.asServiceRole.entities.Part.update(pId, {
-                                 linked_logistics_jobs: [...currentLinks, logisticsJob.id]
-                             });
-                        }
-                    }
-                }
-            }
-        }
+        // LEGACY LOGISTICS AUTOMATION DISABLED (prevents duplicate job creation)
+        // Use createLogisticsJobForPO for all PO-based logistics job creation
+        // Use recordStockMovement for manual part movements
 
         return Response.json({ success: true, part });
     } catch (error) {
