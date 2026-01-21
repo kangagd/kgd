@@ -36,11 +36,20 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
   const { data: jobParts = [] } = useQuery({
     queryKey: ['jobParts', job.id, job.purchase_order_id, job.visit_scope],
     queryFn: async () => {
-      // Method 1: PO-based lookup (for supplier pickup jobs)
+      // Method 1: PO-based lookup (for supplier/procurement jobs)
       if (job.purchase_order_id) {
-        return await base44.entities.Part.filter({ 
+        const parts = await base44.entities.Part.filter({ 
           primary_purchase_order_id: job.purchase_order_id 
         });
+        if (parts.length > 0) return parts;
+      }
+      
+      // Fallback: Also check legacy purchase_order_id field
+      if (job.purchase_order_id) {
+        const legacyParts = await base44.entities.Part.filter({ 
+          purchase_order_id: job.purchase_order_id 
+        });
+        if (legacyParts.length > 0) return legacyParts;
       }
       
       // Method 2: Extract part IDs from visit_scope (warehouse pickups, etc)
