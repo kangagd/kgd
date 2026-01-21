@@ -88,17 +88,17 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   const recordTransferMutation = useMutation({
     mutationFn: async () => {
-      // Map selectedItems to include price_list_item_id from parts
+      // Map selectedItems - use price_list_item_id or part_id as fallback
       const itemsToTransfer = Object.entries(selectedItems)
         .filter(([_, qty]) => qty > 0)
         .map(([partId, qty]) => {
           const part = jobParts.find(p => p.id === partId);
           return { 
-            price_list_item_id: part?.price_list_item_id, 
+            price_list_item_id: part?.price_list_item_id || partId, 
             quantity: qty 
           };
         })
-        .filter(item => item.price_list_item_id); // Only include items with valid price_list_item_id
+        .filter(item => item.price_list_item_id);
 
       if (itemsToTransfer.length === 0) {
         throw new Error('Please select at least one item to transfer');
