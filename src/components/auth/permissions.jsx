@@ -28,6 +28,14 @@ export function can(user, action, resource = null) {
   // Admins can do everything
   if (user.role === 'admin') return true;
 
+  // Determine effective role based on extended_role
+  let effectiveRole = user.role;
+  if (user.extended_role === 'manager') {
+    effectiveRole = 'manager';
+  } else if (user.extended_role === 'technician' || user.is_field_technician === true) {
+    effectiveRole = 'technician';
+  }
+
   // Default role-based permissions
   const defaultPermissions = {
     manager: [
@@ -46,7 +54,7 @@ export function can(user, action, resource = null) {
     viewer: [],
   };
 
-  const rolePerms = defaultPermissions[user.role] || [];
+  const rolePerms = defaultPermissions[effectiveRole] || [];
   return rolePerms.includes(action);
 }
 
