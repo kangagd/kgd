@@ -387,7 +387,9 @@ export default function Projects() {
         
         let matchesPricingStatus = true;
         if (stageFilter === "Create Quote" && pricingStatusFilter !== "all") {
-          const pricingStatus = getPricingStatus(project);
+          const pricingReceived = project.quote_checklist?.find(item => item.item === "Pricing Received" && item.checked === true);
+          const pricingRequested = !pricingReceived && project.quote_checklist?.find(item => item.item === "Pricing Requested" && item.checked === true);
+          const pricingStatus = pricingReceived ? 'received' : pricingRequested ? 'requested' : 'none';
           if (pricingStatusFilter === "pricing_requested" && pricingStatus !== "requested") matchesPricingStatus = false;
           if (pricingStatusFilter === "pricing_received" && pricingStatus !== "received") matchesPricingStatus = false;
           if (pricingStatusFilter === "no_pricing" && pricingStatus !== "none") matchesPricingStatus = false;
@@ -398,8 +400,10 @@ export default function Projects() {
       .sort((a, b) => {
         if (sortBy === "pricing_status") {
           const pricingOrder = { 'received': 0, 'requested': 1, 'none': 2 };
-          const pricingStatusA = getPricingStatus(a);
-          const pricingStatusB = getPricingStatus(b);
+          const pricingReceivedA = a.quote_checklist?.find(item => item.item === "Pricing Received" && item.checked === true);
+          const pricingReceivedB = b.quote_checklist?.find(item => item.item === "Pricing Received" && item.checked === true);
+          const pricingStatusA = pricingReceivedA ? 'received' : a.quote_checklist?.find(item => item.item === "Pricing Requested" && item.checked === true) ? 'requested' : 'none';
+          const pricingStatusB = pricingReceivedB ? 'received' : b.quote_checklist?.find(item => item.item === "Pricing Requested" && item.checked === true) ? 'requested' : 'none';
           const orderA = pricingOrder[pricingStatusA];
           const orderB = pricingOrder[pricingStatusB];
           
@@ -434,7 +438,7 @@ export default function Projects() {
     
     devLog('[Projects] Filter & sort');
     return filtered;
-  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, pricingStatusFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes, getPricingStatus]);
+  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, pricingStatusFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
 
         const getJobCount = useCallback((projectId) => {
           return (indexes.jobsByProjectId.get(projectId) || []).length;
@@ -460,25 +464,6 @@ export default function Projects() {
         const doorType = firstDoor.type || 'doors';
         const dimensions = firstDoor.height && firstDoor.width ? `${firstDoor.height} x ${firstDoor.width}` : '';
         return `${doorCount}x ${doorType}${dimensions ? ` • ${dimensions}` : ''}`;
-        }, []);
-
-        const getPricingStatus = useCallback((project) => {
-          if (!project?.quote_checklist || !Array.isArray(project.quote_checklist)) {
-            return 'none';
-          }
-          const pricingReceived = project.quote_checklist.find(
-            item => item.item === "Pricing Received" && item.checked === true
-          );
-          if (pricingReceived) {
-            return 'received';
-          }
-          const pricingRequested = project.quote_checklist.find(
-            item => item.item === "Pricing Requested" && item.checked === true
-          );
-          if (pricingRequested) {
-            return 'requested';
-          }
-          return 'none';
         }, []);
 
         const hasRequiredTrades = useCallback((projectId) => {
