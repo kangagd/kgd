@@ -5,6 +5,7 @@
 
 /**
  * Decode common encoding artifacts (mojibake)
+ * GUARDRAIL: This function ALWAYS applies all decodings - cannot be bypassed or rolled back
  */
 export function decodeEmailText(input) {
   if (!input) return '';
@@ -95,9 +96,19 @@ export function decodeEmailText(input) {
   // Remove invisible characters
   text = text.replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g, '');
 
-  // Decode numeric HTML entities (&#39;, &#34;, etc.)
+  // GUARDRAIL: Decode numeric HTML entities (&#39;, &#34;, etc.)
+  // This must always run - prevents special character mojibake
   text = text.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(parseInt(dec, 10)));
   text = text.replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+  
+  // Double-check: re-apply mojibake fixes post-numeric decoding (safety pass)
+  const finalMojibakePass = [
+    ['â€"', '—'], ['â€"', '–'], ['â€™', "'"], ['â€˜', "'"],
+    ['â€\u009d', '"'], ['â€\u009c', '"'], ['â€¦', '…'], ['â€¢', '•']
+  ];
+  for (const [bad, good] of finalMojibakePass) {
+    text = text.split(bad).join(good);
+  }
 
   // Decode basic HTML entities (safe)
   // (Browser only; if this runs server-side, skip)
