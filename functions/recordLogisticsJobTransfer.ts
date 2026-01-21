@@ -103,20 +103,20 @@ Deno.serve(async (req) => {
 
         // Store for execution phase
         itemsToProcess.push({
-          price_list_item_id,
+          price_list_item_id: priceListId,
           quantity,
           itemName,
           sourceQtyRecord: sourceQty[0]
         });
-      } else {
-        // Supplier source - no validation needed
-        itemsToProcess.push({
-          price_list_item_id,
-          quantity,
-          itemName,
-          sourceQtyRecord: null
-        });
-      }
+        } else {
+          // Supplier source - no validation needed
+          itemsToProcess.push({
+            price_list_item_id: priceListId,
+            quantity,
+            itemName,
+            sourceQtyRecord: null
+          });
+        }
     }
 
     // GUARDRAIL: If ANY validation failed, abort BEFORE making changes
