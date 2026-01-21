@@ -59,6 +59,13 @@ Deno.serve(async (req) => {
     for (const item of items) {
       let { price_list_item_id, quantity, part_id } = item;
       
+      // Ensure quantity is a positive number
+      quantity = parseFloat(quantity) || 0;
+      if (quantity <= 0) {
+        validationErrors.push('Item quantity must be greater than 0');
+        continue;
+      }
+      
       // Support both price_list_item_id and part_id (fallback for parts created from PO lines)
       const itemId = price_list_item_id || part_id;
       
@@ -138,7 +145,7 @@ Deno.serve(async (req) => {
     const stockMovementIds = [];
 
     for (const item of itemsToProcess) {
-      const { itemId, quantity, itemName, sourceQtyRecord } = item;
+      const { price_list_item_id, quantity, itemName, sourceQtyRecord } = item;
 
       // Deduct from source (if not supplier)
       if (!isSupplierSource && sourceQtyRecord) {
@@ -149,7 +156,7 @@ Deno.serve(async (req) => {
 
       // Add to destination
       const destQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
-        price_list_item_id: itemId,
+        price_list_item_id,
         location_id: destination_location_id
       });
 
@@ -159,7 +166,7 @@ Deno.serve(async (req) => {
         });
       } else {
         await base44.asServiceRole.entities.InventoryQuantity.create({
-          price_list_item_id: itemId,
+          price_list_item_id,
           location_id: destination_location_id,
           quantity: quantity,
           item_name: itemName,
@@ -169,7 +176,7 @@ Deno.serve(async (req) => {
 
       // Create StockMovement record (canonical schema)
       const movement = await base44.asServiceRole.entities.StockMovement.create({
-        price_list_item_id: itemId,
+        price_list_item_id: price_list_item_id,
         item_name: itemName,
         quantity: quantity,
         from_location_id: finalSourceLocationId,
