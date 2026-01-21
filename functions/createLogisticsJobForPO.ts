@@ -279,7 +279,8 @@ Deno.serve(async (req) => {
             job: job,
             purchaseOrder: updatedPO,
             partsCreated: allParts.length,
-            supplierLocationCreated: !!supplierLocation
+            supplierLocationCreated: !!supplierLocation,
+            linkingErrors: linkingErrors.length > 0 ? linkingErrors : undefined
         });
 
     } catch (error) {
