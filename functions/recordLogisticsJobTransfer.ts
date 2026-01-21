@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     // Check if source is a supplier location (either by type or by supplier_id field)
     const isSupplierSource = sourceLocation.type === 'supplier' || sourceLocation.supplier_id;
     
-    console.log(`[Transfer] Source location: ${sourceLocation.name}, type: ${sourceLocation.type}, has supplier_id: ${!!sourceLocation.supplier_id}, isSupplier: ${isSupplierSource}`);
+    console.log(`[Transfer DEBUG] Source: ${sourceLocation.name}, type: ${sourceLocation.type}, supplier_id: ${sourceLocation.supplier_id}, isSupplierSource: ${isSupplierSource}`);
 
     // GUARDRAIL: Validate ALL items BEFORE executing any transfers (transaction-like pattern)
     const validationErrors = [];
