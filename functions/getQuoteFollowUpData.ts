@@ -55,11 +55,12 @@ Deno.serve(async (req) => {
         }
 
         // WARM: Sent 1-5 days ago (no activity check - assume needs follow-up)
-        for (const quote of allQuotes) {
-          if (processedIds.has(quote.id)) continue;
+          for (const quote of allQuotes) {
+            if (processedIds.has(quote.id)) continue;
 
-          const sentDate = new Date(quote.sent_at);
-          if (sentDate >= fiveDaysAgo && sentDate < oneDayAgo) {
+            const sentDate = quote.sent_at ? new Date(quote.sent_at) : null;
+            if (!sentDate) continue;
+            if (sentDate >= fiveDaysAgo && sentDate < oneDayAgo) {
             const project = projectMap.get(quote.project_id);
             if (!project) continue;
 
