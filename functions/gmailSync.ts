@@ -519,7 +519,8 @@ Deno.serve(async (req) => {
           body_text: normalizeText(bodyText),
           message_id: effectiveMessageId,
           is_outbound: isOutbound,
-          attachments: processedAttachments.length > 0 ? processedAttachments : undefined
+          // GUARDRAIL: Always set attachments array (empty or populated) for consistency
+          attachments: processedAttachments.length > 0 ? processedAttachments : []
         };
         
         if (inReplyTo) {
