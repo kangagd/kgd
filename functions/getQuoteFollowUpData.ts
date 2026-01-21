@@ -22,7 +22,8 @@ Deno.serve(async (req) => {
         const fiveDaysFromNow = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
 
         // Batch fetch all quotes and projects upfront (avoid N+1)
-        const allQuotes = await base44.asServiceRole.entities.Quote.filter({ status: 'Sent' });
+        const allQuotes = await base44.asServiceRole.entities.Quote.list('-sent_at', 1000);
+        const sentQuotes = allQuotes.filter(q => q.status === 'Sent');
         const allProjects = await base44.asServiceRole.entities.Project.list('-updated_date', 500);
         const projectMap = new Map(allProjects.map(p => [p.id, p]));
 
