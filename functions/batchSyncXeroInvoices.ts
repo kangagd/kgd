@@ -153,8 +153,10 @@ Deno.serve(async (req) => {
         }
 
         if (invoiceRecord.project_id) {
+          const project = await base44.asServiceRole.entities.Project.get(invoiceRecord.project_id);
           await base44.asServiceRole.entities.Project.update(invoiceRecord.project_id, {
-            xero_payment_url: onlinePaymentUrl
+            xero_payment_url: onlinePaymentUrl,
+            xero_invoices: project.xero_invoices || []
           });
         }
 
