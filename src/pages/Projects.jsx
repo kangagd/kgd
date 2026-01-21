@@ -42,6 +42,7 @@ import { QUERY_CONFIG } from "../components/api/queryConfig";
 import { projectKeys, jobKeys, inboxKeys } from "../components/api/queryKeys";
 import { getProjectDisplayTitle, getProjectDisplayAddress, getProjectCustomerLabel } from "../components/projects/projectDisplay";
 import ProjectTagsDisplay from "../components/projects/ProjectTagsDisplay";
+import PricingChecklistBadges from "../components/projects/PricingChecklistBadges";
 
 export default function Projects() {
   const location = useLocation();
@@ -782,6 +783,9 @@ export default function Projects() {
                         <ProjectTypeBadge value={project.project_type} />
                       )}
                       <ProjectStatusBadge value={project.status} />
+                      {(stageFilter === "Create Quote" || stageFilter === "Quote Sent" || stageFilter === "all") && (
+                        <PricingChecklistBadges project={project} />
+                      )}
                       {hasRequiredTrades(project.id) && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium">
                           Third-party required
