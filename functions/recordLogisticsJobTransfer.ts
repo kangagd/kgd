@@ -47,11 +47,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Location not found' }, { status: 404 });
     }
 
+    // Check if source is a supplier (suppliers have unlimited stock)
+    const isSupplierSource = sourceLocation.type === 'supplier';
+
     // Process each item
     let itemsTransferred = 0;
     const batchId = `logistics_job_${job_id}_${Date.now()}`;
     const stockMovementIds = [];
-    const isSupplierSource = sourceLocation.type === 'supplier';
 
     for (const item of items) {
       const { price_list_item_id, quantity } = item;
