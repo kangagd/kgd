@@ -36,12 +36,14 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
   const { data: jobParts = [] } = useQuery({
     queryKey: ['jobParts', job.id, job.purchase_order_id, job.visit_scope],
     queryFn: async () => {
+      const uniqueParts = new Map();
+      
       // Method 1: PO-based lookup (for supplier/procurement jobs)
       if (job.purchase_order_id) {
         const parts = await base44.entities.Part.filter({ 
           primary_purchase_order_id: job.purchase_order_id 
         });
-        if (parts.length > 0) return parts;
+        parts.forEach(p => uniqueParts.set(p.id, p));
       }
       
       // Fallback: Also check legacy purchase_order_id field
@@ -49,7 +51,11 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         const legacyParts = await base44.entities.Part.filter({ 
           purchase_order_id: job.purchase_order_id 
         });
-        if (legacyParts.length > 0) return legacyParts;
+        legacyParts.forEach(p => uniqueParts.set(p.id, p));
+      }
+      
+      if (uniqueParts.size > 0) {
+        return Array.from(uniqueParts.values());
       }
       
       // Method 2: Extract part IDs from visit_scope (warehouse pickups, etc)
