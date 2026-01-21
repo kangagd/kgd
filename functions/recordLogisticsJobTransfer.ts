@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.js';
 
+// Updated: Suppliers have unlimited stock, skip validation for supplier sources
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
