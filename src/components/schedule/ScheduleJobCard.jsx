@@ -41,14 +41,14 @@ export default function ScheduleJobCard({ job, onClick, onAddressClick, onProjec
             )}
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {(job.job_type_name || "").match(/(Delivery|Pickup|Return)/i) && (
+            {(job.job_type_name || job.job_type || "").match(/(Delivery|Pickup|Return)/i) && (
               <Badge className="bg-slate-800 text-white border-0 flex items-center gap-1 px-2 text-[10px]">
                 <Truck className="w-3 h-3" />
                 Logistics
               </Badge>
             )}
-            {job.job_type_name && (
-              <JobTypeBadge value={job.job_type_name} />
+            {(job.job_type_name || job.job_type) && (
+              <JobTypeBadge value={job.job_type_name || job.job_type} />
             )}
             {job.product && (
               <ProductTypeBadge value={job.product} />
