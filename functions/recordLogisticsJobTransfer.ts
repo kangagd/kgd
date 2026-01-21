@@ -57,39 +57,22 @@ Deno.serve(async (req) => {
 
     // PHASE 1: Validate all items and prepare operations
     for (const item of items) {
-      let { price_list_item_id, quantity, part_id } = item;
+      const { price_list_item_id, quantity } = item;
       
-      // Support both price_list_item_id and part_id (fallback for parts created from PO lines)
-      const itemId = price_list_item_id || part_id;
-      
-      if (!itemId) {
-        validationErrors.push('Item missing price_list_item_id or part_id');
+      if (!price_list_item_id) {
+        validationErrors.push('Item missing price_list_item_id');
         continue;
       }
 
       // Try to get item name for better error messages
       let itemName = 'Unknown Item';
-      
-      // Try price list first if available
-      if (price_list_item_id) {
-        try {
-          const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
-          if (priceItem) {
-            itemName = priceItem.item || 'Unknown Item';
-          }
-        } catch (err) {
-          // Continue with generic name
+      try {
+        const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
+        if (priceItem) {
+          itemName = priceItem.item || 'Unknown Item';
         }
-      } else if (part_id) {
-        // Fallback to part's item_name
-        try {
-          const part = await base44.asServiceRole.entities.Part.get(part_id);
-          if (part) {
-            itemName = part.item_name || 'Unknown Item';
-          }
-        } catch (err) {
-          // Continue with generic name
-        }
+      } catch (err) {
+        // Continue with generic name
       }
 
       // Validate stock availability for non-supplier sources
