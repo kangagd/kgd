@@ -32,6 +32,26 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
     enabled: editingLocations,
   });
 
+  // Fetch parts for this logistics job
+  const { data: jobParts = [] } = useQuery({
+    queryKey: ['jobParts', job.id, job.purchase_order_id],
+    queryFn: async () => {
+      if (job.purchase_order_id) {
+        return await base44.entities.Part.filter({ 
+          primary_purchase_order_id: job.purchase_order_id 
+        });
+      } else {
+        const allParts = await base44.entities.Part.list();
+        return allParts.filter(p => 
+          p.linked_logistics_jobs && 
+          Array.isArray(p.linked_logistics_jobs) && 
+          p.linked_logistics_jobs.includes(job.id)
+        );
+      }
+    },
+    enabled: showTransferModal,
+  });
+
   const status = job.stock_transfer_status || 'not_started';
   const config = transferStatusConfig[status];
   const Icon = config.icon;
@@ -56,10 +76,17 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   const recordTransferMutation = useMutation({
     mutationFn: async () => {
-      // Validate selections
+      // Map selectedItems to include price_list_item_id from parts
       const itemsToTransfer = Object.entries(selectedItems)
         .filter(([_, qty]) => qty > 0)
-        .map(([itemId, qty]) => ({ price_list_item_id: itemId, quantity: qty }));
+        .map(([partId, qty]) => {
+          const part = jobParts.find(p => p.id === partId);
+          return { 
+            price_list_item_id: part?.price_list_item_id, 
+            quantity: qty 
+          };
+        })
+        .filter(item => item.price_list_item_id); // Only include items with valid price_list_item_id
 
       if (itemsToTransfer.length === 0) {
         throw new Error('Please select at least one item to transfer');
@@ -305,6 +332,9 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         onOpenChange={setShowTransferModal}
         sourceLocation={sourceLocation}
         destinationLocation={destinationLocation}
+        jobParts={jobParts}
+        selectedItems={selectedItems}
+        onSelectedItemsChange={setSelectedItems}
         onConfirm={() => recordTransferMutation.mutate()}
         isLoading={recordTransferMutation.isPending}
         notes={notes}
@@ -314,10 +344,17 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
   );
 }
 
-function TransferModal({ open, onOpenChange, sourceLocation, destinationLocation, onConfirm, isLoading, notes, onNotesChange }) {
+function TransferModal({ open, onOpenChange, sourceLocation, destinationLocation, jobParts = [], selectedItems, onSelectedItemsChange, onConfirm, isLoading, notes, onNotesChange }) {
+  const handleQuantityChange = (partId, quantity) => {
+    const qty = parseFloat(quantity) || 0;
+    onSelectedItemsChange({ ...selectedItems, [partId]: qty });
+  };
+
+  const selectedCount = Object.values(selectedItems).filter(qty => qty > 0).length;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Record Inventory Transfer</DialogTitle>
         </DialogHeader>
@@ -334,6 +371,47 @@ function TransferModal({ open, onOpenChange, sourceLocation, destinationLocation
             <div className="font-medium">{destinationLocation?.name}</div>
           </div>
 
+          {/* Items to Transfer */}
+          <div>
+            <Label className="text-sm font-semibold mb-2 block">Select Items to Transfer</Label>
+            {jobParts.length === 0 ? (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                No parts found for this logistics job
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto border border-gray-200 rounded-lg p-3">
+                {jobParts.map((part) => (
+                  <div key={part.id} className="flex items-center gap-3 p-2 bg-white border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        {part.item_name || 'Unnamed Part'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Required: {part.quantity_required || 1}
+                      </div>
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Qty"
+                        value={selectedItems[part.id] || ''}
+                        onChange={(e) => handleQuantityChange(part.id, e.target.value)}
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedCount > 0 && (
+              <div className="text-xs text-green-600 mt-2 font-medium">
+                {selectedCount} item(s) selected for transfer
+              </div>
+            )}
+          </div>
+
           <div>
             <Label>Notes (Optional)</Label>
             <Input
@@ -344,21 +422,17 @@ function TransferModal({ open, onOpenChange, sourceLocation, destinationLocation
             />
           </div>
 
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
-            You'll be prompted to enter quantities for each item being transferred on the next step.
-          </div>
-
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
               onClick={onConfirm}
-              disabled={isLoading}
+              disabled={isLoading || selectedCount === 0}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
             >
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Continue
+              Transfer {selectedCount > 0 ? `(${selectedCount})` : ''}
             </Button>
           </div>
         </div>
