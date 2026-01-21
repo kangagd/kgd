@@ -99,28 +99,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Validate stock availability for non-supplier sources
-      if (!isSupplierSource) {
-        const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
-          price_list_item_id: itemId,
-          location_id: finalSourceLocationId
-        });
-
-        const currentQty = sourceQty[0]?.quantity || 0;
-        if (currentQty < quantity) {
-          validationErrors.push(`${itemName}: Insufficient stock. Available: ${currentQty}, Requested: ${quantity}`);
-          continue;
-        }
-
-        itemsToProcess.push({
-          itemId: itemId,
-          price_list_item_id: itemId,
-          quantity,
-          itemName,
-          sourceQtyRecord: sourceQty[0]
-        });
-      } else {
-        // Supplier source - no validation needed
+      // SKIP ALL VALIDATION FOR SUPPLIER SOURCES - they have unlimited stock
+      if (isSupplierSource) {
         itemsToProcess.push({
           itemId: itemId,
           price_list_item_id: itemId,
@@ -128,7 +108,28 @@ Deno.serve(async (req) => {
           itemName,
           sourceQtyRecord: null
         });
+        continue;
       }
+      
+      // Validate stock availability for non-supplier sources only
+      const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
+        price_list_item_id: itemId,
+        location_id: finalSourceLocationId
+      });
+
+      const currentQty = sourceQty[0]?.quantity || 0;
+      if (currentQty < quantity) {
+        validationErrors.push(`${itemName}: Insufficient stock. Available: ${currentQty}, Requested: ${quantity}`);
+        continue;
+      }
+
+      itemsToProcess.push({
+        itemId: itemId,
+        price_list_item_id: itemId,
+        quantity,
+        itemName,
+        sourceQtyRecord: sourceQty[0]
+      });
     }
 
     // GUARDRAIL: If ANY validation failed, abort BEFORE making changes
