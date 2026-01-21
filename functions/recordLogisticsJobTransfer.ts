@@ -25,7 +25,7 @@ async function getOrCreateSupplierInventoryLocation(base44, supplier_id) {
     supplier_id: supplier_id,
     is_active: true
   });
-}
+} 
 
 // Suppliers have unlimited stock - no validation needed when source is supplier
 Deno.serve(async (req) => {
