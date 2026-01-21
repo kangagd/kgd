@@ -478,7 +478,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               return (
                 <>
                   {/* Parts grouped by PO */}
-                  {Array.from(partsByPO.values()).map(({ po, parts }) => {
+                  {Array.from(partsByPO.values()).map(({ po, parts: groupParts }) => {
                     const eta = getPoEta(po);
                     const etaDate = safeParseDate(eta);
                     const logisticsCount = logisticsJobsByPO.get(po.id) || 0;
@@ -521,7 +521,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                         
                         {/* Parts List */}
                         <div className="divide-y divide-red-100">
-                          {parts.map(part => {
+                          {groupParts.map(part => {
                             const partTitle = part.item_name || part.category || "Part";
                             const normalizedStatus = getNormalizedPartStatus(part);
                             
@@ -648,7 +648,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
               return (
                 <>
                   {/* Parts grouped by PO */}
-                  {Array.from(partsByPO.values()).map(({ po, parts }) => {
+                  {Array.from(partsByPO.values()).map(({ po, parts: groupParts }) => {
                     const eta = getPoEta(po);
                     const etaDate = safeParseDate(eta);
                     const logisticsCount = logisticsJobsByPO.get(po.id) || 0;
@@ -691,7 +691,7 @@ export default function ProjectPartsPanel({ project, parts = [], inventoryByItem
                         
                         {/* Parts List */}
                         <div className="divide-y divide-gray-100">
-                          {parts.map(part => {
+                          {groupParts.map(part => {
                             const partTitle = part.item_name || part.category || "Part";
                             const normalizedStatus = getNormalizedPartStatus(part);
                             
