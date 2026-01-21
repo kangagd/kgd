@@ -489,16 +489,24 @@ Deno.serve(async (req) => {
           processParts(detail.payload.parts);
         }
 
-        const processedAttachments = attachments.map(att => ({
-           filename: att.filename,
-           mime_type: att.mime_type,
-           size: att.size,
-           attachment_id: att.attachment_id,
-           gmail_message_id: att.gmail_message_id,
-           content_id: att.content_id || null,
-           content_id_normalized: att.content_id_normalized || null,
-           is_inline: att.is_inline || false
-         }));
+        // GUARDRAIL: Validate and normalize attachment metadata for consistency
+        const processedAttachments = attachments.map(att => {
+          // Ensure content_id_normalized is ALWAYS set if content_id exists
+          const cidNormalized = att.content_id 
+            ? att.content_id.replace(/^cid:/i, '').replace(/^<|>$/g, '').trim()
+            : null;
+          
+          return {
+            filename: att.filename,
+            mime_type: att.mime_type,
+            size: att.size,
+            attachment_id: att.attachment_id,
+            gmail_message_id: att.gmail_message_id,
+            content_id: att.content_id || null,
+            content_id_normalized: cidNormalized, // MANDATORY: Always derived from content_id
+            is_inline: att.is_inline || false
+          };
+        });
         
         const toAddresses = to ? to.split(',').map(e => parseEmailAddress(e.trim())).filter(e => e) : [];
         const fromAddress = parseEmailAddress(from) || 'unknown@unknown.com';
