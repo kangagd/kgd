@@ -1,7 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.js';
 
-// Updated: Suppliers have unlimited stock, skip validation for supplier sources
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -50,11 +49,6 @@ Deno.serve(async (req) => {
 
     // Check if source is a supplier (suppliers have unlimited stock)
     const isSupplierSource = sourceLocation.type === 'supplier';
-    console.log('Source location check:', { 
-      name: sourceLocation.name, 
-      type: sourceLocation.type, 
-      isSupplierSource 
-    });
 
     // Process each item
     let itemsTransferred = 0;
@@ -68,9 +62,8 @@ Deno.serve(async (req) => {
       const priceItem = await base44.asServiceRole.entities.PriceListItem.get(price_list_item_id);
       const itemName = priceItem?.item || 'Unknown Item';
 
-      console.log('Processing item:', { itemName, quantity, isSupplierSource });
-
       // Only validate and deduct stock for non-supplier sources
+      // Suppliers have unlimited inventory, so skip the stock check
       if (!isSupplierSource) {
         const sourceQty = await base44.asServiceRole.entities.InventoryQuantity.filter({
           price_list_item_id,
