@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     const hotQuotes = [];
     const warmQuotes = [];
     const coldQuotes = [];
+    const processedQuoteIds = new Set();
 
     for (const quote of sentInWindow) {
       const sentDate = new Date(quote.sent_at);
@@ -56,77 +57,51 @@ Deno.serve(async (req) => {
       // HOT: Sent within last 24 hours
       if (sentDate >= oneDayAgo) {
         hotQuotes.push(quoteData);
+        processedQuoteIds.add(quote.id);
         continue;
       }
 
-      // Check for activity in the 5-day window
-      let hasActivity = false;
+      // Quick activity check (skip expensive queries if quote_viewed)
+      let hasActivity = quote.quote_viewed || false;
 
-      // Check EmailThread activity on project
-      try {
-        const threads = await base44.asServiceRole.entities.EmailThread.filter({
-          project_id: project.id
-        });
-
-        for (const thread of threads) {
-          const lastMessageDate = thread.last_message_date ? new Date(thread.last_message_date) : null;
-          if (lastMessageDate && lastMessageDate >= sentDate) {
-            hasActivity = true;
-            break;
-          }
+      // Only check threads/tasks if quote wasn't viewed
+      if (!hasActivity) {
+        try {
+          const threads = await base44.asServiceRole.entities.EmailThread.filter({
+            project_id: project.id
+          });
+          hasActivity = threads.some(t => t.last_message_date && new Date(t.last_message_date) >= sentDate);
+        } catch (err) {
+          console.warn(`Email thread check failed for project ${project.id}`);
         }
-      } catch (err) {
-        console.warn(`Failed to check email threads for project ${project.id}:`, err);
       }
 
-      // Check Task activity on project
       if (!hasActivity) {
         try {
           const tasks = await base44.asServiceRole.entities.Task.filter({
             project_id: project.id
           });
-
-          for (const task of tasks) {
-            const taskDate = new Date(task.created_date);
-            if (taskDate >= sentDate) {
-              hasActivity = true;
-              break;
-            }
-          }
+          hasActivity = tasks.some(t => new Date(t.created_date) >= sentDate);
         } catch (err) {
-          console.warn(`Failed to check tasks for project ${project.id}:`, err);
+          console.warn(`Task check failed for project ${project.id}`);
         }
       }
-
-      // Check if quote was viewed
-      if (quote.quote_viewed) {
-        hasActivity = true;
-      }
-
-      // Check if quote status changed (from Sent to Accepted/Declined within window)
-      // Note: This is tracked through the quote itself - if status changed, we'd see it as non-Sent
-      // For now, quote_viewed flag serves as interaction indicator
 
       // WARM: Sent 1-5 days ago with NO activity
       if (!hasActivity) {
         warmQuotes.push(quoteData);
-        continue;
+        processedQuoteIds.add(quote.id);
       }
-
-      // If there was activity, don't include in follow-up sections
     }
 
     // COLD: Get quotes expiring within 5 days (status still "Sent")
     for (const quote of quotes) {
+      if (processedQuoteIds.has(quote.id)) continue; // Skip already processed
+
       const expiryDate = quote.expires_at ? new Date(quote.expires_at) : null;
-      
       if (expiryDate && expiryDate >= now && expiryDate <= fiveDaysFromNow) {
         const project = await base44.asServiceRole.entities.Project.get(quote.project_id);
         if (!project) continue;
-
-        // Avoid duplicating if already in hot/warm
-        const alreadyIncluded = [...hotQuotes, ...warmQuotes].some(q => q.id === quote.id);
-        if (alreadyIncluded) continue;
 
         coldQuotes.push({
           id: quote.id,
