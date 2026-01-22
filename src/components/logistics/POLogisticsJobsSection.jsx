@@ -11,11 +11,8 @@ export default function POLogisticsJobsSection({ purchaseOrderId }) {
   const { data: linkedJobs = [], isLoading } = useQuery({
     queryKey: ['poLogisticsJobs', purchaseOrderId],
     queryFn: async () => {
-      const jobs = await base44.asServiceRole.entities.Job.filter({
-        is_logistics_job: true,
-        reference_type: 'purchase_order',
-        reference_id: purchaseOrderId
-      });
+      const response = await base44.functions.invoke('getPoLogisticsJobs', { purchaseOrderId });
+      const jobs = response?.jobs ?? response?.data?.jobs ?? [];
       return jobs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!purchaseOrderId
