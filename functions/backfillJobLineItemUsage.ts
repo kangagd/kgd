@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
 
         for (const job of completedJobs) {
             // Skip logistics jobs
-            if (job.is_logistics_job === true) {
+            if (job.is_logistics_job === true) { 
                 skippedCount++;
                 continue;
             }
