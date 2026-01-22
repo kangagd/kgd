@@ -85,9 +85,11 @@ Deno.serve(async (req) => {
 
         return Response.json({
             success: true,
+            dryRun,
             processed: processedCount,
             skipped: skippedCount,
-            total: completedJobs.length
+            total: completedJobs.length,
+            message: dryRun ? 'Dry run completed - no changes made' : `Backfill completed - ${processedCount} jobs processed`
         });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
