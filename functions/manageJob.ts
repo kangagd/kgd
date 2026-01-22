@@ -2,6 +2,7 @@ import { createClientFromRequest } from './shared/sdk.js';
 import { updateProjectActivity } from './updateProjectActivity.js';
 import { PO_STATUS, PART_STATUS, PART_LOCATION } from './shared/constants.js';
 import { LOGISTICS_PURPOSE, ALL_LOGISTICS_PURPOSES } from './shared/logisticsPurpose.js';
+import { resolveCoreLocations } from './shared/locationResolver.js';
 import { generateJobNumber } from './shared/jobNumberGenerator.js';
 import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
 import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.js';
