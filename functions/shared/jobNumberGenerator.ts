@@ -9,17 +9,35 @@ export async function generateJobNumber(base44, projectId = null) {
         const project = await base44.asServiceRole.entities.Project.get(projectId);
         const projectNumber = project.project_number;
         
-        // Find existing jobs for this project to determine next suffix
+        // Find highest existing suffix for this project
         const projectJobs = await base44.asServiceRole.entities.Job.filter({ 
             project_id: projectId 
         });
+        
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const suffix = alphabet[projectJobs.length] || `Z${projectJobs.length - 25}`;
+        let highestIndex = -1;
+        
+        for (const job of projectJobs) {
+            if (job.job_number) {
+                // Extract suffix from job number (e.g., "5000-A" -> "A")
+                const parts = job.job_number.split('-');
+                if (parts.length === 2) {
+                    const suffix = parts[1];
+                    const index = alphabet.indexOf(suffix);
+                    if (index > highestIndex) {
+                        highestIndex = index;
+                    }
+                }
+            }
+        }
+        
+        const nextIndex = highestIndex + 1;
+        const suffix = alphabet[nextIndex] || `Z${nextIndex - 25}`;
         
         return `${projectNumber}-${suffix}`;
     } else {
-        // Standalone job - use unique number
-        const allJobs = await base44.asServiceRole.entities.Job.list('-created_date', 1);
+        // Standalone job - query ALL jobs to find highest number
+        const allJobs = await base44.asServiceRole.entities.Job.list();
         const allProjects = await base44.asServiceRole.entities.Project.list('-project_number', 1);
         
         // Find highest number used across both projects and standalone jobs
@@ -29,7 +47,7 @@ export async function generateJobNumber(base44, projectId = null) {
             highestNumber = Math.max(highestNumber, allProjects[0].project_number);
         }
         
-        // Check existing standalone job numbers
+        // Check ALL standalone job numbers
         const standaloneJobs = allJobs.filter(j => !j.project_id && typeof j.job_number === 'string' && !j.job_number.includes('-'));
         for (const job of standaloneJobs) {
             const num = parseInt(job.job_number);
