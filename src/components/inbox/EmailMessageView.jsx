@@ -114,11 +114,12 @@ export default function EmailMessageView({ message, isFirst, isLast, linkedJobId
   // Load inline images when expanded
   useEffect(() => {
   if (!expanded || inlineAttachments.length === 0 || loadingInlineImages || inlineImagesAttempted) return;
-    
+
     const loadInlineImages = async () => {
       setLoadingInlineImages(true);
       const urls = {};
-      
+      let hasAttempted = false;
+
       for (const att of inlineAttachments) {
         if (att.content_id && att.attachment_id) {
           try {
@@ -127,29 +128,34 @@ export default function EmailMessageView({ message, isFirst, isLast, linkedJobId
               console.warn('No gmail_message_id for inline image:', att.filename);
               continue;
             }
-            
+
             const result = await base44.functions.invoke('getGmailAttachment', {
               gmail_message_id: effectiveMsgId,
               attachment_id: att.attachment_id,
               filename: att.filename,
               mime_type: att.mime_type
             });
-            
+
             if (result.data?.url) {
               urls[att.content_id] = result.data.url;
             }
+            hasAttempted = true;
           } catch (err) {
             // Silently fail for inline images - don't break the email view
             console.warn('Failed to load inline image:', att.filename);
+            hasAttempted = true;
           }
         }
       }
-      
+
       setInlineImageUrls(urls);
       setLoadingInlineImages(false);
-      setInlineImagesAttempted(true);
+      // Only mark as attempted if we actually tried to fetch something
+      if (hasAttempted || inlineAttachments.length === 0) {
+        setInlineImagesAttempted(true);
+      }
     };
-    
+
     loadInlineImages();
   }, [expanded, inlineAttachments, gmailMessageId, loadingInlineImages, inlineImagesAttempted]);
 
