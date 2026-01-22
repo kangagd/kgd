@@ -15,9 +15,9 @@ const statusConfig = {
 };
 
 const logisticsPurposeConfig = {
-  'po_delivery_to_warehouse': { icon: Truck, label: 'PO Delivery to Warehouse' },
-  'po_pickup_from_supplier': { icon: Package, label: 'PO Pickup from Supplier' },
-  'part_pickup_for_install': { icon: Package, label: 'Part Pickup for Install' },
+  'po_delivery_to_warehouse': { icon: Truck, label: 'PO Delivery → Loading Bay' },
+  'po_pickup_from_supplier': { icon: Package, label: 'Supplier Pickup → Loading Bay' },
+  'part_pickup_for_install': { icon: Package, label: 'Pick Up Materials → Vehicle' },
   'manual_client_dropoff': { icon: Truck, label: 'Client Dropoff' },
   'sample_dropoff': { icon: Package, label: 'Sample Dropoff' },
   'sample_pickup': { icon: Package, label: 'Sample Pickup' }
