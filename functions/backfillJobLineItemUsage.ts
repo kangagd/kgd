@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
                 skippedCount++;
                 continue;
             }
-
+ 
             // Check if already processed
             const existingMovements = await base44.asServiceRole.entities.StockMovement.filter({
                 job_id: job.id,
