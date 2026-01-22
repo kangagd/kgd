@@ -425,25 +425,9 @@ export default function Inbox() {
     if (!selectedThread || !user) return;
 
     const timeout = setTimeout(() => {
-      base44.entities.EmailThreadViewer.filter({
+      base44.functions.invoke('updateEmailThreadViewerLastSeen', {
         thread_id: selectedThread.id,
-        user_email: user.email,
-      })
-        .then((existing) => {
-          if (existing.length > 0) {
-            base44.asServiceRole.entities.EmailThreadViewer.update(existing[0].id, {
-              last_seen: new Date().toISOString(),
-            }).catch(() => {});
-          } else {
-            base44.entities.EmailThreadViewer.create({
-              thread_id: selectedThread.id,
-              user_email: user.email,
-              user_name: user.full_name,
-              last_seen: new Date().toISOString(),
-            }).catch(() => {});
-          }
-        })
-        .catch(() => {});
+      }).catch(() => {});
     }, 10000);
 
     return () => clearTimeout(timeout);
