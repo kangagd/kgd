@@ -5,7 +5,8 @@
 
 /**
  * Decode common encoding artifacts (mojibake)
- * GUARDRAIL: This function ALWAYS applies all decodings - cannot be bypassed or rolled back
+ * GUARDRAIL: Only fixes known full sequences; no single-character replacements
+ * Applied once, deterministically, without side effects
  */
 export function decodeEmailText(input) {
   if (!input) return '';
@@ -37,52 +38,46 @@ export function decodeEmailText(input) {
     text = text.split(entity).join(char);
   }
 
-  // Most common Gmail/UTF-8 mojibake sequences - prioritize longer sequences first
-  const replacements = [
-    // Em/en dashes (most common - matches the screenshot issue)
-    ['â€"', '—'], // em dash UTF-8 mojibake (CRITICAL FIX)
-    ['â€"', '–'], // en dash UTF-8 mojibake
-    ['â', '–'],
-    ['â', '—'],
+  // Decode numeric HTML entities (&#39;, &#34;, etc.)
+  text = text.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(parseInt(dec, 10)));
+  text = text.replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
 
-    // Smart quotes / apostrophes (UTF-8 sequences)
-    ['â€™', "'"],  // right single quotation mark
-    ['â€˜', "'"],  // left single quotation mark
-    ['â€œ', '"'],  // left double quotation mark
-    ['â€', '"'],   // right double quotation mark
-    ['â', "'"],
-    ['â', "'"],
-    ['â', '"'],
-    ['â', '"'],
-
-    // Ellipsis / bullets
-    ['â€¦', '…'],
-    ['â¦', '…'],
-    ['â€¢', '•'],
-    ['â¢', '•'],
-
-    // Spacing artifacts
-    ['Â ', ' '],  // NBSP shown as "Â "
-    ['â¯', ' '],  // narrow NBSP mojibake
-    ['&nbsp;', ' '],
-    ['Â', ''],
-
-    // Misc
-    ['â€º', '›'],
-    ['â€¹', '‹'],
-    ['â„¢', '™'],
-    ['Â®', '®'],
-
-    // Common latin1 double-encoding samples
+  // SAFE mojibake fixes: only known full sequences, ordered longest-first
+  // NO single-character replacements (prevents I–ve artifacts)
+  const mojibakeReplacements = [
+    // UTF-8 encoding sequences (3+ chars only)
+    ['\u0080\u0099', '''], // stray encoding → right single quote (when preceded by dash)
+    ['â\u0080\u0099', '''], // half-decoded right single quote
+    ['â\u0080\u0093', '–'], // half-decoded en dash
+    ['â\u0080\u0094', '—'], // half-decoded em dash
+    ['â\u0080\u009c', '"'], // half-decoded left double quote
+    ['â\u0080\u009d', '"'], // half-decoded right double quote
+    ['â€™', '''], // em-dash mojibake for apostrophe
+    ['â€˜', '''], // left single quote
+    ['â€œ', '"'], // left double quote
+    ['â€\u009d', '"'], // right double quote (alt form)
+    ['â€\u009c', '"'], // left double quote (alt form)
+    ['â€"', '—'], // em dash
+    ['â€"', '–'], // en dash (variant)
+    ['â€¦', '…'], // ellipsis
+    ['â€¢', '•'], // bullet
+    ['â€º', '›'], // right angle quote
+    ['â€¹', '‹'], // left angle quote
+    ['â„¢', '™'], // trademark
+    // Spacing: only multi-char sequences
+    ['Â ', ' '], // NBSP with stray byte
+    ['â¯', ' '], // narrow NBSP mojibake
+    // Latin1 double-encoding (multi-char only)
     ['Ã©', 'é'],
     ['Ã¨', 'è'],
     ['Ã§', 'ç'],
-    ['Ã', 'à'],
+    ['Ã ', 'à'],
     ['Ã¼', 'ü'],
     ['Ã¶', 'ö'],
+    ['Â®', '®'],
   ];
 
-  for (const [bad, good] of replacements) {
+  for (const [bad, good] of mojibakeReplacements) {
     text = text.split(bad).join(good);
   }
 
@@ -96,20 +91,6 @@ export function decodeEmailText(input) {
   // Remove invisible characters
   text = text.replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g, '');
 
-  // GUARDRAIL: Decode numeric HTML entities (&#39;, &#34;, etc.)
-  // This must always run - prevents special character mojibake
-  text = text.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(parseInt(dec, 10)));
-  text = text.replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
-  
-  // Double-check: re-apply mojibake fixes post-numeric decoding (safety pass)
-  const finalMojibakePass = [
-    ['â€"', '—'], ['â€"', '–'], ['â€™', "'"], ['â€˜', "'"],
-    ['â€\u009d', '"'], ['â€\u009c', '"'], ['â€¦', '…'], ['â€¢', '•']
-  ];
-  for (const [bad, good] of finalMojibakePass) {
-    text = text.split(bad).join(good);
-  }
-
   // Decode basic HTML entities (safe)
   // (Browser only; if this runs server-side, skip)
   if (typeof window !== 'undefined') {
@@ -119,6 +100,39 @@ export function decodeEmailText(input) {
   }
 
   return text;
+}
+
+// Dev-only test helper
+if (typeof window !== 'undefined' && window.__DEV_TEST__) {
+  window.__emailFormattingTests__ = {
+    testDecodeEmailText: () => {
+      const tests = [
+        {
+          input: 'Iâ\u0080\u0099ve',
+          expected: 'I've',
+          desc: 'half-decoded apostrophe'
+        },
+        {
+          input: 'Thanks for the call earlier. Iâ\u0080\u0099ve been working on this.',
+          expected: 'Thanks for the call earlier. I've been working on this.',
+          desc: 'apostrophe in sentence'
+        },
+        {
+          input: 'Payment can be made via Bank TransferÂ ',
+          expected: 'Payment can be made via Bank Transfer ',
+          desc: 'remove stray byte Â'
+        }
+      ];
+
+      const results = tests.map(t => {
+        const actual = decodeEmailText(t.input);
+        const passed = actual === t.expected;
+        return { ...t, actual, passed };
+      });
+
+      return results;
+    }
+  };
 }
 
 /**
