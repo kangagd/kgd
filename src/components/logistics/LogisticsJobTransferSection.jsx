@@ -18,7 +18,7 @@ const transferStatusConfig = {
   'skipped': { icon: AlertCircle, color: 'bg-slate-100 text-slate-800', label: 'Skipped' }
 };
 
-export default function LogisticsJobTransferSection({ job, sourceLocation, destinationLocation, isAdmin = false }) {
+export default function LogisticsJobTransferSection({ job, sourceLocation, destinationLocation }) {
   const queryClient = useQueryClient();
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedItems, setSelectedItems] = useState({});
@@ -168,7 +168,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-sm font-medium text-gray-700">Transfer Route</div>
-              {isAdmin && status !== 'completed' && (
+              {status !== 'completed' && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -324,14 +324,14 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           </Button>
         )}
 
-        {/* Admin-Only Legacy Helper Button */}
-        {isLegacy && isAdmin && (
+        {/* Legacy Helper Button */}
+        {isLegacy && (
           <Button
             onClick={() => setShowTransferModal(true)}
             variant="outline"
             className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
           >
-            Link Inventory Transfer (Admin)
+            Link Inventory Transfer
           </Button>
         )}
 
