@@ -129,18 +129,25 @@ export default function Inbox() {
     queryFn: async () => {
       devLog(`[Inbox] queryFn STARTED - user=${user?.email}`);
       setLastThreadFetchTime(Date.now());
-      devLog('[Inbox] Fetch threads (viewers skipped)');
-      const fetchedThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
+      devLog('[Inbox] Fetch threads via backend function');
+      try {
+        const response = await base44.functions.invoke("getMyEmailThreads", { limit: 100 });
+        const fetchedThreads = response.data?.threads || [];
 
-      const result = fetchedThreads
-        .filter((t) => !t.is_deleted)
-        .map((thread) => ({
-          ...thread,
-          viewers: [],
-        }));
+        const result = fetchedThreads
+          .filter((t) => !t.is_deleted)
+          .map((thread) => ({
+            ...thread,
+            viewers: [],
+          }));
 
-      devLog(`[Inbox] queryFn RETURNING ${result.length} threads`);
-      return result;
+        devLog(`[Inbox] queryFn RETURNING ${result.length} threads`);
+        return result;
+      } catch (error) {
+        devLog(`[Inbox] Error fetching threads:`, error);
+        toast.error("Failed to load threads");
+        return [];
+      }
     },
     enabled: !!user,
     staleTime: 2 * 60 * 1000,
