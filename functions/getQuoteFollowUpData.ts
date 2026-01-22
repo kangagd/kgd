@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
 
         // HOT: Sent within last 24 hours
           for (const quote of sentQuotes) {
-            const sentDate = quote.sent_at ? new Date(quote.sent_at) : null;
+            const sentDate = quote.sent_at ? new Date(quote.sent_at) : new Date(quote.updated_date);
             if (!sentDate) continue;
             if (sentDate >= oneDayAgo && sentDate <= now) {
               const project = projectMap.get(quote.project_id);
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
           for (const quote of sentQuotes) {
             if (processedIds.has(quote.id)) continue;
 
-            const sentDate = quote.sent_at ? new Date(quote.sent_at) : null;
+            const sentDate = quote.sent_at ? new Date(quote.sent_at) : new Date(quote.updated_date);
             if (!sentDate) continue;
             if (sentDate >= fiveDaysAgo && sentDate < oneDayAgo) {
               const project = projectMap.get(quote.project_id);
