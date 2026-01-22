@@ -157,7 +157,8 @@ export default function Inbox() {
       devLog(`[Inbox] onSuccess - newThreads.length=${newThreads.length}`);
       setCursor(newThreads.length > 0 ? newThreads[newThreads.length - 1].last_message_date : null);
       setHasMore(newThreads.length === 100);
-      if (selectedThreadId && !newThreads.find((t) => t.id === selectedThreadId)) {
+      // Always fallback to first thread if selected is missing
+      if (!newThreads.find((t) => t.id === selectedThreadId)) {
         setSelectedThreadId(newThreads[0]?.id ?? null);
       }
     },
