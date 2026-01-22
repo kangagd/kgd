@@ -76,10 +76,8 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
     let fromLocationId = null, fromVehicleId = null, fromLocationName = null;
     let toLocationId = null, toVehicleId = null, toLocationName = null;
 
-    // Fetch loading bay and storage locations
-    const locations = await base44.asServiceRole.entities.InventoryLocation.list();
-    const loadingBayLocation = locations.find(l => l.name === 'Loading Bay' || l.location_type === 'loading_bay');
-    const storageLocation = locations.find(l => l.name === 'Warehouse Storage' || l.location_type === 'warehouse');
+    // Resolve core locations deterministically
+    const { loadingBayId, loadingBayName, warehouseId, warehouseName } = await resolveCoreLocations(base44);
 
     switch (job.logistics_purpose) {
         case LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER:
@@ -94,14 +92,14 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
 
         case LOGISTICS_PURPOSE.PO_DELIVERY_TO_WAREHOUSE:
             // Supplier → Loading Bay
-            toLocationId = loadingBayLocation?.id || null;
-            toLocationName = 'Loading Bay';
+            toLocationId = loadingBayId;
+            toLocationName = loadingBayName;
             break;
 
         case LOGISTICS_PURPOSE.PART_PICKUP_FOR_INSTALL:
             // Storage → Vehicle
-            fromLocationId = storageLocation?.id || null;
-            fromLocationName = 'Warehouse Storage';
+            fromLocationId = warehouseId;
+            fromLocationName = warehouseName;
             toVehicleId = job.vehicle_id;
             if (!toVehicleId) {
                 console.error(`[StockMovement] ${LOGISTICS_PURPOSE.PART_PICKUP_FOR_INSTALL} requires vehicle_id`);
@@ -112,16 +110,16 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
 
         case LOGISTICS_PURPOSE.SAMPLE_DROPOFF:
             // Storage → Client Site (external)
-            fromLocationId = storageLocation?.id || null;
-            fromLocationName = 'Warehouse Storage';
+            fromLocationId = warehouseId;
+            fromLocationName = warehouseName;
             toLocationName = 'Client Site';
             break;
 
         case LOGISTICS_PURPOSE.SAMPLE_PICKUP:
             // Client Site → Storage
             fromLocationName = 'Client Site';
-            toLocationId = storageLocation?.id || null;
-            toLocationName = 'Warehouse Storage';
+            toLocationId = warehouseId;
+            toLocationName = warehouseName;
             break;
 
         default:
