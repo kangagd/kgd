@@ -299,7 +299,16 @@ export default function Inbox() {
 
   const { data: teamUsers = [] } = useQuery({
     queryKey: ["teamUsers"],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      try {
+        const response = await base44.functions.invoke("getTeamUsers", {});
+        return response.data?.users || [];
+      } catch (error) {
+        devLog("Error fetching team users:", error);
+        toast.error("Failed to load team members");
+        return [];
+      }
+    },
     enabled: !!user,
     ...QUERY_CONFIG.reference,
   });
