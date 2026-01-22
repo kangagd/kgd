@@ -9,12 +9,15 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Admin access required' }, { status: 403 });
         }
 
+        const url = new URL(req.url);
+        const dryRun = url.searchParams.get('dryRun') === 'true';
+
         // Fetch all completed jobs
         const completedJobs = await base44.asServiceRole.entities.Job.filter({
             status: 'Completed'
         });
 
-        console.log(`[backfillJobLineItemUsage] Found ${completedJobs.length} completed jobs`);
+        console.log(`[backfillJobLineItemUsage] Found ${completedJobs.length} completed jobs (dryRun: ${dryRun})`);
 
         let processedCount = 0;
         let skippedCount = 0;
