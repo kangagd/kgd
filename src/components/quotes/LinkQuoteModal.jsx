@@ -33,7 +33,9 @@ export default function LinkQuoteModal({
 
   useEffect(() => {
     if (isOpen) {
-      loadDocuments();
+      setSearch(''); // Clear search
+      setSelectedDoc(null); // Clear selection
+      loadDocuments(); // Fresh load
     }
   }, [isOpen]);
 
