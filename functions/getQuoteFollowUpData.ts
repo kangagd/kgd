@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
             if (!sentDate) continue;
             if (sentDate >= oneDayAgo && sentDate <= now) {
               const project = projectMap.get(quote.project_id);
+              if (!project) continue; // Skip quotes without valid projects
 
               hotQuotes.push({
                 id: quote.id,
@@ -62,6 +63,7 @@ Deno.serve(async (req) => {
             if (!sentDate) continue;
             if (sentDate >= fiveDaysAgo && sentDate < oneDayAgo) {
               const project = projectMap.get(quote.project_id);
+              if (!project) continue; // Skip quotes without valid projects
 
               warmQuotes.push({
                 id: quote.id,
@@ -83,6 +85,7 @@ Deno.serve(async (req) => {
             const expiryDate = quote.expires_at ? new Date(quote.expires_at) : null;
             if (expiryDate && expiryDate >= now && expiryDate <= fiveDaysFromNow) {
               const project = projectMap.get(quote.project_id);
+              if (!project) continue; // Skip quotes without valid projects
 
               coldQuotes.push({
                 id: quote.id,
