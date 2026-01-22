@@ -560,29 +560,6 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           source_type: newItem.source_type || "supplier_delivery",
           ...partOrderData
         });
-      } else if (formData.project_id) {
-        // If no part_id but we have a project, create a new Part
-        const newPart = await base44.entities.Part.create({
-          project_id: formData.project_id,
-          category: newItem.category || "Other",
-          item_name: newItem.name || '',
-          price_list_item_id: lineData.price_list_item_id,
-          quantity_required: newItem.quantity || 1,
-          status: partStatus,
-          location: "supplier",
-          purchase_order_id: poId,
-          supplier_id: formData.supplier_id || null,
-          supplier_name: suppliers.find(s => sameId(s.id, formData.supplier_id))?.name || "",
-          po_number: formData.po_reference || getPoDisplayReference(po),
-          source_type: newItem.source_type || "supplier_delivery",
-          notes: newItem.notes || null,
-          ...partOrderData
-        });
-        
-        // Update the line item with the new part_id
-        await base44.entities.PurchaseOrderLine.update(created.id, {
-          part_id: newPart.id
-        });
       }
       
       return created;
