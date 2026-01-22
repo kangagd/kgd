@@ -37,6 +37,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // GUARDRAIL: Do NOT add admin-only check here. StockMovement entity RLS 
+    // already restricts creation to admin/manager/technician. Duplicating the 
+    // check here breaks non-admin users from recording logistics job transfers.
+    // If access should be restricted, modify StockMovement RLS instead.
+
     const { job_id, source_location_id, destination_location_id, items, notes } = await req.json();
 
     let finalSourceLocationId = source_location_id;
