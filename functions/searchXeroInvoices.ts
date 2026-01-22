@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     let maxPages = 20; // Fetch up to 2,000 invoices (20 pages x 100)
     
     for (let currentPage = 1; currentPage <= maxPages; currentPage++) {
-      const url = `https://api.xero.com/api.xro/2.0/Invoices?Statuses=DRAFT,SUBMITTED,AUTHORISED,PAID&Type=ACCREC&order=UpdatedDateUTC DESC&page=${currentPage}`;
+      const url = `https://api.xero.com/api.xro/2.0/Invoices?Type=ACCREC&order=UpdatedDateUTC DESC&page=${currentPage}`;
       
       const xeroResponse = await fetch(url, {
         headers: getXeroHeaders(connection)
