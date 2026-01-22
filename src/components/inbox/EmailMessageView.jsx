@@ -118,7 +118,7 @@ export default function EmailMessageView({ message, isFirst, isLast, linkedJobId
     const loadInlineImages = async () => {
       setLoadingInlineImages(true);
       const urls = {};
-      let hasAttempted = false;
+      let successCount = 0;
 
       for (const att of inlineAttachments) {
         if (att.content_id && att.attachment_id) {
@@ -138,20 +138,19 @@ export default function EmailMessageView({ message, isFirst, isLast, linkedJobId
 
             if (result.data?.url) {
               urls[att.content_id] = result.data.url;
+              successCount++;
             }
-            hasAttempted = true;
           } catch (err) {
-            // Silently fail for inline images - don't break the email view
             console.warn('Failed to load inline image:', att.filename);
-            hasAttempted = true;
           }
         }
       }
 
       setInlineImageUrls(urls);
       setLoadingInlineImages(false);
-      // Only mark as attempted if we actually tried to fetch something
-      if (hasAttempted || inlineAttachments.length === 0) {
+      // Only mark as attempted once we've successfully loaded at least one image
+      // (or if there are no inline images to load)
+      if (successCount > 0 || inlineAttachments.length === 0) {
         setInlineImagesAttempted(true);
       }
     };
