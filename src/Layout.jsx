@@ -189,43 +189,27 @@ export default function Layout({ children, currentPageName }) {
     loadUser();
   }, []);
 
-  // GUARDRAIL: Use React Query for active check-ins to ensure cache consistency
+  // GUARDRAIL: Use React Query for active check-ins with backend batch job fetch
   const { data: activeCheckInsData } = useQuery({
     queryKey: ['activeCheckIns', user?.email],
     queryFn: async () => {
       if (!user?.email) return null;
-      
-      const checkIns = await base44.entities.CheckInOut.list();
+
+      const response = await base44.functions.invoke('getActiveCheckinsWithJobs', {});
+      const checkIns = response.data?.checkIns || [];
+
+      if (checkIns.length === 0) return null;
+
       const effectiveRole = getEffectiveRole(user);
       const isManagerOrAdmin = effectiveRole === 'admin' || effectiveRole === 'manager';
 
-      // Filter for active check-ins (no check_out_time)
-      const activeCheckIns = isManagerOrAdmin 
-        ? checkIns.filter(c => !c.check_out_time)
-        : checkIns.filter(c => !c.check_out_time && c.technician_email === user.email);
-
-      if (activeCheckIns.length === 0) return null;
-
-      // Fetch job details for all active check-ins
-      const checkInsWithJobs = await Promise.all(
-        activeCheckIns.map(async (checkIn) => {
-          try {
-            const job = await base44.entities.Job.get(checkIn.job_id);
-            return { ...checkIn, job };
-          } catch (err) {
-            console.error("Error fetching job for check-in", err);
-            return { ...checkIn, job: null };
-          }
-        })
-      );
-
       // For technicians, return single object; for admins/managers, return array
-      return isManagerOrAdmin ? checkInsWithJobs : checkInsWithJobs[0];
+      return isManagerOrAdmin ? checkIns : checkIns[0];
     },
     enabled: !!user,
-    staleTime: 30000, // 30 seconds - more responsive than 2 minutes
+    staleTime: 30000, // 30 seconds
     refetchInterval: 60000, // Refetch every minute
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {
