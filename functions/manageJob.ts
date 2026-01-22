@@ -684,7 +684,7 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Updated');
             }
 
-            // Handle logistics job completion
+            // Handle job completion
             if (job.status === 'Completed' && previousJob.status !== 'Completed') {
                 // LOGISTICS JOB: Record stock movements
                 if (job.is_logistics_job === true) {
@@ -694,6 +694,9 @@ Deno.serve(async (req) => {
                     if (job.logistics_purpose && job.purchase_order_id) {
                         await createStockMovementsForLogisticsJob(base44, job, user);
                     }
+                } else {
+                    // STANDARD JOB: Deduct inventory from LineItems
+                    await processJobLineItemUsage(base44, job, user);
                 }
 
                 // Process sample transfers (explicit action on completion)
