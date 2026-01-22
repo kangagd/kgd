@@ -193,14 +193,15 @@ Deno.serve(async (req) => {
       if (isV2) v2EnabledCount++;
 
       // ---- NEW: report legacy fields on Scheduled/Open jobs (NO FIX) ----
+      // ONLY flag if job is explicitly V2 (has visit_count > 0) and still using legacy fields
       if (legacyFields.length > 0) {
         const status = job.status || "unknown";
 
-        if (isScheduledStatus(status) || isOpenishStatus(status) || (!isCompletedStatus(status) && !shouldHide)) {
+        if ((isScheduledStatus(status) || isOpenishStatus(status) || (!isCompletedStatus(status) && !shouldHide)) && shouldHide) {
           pushIssue(
             issuesByType,
             "scheduled_with_legacy_fields",
-            "Jobs not completed (Scheduled/Open/etc) contain legacy fields on Job. This is report-only (no migration recommended).",
+            "V2 jobs (visit_count > 0) that are not completed still have legacy fields. These should use Visit records instead.",
             {
               id: job.id,
               job_number: job.job_number,
