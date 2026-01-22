@@ -148,7 +148,10 @@ export default function BaselineStockSeed() {
   // Check if baseline already executed
   const { data: existingRuns = [] } = useQuery({
     queryKey: ['baseline-seed-runs'],
-    queryFn: () => base44.asServiceRole.entities.BaselineSeedRun.list(),
+    queryFn: async () => {
+      const response = await base44.functions.invoke("getBaselineSeedRuns", {});
+      return response?.runs ?? response?.data?.runs ?? [];
+    },
     staleTime: 30000,
   });
 
