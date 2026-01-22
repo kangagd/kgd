@@ -168,14 +168,17 @@ export default function Inbox() {
     if (!cursor || isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
     try {
-      const response = await base44.functions.invoke("getMyEmailThreadsPage", { limit: 100, cursor });
-      const moreThreads = response.data?.threads || [];
+      const response = await base44.functions.invoke("getMyEmailThreadsPaged", { 
+        limit: 100, 
+        beforeDate: cursor 
+      });
+      const moreThreads = response?.threads ?? response?.data?.threads ?? [];
 
       if (moreThreads.length > 0) {
         // Append to existing threads instead of refetching
         queryClient.setQueryData(inboxKeys.threads(), (old) => [...(old || []), ...moreThreads]);
-        setCursor(response.data?.cursor || null);
-        setHasMore(response.data?.hasMore ?? false);
+        setCursor(response?.cursor ?? response?.data?.cursor ?? null);
+        setHasMore(response?.hasMore ?? response?.data?.hasMore ?? false);
       } else {
         setHasMore(false);
       }
