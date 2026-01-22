@@ -36,7 +36,7 @@ export default function LinkedPartsCard({ job }) {
 
   // Fetch parts linked to this job
   const { data: linkedParts = [] } = useQuery({
-  queryKey: ['linkedParts', job.id, job.project_id, job.purchase_order_id],
+  queryKey: ['linkedParts', job.id, job.project_id, job.purchase_order_id, job.visit_scope],
   queryFn: async () => {
     if (!job?.id) return [];
 
@@ -56,6 +56,18 @@ export default function LinkedPartsCard({ job }) {
     if (job.purchase_order_id) {
       const poParts = await base44.entities.Part.filter({ purchase_order_id: job.purchase_order_id });
       results.push(...poParts);
+    }
+
+    // 3) Check visit_scope for part references
+    if (job.visit_scope && Array.isArray(job.visit_scope)) {
+      const partIdsFromScope = job.visit_scope
+        .filter(item => item.type === 'part' && item.ref_id)
+        .map(item => item.ref_id);
+      
+      if (partIdsFromScope.length > 0) {
+        const allParts = await base44.entities.Part.list();
+        results.push(...allParts.filter(p => partIdsFromScope.includes(p.id)));
+      }
     }
 
     // Dedupe by part.id
