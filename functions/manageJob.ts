@@ -788,6 +788,83 @@ Deno.serve(async (req) => {
             // Soft delete the job
             await base44.asServiceRole.entities.Job.update(id, { deleted_at: new Date().toISOString() });
             return Response.json({ success: true });
+        } else if (action === 'postComplete') {
+            // POST-COMPLETION ORCHESTRATION
+            // Handles sample transfers, stock movements, and other completion side effects
+            if (!id) {
+                return Response.json({ error: 'Job ID is required for postComplete' }, { status: 400 });
+            }
+
+            job = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+            if (!job) {
+                return Response.json({ error: 'Job not found', ok: false }, { status: 404 });
+            }
+
+            // Only process completed jobs
+            if (job.status !== 'Completed') {
+                return Response.json({ ok: false, reason: 'job_not_completed' });
+            }
+
+            // Idempotency: skip if already ran
+            if (job.post_complete_ran === true) {
+                return Response.json({ ok: true, skipped: true });
+            }
+
+            let sampleTransferSummary = null;
+            let stockMovementSummary = null;
+
+            try {
+                if (job.is_logistics_job === true) {
+                    // LOGISTICS JOB: Handle sample transfers or stock movements
+                    if (job.logistics_purpose === LOGISTICS_PURPOSE.SAMPLE_DROPOFF || 
+                        job.logistics_purpose === LOGISTICS_PURPOSE.SAMPLE_PICKUP) {
+                        // Sample transfers
+                        await processSampleTransfers(base44, job);
+                        sampleTransferSummary = {
+                            type: 'sample_transfer',
+                            sample_count: job.sample_ids?.length || 0,
+                            status: 'completed'
+                        };
+                    } else if (job.logistics_purpose && job.purchase_order_id) {
+                        // Stock movements
+                        await createStockMovementsForLogisticsJob(base44, job, user);
+                        stockMovementSummary = {
+                            type: 'stock_movement',
+                            purpose: job.logistics_purpose,
+                            status: 'completed'
+                        };
+                    }
+                } else {
+                    // STANDARD JOB: Deduct inventory from LineItems
+                    await processJobLineItemUsage(base44, job, user);
+                }
+            } catch (error) {
+                console.error(`[postComplete] Error processing completions for job ${id}:`, error);
+                // Mark as attempted but failed
+                await base44.asServiceRole.entities.Job.update(id, {
+                    post_complete_ran: false,
+                    post_complete_error: error.message
+                });
+                return Response.json({
+                    ok: false,
+                    error: error.message,
+                    error_type: 'completion_action_failed'
+                }, { status: 500 });
+            }
+
+            // Mark completion as ran
+            const summary = {
+                sampleTransferSummary,
+                stockMovementSummary
+            };
+
+            await base44.asServiceRole.entities.Job.update(id, {
+                post_complete_ran: true,
+                post_complete_ran_at: new Date().toISOString(),
+                post_complete_summary: JSON.stringify(summary)
+            });
+
+            return Response.json({ ok: true, summary });
         } else {
             return Response.json({ error: 'Invalid action' }, { status: 400 });
         }
