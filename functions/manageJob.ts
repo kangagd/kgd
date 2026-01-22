@@ -331,6 +331,16 @@ Deno.serve(async (req) => {
              const now = new Date();
              if (now >= V2_CUTOFF_DATE && !jobData.job_model_version) {
                  jobData.job_model_version = "v2";
+                 
+                 // Strip legacy execution fields from V2 jobs - these should go in Visit records
+                 const legacyExecutionFields = ['overview', 'next_steps', 'communication_with_client', 
+                                                'completion_notes', 'pricing_provided', 'additional_info'];
+                 legacyExecutionFields.forEach(field => {
+                     if (jobData[field]) {
+                         console.log(`[manageJob] Stripped legacy field '${field}' from new V2 job`);
+                         delete jobData[field];
+                     }
+                 });
              }
 
              // GUARDRAIL: Enforce project-format jobs must have project_id
