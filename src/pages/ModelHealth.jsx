@@ -185,6 +185,42 @@ export default function ModelHealth() {
           </Card>
         )}
 
+        {/* System Performance Stats */}
+        <Card className="border-2 border-slate-200">
+          <CardHeader className="bg-slate-50 border-b border-slate-200">
+            <CardTitle className="text-[18px] font-semibold text-[#111827]">System Performance</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Analysis Load Time</div>
+                <div className="font-semibold text-[#111827]">
+                  {driftData?.loadTime ? `${(driftData.loadTime / 1000).toFixed(2)}s` : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Jobs Queried</div>
+                <div className="font-semibold text-[#111827]">{driftData?.total_jobs || 0}</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Avg Response</div>
+                <div className="font-semibold text-[#111827]">
+                  {driftData?.loadTime && driftData?.total_jobs 
+                    ? `${((driftData.loadTime / driftData.total_jobs)).toFixed(1)}ms/job`
+                    : 'N/A'
+                  }
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Status</div>
+                <div className="font-semibold text-green-600">
+                  {driftData?.loadTime < 10000 ? '✓ Good' : '⚠ Slow'}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Results */}
         {driftData && !isLoading && (
           <>
@@ -194,11 +230,6 @@ export default function ModelHealth() {
                 <CardContent className="p-4">
                   <div className="text-[12px] text-[#6B7280] mb-1">Total Jobs Analyzed</div>
                   <div className="text-[28px] font-bold text-[#111827]">{driftData.total_jobs || 0}</div>
-                  {driftData.loadTime && (
-                    <div className="text-[11px] text-[#9CA3AF] mt-1">
-                      Load time: {(driftData.loadTime / 1000).toFixed(2)}s
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
