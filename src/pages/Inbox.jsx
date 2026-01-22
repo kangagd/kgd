@@ -298,10 +298,21 @@ export default function Inbox() {
     queryFn: async () => {
       try {
         const response = await base44.functions.invoke("getTeamUsers", {});
-        return response.data?.users || [];
+        const users = response?.users ?? response?.data?.users ?? [];
+        
+        if (users.length === 0 && user?.email) {
+          devLog("Team users list empty, using current user only");
+          toast.info("Team roster unavailable, using current user");
+          return [{ email: user.email, display_name: user.display_name || user.full_name }];
+        }
+        
+        return users;
       } catch (error) {
         devLog("Error fetching team users:", error);
-        toast.error("Failed to load team members");
+        // Graceful fallback
+        if (user?.email) {
+          return [{ email: user.email, display_name: user.display_name || user.full_name }];
+        }
         return [];
       }
     },
