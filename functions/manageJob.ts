@@ -44,6 +44,11 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
         return;
     }
 
+    // VALIDATION: Canonical logistics_purpose check
+    if (job.is_logistics_job && job.logistics_purpose && !ALL_LOGISTICS_PURPOSES.includes(job.logistics_purpose)) {
+        throw new Error(`[StockMovement] Invalid logistics_purpose: ${job.logistics_purpose}`);
+    }
+
     // VALIDATION: Require logistics_purpose
     if (!job.logistics_purpose) {
         console.error(`[StockMovement] Job ${job.id} missing logistics_purpose - aborting`);
