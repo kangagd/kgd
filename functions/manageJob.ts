@@ -166,6 +166,79 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
     console.log(`[StockMovement] Created ${parts.length} movement(s) for job ${job.id}`);
 }
 
+// Helper: Deduct inventory for non-logistics job completion
+async function processJobLineItemUsage(base44, job, user) {
+    if (!job.id) return;
+    
+    // Fetch LineItems for this job
+    const lineItems = await base44.asServiceRole.entities.LineItem.filter({
+        job_id: job.id
+    });
+    
+    if (lineItems.length === 0) {
+        console.log(`[LineItemUsage] Job ${job.id} has no line items - skipping`);
+        return;
+    }
+    
+    // Check idempotency: abort if StockMovements already exist for this job
+    const existingMovements = await base44.asServiceRole.entities.StockMovement.filter({
+        job_id: job.id,
+        source: 'job_completion_usage'
+    });
+    if (existingMovements.length > 0) {
+        console.log(`[LineItemUsage] Job ${job.id} already has usage movements - skipping`);
+        return;
+    }
+    
+    try {
+        // Get vehicle location if job has assigned technician
+        let vehicleLocationId = null;
+        let vehicleLocationName = 'Vehicle';
+        
+        if (job.assigned_to && job.assigned_to.length > 0) {
+            const technician = await base44.asServiceRole.entities.User.filter({
+                email: job.assigned_to[0]
+            }).catch(() => null);
+            
+            if (technician && technician[0]) {
+                // Assume technician has a vehicle in the InventoryLocation system
+                // For now, we'll just create the movement without a specific location ID
+                vehicleLocationName = `${job.assigned_to_name?.[0] || 'Technician'}'s Vehicle`;
+            }
+        }
+        
+        // Create StockMovement for each LineItem
+        for (const item of lineItems) {
+            const quantity = item.quantity || 1;
+            
+            if (quantity <= 0) {
+                console.warn(`[LineItemUsage] Invalid quantity for item ${item.id}`);
+                continue;
+            }
+            
+            await base44.asServiceRole.entities.StockMovement.create({
+                job_id: job.id,
+                project_id: job.project_id,
+                sku_id: item.price_list_item_id,
+                item_name: item.item_name,
+                quantity,
+                movement_type: 'job_usage',
+                from_location_name: vehicleLocationName,
+                performed_by_user_id: user.id,
+                performed_by_user_email: user.email,
+                performed_by_user_name: user.full_name || user.display_name,
+                performed_at: new Date().toISOString(),
+                source: 'job_completion_usage',
+                notes: `Used in job #${job.job_number} completion`
+            });
+        }
+        
+        console.log(`[LineItemUsage] Created ${lineItems.length} movement(s) for job ${job.id}`);
+    } catch (error) {
+        console.error(`[LineItemUsage] Error processing line items for job ${job.id}:`, error);
+    }
+}
+
 // Helper: Handle logistics job completion - update PO and Parts based on outcome
 async function handleLogisticsJobCompletion(base44, job) {
     if (!job.purchase_order_id) return;
