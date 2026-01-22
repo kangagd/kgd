@@ -46,14 +46,14 @@ export function decodeEmailText(input) {
   // NO single-character replacements (prevents I–ve artifacts)
   const mojibakeReplacements = [
     // UTF-8 encoding sequences (3+ chars only)
-    ['\u0080\u0099', '''], // stray encoding → right single quote (when preceded by dash)
-    ['â\u0080\u0099', '''], // half-decoded right single quote
+    ['\u0080\u0099', "'"], // stray encoding → apostrophe
+    ['â\u0080\u0099', "'"], // half-decoded right single quote
     ['â\u0080\u0093', '–'], // half-decoded en dash
     ['â\u0080\u0094', '—'], // half-decoded em dash
     ['â\u0080\u009c', '"'], // half-decoded left double quote
     ['â\u0080\u009d', '"'], // half-decoded right double quote
-    ['â€™', '''], // em-dash mojibake for apostrophe
-    ['â€˜', '''], // left single quote
+    ['â€™', "'"], // right single quote
+    ['â€˜', "'"], // left single quote
     ['â€œ', '"'], // left double quote
     ['â€\u009d', '"'], // right double quote (alt form)
     ['â€\u009c', '"'], // left double quote (alt form)
