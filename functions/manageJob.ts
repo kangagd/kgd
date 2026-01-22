@@ -81,50 +81,42 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
     const storageLocation = locations.find(l => l.name === 'Warehouse Storage' || l.location_type === 'warehouse');
 
     switch (job.logistics_purpose) {
-        case 'supplier_pickup':
+        case LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER:
             // Supplier → Vehicle
             toVehicleId = job.vehicle_id;
             if (!toVehicleId) {
-                console.error(`[StockMovement] supplier_pickup requires vehicle_id`);
+                console.error(`[StockMovement] ${LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER} requires vehicle_id`);
                 return;
             }
             toLocationName = 'Vehicle';
             break;
 
-        case 'po_delivery_to_loading_bay':
+        case LOGISTICS_PURPOSE.PO_DELIVERY_TO_WAREHOUSE:
             // Supplier → Loading Bay
             toLocationId = loadingBayLocation?.id || null;
             toLocationName = 'Loading Bay';
             break;
 
-        case 'move_to_storage':
-            // Loading Bay → Storage
-            fromLocationId = loadingBayLocation?.id || null;
-            fromLocationName = 'Loading Bay';
-            toLocationId = storageLocation?.id || null;
-            toLocationName = 'Warehouse Storage';
-            break;
-
-        case 'material_pickup_for_install':
+        case LOGISTICS_PURPOSE.PART_PICKUP_FOR_INSTALL:
             // Storage → Vehicle
             fromLocationId = storageLocation?.id || null;
             fromLocationName = 'Warehouse Storage';
             toVehicleId = job.vehicle_id;
             if (!toVehicleId) {
-                console.error(`[StockMovement] material_pickup_for_install requires vehicle_id`);
+                console.error(`[StockMovement] ${LOGISTICS_PURPOSE.PART_PICKUP_FOR_INSTALL} requires vehicle_id`);
                 return;
             }
             toLocationName = 'Vehicle';
             break;
 
-        case 'sample_dropoff':
+        case LOGISTICS_PURPOSE.SAMPLE_DROPOFF:
             // Storage → Client Site (external)
             fromLocationId = storageLocation?.id || null;
             fromLocationName = 'Warehouse Storage';
             toLocationName = 'Client Site';
             break;
 
-        case 'sample_pickup':
+        case LOGISTICS_PURPOSE.SAMPLE_PICKUP:
             // Client Site → Storage
             fromLocationName = 'Client Site';
             toLocationId = storageLocation?.id || null;
