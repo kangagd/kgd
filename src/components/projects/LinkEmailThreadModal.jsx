@@ -52,7 +52,9 @@ export default function LinkEmailThreadModal({ open, onClose, projectId, onLink,
     return allThreads.filter(thread =>
       thread.subject?.toLowerCase().includes(term) ||
       thread.from_address?.toLowerCase().includes(term) ||
-      thread.to_addresses?.some(addr => addr.toLowerCase().includes(term))
+      thread.to_addresses?.some(addr => addr.toLowerCase().includes(term)) ||
+      thread.project_number?.toString().includes(term) ||
+      thread.project_title?.toLowerCase().includes(term)
     ).slice(0, 20);
   }, [allThreads, searchTerm]);
 
@@ -69,7 +71,7 @@ export default function LinkEmailThreadModal({ open, onClose, projectId, onLink,
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
           <Input
-            placeholder="Search by subject, sender, or recipient..."
+            placeholder="Search by subject, sender, recipient, or project number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
