@@ -326,6 +326,13 @@ Deno.serve(async (req) => {
                  }
              }
 
+             // Set job_model_version for new jobs created after V2 cutoff date
+             const V2_CUTOFF_DATE = new Date("2026-01-16T00:00:00Z");
+             const now = new Date();
+             if (now >= V2_CUTOFF_DATE && !jobData.job_model_version) {
+                 jobData.job_model_version = "v2";
+             }
+
              // GUARDRAIL: Enforce project-format jobs must have project_id
              const jobNumberStr = String(jobData.job_number || '');
              if (/^\d+-[A-Za-z]$/.test(jobNumberStr) && !jobData.project_id) {
