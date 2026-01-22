@@ -170,6 +170,7 @@ Deno.serve(async (req) => {
     }
 
     // PHASE 2: Execute all transfers (validation passed)
+    // Use asServiceRole to bypass RLS restrictions on entity create/update
     let itemsTransferred = 0;
     const batchId = `logistics_job_${job_id}_${Date.now()}`;
     const stockMovementIds = [];
@@ -217,8 +218,6 @@ Deno.serve(async (req) => {
         performed_by_user_name: user.full_name || user.display_name || user.email,
         performed_at: new Date().toISOString(),
         source: 'logistics_job',
-        reference_type: 'job',
-        reference_id: job_id,
         notes: notes ? `Job #${job.job_number}: ${notes}` : `Transferred via Logistics Job #${job.job_number}`
       });
 
