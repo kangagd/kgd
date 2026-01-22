@@ -21,6 +21,7 @@ export default function QuoteFollowUpSection() {
       return response.data;
     },
     staleTime: 60000, // 1 minute
+    retry: 1,
   });
 
   if (isLoading) {
