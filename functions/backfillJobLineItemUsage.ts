@@ -22,7 +22,14 @@ Deno.serve(async (req) => {
         let processedCount = 0;
         let skippedCount = 0;
 
-        for (const job of completedJobs) {
+        for (let i = 0; i < completedJobs.length; i++) {
+            const job = completedJobs[i];
+            
+            // Add delay between jobs to avoid rate limiting
+            if (i > 0) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
             // Skip logistics jobs
             if (job.is_logistics_job === true) { 
                 skippedCount++;
@@ -53,7 +60,13 @@ Deno.serve(async (req) => {
 
             try {
                 // Create StockMovement for each LineItem
-                for (const item of lineItems) {
+                for (let j = 0; j < lineItems.length; j++) {
+                    const item = lineItems[j];
+                    
+                    if (j > 0) {
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                    }
+                    
                     const quantity = item.quantity || 1;
                     if (quantity <= 0) continue;
 
