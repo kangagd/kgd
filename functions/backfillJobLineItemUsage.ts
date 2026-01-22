@@ -57,25 +57,27 @@ Deno.serve(async (req) => {
                     const quantity = item.quantity || 1;
                     if (quantity <= 0) continue;
 
-                    await base44.asServiceRole.entities.StockMovement.create({
-                        job_id: job.id,
-                        project_id: job.project_id,
-                        sku_id: item.price_list_item_id,
-                        item_name: item.item_name,
-                        quantity,
-                        movement_type: 'job_usage',
-                        from_location_name: 'Vehicle',
-                        performed_by_user_id: user.id,
-                        performed_by_user_email: user.email,
-                        performed_by_user_name: user.full_name || user.display_name,
-                        performed_at: new Date().toISOString(),
-                        source: 'job_completion_usage',
-                        notes: `[Backfill] Used in job #${job.job_number} completion`
-                    });
+                    if (!dryRun) {
+                        await base44.asServiceRole.entities.StockMovement.create({
+                            job_id: job.id,
+                            project_id: job.project_id,
+                            sku_id: item.price_list_item_id,
+                            item_name: item.item_name,
+                            quantity,
+                            movement_type: 'job_usage',
+                            from_location_name: 'Vehicle',
+                            performed_by_user_id: user.id,
+                            performed_by_user_email: user.email,
+                            performed_by_user_name: user.full_name || user.display_name,
+                            performed_at: new Date().toISOString(),
+                            source: 'job_completion_usage',
+                            notes: `[Backfill] Used in job #${job.job_number} completion`
+                        });
+                    }
                 }
 
                 processedCount++;
-                console.log(`[backfillJobLineItemUsage] Processed job ${job.id} (${lineItems.length} items)`);
+                console.log(`[backfillJobLineItemUsage] ${dryRun ? '[DRY RUN] Would process' : 'Processed'} job ${job.id} (${lineItems.length} items)`);
             } catch (error) {
                 console.error(`[backfillJobLineItemUsage] Error processing job ${job.id}:`, error);
             }
