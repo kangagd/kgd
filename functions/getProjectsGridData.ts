@@ -53,12 +53,9 @@ Deno.serve(async (req) => {
     });
 
     pos.forEach(po => {
-      const linked = po.xero_invoices ? Array.isArray(po.xero_invoices) ? po.xero_invoices : [po.xero_invoices] : [];
-      linked.forEach(inv => {
-        if (inv && typeof inv === 'string') {
-          posByProject.set(inv, (posByProject.get(inv) || 0) + 1);
-        }
-      });
+      if (po.reference_id && po.reference_type === 'project') {
+        posByProject.set(po.reference_id, (posByProject.get(po.reference_id) || 0) + 1);
+      }
     });
 
     attention.forEach(ai => {
