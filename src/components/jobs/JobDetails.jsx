@@ -1071,6 +1071,20 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   };
 
+  const handleIssuesFoundBlur = () => {
+    if (issuesFound !== job.issues_found) {
+      logChange('issues_found', job.issues_found, issuesFound);
+      updateJobMutation.mutate({ field: 'issues_found', value: issuesFound });
+    }
+  };
+
+  const handleResolutionBlur = () => {
+    if (resolution !== job.resolution) {
+      logChange('resolution', job.resolution, resolution);
+      updateJobMutation.mutate({ field: 'resolution', value: resolution });
+    }
+  };
+
   const handleOutcomeChange = async (value) => {
     // GUARDRAIL: Outcome can only be set during final checkout
     // If not last checked-in technician and outcome is being set, prevent it
@@ -3008,6 +3022,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         label="Issues Found"
                         value={issuesFound}
                         onChange={setIssuesFound}
+                        onBlur={handleIssuesFoundBlur}
                         placeholder="Diagnosis of problems identified..."
                       />
 
@@ -3015,6 +3030,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         label="Resolution"
                         value={resolution}
                         onChange={setResolution}
+                        onBlur={handleResolutionBlur}
                         placeholder="How the issues were resolved..."
                       />
 
