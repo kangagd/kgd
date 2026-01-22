@@ -31,10 +31,11 @@ Deno.serve(async (req) => {
     const projectId = quote.project_id;
     const jobId = quote.job_id;
 
-    // STEP 1: Clear quote's project/job references
+    // STEP 1: Clear quote's project/job references AND cached project fields
     await base44.asServiceRole.entities.Quote.update(quoteId, {
       project_id: null,
-      job_id: null
+      job_id: null,
+      project_title: null
     });
 
     // STEP 2: Remove from project's quote_ids array (STRING normalization)
