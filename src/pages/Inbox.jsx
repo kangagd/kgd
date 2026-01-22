@@ -158,9 +158,7 @@ export default function Inbox() {
       setCursor(newThreads.length > 0 ? newThreads[newThreads.length - 1].last_message_date : null);
       setHasMore(newThreads.length === 100);
       if (selectedThreadId && !newThreads.find((t) => t.id === selectedThreadId)) {
-        const currentIndex = newThreads.findIndex((t) => t.id === selectedThreadId);
-        const nextThread = newThreads[Math.min(currentIndex, newThreads.length - 1)];
-        setSelectedThreadId(nextThread?.id || null);
+        setSelectedThreadId(newThreads[0]?.id ?? null);
       }
     },
   });
