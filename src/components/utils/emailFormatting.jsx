@@ -109,12 +109,12 @@ if (typeof window !== 'undefined' && window.__DEV_TEST__) {
       const tests = [
         {
           input: 'Iâ\u0080\u0099ve',
-          expected: 'I've',
+          expected: `I've`,
           desc: 'half-decoded apostrophe'
         },
         {
           input: 'Thanks for the call earlier. Iâ\u0080\u0099ve been working on this.',
-          expected: 'Thanks for the call earlier. I've been working on this.',
+          expected: `Thanks for the call earlier. I've been working on this.`,
           desc: 'apostrophe in sentence'
         },
         {
