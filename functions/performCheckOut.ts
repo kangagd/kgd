@@ -208,13 +208,27 @@ Deno.serve(async (req) => {
         }
 
         // Post-completion actions
-        if (job.project_id) {
-            await updateProjectActivity(base44, job.project_id, 'Visit Completed');
-        }
-        await base44.asServiceRole.functions.invoke('autoDeductJobUsage', { job_id: jobId });
+         if (job.project_id) {
+             await updateProjectActivity(base44, job.project_id, 'Visit Completed');
+         }
 
+         // Trigger post-completion orchestration (idempotent)
+         try {
+             await base44.asServiceRole.functions.invoke('manageJob', { action: 'postComplete', id: jobId });
+         } catch (error) {
+             console.warn(`[performCheckOut] postComplete failed for job ${jobId}:`, error);
+             // Update job to record the failure (non-blocking)
+             try {
+                 await base44.asServiceRole.entities.Job.update(jobId, {
+                     post_complete_ran: false,
+                     post_complete_error: error.message
+                 });
+             } catch (e) {
+                 console.error("Failed to record postComplete error:", e);
+             }
+         }
 
-        return Response.json({ success: true, status: 'completed', message: 'Job completed successfully.' });
+         return Response.json({ success: true, status: 'completed', message: 'Job completed successfully.' });
 
     } catch (error) {
         console.error("performCheckOut ERROR:", error, error?.stack);
