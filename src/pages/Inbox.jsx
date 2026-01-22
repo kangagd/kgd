@@ -169,7 +169,8 @@ export default function Inbox() {
     if (!cursor || isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
     try {
-      const moreThreads = await base44.entities.EmailThread.list("-last_message_date", 100);
+      const response = await base44.functions.invoke("getMyEmailThreads", { limit: 100 });
+      const moreThreads = response.data?.threads || [];
       const filtered = moreThreads
         .filter((t) => !t.is_deleted && new Date(t.last_message_date).getTime() < new Date(cursor).getTime())
         .slice(0, 100);
@@ -183,6 +184,7 @@ export default function Inbox() {
       }
     } catch (error) {
       devLog('Failed to load more threads:', error);
+      toast.error("Failed to load more threads");
     } finally {
       setIsLoadingMore(false);
     }
