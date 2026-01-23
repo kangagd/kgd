@@ -18,26 +18,28 @@ Deno.serve(async (req) => {
       return Response.json({ checkIns: [] });
     }
 
+    // Filter: technicians only see their own, admins/managers see all
+    const isAdminOrManager = user.role === 'admin' || user.extended_role === 'manager';
+    const filteredCheckIns = isAdminOrManager 
+      ? allCheckIns 
+      : allCheckIns.filter(c => c.technician_email === user.email);
+
+    if (filteredCheckIns.length === 0) {
+      return Response.json({ checkIns: [] });
+    }
+
     // Get unique job IDs and fetch jobs in batch
-    const jobIds = [...new Set(allCheckIns.map(c => c.job_id))];
+    const jobIds = [...new Set(filteredCheckIns.map(c => c.job_id))];
     const jobs = await Promise.all(
       jobIds.map(jId => base44.asServiceRole.entities.Job.get(jId).catch(() => null))
     );
     const jobMap = Object.fromEntries(jobs.filter(Boolean).map(j => [j.id, j]));
 
-    // Get unique technician emails and fetch user details
-    const techEmails = [...new Set(allCheckIns.map(c => c.technician_email))];
-    const techUsers = await Promise.all(
-      techEmails.map(email => base44.asServiceRole.entities.User.filter({ email }).then(u => u[0] || null).catch(() => null))
-    );
-    const techMap = Object.fromEntries(techUsers.filter(Boolean).map(t => [t.email, t]));
-
     // Build rich check-in objects
-    const checkIns = allCheckIns
+    const checkIns = filteredCheckIns
       .filter(checkIn => jobMap[checkIn.job_id]) // Only include if job exists
       .map(checkIn => {
         const job = jobMap[checkIn.job_id];
-        const tech = techMap[checkIn.technician_email];
         
         return {
           id: checkIn.id,
@@ -54,9 +56,7 @@ Deno.serve(async (req) => {
           assigned_to_name: job.assigned_to_name,
           scheduled_date: job.scheduled_date,
           scheduled_time: job.scheduled_time,
-          job_type_name: job.job_type_name,
-          tech_role: tech?.role,
-          tech_extended_role: tech?.extended_role
+          job_type_name: job.job_type_name
         };
       });
 
