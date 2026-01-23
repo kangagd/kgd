@@ -90,7 +90,7 @@ export default function Projects() {
   const { data: allProjects = [], isLoading } = useQuery({
     queryKey: [...projectKeys.all, pageNum],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getMyProjects');
+      const response = await base44.functions.invoke('getProjectsForRole', { limit: 500, filters: {} });
       devLog(`[Projects Page] Received ${response.data?.projects?.length || 0} projects from backend`);
       return response.data?.projects || [];
     },
