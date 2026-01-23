@@ -119,21 +119,52 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Map projects to grid data with counts only
-    const gridData = projects.map(p => ({
-      id: p.id,
-      project_number: p.project_number,
-      title: p.title,
-      customer_name: p.customer_name,
-      status: p.status,
-      updated_date: p.updated_date,
-      job_count: jobsByProject.get(p.id) || 0,
-      part_count: partsByProject.get(p.id) || 0,
-      trade_count: tradesByProject.get(p.id) || 0,
-      po_count: posByProject.get(p.id) || 0,
-      attention_count: attentionByProject.get(p.id) || 0,
-      thread_count: threadsByProject.get(p.id) || 0,
-    }));
+    // Map projects to grid data with counts and computed fields
+    const gridData = projects.map(p => {
+      const nextJob = nextJobByProject.get(p.id) || null;
+      const lastActivityAt = lastActivityByProject.get(p.id) || p.updated_date;
+      const lastCustomerMessageAt = lastCustomerMessageByProject.get(p.id) || null;
+      
+      // Compute freshness badge inputs (days since last activity)
+      const daysSinceActivity = lastActivityAt 
+        ? Math.floor((Date.now() - new Date(lastActivityAt).getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+      
+      return {
+        // Core fields
+        id: p.id,
+        project_number: p.project_number,
+        title: p.title,
+        customer_name: p.customer_name,
+        customer_id: p.customer_id,
+        status: p.status,
+        updated_date: p.updated_date,
+        created_date: p.created_date,
+        opened_date: p.opened_date,
+        address_full: p.address_full,
+        project_type: p.project_type,
+        
+        // Counts
+        job_count: jobsByProject.get(p.id) || 0,
+        part_count: partsByProject.get(p.id) || 0,
+        trade_count: tradesByProject.get(p.id) || 0,
+        po_count: posByProject.get(p.id) || 0,
+        attention_count: attentionByProject.get(p.id) || 0,
+        open_attention_count: openAttentionByProject.get(p.id) || 0,
+        thread_count: threadsByProject.get(p.id) || 0,
+        
+        // Computed fields
+        next_job: nextJob,
+        last_activity_at: lastActivityAt,
+        last_customer_message_at: lastCustomerMessageAt,
+        days_since_activity: daysSinceActivity,
+        
+        // Pricing/tags for filtering
+        total_project_value: p.total_project_value,
+        financial_status: p.financial_status,
+        project_tag_ids: p.project_tag_ids || [],
+      };
+    });
 
     return Response.json({ projects: gridData });
   } catch (error) {
