@@ -233,9 +233,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     refetchOnMount: false,
   });
 
-  // Determine active visit (draft, open, in_progress)
+  // Determine active visit (draft, open, in_progress, scheduled)
   const activeVisit = allVisits.find(v => 
-    v.status === 'draft' || v.status === 'open' || v.status === 'in_progress'
+    v.status === 'draft' || v.status === 'open' || v.status === 'in_progress' || v.status === 'scheduled'
   ) || null;
 
   // Legacy compatibility: also check completed_at
