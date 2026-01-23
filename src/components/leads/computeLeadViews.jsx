@@ -17,7 +17,7 @@
  * - Communication rollups
  */
 
-import { DEFAULT_LEAD_THRESHOLDS } from "./leadViewModel";
+import { DEFAULT_LEAD_THRESHOLDS, LEAD_STAGES } from "./leadViewModel";
 import { isProjectLeadEligible } from "./isProjectLeadEligible";
 import { resolvePrimaryQuote } from "./resolvePrimaryQuote";
 import { computeCommsRollup } from "./computeCommsRollup";
@@ -155,6 +155,16 @@ export const computeLeadViews = ({
     const stageOut = computeLeadStage(project, primaryQuoteSnap, comms, thresholds);
     const stage = stageOut.lead_stage;
     const isActive = stageOut.is_active;
+
+    // Stage gate: ONLY include Quote Sent follow-up stages
+    const allowedStages = [
+      LEAD_STAGES.QUOTE_SENT,
+      LEAD_STAGES.ENGAGED,
+      LEAD_STAGES.STALLED,
+    ];
+    if (!allowedStages.includes(stage)) {
+      continue; // Skip this project
+    }
 
     // Compute temperature
     const tempOut = computeTemperature(
