@@ -127,13 +127,40 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
             return;
     }
 
-    // Create StockMovement for each part
-    for (const part of parts) {
-        const quantity = part.quantity_required || 1;
+    // Create StockMovement for each PO line
+    const results = { created: 0, skipped: 0, skippedReasons: [] };
+    
+    for (const line of poLines) {
+        const quantity = line.qty_ordered || 1;
         
         // VALIDATION: Quantity must be > 0
         if (quantity <= 0) {
-            console.error(`[StockMovement] Invalid quantity for part ${part.id}`);
+            console.warn(`[StockMovement] Invalid quantity for PO line ${line.id} - skipping`);
+            results.skipped++;
+            results.skippedReasons.push(`Line ${line.id}: invalid quantity`);
+            continue;
+        }
+
+        // HANDLE MISSING SKU: Skip untracked/custom items gracefully
+        if (!line.price_list_item_id) {
+            console.warn(`[StockMovement] PO line ${line.id} missing price_list_item_id - skipping (custom/untracked item)`);
+            results.skipped++;
+            results.skippedReasons.push(`${line.item_name || line.description || 'Unknown'}: custom/untracked line`);
+            continue;
+        }
+
+        // IDEMPOTENCY SIGNATURE: Check for duplicate movement
+        const signature = `${job.id}|${job.logistics_purpose}|${toLocationId || toVehicleId || 'external'}|${line.price_list_item_id}`;
+        const duplicate = await base44.asServiceRole.entities.StockMovement.filter({
+            job_id: job.id,
+            sku_id: line.price_list_item_id,
+            source: 'logistics_job_completion'
+        });
+        
+        if (duplicate.length > 0) {
+            console.log(`[StockMovement] Duplicate detected for line ${line.id} - skipping`);
+            results.skipped++;
+            results.skippedReasons.push(`${line.item_name || line.description}: already recorded`);
             continue;
         }
 
@@ -141,9 +168,9 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
             job_id: job.id,
             project_id: job.project_id,
             purchase_order_id: job.purchase_order_id,
-            part_id: part.id,
-            sku_id: part.price_list_item_id,
-            item_name: part.item_name || 'Unknown Item',
+            po_line_id: line.id,
+            sku_id: line.price_list_item_id,
+            item_name: line.item_name || line.description || 'Unknown Item',
             quantity,
             from_location_id: fromLocationId,
             from_location_name: fromLocationName,
@@ -156,11 +183,15 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
             performed_by_user_name: user.full_name || user.display_name,
             performed_at: new Date().toISOString(),
             source: 'logistics_job_completion',
-            notes: `Logistics job: ${job.logistics_purpose}`
+            notes: `Logistics job: ${job.logistics_purpose}`,
+            idempotency_signature: signature
         });
+        
+        results.created++;
     }
 
-    console.log(`[StockMovement] Created ${parts.length} movement(s) for job ${job.id}`);
+    console.log(`[StockMovement] Created ${results.created} movement(s) for job ${job.id}, skipped ${results.skipped}`);
+    return results;
 }
 
 // Helper: Deduct inventory for non-logistics job completion
