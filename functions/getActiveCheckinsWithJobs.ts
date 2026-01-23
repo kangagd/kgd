@@ -1,4 +1,4 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -9,46 +9,60 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Determine effective role
-    const isAdmin = user.role === 'admin';
-    const isManager = user.extended_role === 'manager';
-    const isManagerOrAdmin = isAdmin || isManager;
+    // Fetch all check-in records with active check-ins (no check_out_time)
+    const allCheckIns = await base44.asServiceRole.entities.CheckInOut.filter({ 
+      check_out_time: { $exists: false } 
+    });
 
-    // Fetch all active check-ins (no check_out_time)
-    const checkIns = await base44.asServiceRole.entities.CheckInOut.list();
-    const activeCheckIns = checkIns.filter(c => !c.check_out_time);
-
-    // For technicians: filter to their own check-ins
-    // For managers/admins: return all
-    const filteredCheckIns = isManagerOrAdmin 
-      ? activeCheckIns 
-      : activeCheckIns.filter(c => c.technician_email === user.email);
-
-    if (filteredCheckIns.length === 0) {
+    if (allCheckIns.length === 0) {
       return Response.json({ checkIns: [] });
     }
 
-    // Batch fetch jobs (single query with multiple IDs)
-    const jobIds = [...new Set(filteredCheckIns.map(c => c.job_id))];
-    const jobs = jobIds.length > 0 
-      ? await base44.asServiceRole.entities.Job.filter(
-          { id: { $in: jobIds } },
-          '-last_activity_at',
-          100
-        )
-      : [];
+    // Get unique job IDs and fetch jobs in batch
+    const jobIds = [...new Set(allCheckIns.map(c => c.job_id))];
+    const jobs = await Promise.all(
+      jobIds.map(jId => base44.asServiceRole.entities.Job.get(jId).catch(() => null))
+    );
+    const jobMap = Object.fromEntries(jobs.filter(Boolean).map(j => [j.id, j]));
 
-    // Create lookup map for efficient pairing
-    const jobMap = new Map(jobs.map(j => [j.id, j]));
+    // Get unique technician emails and fetch user details
+    const techEmails = [...new Set(allCheckIns.map(c => c.technician_email))];
+    const techUsers = await Promise.all(
+      techEmails.map(email => base44.asServiceRole.entities.User.filter({ email }).then(u => u[0] || null).catch(() => null))
+    );
+    const techMap = Object.fromEntries(techUsers.filter(Boolean).map(t => [t.email, t]));
 
-    // Pair check-ins with jobs
-    const result = filteredCheckIns.map(checkIn => ({
-      ...checkIn,
-      job: jobMap.get(checkIn.job_id) || null
-    }));
+    // Build rich check-in objects
+    const checkIns = allCheckIns
+      .filter(checkIn => jobMap[checkIn.job_id]) // Only include if job exists
+      .map(checkIn => {
+        const job = jobMap[checkIn.job_id];
+        const tech = techMap[checkIn.technician_email];
+        
+        return {
+          id: checkIn.id,
+          job_id: checkIn.job_id,
+          technician_email: checkIn.technician_email,
+          technician_name: checkIn.technician_name,
+          check_in_time: checkIn.check_in_time,
+          job_number: job.job_number,
+          job_status: job.status,
+          customer_name: job.customer_name,
+          customer_phone: job.customer_phone,
+          address: job.address_full || job.address,
+          assigned_to: job.assigned_to,
+          assigned_to_name: job.assigned_to_name,
+          scheduled_date: job.scheduled_date,
+          scheduled_time: job.scheduled_time,
+          job_type_name: job.job_type_name,
+          tech_role: tech?.role,
+          tech_extended_role: tech?.extended_role
+        };
+      });
 
-    return Response.json({ checkIns: result });
+    return Response.json({ checkIns });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('Error fetching active check-ins with jobs:', error);
+    return Response.json({ error: error.message, checkIns: [] }, { status: 500 });
   }
 });
