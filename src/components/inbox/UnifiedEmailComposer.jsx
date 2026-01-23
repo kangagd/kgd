@@ -316,6 +316,7 @@ export default function UnifiedEmailComposer({
   const lastSavedSnapshotRef = useRef(null); // Track last saved state for dirty detection
   const editorFocusedRef = useRef(false); // GUARDRAIL: Track if Quill editor is focused (prevent state updates while focused)
   const lastKeystrokeAtRef = useRef(0); // GUARDRAIL: Track timestamp of last keystroke for idle detection
+  const lastSavedComposeKeyRef = useRef(null); // Track compose context to prevent cross-thread draft migration
 
   // Load user from auth (most reliable source for signature)
   useEffect(() => {
@@ -466,6 +467,7 @@ export default function UnifiedEmailComposer({
       // CRITICAL: Clear selectedMessage immediately to prevent recipient init from using old message
       setSelectedMessage(null);
       lastSavedSnapshotRef.current = null;
+      lastSavedComposeKeyRef.current = null;
     }
   }, [thread?.id]);
 
@@ -580,6 +582,13 @@ export default function UnifiedEmailComposer({
     setter(list.filter((e) => e !== email));
   };
 
+  // Compute compose context key for draft isolation
+  const computeComposeContextKey = () => {
+    const normalize = (e) => e.trim().toLowerCase();
+    const toSorted = (toChips || []).map(normalize).sort().join(",");
+    return `${mode}|${thread?.id || ""}|${linkTarget?.type || ""}|${linkTarget?.id || ""}|${toSorted}`;
+  };
+
   // Check if current state differs from last saved
   const isDirty = () => {
     const current = { to: toChips, cc: ccChips, bcc: bccChips, subject, body };
@@ -601,6 +610,7 @@ export default function UnifiedEmailComposer({
 
       try {
         const now = new Date().toISOString();
+        const currentContextKey = computeComposeContextKey();
         const draft = {
           thread_id: thread?.id || null,
           to_addresses: draftData.to || [],
@@ -611,16 +621,25 @@ export default function UnifiedEmailComposer({
           mode: mode !== "compose" ? mode : "compose",
           status: "active",
           last_saved_at: now,
+          compose_context_key: currentContextKey,
           // Link to project/contract if provided
           ...(linkTarget?.type === "project" && { project_id: linkTarget.id }),
           ...(linkTarget?.type === "contract" && { contract_id: linkTarget.id }),
         };
 
-        if (draftId) {
+        // Check if compose context changed - if so, create new draft instead of updating
+        if (draftId && lastSavedComposeKeyRef.current && lastSavedComposeKeyRef.current !== currentContextKey) {
+          devLog('[UnifiedEmailComposer] Compose context changed - creating new draft instead of updating');
+          const newDraft = await base44.entities.EmailDraft.create(draft);
+          setDraftId(newDraft.id);
+          lastSavedComposeKeyRef.current = currentContextKey;
+        } else if (draftId) {
           await base44.entities.EmailDraft.update(draftId, draft);
+          lastSavedComposeKeyRef.current = currentContextKey;
         } else {
           const newDraft = await base44.entities.EmailDraft.create(draft);
           setDraftId(newDraft.id);
+          lastSavedComposeKeyRef.current = currentContextKey;
         }
         // Update snapshot after successful save
         lastSavedSnapshotRef.current = { to: draftData.to, cc: draftData.cc, bcc: draftData.bcc, subject: draftData.subject, body: draftData.body };
@@ -1009,6 +1028,7 @@ export default function UnifiedEmailComposer({
     // Reset init/typing refs so next compose session initializes correctly
     didInitBodyRef.current = false;
     userHasTypedRef.current = false;
+    lastSavedComposeKeyRef.current = null;
 
     if (variant === "drawer" && onOpenChange) {
       onOpenChange(false);
