@@ -177,7 +177,7 @@ export default function Inbox() {
       if (moreThreads.length > 0) {
         // Append to existing threads instead of refetching
         queryClient.setQueryData(inboxKeys.threads(), (old) => [...(old || []), ...moreThreads]);
-        setCursor(response?.cursor ?? response?.data?.cursor ?? null);
+        setCursor(response?.nextBeforeDate ?? response?.data?.nextBeforeDate ?? null);
         setHasMore(response?.hasMore ?? response?.data?.hasMore ?? false);
       } else {
         setHasMore(false);
