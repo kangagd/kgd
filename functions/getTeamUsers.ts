@@ -15,11 +15,14 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Allow: admin, manager, technician (anyone who needs roster access)
-        const allowedRoles = ['admin', 'manager'];
-        const isTechnician = user.extended_role === 'technician' || user.is_field_technician === true;
+        // Compute effective role
+        const role = (user.extended_role || user.role || '').toLowerCase();
+        const isAdmin = user.role === 'admin' || role === 'admin';
+        const isManager = role === 'manager';
+        const isTech = role === 'technician' || user.is_field_technician === true;
 
-        if (user.role !== 'admin' && !allowedRoles.includes(user.role) && !isTechnician) {
+        // Allow: admin, manager, technician (anyone who needs roster access)
+        if (!(isAdmin || isManager || isTech)) {
             return Response.json({
                 error: 'Forbidden: Insufficient permissions for roster access',
                 users: []
@@ -30,7 +33,6 @@ Deno.serve(async (req) => {
         const allUsers = await base44.asServiceRole.entities.User.list();
 
         // Filter: exclude inactive users unless requester is admin
-        const isAdmin = user.role === 'admin';
         const filtered = allUsers.filter(u => isAdmin || u.is_active !== false);
 
         // Project safe fields
