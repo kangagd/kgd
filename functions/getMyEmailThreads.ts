@@ -10,10 +10,11 @@ Deno.serve(async (req) => {
     }
 
     // Allow admins and managers to fetch all email threads
-    const isAdmin = user.role === 'admin';
-    const isManager = user.extended_role === 'manager';
+    const role = (user.extended_role || user.role || "").toLowerCase();
+    const isAdmin = user.role === 'admin' || role === 'admin';
+    const isManager = role === 'manager';
 
-    if (!isAdmin && !isManager) {
+    if (!(isAdmin || isManager)) {
       return Response.json({ error: 'Forbidden: Only admins and managers can view inbox' }, { status: 403 });
     }
 
