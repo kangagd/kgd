@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     // Create new Visit
     const visit_number = existingVisits.length + 1;
     
-    const newVisit = await base44.asServiceRole.entities.Visit.create({
+    const visitPayload = {
       job_id,
       visit_number,
       scheduled_date: job.scheduled_date || null,
@@ -72,7 +72,12 @@ Deno.serve(async (req) => {
       checked_in_names: [],
       check_in_events: [],
       photos: []
-    });
+    };
+
+    // Auto-derive status
+    visitPayload.status = deriveVisitStatus(visitPayload);
+    
+    const newVisit = await base44.asServiceRole.entities.Visit.create(visitPayload);
 
     return Response.json({ 
       visit: newVisit, 
