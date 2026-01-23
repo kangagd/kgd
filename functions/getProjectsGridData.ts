@@ -26,17 +26,35 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.EmailThread.list(),
     ]);
 
-    // Create lookup maps for efficient counting
+    // Create lookup maps for efficient counting and data
     const jobsByProject = new Map();
+    const nextJobByProject = new Map();
     const partsByProject = new Map();
     const tradesByProject = new Map();
     const posByProject = new Map();
     const attentionByProject = new Map();
+    const openAttentionByProject = new Map();
     const threadsByProject = new Map();
+    const lastActivityByProject = new Map();
+    const lastCustomerMessageByProject = new Map();
 
     jobs.forEach(j => {
       if (j.project_id) {
-        jobsByProject.set(j.project_id, (jobsByProject.get(j.project_id) || 0) + 1);
+        const count = jobsByProject.get(j.project_id) || 0;
+        jobsByProject.set(j.project_id, count + 1);
+        
+        // Track next scheduled job
+        if (j.status !== 'Completed' && j.status !== 'Cancelled' && j.scheduled_date) {
+          const existing = nextJobByProject.get(j.project_id);
+          if (!existing || j.scheduled_date < existing.scheduled_date) {
+            nextJobByProject.set(j.project_id, {
+              id: j.id,
+              job_number: j.job_number,
+              scheduled_date: j.scheduled_date,
+              scheduled_time: j.scheduled_time,
+            });
+          }
+        }
       }
     });
 
@@ -60,13 +78,44 @@ Deno.serve(async (req) => {
 
     attention.forEach(ai => {
       if (ai.project_id) {
-        attentionByProject.set(ai.project_id, (attentionByProject.get(ai.project_id) || 0) + 1);
+        const totalCount = attentionByProject.get(ai.project_id) || 0;
+        attentionByProject.set(ai.project_id, totalCount + 1);
+        
+        // Count only unresolved attention items
+        if (!ai.resolved_at) {
+          const openCount = openAttentionByProject.get(ai.project_id) || 0;
+          openAttentionByProject.set(ai.project_id, openCount + 1);
+        }
       }
     });
 
     threads.forEach(t => {
       if (t.project_id && !t.is_deleted) {
         threadsByProject.set(t.project_id, (threadsByProject.get(t.project_id) || 0) + 1);
+        
+        // Track last customer message
+        if (t.last_customer_message_at) {
+          const existing = lastCustomerMessageByProject.get(t.project_id);
+          if (!existing || t.last_customer_message_at > existing) {
+            lastCustomerMessageByProject.set(t.project_id, t.last_customer_message_at);
+          }
+        }
+      }
+    });
+
+    // Compute last activity for each project
+    projects.forEach(p => {
+      const timestamps = [p.last_activity_at, p.updated_date].filter(Boolean);
+      
+      const projectJobs = jobs.filter(j => j.project_id === p.id);
+      projectJobs.forEach(j => {
+        if (j.updated_date) timestamps.push(j.updated_date);
+        if (j.scheduled_date) timestamps.push(j.scheduled_date);
+      });
+      
+      if (timestamps.length > 0) {
+        const latest = timestamps.sort((a, b) => new Date(b) - new Date(a))[0];
+        lastActivityByProject.set(p.id, latest);
       }
     });
 
