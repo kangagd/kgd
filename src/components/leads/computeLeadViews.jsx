@@ -129,6 +129,16 @@ export const computeLeadViews = ({
     (t) => t.project_id || t.projectId
   );
 
+  // Helper to normalize status
+  const normalizeStatus = (v) => (typeof v === "string" ? v.trim().toLowerCase() : "");
+
+  // Allowed Project.status values for Quote Sent (tolerant to formatting)
+  const QUOTE_SENT_STATUSES = new Set([
+    "quote sent",
+    "quote_sent",
+    "quotesent",
+  ]);
+
   const leadViews = [];
 
   // Iterate projects once
@@ -140,6 +150,10 @@ export const computeLeadViews = ({
 
     const projectId = project.id;
     if (!projectId) continue;
+
+    // STRICT STATUS GATE: Only include projects with Project.status = "Quote Sent"
+    const statusNorm = normalizeStatus(project.status);
+    if (!QUOTE_SENT_STATUSES.has(statusNorm)) continue;
 
     // Get related records
     const quotesForProject = quotesByProjectId[projectId] || [];
