@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { computeLeadViews } from "@/components/leads/computeLeadViews";
+import { computeLeadViews, groupByProjectId } from "@/components/leads/computeLeadViews";
 import { LEAD_STAGES, TEMP_BUCKETS } from "@/components/leads/leadViewModel";
+import LeadSidePanel from "@/components/leads/LeadSidePanel";
 
 // ============================================================================
 // FORMATTING HELPERS
@@ -43,6 +44,8 @@ export default function Leads() {
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [tempFilter, setTempFilter] = useState("all");
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const nowIso = useMemo(() => new Date().toISOString(), []);
 
@@ -83,6 +86,31 @@ export default function Leads() {
       nowIso,
     });
   }, [projects, quotes, threads, nowIso]);
+
+  // Pre-group quotes and threads by project_id for panel
+  const quotesByProjectId = useMemo(() => {
+    return groupByProjectId(quotes, (q) => q.project_id || q.projectId);
+  }, [quotes]);
+
+  const threadsByProjectId = useMemo(() => {
+    return groupByProjectId(threads, (t) => t.project_id || t.projectId);
+  }, [threads]);
+
+  // Get selected project data for panel
+  const selectedProject = useMemo(() => {
+    if (!selectedLead) return null;
+    return projects.find((p) => p.id === selectedLead.project_id) || null;
+  }, [selectedLead, projects]);
+
+  const selectedQuotes = useMemo(() => {
+    if (!selectedLead) return [];
+    return quotesByProjectId[selectedLead.project_id] || [];
+  }, [selectedLead, quotesByProjectId]);
+
+  const selectedThreads = useMemo(() => {
+    if (!selectedLead) return [];
+    return threadsByProjectId[selectedLead.project_id] || [];
+  }, [selectedLead, threadsByProjectId]);
 
   // Client-side filtering
   const filteredLeads = useMemo(() => {
@@ -129,9 +157,10 @@ export default function Leads() {
     refetchThreads();
   };
 
-  // Row click handler
+  // Row click handler - open side panel
   const handleRowClick = (lead) => {
-    navigate(createPageUrl("Projects") + `?projectId=${lead.project_id}`);
+    setSelectedLead(lead);
+    setPanelOpen(true);
   };
 
   // ============================================================================
@@ -336,6 +365,16 @@ export default function Leads() {
           )}
         </CardContent>
       </Card>
+
+      {/* Lead Side Panel */}
+      <LeadSidePanel
+        open={panelOpen}
+        onOpenChange={setPanelOpen}
+        lead={selectedLead}
+        project={selectedProject}
+        quotes={selectedQuotes}
+        threads={selectedThreads}
+      />
     </div>
   );
 }
