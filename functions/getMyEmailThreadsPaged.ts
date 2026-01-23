@@ -3,6 +3,7 @@ import { createClientFromRequest } from './shared/sdk.js';
 /**
  * Paginated email threads: returns threads before a given date
  * For UI pagination, pass last thread's last_message_date as beforeDate
+ * Mirrors getMyEmailThreads.ts access logic (admin/manager only)
  */
 Deno.serve(async (req) => {
     try {
@@ -13,25 +14,34 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Allow admins and managers to fetch all email threads
+        const isAdmin = user.role === 'admin';
+        const isManager = user.extended_role === 'manager';
+
+        if (!isAdmin && !isManager) {
+            return Response.json({ error: 'Forbidden: Only admins and managers can view inbox' }, { status: 403 });
+        }
+
         const { limit = 100, beforeDate = null } = await req.json();
 
         if (!Number.isFinite(limit) || limit <= 0) {
             return Response.json({ error: 'Invalid limit' }, { status: 400 });
         }
 
-        // Fetch user's email threads
-        let query = { created_by: user.email };
-        
-        // If beforeDate provided, filter to threads before that timestamp
+        // Use service role to bypass EmailThread entity RLS
+        let threads;
         if (beforeDate) {
-            query.last_message_date = { $lt: beforeDate };
+            threads = await base44.asServiceRole.entities.EmailThread.filter(
+                { last_message_date: { $lt: beforeDate } },
+                '-last_message_date',
+                limit + 1
+            );
+        } else {
+            threads = await base44.asServiceRole.entities.EmailThread.list(
+                '-last_message_date',
+                limit + 1
+            );
         }
-
-        const threads = await base44.entities.EmailThread.filter(
-            query,
-            '-last_message_date',
-            limit + 1
-        );
 
         // Check if there are more
         const hasMore = threads.length > limit;
@@ -40,7 +50,7 @@ Deno.serve(async (req) => {
         return Response.json({
             threads: result,
             hasMore,
-            cursor: result.length > 0 ? result[result.length - 1].last_message_date : null
+            nextBeforeDate: result.length > 0 ? result[result.length - 1].last_message_date : null
         });
     } catch (error) {
         console.error('[getMyEmailThreadsPaged] Error:', error);
