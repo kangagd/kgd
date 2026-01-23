@@ -42,7 +42,7 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
     });
     if (existingMovements.length > 0) {
         console.log(`[StockMovement] Job ${job.id} already has movements - skipping`);
-        return;
+        return { skipped: true, count: existingMovements.length };
     }
 
     // VALIDATION: Canonical logistics_purpose check
