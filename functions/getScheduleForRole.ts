@@ -22,9 +22,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden: Only admins and managers can view full schedule' }, { status: 403 });
         }
 
-        const { date_from, date_to } = await req.json();
+        const { date_from = null, date_to = null } = await req.json().catch(() => ({}));
 
-        // Build filter for date range
+        // Build filter for date range (optional)
         const filter = {};
         if (date_from && date_to) {
             filter.scheduled_date = { $gte: date_from, $lte: date_to };
