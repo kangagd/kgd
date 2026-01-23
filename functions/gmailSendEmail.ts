@@ -281,6 +281,28 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Inherit project_id/contract_id from thread if not explicitly provided
+    let resolvedProjectId = project_id;
+    let resolvedContractId = contract_id;
+    
+    if (thread_id && !resolvedProjectId && !resolvedContractId) {
+      try {
+        const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
+        if (thread) {
+          if (thread.contract_id) {
+            resolvedContractId = thread.contract_id;
+            console.log(`[gmailSendEmail] Inherited contract_id=${resolvedContractId} from thread`);
+          } else if (thread.project_id) {
+            resolvedProjectId = thread.project_id;
+            console.log(`[gmailSendEmail] Inherited project_id=${resolvedProjectId} from thread`);
+          }
+        }
+      } catch (err) {
+        console.error('[gmailSendEmail] Failed to load thread for inheritance:', err.message);
+        // Continue without inheritance (non-blocking)
+      }
+    }
+
     // Normalize body fields: use canonical body_html/body_text with backwards-compat
     const canonicalBodyHtml = body_html ?? htmlBody ?? '';
     const canonicalBodyText = body_text ?? textBody ?? '';
@@ -471,7 +493,7 @@ Deno.serve(async (req) => {
     // IMMEDIATE LINKING: Link sent emails to Project/Contract at send time
     // When origin="project", link immediately via deterministic upsert
     // ============================================================================
-    if (result.threadId && (project_id || contract_id)) {
+    if (result.threadId && (resolvedProjectId || resolvedContractId)) {
       try {
         // Check for existing EmailThread with same gmail_thread_id
         const existingThreads = await base44.asServiceRole.entities.EmailThread.filter({
@@ -484,13 +506,13 @@ Deno.serve(async (req) => {
           const thread = existingThreads[0];
           const updateData = {};
 
-          if (contract_id && !thread.contract_id) {
-            updateData.contract_id = contract_id;
+          if (resolvedContractId && !thread.contract_id) {
+            updateData.contract_id = resolvedContractId;
             updateData.linked_to_contract_at = new Date().toISOString();
             updateData.linked_to_contract_by = user.email;
-          } else if (project_id && !thread.project_id) {
+          } else if (resolvedProjectId && !thread.project_id) {
             // Only link to project if contract not present
-            updateData.project_id = project_id;
+            updateData.project_id = resolvedProjectId;
             updateData.linked_to_project_at = new Date().toISOString();
             updateData.linked_to_project_by = user.email;
           }
@@ -512,21 +534,21 @@ Deno.serve(async (req) => {
             lastMessageDirection: 'sent',
             message_count: 1,
             // Linking: prefer contract, fallback to project
-            ...(contract_id && { contract_id }),
-            ...(project_id && !contract_id && { project_id }),
+            ...(resolvedContractId && { contract_id: resolvedContractId }),
+            ...(resolvedProjectId && !resolvedContractId && { project_id: resolvedProjectId }),
             // Track linking metadata
-            ...(contract_id && {
+            ...(resolvedContractId && {
               linked_to_contract_at: new Date().toISOString(),
               linked_to_contract_by: user.email
             }),
-            ...(project_id && !contract_id && {
+            ...(resolvedProjectId && !resolvedContractId && {
               linked_to_project_at: new Date().toISOString(),
               linked_to_project_by: user.email
             })
           });
 
           resolvedThreadId = newThread.id;
-          console.log(`[gmailSendEmail] Created new thread ${resolvedThreadId} with ${contract_id ? 'contract' : 'project'} linking`);
+          console.log(`[gmailSendEmail] Created new thread ${resolvedThreadId} with ${resolvedContractId ? 'contract' : 'project'} linking`);
         }
       } catch (error) {
         console.error('[gmailSendEmail] Error resolving/creating EmailThread for outbound email:', error.message);
@@ -567,8 +589,8 @@ Deno.serve(async (req) => {
              performed_by_user_email: user.email,
              performed_at: new Date().toISOString(),
              // Link to project/contract if provided (deterministic linking at send time)
-             ...(project_id && { project_id }),
-             ...(contract_id && { contract_id })
+             ...(resolvedProjectId && { project_id: resolvedProjectId }),
+             ...(resolvedContractId && { contract_id: resolvedContractId })
            });
           console.log(`[gmailSendEmail] Created new EmailMessage ${createdMessage.id}`);
         }
@@ -585,14 +607,14 @@ Deno.serve(async (req) => {
             };
 
             // Safe linking: only set if not already linked (GUARDRAIL #1: never overwrite existing non-null link)
-            if (project_id && !thread.project_id) {
-              updateData.project_id = project_id;
+            if (resolvedProjectId && !thread.project_id) {
+              updateData.project_id = resolvedProjectId;
               updateData.linked_to_project_at = new Date().toISOString();
               updateData.linked_to_project_by = user.email;
             }
 
-            if (contract_id && !thread.contract_id) {
-              updateData.contract_id = contract_id;
+            if (resolvedContractId && !thread.contract_id) {
+              updateData.contract_id = resolvedContractId;
               updateData.linked_to_contract_at = new Date().toISOString();
               updateData.linked_to_contract_by = user.email;
             }
@@ -614,8 +636,8 @@ Deno.serve(async (req) => {
         const thread = await base44.asServiceRole.entities.EmailThread.get(resolvedThreadId);
         if (thread) {
           // Determine link target: prefer contract_id, fallback to project_id
-          const targetContractId = contract_id || thread.contract_id;
-          const targetProjectId = project_id || thread.project_id;
+          const targetContractId = resolvedContractId || thread.contract_id;
+          const targetProjectId = resolvedProjectId || thread.project_id;
           
           if (targetContractId) {
             // Persist to Contract
@@ -683,7 +705,8 @@ Deno.serve(async (req) => {
       email_thread_id: resolvedThreadId,
       email_message_id: emailMessageId,
       baseThreadId: resolvedThreadId,
-      project_id,
+      project_id: resolvedProjectId,
+      contract_id: resolvedContractId,
       labelIds: result.labelIds,
       attachment_persist: attachmentPersistResult,
       attempt_id: attemptId
