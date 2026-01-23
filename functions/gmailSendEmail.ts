@@ -242,7 +242,10 @@ Deno.serve(async (req) => {
       origin,
       project_customer_id,
       project_address,
-      email_thread_id
+      email_thread_id,
+      // Idempotency params
+      draft_id,
+      content_hash
     } = await req.json();
 
     // GUARDRAIL: If origin="project", project_id is required
@@ -270,6 +273,52 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Gmail credentials not configured. Set GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_IMPERSONATE_USER_EMAIL' }, { status: 500 });
     }
 
+    // IDEMPOTENCY CHECK: If draft_id + content_hash provided, check for existing sent attempt
+    if (draft_id && content_hash) {
+      try {
+        const existingAttempts = await base44.asServiceRole.entities.EmailSendAttempt.filter({
+          draft_id,
+          content_hash,
+          status: 'sent'
+        });
+
+        if (existingAttempts.length > 0) {
+          const existingAttempt = existingAttempts[0];
+          console.log(`[gmailSendEmail] Idempotent send detected - email already sent (attempt_id: ${existingAttempt.attempt_id})`);
+          return Response.json({
+            success: true,
+            idempotent: true,
+            gmailMessageId: existingAttempt.gmail_message_id,
+            gmailThreadId: existingAttempt.thread_id,
+            attempt_id: existingAttempt.attempt_id,
+            message: 'Email already sent (idempotent)'
+          });
+        }
+      } catch (err) {
+        console.error('[gmailSendEmail] Error checking existing send attempts:', err.message);
+        // Continue with send on error (fail-open)
+      }
+    }
+
+    // Create new send attempt record (status: sending)
+    let attemptId = null;
+    if (draft_id && content_hash) {
+      try {
+        const attempt = await base44.asServiceRole.entities.EmailSendAttempt.create({
+          draft_id,
+          content_hash,
+          compose_context_key: '', // Optional field, can be populated from draft
+          status: 'sending',
+          attempt_id: crypto.randomUUID(),
+        });
+        attemptId = attempt.id;
+        console.log(`[gmailSendEmail] Created send attempt ${attemptId}`);
+      } catch (err) {
+        console.error('[gmailSendEmail] Failed to create send attempt:', err.message);
+        // Continue without attempt tracking (non-blocking)
+      }
+    }
+
     // Get access token using service account
     let accessToken;
     try {
@@ -277,6 +326,20 @@ Deno.serve(async (req) => {
       console.log('[gmailSendEmail] Access token obtained');
     } catch (tokenError) {
       console.error('[gmailSendEmail] Failed to get access token:', tokenError.message);
+      
+      // Update attempt to failed if exists
+      if (attemptId) {
+        try {
+          await base44.asServiceRole.entities.EmailSendAttempt.update(attemptId, {
+            status: 'failed',
+            error_code: 'AUTH_FAILED',
+            error_message: tokenError.message
+          });
+        } catch (err) {
+          console.error('[gmailSendEmail] Failed to update attempt status:', err.message);
+        }
+      }
+      
       throw new Error(`Authentication failed: ${tokenError.message}`);
     }
 
@@ -575,6 +638,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Update send attempt to sent (if exists)
+    if (attemptId) {
+      try {
+        await base44.asServiceRole.entities.EmailSendAttempt.update(attemptId, {
+          status: 'sent',
+          gmail_message_id: result.id,
+        });
+        console.log(`[gmailSendEmail] Updated send attempt ${attemptId} to sent`);
+      } catch (err) {
+        console.error('[gmailSendEmail] Failed to update attempt to sent:', err.message);
+      }
+    }
+
     return Response.json({
       success: true,
       gmailMessageId: result.id,
@@ -584,12 +660,27 @@ Deno.serve(async (req) => {
       baseThreadId: resolvedThreadId,
       project_id,
       labelIds: result.labelIds,
-      attachment_persist: attachmentPersistResult
+      attachment_persist: attachmentPersistResult,
+      attempt_id: attemptId
     });
 
   } catch (error) {
     console.error('[gmailSendEmail] Error:', error.message);
     if (error.stack) console.error('[gmailSendEmail] Stack:', error.stack);
+    
+    // Update send attempt to failed (if exists)
+    if (attemptId) {
+      try {
+        await base44.asServiceRole.entities.EmailSendAttempt.update(attemptId, {
+          status: 'failed',
+          error_code: 'SEND_FAILED',
+          error_message: error.message || 'Failed to send email'
+        });
+      } catch (err) {
+        console.error('[gmailSendEmail] Failed to update attempt to failed:', err.message);
+      }
+    }
+    
     return Response.json({ 
       error: error.message || 'Failed to send email'
     }, { status: 500 });
