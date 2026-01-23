@@ -113,9 +113,9 @@ export default function Schedule() {
   const { data: allJobs = [], isLoading } = useQuery({
     queryKey: jobKeys.all,
     queryFn: async () => {
-      // Use backend function for robust permission handling
-      const response = await base44.functions.invoke('getMyJobs');
-      const jobs = response.data || [];
+      // Use role-safe backend function to bypass RLS issues
+      const response = await base44.functions.invoke('getScheduleForRole', {});
+      const jobs = response.data?.jobs || [];
       // Sort manually since backend function might not sort
       return jobs.sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''));
     },
