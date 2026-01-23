@@ -804,9 +804,13 @@ Deno.serve(async (req) => {
                 return Response.json({ ok: false, reason: 'job_not_completed' });
             }
 
-            // Idempotency: skip if already ran
+            // IDEMPOTENCY: Skip if already ran successfully
             if (job.post_complete_ran === true) {
-                return Response.json({ ok: true, skipped: true });
+                return Response.json({ 
+                    ok: true, 
+                    skipped: true, 
+                    summary: job.post_complete_summary || 'Already applied' 
+                });
             }
 
             let sampleTransferSummary = null;
