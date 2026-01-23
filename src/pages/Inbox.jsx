@@ -587,19 +587,33 @@ export default function Inbox() {
 
   const bulkAssignToMe = async () => {
     const count = selectedThreadIds.size;
+    const ids = Array.from(selectedThreadIds);
+    const BATCH_SIZE = 10;
+    
     try {
       const now = new Date().toISOString();
-      await Promise.all(
-        Array.from(selectedThreadIds).map((id) =>
-          base44.entities.EmailThread.update(id, {
-            assigned_to: user.email,
-            assigned_to_name: user.display_name || user.full_name,
-            assigned_by: user.email,
-            assigned_by_name: user.display_name || user.full_name,
-            assigned_at: now,
-          })
-        )
-      );
+      
+      // Process in batches to avoid rate limits
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((id) =>
+            base44.entities.EmailThread.update(id, {
+              assigned_to: user.email,
+              assigned_to_name: user.display_name || user.full_name,
+              assigned_by: user.email,
+              assigned_by_name: user.display_name || user.full_name,
+              assigned_at: now,
+            })
+          )
+        );
+        
+        // Small delay between batches
+        if (i + BATCH_SIZE < ids.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
       await refetchThreads();
       setSelectedThreadIds(new Set());
       toast.success(`Assigned ${count} thread${count !== 1 ? "s" : ""} to you`);
