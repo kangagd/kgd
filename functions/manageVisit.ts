@@ -189,7 +189,11 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Visit not found' }, { status: 404 });
       }
 
-      const updatedVisit = await base44.asServiceRole.entities.Visit.update(visit_id, data);
+      // Merge data and re-derive status
+      const merged = { ...visit, ...data };
+      const statusUpdate = { ...data, status: deriveVisitStatus(merged) };
+
+      const updatedVisit = await base44.asServiceRole.entities.Visit.update(visit_id, statusUpdate);
       return Response.json({ success: true, visit: updatedVisit });
     }
 
