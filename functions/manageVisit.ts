@@ -60,6 +60,9 @@ Deno.serve(async (req) => {
         ...data
       };
 
+      // Auto-derive status based on initial state
+      visitData.status = deriveVisitStatus(visitData);
+
       const visit = await base44.asServiceRole.entities.Visit.create(visitData);
       return Response.json({ success: true, visit });
     }
