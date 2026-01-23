@@ -2507,6 +2507,58 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </div>
                   )}
 
+                  {/* Automation Status Section */}
+                  {job.status === 'Completed' && (job.is_logistics_job === true || job.post_complete_ran !== null || job.post_complete_error) && (
+                    <Card className="border border-slate-200 shadow-sm rounded-lg">
+                      <CardHeader className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                        <CardTitle className="text-[14px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-slate-600" />
+                          Post-Completion Automation
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-4">
+                        {job.post_complete_error ? (
+                          <div className="space-y-2">
+                            <Badge className="bg-red-100 text-red-700 border-red-200 font-semibold">
+                              Automation: Failed
+                            </Badge>
+                            <p className="text-sm text-red-700">{job.post_complete_error}</p>
+                          </div>
+                        ) : job.post_complete_ran === true ? (
+                          <div className="space-y-2">
+                            <Badge className="bg-green-100 text-green-700 border-green-200 font-semibold">
+                              Automation: Completed
+                            </Badge>
+                            {job.post_complete_summary && (() => {
+                              try {
+                                const summary = JSON.parse(job.post_complete_summary);
+                                return (
+                                  <div className="text-sm text-slate-700 space-y-1">
+                                    {summary.moved_count > 0 && (
+                                      <p>• Moved {summary.moved_count} item{summary.moved_count !== 1 ? 's' : ''}</p>
+                                    )}
+                                    {summary.skipped_reason && (
+                                      <p className="text-amber-700">• Skipped: {summary.skipped_reason}</p>
+                                    )}
+                                    {summary.sampleTransferSummary && (
+                                      <p>• Samples: {summary.sampleTransferSummary}</p>
+                                    )}
+                                  </div>
+                                );
+                              } catch {
+                                return <p className="text-sm text-slate-600">{job.post_complete_summary}</p>;
+                              }
+                            })()}
+                          </div>
+                        ) : (
+                          <Badge className="bg-amber-100 text-amber-700 border-amber-200 font-semibold">
+                            Automation: Pending
+                          </Badge>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Outcome for Logistics Jobs - Only Complete and Reschedule */}
                   {activeCheckIn && (
                     <div>
