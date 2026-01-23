@@ -28,7 +28,8 @@ export default function ModelHealth() {
       return response.data;
     },
     enabled: isAdmin,
-    staleTime: 0,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   // Logistics Purpose Drift
@@ -39,7 +40,8 @@ export default function ModelHealth() {
       return response.data;
     },
     enabled: isAdmin,
-    staleTime: 0,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   // Automation Failures (last 14 days)
@@ -59,7 +61,8 @@ export default function ModelHealth() {
       ).sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
     },
     enabled: isAdmin,
-    staleTime: 0,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   // Gmail Sync Health - Mock for now (can be implemented later)
