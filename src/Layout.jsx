@@ -55,6 +55,7 @@ const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
   { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
+  { title: "Leads", url: createPageUrl("Leads"), icon: TrendingUp },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
   { title: "Projects", url: createPageUrl("Projects"), icon: FolderKanban },
   { title: "Jobs", url: createPageUrl("Jobs"), icon: Briefcase },
