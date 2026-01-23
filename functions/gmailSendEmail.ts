@@ -256,6 +256,31 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate attachments (size + structure)
+    if (attachments && Array.isArray(attachments)) {
+      const totalSize = attachments.reduce((sum, att) => sum + (att.size || 0), 0);
+      const MAX_ATTACHMENT_SIZE = 20 * 1024 * 1024; // 20MB
+      
+      if (totalSize > MAX_ATTACHMENT_SIZE) {
+        return Response.json({
+          success: false,
+          error: 'ATTACHMENTS_TOO_LARGE',
+          message: `Total attachment size (${(totalSize / 1024 / 1024).toFixed(1)}MB) exceeds 20MB limit`
+        }, { status: 400 });
+      }
+
+      // Validate each attachment has required fields
+      for (const att of attachments) {
+        if (!att.filename || !att.mimeType || !att.data) {
+          return Response.json({
+            success: false,
+            error: 'INVALID_ATTACHMENT',
+            message: 'Each attachment must have filename, mimeType, and data'
+          }, { status: 400 });
+        }
+      }
+    }
+
     // Normalize body fields: use canonical body_html/body_text with backwards-compat
     const canonicalBodyHtml = body_html ?? htmlBody ?? '';
     const canonicalBodyText = body_text ?? textBody ?? '';

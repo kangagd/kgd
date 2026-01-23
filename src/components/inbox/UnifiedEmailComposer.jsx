@@ -769,9 +769,10 @@ export default function UnifiedEmailComposer({
     setAttachments(attachments.filter((_, i) => i !== index));
   };
 
-  // Calculate total attachment size
+  // Calculate total attachment size and enforce hard limit
   const totalAttachmentSize = attachments.reduce((sum, att) => sum + (att.size || 0), 0);
-  const attachmentSizeWarning = totalAttachmentSize > 20 * 1024 * 1024;
+  const ATTACHMENT_SIZE_LIMIT = 20 * 1024 * 1024; // 20MB
+  const attachmentSizeExceeded = totalAttachmentSize > ATTACHMENT_SIZE_LIMIT;
 
   // Clear attachments when opening fresh compose or switching threads (drawer variant reuse)
   // GUARDRAIL: Include thread?.id in dependencies so attachments clear when switching threads
@@ -1002,7 +1003,12 @@ export default function UnifiedEmailComposer({
 
       handleClose();
     } catch (error) {
-      toast.error(error.message || "Failed to send email");
+      const errorMsg = error.message || "Failed to send email";
+      if (errorMsg.includes("ATTACHMENTS_TOO_LARGE")) {
+        toast.error("Attachments exceed 20MB limit. Please remove or compress files before sending.", { duration: 5000 });
+      } else {
+        toast.error(errorMsg);
+      }
     } finally {
       setIsSending(false);
     }
@@ -1475,7 +1481,7 @@ export default function UnifiedEmailComposer({
 
       {/* Attachments */}
       {attachments.length > 0 && (
-        <div className={`space-y-2 bg-[#F9FAFB] rounded-lg p-3 border ${attachmentSizeWarning ? "border-amber-300 bg-amber-50" : "border-[#E5E7EB]"}`}>
+        <div className={`space-y-2 bg-[#F9FAFB] rounded-lg p-3 border ${attachmentSizeExceeded ? "border-red-300 bg-red-50" : "border-[#E5E7EB]"}`}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Paperclip className="w-4 h-4 text-[#6B7280]" />
@@ -1484,9 +1490,9 @@ export default function UnifiedEmailComposer({
                 {attachments.length !== 1 ? "s" : ""} ({(totalAttachmentSize / 1024 / 1024).toFixed(1)} MB)
               </label>
             </div>
-            {attachmentSizeWarning && (
-              <span className="text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-1 rounded">
-                ⚠ Large attachment
+            {attachmentSizeExceeded && (
+              <span className="text-[11px] font-medium text-red-700 bg-red-100 px-2 py-1 rounded">
+                ⚠ Attachments exceed 20MB limit
               </span>
             )}
           </div>
@@ -1583,7 +1589,7 @@ export default function UnifiedEmailComposer({
               </Button>
               <Button
                 onClick={handleSend}
-                disabled={isSending || toChips.length === 0 || !subject || !body}
+                disabled={isSending || toChips.length === 0 || !subject || !body || attachmentSizeExceeded}
                 className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2 font-semibold"
               >
                 <Send className="w-4 h-4" />
@@ -1629,7 +1635,7 @@ export default function UnifiedEmailComposer({
           </Button>
           <Button
             onClick={handleSend}
-            disabled={isSending || toChips.length === 0 || !subject || !body}
+            disabled={isSending || toChips.length === 0 || !subject || !body || attachmentSizeExceeded}
             className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] gap-2 font-semibold"
           >
             <Send className="w-4 h-4" />
