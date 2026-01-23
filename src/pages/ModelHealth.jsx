@@ -1,109 +1,101 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Loader2, RefreshCw, PlayCircle, Save, ExternalLink } from "lucide-react";
+import { AlertTriangle, CheckCircle, Loader2, RefreshCw, PlayCircle, ExternalLink, Server, Mail, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { isFeatureEnabled } from "@/components/domain/featureFlags";
+import { format } from "date-fns";
 
 export default function ModelHealth() {
   const queryClient = useQueryClient();
-  const [confirmAction, setConfirmAction] = useState(null); // 'dry_run' | 'commit'
   const [user, setUser] = useState(null);
 
-  const isModelHealthEnabled = isFeatureEnabled('model_health_fixes');
-
-  // Load user
-  useState(() => {
+  useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   const isAdmin = user?.role === 'admin';
 
-  // Fetch drift analysis
-  const { data: driftData, isLoading, error, refetch, isFetching } = useQuery({
-    queryKey: ['modelDrift'],
+  // Core Locations Health
+  const { data: coreLocations, isLoading: locationsLoading, refetch: refetchLocations } = useQuery({
+    queryKey: ['coreLocations'],
     queryFn: async () => {
-      const startTime = Date.now();
-      const response = await base44.functions.invoke('analyzeModelDrift', {});
-      const loadTime = Date.now() - startTime;
-      return { ...response.data, loadTime };
+      const response = await base44.functions.invoke('auditCoreLocations', {});
+      return response.data;
     },
     enabled: isAdmin,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
   });
 
-  // State for dry run results
-  const [dryRunResults, setDryRunResults] = useState(null);
+  // Logistics Purpose Drift
+  const { data: purposeDrift, isLoading: driftLoading, refetch: refetchDrift } = useQuery({
+    queryKey: ['logisticsPurposeDrift'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('auditLogisticsPurposeDrift', {});
+      return response.data;
+    },
+    enabled: isAdmin,
+    staleTime: 0,
+  });
 
-  // Dry run mutation - ALWAYS allowed (read-only)
-  const dryRunMutation = useMutation({
-    mutationFn: async () => {
-      const response = await base44.functions.invoke('fixModelDrift', { dry_run: true });
+  // Automation Failures (last 14 days)
+  const { data: automationFailures = [], isLoading: failuresLoading, refetch: refetchFailures } = useQuery({
+    queryKey: ['automationFailures'],
+    queryFn: async () => {
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      
+      const jobs = await base44.entities.Job.filter({
+        status: 'Completed',
+        updated_date: { $gte: fourteenDaysAgo.toISOString() }
+      });
+
+      return jobs.filter(job => 
+        job.post_complete_error || job.post_complete_ran !== true
+      ).sort((a, b) => new Date(b.updated_date) - new Date(a.updated_date));
+    },
+    enabled: isAdmin,
+    staleTime: 0,
+  });
+
+  // Gmail Sync Health - Mock for now (can be implemented later)
+  const { data: gmailHealth } = useQuery({
+    queryKey: ['gmailHealth'],
+    queryFn: async () => {
+      // Placeholder - can implement proper sync tracking later
+      return {
+        lastSync: new Date().toISOString(),
+        lastError: null,
+        threads24h: 0,
+        messages24h: 0
+      };
+    },
+    enabled: isAdmin,
+    staleTime: 60000,
+  });
+
+  // Re-run postComplete mutation
+  const rerunMutation = useMutation({
+    mutationFn: async (jobId) => {
+      const response = await base44.functions.invoke('manageJob', {
+        action: 'postComplete',
+        id: jobId
+      });
       return response.data;
     },
     onSuccess: (data) => {
-      setDryRunResults(data);
-      toast.success(`Dry Run Complete: ${data.would_fix_count || 0} issues would be fixed (no changes made)`);
-      queryClient.invalidateQueries({ queryKey: ['modelDrift'] });
+      queryClient.invalidateQueries({ queryKey: ['automationFailures'] });
+      const summary = data?.summary || 'Post-completion automation re-run completed';
+      toast.success(summary);
     },
     onError: (error) => {
-      const errorMsg = error?.response?.data?.error || error?.message || 'Dry run failed';
-      toast.error(errorMsg);
+      toast.error(error.message || 'Failed to re-run automation');
     }
   });
-
-  // Commit fix mutation - Requires feature flag
-  const commitFixMutation = useMutation({
-    mutationFn: async () => {
-      const response = await base44.functions.invoke('fixModelDrift', { dry_run: false });
-      return response.data;
-    },
-    onSuccess: (data) => {
-      setDryRunResults(null);
-      toast.success(`Fixed ${data.fixed_count} drift issues successfully`);
-      queryClient.invalidateQueries({ queryKey: ['modelDrift'] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['visits'] });
-    },
-    onError: (error) => {
-      const errorMsg = error?.response?.data?.error || error?.message || 'Fix commit failed';
-      toast.error(errorMsg);
-    }
-  });
-
-  const handleAction = (action) => {
-    // Dry run is always allowed (read-only)
-    // Commit requires feature flag
-    if (action === 'commit' && !isModelHealthEnabled) {
-      toast.error('Model Health fixes are disabled. Enable FEATURE_MODEL_HEALTH_FIXES flag.');
-      return;
-    }
-    setConfirmAction(action);
-  };
-
-  const confirmAndExecute = () => {
-    if (confirmAction === 'dry_run') {
-      dryRunMutation.mutate();
-    } else if (confirmAction === 'commit') {
-      commitFixMutation.mutate();
-    }
-    setConfirmAction(null);
-  };
 
   if (!isAdmin) {
     return (
@@ -125,411 +117,241 @@ export default function ModelHealth() {
         {/* Header */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-[28px] font-bold text-[#111827] mb-1">Model Health Dashboard</h1>
+            <h1 className="text-[28px] font-bold text-[#111827] mb-1">System Health Dashboard</h1>
             <p className="text-[14px] text-[#6B7280]">
-              Detect and fix drift between legacy Job model and Visit model
+              Monitor core system health, logistics data integrity, and automation status
             </p>
           </div>
           <Button
             onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['modelDrift'] });
-              refetch();
+              refetchLocations();
+              refetchDrift();
+              refetchFailures();
             }}
-            disabled={isFetching}
             variant="outline"
             className="gap-2"
           >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
-            {isFetching ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className="w-4 h-4" />
+            Refresh All
           </Button>
         </div>
 
-        {/* Feature Flag Status */}
-        <Card className={`border-2 ${isModelHealthEnabled ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              {isModelHealthEnabled ? (
-                <>
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-sm font-semibold text-green-800">Model Health Fixes: ENABLED</span>
-                </>
-              ) : (
-                <>
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  <span className="text-sm font-semibold text-amber-800">Model Health Fixes: DISABLED</span>
-                  <span className="text-xs text-amber-700 ml-2">(Set FEATURE_MODEL_HEALTH_FIXES flag to enable)</span>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Loading State */}
-        {isLoading && (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-[#FAE008] mx-auto mb-3" />
-              <p className="text-sm text-[#6B7280]">Analyzing model drift...</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <Card className="border-2 border-red-200 bg-red-50">
-            <CardContent className="p-6 text-center">
-              <AlertTriangle className="w-12 h-12 text-red-600 mx-auto mb-3" />
-              <h3 className="text-lg font-semibold text-red-800 mb-2">Analysis Failed</h3>
-              <p className="text-sm text-red-700">{error.message}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* System Performance Stats */}
+        {/* 1) Core Locations Health */}
         <Card className="border-2 border-slate-200">
           <CardHeader className="bg-slate-50 border-b border-slate-200">
-            <CardTitle className="text-[18px] font-semibold text-[#111827]">System Performance</CardTitle>
+            <CardTitle className="text-[18px] font-semibold text-[#111827] flex items-center gap-2">
+              <Server className="w-5 h-5 text-slate-600" />
+              Core Locations Health
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            {locationsLoading ? (
+              <div className="flex items-center gap-2 py-4">
+                <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
+                <span className="text-sm text-[#6B7280]">Checking core locations...</span>
+              </div>
+            ) : coreLocations ? (
+              <div className="space-y-3">
+                {coreLocations.ok ? (
+                  <div className="flex items-center gap-2 text-green-700">
+                    <CheckCircle className="w-5 h-5" />
+                    <span className="text-sm font-semibold">All core locations exist</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-red-700">
+                      <AlertTriangle className="w-5 h-5" />
+                      <span className="text-sm font-semibold">Missing locations detected</span>
+                    </div>
+                    {coreLocations.missing && coreLocations.missing.length > 0 && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                        <div className="text-xs font-semibold text-red-700 mb-2">Missing:</div>
+                        <div className="space-y-1">
+                          {coreLocations.missing.map((loc, idx) => (
+                            <div key={idx} className="text-sm text-red-600">• {loc}</div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-[#9CA3AF]">No data</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 2) Logistics Purpose Drift */}
+        <Card className="border-2 border-slate-200">
+          <CardHeader className="bg-slate-50 border-b border-slate-200">
+            <CardTitle className="text-[18px] font-semibold text-[#111827] flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-slate-600" />
+              Logistics Purpose Drift
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {driftLoading ? (
+              <div className="flex items-center gap-2 py-4">
+                <Loader2 className="w-4 h-4 animate-spin text-slate-600" />
+                <span className="text-sm text-[#6B7280]">Analyzing logistics jobs...</span>
+              </div>
+            ) : purposeDrift ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Badge className={`${purposeDrift.count > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'} font-semibold text-[14px] px-3 py-1`}>
+                    {purposeDrift.count || 0} issue{purposeDrift.count !== 1 ? 's' : ''}
+                  </Badge>
+                </div>
+                
+                {purposeDrift.jobs && purposeDrift.jobs.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">
+                      First 25 Jobs
+                    </div>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {purposeDrift.jobs.slice(0, 25).map((job) => (
+                        <div key={job.id} className="bg-white border border-amber-200 rounded-lg p-3 flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold text-[#111827]">#{job.job_number}</span>
+                              <Badge className="bg-slate-100 text-slate-700 text-[11px]">{job.status}</Badge>
+                            </div>
+                            <div className="text-xs text-[#6B7280] space-y-0.5">
+                              <div>Purpose: {job.logistics_purpose || 'not set'}</div>
+                            </div>
+                          </div>
+                          <Link
+                            to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
+                            className="text-blue-600 hover:text-blue-700 flex-shrink-0"
+                            title="View Job"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Link>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-[#9CA3AF]">No data</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 3) Automation Failures (last 14 days) */}
+        <Card className="border-2 border-red-200">
+          <CardHeader className="bg-red-50 border-b border-red-200">
+            <CardTitle className="text-[18px] font-semibold text-[#111827] flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              Automation Failures (Last 14 Days)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {failuresLoading ? (
+              <div className="flex items-center gap-2 py-4">
+                <Loader2 className="w-4 h-4 animate-spin text-red-600" />
+                <span className="text-sm text-[#6B7280]">Loading failures...</span>
+              </div>
+            ) : automationFailures.length === 0 ? (
+              <div className="text-center py-6">
+                <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                <p className="text-sm text-green-700 font-medium">No automation failures in last 14 days</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <Badge className="bg-red-600 text-white font-semibold text-[14px] px-3 py-1">
+                  {automationFailures.length} failure{automationFailures.length !== 1 ? 's' : ''}
+                </Badge>
+                
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {automationFailures.map((job) => (
+                    <div key={job.id} className="bg-white border border-red-200 rounded-lg p-3">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-[#111827]">#{job.job_number}</span>
+                            {job.project_name && (
+                              <span className="text-sm text-[#6B7280]">{job.project_name}</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-[#6B7280]">
+                            Completed: {job.updated_date ? format(new Date(job.updated_date), 'MMM d, yyyy h:mm a') : 'N/A'}
+                          </div>
+                          {job.post_complete_error && (
+                            <div className="bg-red-50 border border-red-200 rounded p-2 mt-2">
+                              <div className="text-xs text-red-700">{job.post_complete_error}</div>
+                            </div>
+                          )}
+                          {!job.post_complete_error && job.post_complete_ran !== true && (
+                            <div className="bg-amber-50 border border-amber-200 rounded p-2 mt-2">
+                              <div className="text-xs text-amber-700">Automation did not run</div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <Link
+                            to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
+                            className="text-blue-600 hover:text-blue-700"
+                            title="View Job"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Link>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => rerunMutation.mutate(job.id)}
+                            disabled={rerunMutation.isPending}
+                            className="h-7 px-2 text-xs"
+                            title="Re-run automation"
+                          >
+                            <PlayCircle className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 4) Gmail Sync Health */}
+        <Card className="border-2 border-slate-200">
+          <CardHeader className="bg-slate-50 border-b border-slate-200">
+            <CardTitle className="text-[18px] font-semibold text-[#111827] flex items-center gap-2">
+              <Mail className="w-5 h-5 text-slate-600" />
+              Gmail Sync Health
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Analysis Load Time</div>
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Last Sync</div>
                 <div className="font-semibold text-[#111827]">
-                  {driftData?.loadTime ? `${(driftData.loadTime / 1000).toFixed(2)}s` : 'N/A'}
+                  {gmailHealth?.lastSync ? format(new Date(gmailHealth.lastSync), 'MMM d, yyyy h:mm a') : 'N/A'}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Jobs Queried</div>
-                <div className="font-semibold text-[#111827]">{driftData?.total_jobs || 0}</div>
-              </div>
-              <div>
-                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Avg Response</div>
-                <div className="font-semibold text-[#111827]">
-                  {driftData?.loadTime && driftData?.total_jobs 
-                    ? `${((driftData.loadTime / driftData.total_jobs)).toFixed(1)}ms/job`
-                    : 'N/A'
-                  }
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Last Error</div>
+                <div className={`font-semibold ${gmailHealth?.lastError ? 'text-red-600' : 'text-green-600'}`}>
+                  {gmailHealth?.lastError || 'None'}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Status</div>
-                <div className="font-semibold text-green-600">
-                  {driftData?.loadTime < 10000 ? '✓ Good' : '⚠ Slow'}
-                </div>
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Threads (24h)</div>
+                <div className="font-semibold text-[#111827]">{gmailHealth?.threads24h || 0}</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-[#6B7280] uppercase tracking-wide mb-1">Messages (24h)</div>
+                <div className="font-semibold text-[#111827]">{gmailHealth?.messages24h || 0}</div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Results */}
-        {driftData && !isLoading && (
-          <>
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-[12px] text-[#6B7280] mb-1">Total Jobs Analyzed</div>
-                  <div className="text-[28px] font-bold text-[#111827]">{driftData.total_jobs || 0}</div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-[12px] text-[#6B7280] mb-1">V2 Execution Jobs</div>
-                  <div className="text-[28px] font-bold text-blue-600">{driftData.v2_execution_count || 0}</div>
-                </CardContent>
-              </Card>
-
-              <Card className={driftData.fixable_drift_count > 0 ? 'border-2 border-amber-200' : 'border-2 border-green-200'}>
-                <CardContent className="p-4">
-                  <div className="text-[12px] text-[#6B7280] mb-1">Fixable Drift</div>
-                  <div className={`text-[28px] font-bold ${driftData.fixable_drift_count > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                    {driftData.fixable_drift_count || 0}
-                  </div>
-                  {driftData.legacy_info_count > 0 && (
-                    <div className="text-[11px] text-[#9CA3AF] mt-1">
-                      +{driftData.legacy_info_count} v1 legacy (info only)
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="text-[12px] text-[#6B7280] mb-1">Health Score</div>
-                  <div className={`text-[28px] font-bold ${driftData.health_score >= 95 ? 'text-green-600' : driftData.health_score >= 80 ? 'text-amber-600' : 'text-red-600'}`}>
-                    {driftData.health_score || 0}%
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Action Buttons */}
-            {(driftData.fixable_drift_count > 0 || driftData.drift_issues_count > 0) && (
-              <Card className="border-2 border-blue-200 bg-blue-50">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold text-blue-900 mb-1">Dry Run Analysis</div>
-                      <div className="text-xs text-blue-700 mb-3">
-                        Read-only simulation • No writes • Always available
-                      </div>
-                      <Button
-                        onClick={() => handleAction('dry_run')}
-                        disabled={dryRunMutation.isPending}
-                        variant="outline"
-                        className="gap-2 w-full sm:w-auto"
-                      >
-                        {dryRunMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <PlayCircle className="w-4 h-4" />
-                        )}
-                        Run Dry Run
-                      </Button>
-                    </div>
-                    
-                    <div className="flex-1 sm:border-l border-blue-200 sm:pl-4">
-                      <div className="text-sm font-semibold text-blue-900 mb-1">Commit Fixes</div>
-                      <div className="text-xs text-blue-700 mb-3">
-                        {isModelHealthEnabled 
-                          ? `Writes data • ${driftData.fixable_drift_count || 0} fixable issues` 
-                          : 'Blocked: Enable FEATURE_MODEL_HEALTH_FIXES'}
-                      </div>
-                      <Button
-                        onClick={() => handleAction('commit')}
-                        disabled={commitFixMutation.isPending || !isModelHealthEnabled || (driftData.fixable_drift_count === 0)}
-                        className="gap-2 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto disabled:opacity-50"
-                      >
-                        {commitFixMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Save className="w-4 h-4" />
-                        )}
-                        Commit Fixes
-                      </Button>
-                      {!isModelHealthEnabled && (
-                        <div className="text-[10px] text-amber-700 mt-1">
-                          Set FEATURE_MODEL_HEALTH_FIXES = true to enable
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Drift Issues by Type */}
-            {driftData.issues_by_type && Object.keys(driftData.issues_by_type).length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-[22px] font-semibold text-[#111827]">Issues by Type</h2>
-                
-                {Object.entries(driftData.issues_by_type).map(([issueType, issueData]) => {
-                  const severityConfig = {
-                    error: { border: 'border-red-200', bg: 'bg-red-50', text: 'text-red-800', badgeBg: 'bg-red-600' },
-                    warn: { border: 'border-amber-200', bg: 'bg-amber-50', text: 'text-amber-800', badgeBg: 'bg-amber-600' },
-                    info: { border: 'border-blue-200', bg: 'bg-blue-50', text: 'text-blue-800', badgeBg: 'bg-blue-600' }
-                  };
-                  const config = severityConfig[issueData.severity] || severityConfig.error;
-                  
-                  return (
-                    <Card key={issueType} className={`border-2 ${config.border}`}>
-                      <CardHeader className={`${config.bg} border-b border-${issueData.severity === 'error' ? 'red' : issueData.severity === 'warn' ? 'amber' : 'blue'}-100`}>
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <CardTitle className={`text-[18px] font-semibold ${config.text} flex items-center gap-2`}>
-                            {issueData.severity === 'info' ? <CheckCircle className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                            {issueType.replace(/_/g, ' ').toUpperCase()}
-                          </CardTitle>
-                          <div className="flex items-center gap-2">
-                            <Badge className={`${config.badgeBg} text-white text-[14px] font-bold px-3 py-1`}>
-                              {issueData.count}
-                            </Badge>
-                            {issueData.fixable === false && (
-                              <Badge className="bg-slate-600 text-white text-[11px] px-2 py-0.5">
-                                {issueData.severity === 'info' ? 'INFO ONLY' : 'NOT FIXABLE'}
-                              </Badge>
-                            )}
-                            {issueData.fixable === true && (
-                              <Badge className="bg-green-600 text-white text-[11px] px-2 py-0.5">
-                                FIXABLE
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </CardHeader>
-                    <CardContent className="p-4">
-                      <div className="mb-4 space-y-2">
-                        {issueData.description && (
-                          <p className="text-sm text-[#6B7280]">{issueData.description}</p>
-                        )}
-                        {issueData.fix_blocked_reason && (
-                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800">
-                            <strong>Fix blocked:</strong> {issueData.fix_blocked_reason.replace(/_/g, ' ')}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Sample Jobs */}
-                      {issueData.sample_jobs && issueData.sample_jobs.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide">
-                            Sample Jobs (showing {Math.min(5, issueData.sample_jobs.length)} of {issueData.count})
-                          </div>
-                          <div className="space-y-2">
-                            {issueData.sample_jobs.slice(0, 5).map((job) => (
-                              <div key={job.id} className="bg-white border border-red-100 rounded-lg p-3 hover:border-red-300 transition-colors">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-semibold text-[#111827]">#{job.job_number}</span>
-                                      <span className="text-sm text-[#6B7280]">{job.customer_name}</span>
-                                    </div>
-                                    <div className="text-xs text-[#9CA3AF] space-y-0.5">
-                                      <div>Visit Count: {job.visit_count || 0}</div>
-                                      {job.actual_visits !== undefined && (
-                                        <div>Actual Visits: {job.actual_visits}</div>
-                                      )}
-                                      <div>Model Version: {job.job_model_version || 'v1'}</div>
-                                      <div>Status: {job.status}</div>
-                                      {job.issue_details && (
-                                        <div className={`font-medium mt-1 ${issueData.severity === 'info' ? 'text-blue-600' : 'text-red-600'}`}>
-                                          {job.issue_details}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <Link
-                                    to={`${createPageUrl("Jobs")}?jobId=${job.id}`}
-                                    className="text-blue-600 hover:text-blue-700 flex-shrink-0"
-                                    title="View Job"
-                                  >
-                                    <ExternalLink className="w-4 h-4" />
-                                  </Link>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Dry Run Results */}
-            {dryRunResults && (
-              <Card className="border-2 border-purple-200 bg-purple-50">
-                <CardHeader className="bg-purple-100 border-b border-purple-200">
-                  <CardTitle className="text-[18px] font-semibold text-purple-800 flex items-center gap-2">
-                    <PlayCircle className="w-5 h-5" />
-                    Dry Run Results
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="text-sm text-purple-900 mb-3">
-                    <strong>{dryRunResults.would_fix_count || 0}</strong> jobs would be fixed (no data was modified)
-                  </div>
-                  
-                  {dryRunResults.would_fix_jobs && dryRunResults.would_fix_jobs.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-xs font-semibold text-purple-700 uppercase tracking-wide">
-                        Proposed Changes ({dryRunResults.would_fix_jobs.length} jobs)
-                      </div>
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {dryRunResults.would_fix_jobs.map((fix, idx) => (
-                          <div key={idx} className="bg-white border border-purple-200 rounded-lg p-3">
-                            <div className="flex items-start justify-between gap-3 mb-2">
-                              <div className="flex-1">
-                                <div className="font-semibold text-[#111827]">#{fix.job_number}</div>
-                                <div className="text-xs text-[#6B7280]">{fix.customer_name}</div>
-                              </div>
-                              <Link
-                                to={`${createPageUrl("Jobs")}?jobId=${fix.job_id}`}
-                                className="text-purple-600 hover:text-purple-700"
-                                title="View Job"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                              </Link>
-                            </div>
-                            <div className="bg-purple-50 px-2 py-1.5 rounded text-xs">
-                              <div className="text-purple-900 font-medium mb-0.5">visit_count correction:</div>
-                              <div className="text-purple-800">
-                                {fix.old_visit_count} → {fix.new_visit_count} ({fix.visits_found} Visit records found)
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Button
-                    onClick={() => setDryRunResults(null)}
-                    variant="ghost"
-                    size="sm"
-                    className="mt-3 text-purple-700 hover:text-purple-800"
-                  >
-                    Clear Results
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* No Issues Found */}
-            {driftData.drift_issues_count === 0 && (
-              <Card className="border-2 border-green-200 bg-green-50">
-                <CardContent className="p-12 text-center">
-                  <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-green-800 mb-2">All Systems Healthy</h3>
-                  <p className="text-sm text-green-700">No drift issues detected between Job and Visit models.</p>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        )}
       </div>
-
-      {/* Confirmation Dialog */}
-      <AlertDialog open={!!confirmAction} onOpenChange={() => setConfirmAction(null)}>
-        <AlertDialogContent className="rounded-2xl border-2 border-slate-200">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-[22px] font-semibold text-[#111827]">
-              {confirmAction === 'dry_run' ? 'Run Dry Run Analysis?' : 'Commit Fixes to Database?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-[14px] text-slate-600 space-y-2">
-              {confirmAction === 'dry_run' ? (
-                <>
-                  <p>This will analyze what would be fixed <strong>without making any changes</strong> to the database.</p>
-                  <p className="text-green-700 font-medium">✓ Read-only operation - Safe to run anytime</p>
-                  <p className="text-green-700 font-medium">✓ No writes to Job, Visit, or any entity</p>
-                  <p className="text-green-700 font-medium">✓ Works even when FEATURE_MODEL_HEALTH_FIXES is disabled</p>
-                </>
-              ) : (
-                <>
-                  <p>This will <strong>permanently modify</strong> up to {driftData?.fixable_drift_count || 0} job(s).</p>
-                  <p className="text-blue-700 font-medium">• Only applies safe fixes (visit_count sync, version markers)</p>
-                  <p className="text-red-700 font-medium">⚠ Database writes will occur</p>
-                  <p className="text-amber-700 font-medium">⚠ Review dry run results first</p>
-                  <p className="text-amber-700 font-medium">⚠ Requires FEATURE_MODEL_HEALTH_FIXES enabled</p>
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl font-semibold border-2">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmAndExecute}
-              className={`rounded-xl font-semibold ${
-                confirmAction === 'commit' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]'
-              }`}
-            >
-              {confirmAction === 'dry_run' ? 'Run Dry Run' : 'Commit Changes'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
