@@ -1,6 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
+ * Derive visit status from current state
+ */
+const deriveVisitStatus = (visit) => {
+  if (visit.cancelled_at || visit.status === 'cancelled') return 'cancelled';
+  if (visit.completed_at) return 'completed';
+  
+  const hasActiveCheckIn = (visit.check_in_events || []).some(e => !e.checked_out_at);
+  const hasCheckedInTechs = (visit.checked_in_technicians || []).length > 0;
+  if (hasActiveCheckIn || hasCheckedInTechs) return 'in_progress';
+  
+  if (visit.scheduled_date) return 'scheduled';
+  return 'draft';
+};
+
+/**
  * Ensures a Job has exactly one active Visit.
  * Creates a Visit silently if none exists.
  * Active = completed_at is null
