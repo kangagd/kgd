@@ -193,6 +193,23 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Visit not found' }, { status: 404 });
       }
 
+      // Check if update includes measurement fields
+      const measurementFields = ['measurements_json', 'measurements_updated_at', 'measurements_updated_by', 'measurement_summary'];
+      const hasMeasurementUpdate = measurementFields.some(field => data.hasOwnProperty(field));
+
+      // Enforce: measurements only editable when visit is checked-in
+      if (hasMeasurementUpdate) {
+        const isInProgress = visit.status === 'in_progress';
+        const hasCheckedInTechs = (visit.checked_in_technicians?.length || 0) > 0;
+
+        if (!isInProgress && !hasCheckedInTechs) {
+          return Response.json(
+            { error: 'MEASUREMENTS_LOCKED_UNTIL_CHECKIN', message: 'Measurements can only be updated when technician is checked in' },
+            { status: 403 }
+          );
+        }
+      }
+
       // Merge data and re-derive status
       const merged = { ...visit, ...data };
       const statusUpdate = { ...data, status: deriveVisitStatus(merged) };
