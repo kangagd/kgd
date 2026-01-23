@@ -560,10 +560,23 @@ export default function Inbox() {
 
   const bulkClose = async () => {
     const count = selectedThreadIds.size;
+    const ids = Array.from(selectedThreadIds);
+    const BATCH_SIZE = 10;
+    
     try {
-      await Promise.all(
-        Array.from(selectedThreadIds).map((id) => base44.entities.EmailThread.update(id, { userStatus: "closed" }))
-      );
+      // Process in batches to avoid rate limits
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((id) => base44.entities.EmailThread.update(id, { userStatus: "closed" }))
+        );
+        
+        // Small delay between batches
+        if (i + BATCH_SIZE < ids.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
       await refetchThreads();
       setSelectedThreadIds(new Set());
       toast.success(`Closed ${count} thread${count !== 1 ? "s" : ""}`);
