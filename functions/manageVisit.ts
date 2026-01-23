@@ -94,7 +94,8 @@ Deno.serve(async (req) => {
       const updatedVisit = await base44.asServiceRole.entities.Visit.update(visit.id, {
         checked_in_technicians: [...(visit.checked_in_technicians || []), user.email],
         checked_in_names: [...(visit.checked_in_names || []), user.display_name || user.full_name],
-        check_in_events: [...(visit.check_in_events || []), checkInEvent]
+        check_in_events: [...(visit.check_in_events || []), checkInEvent],
+        status: 'in_progress'
       });
 
       return Response.json({ success: true, visit: updatedVisit });
