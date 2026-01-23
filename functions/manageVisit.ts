@@ -157,6 +157,10 @@ Deno.serve(async (req) => {
         issues_found: data?.issues_found || visit.issues_found,
         resolution: data?.resolution || visit.resolution,
         measurements: data?.measurements || visit.measurements,
+        measurements_json: data?.measurements_json || visit.measurements_json,
+        measurements_updated_at: data?.measurements_updated_at || visit.measurements_updated_at,
+        measurements_updated_by: data?.measurements_updated_by || visit.measurements_updated_by,
+        measurement_summary: data?.measurement_summary || visit.measurement_summary,
         photos: data?.photos || visit.photos,
         communication_notes: data?.communication_notes || visit.communication_notes,
         next_steps: data?.next_steps || visit.next_steps
