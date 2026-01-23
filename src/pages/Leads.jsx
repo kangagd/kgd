@@ -347,10 +347,10 @@ export default function Leads() {
                         <Badge
                           variant={
                             lead.temperature_bucket === TEMP_BUCKETS.HOT
-                              ? "destructive"
+                              ? "error"
                               : lead.temperature_bucket === TEMP_BUCKETS.WARM
-                              ? "default"
-                              : "secondary"
+                              ? "warning"
+                              : "default"
                           }
                           className="capitalize"
                         >
