@@ -861,11 +861,14 @@ Deno.serve(async (req) => {
                         };
                     } else if (job.logistics_purpose && job.purchase_order_id) {
                         // Stock movements
-                        await createStockMovementsForLogisticsJob(base44, job, user);
+                        const moveResults = await createStockMovementsForLogisticsJob(base44, job, user);
                         stockMovementSummary = {
                             type: 'stock_movement',
                             purpose: job.logistics_purpose,
-                            status: 'completed'
+                            created: moveResults?.created || 0,
+                            skipped: moveResults?.skipped || 0,
+                            skipped_reasons: moveResults?.skippedReasons || [],
+                            status: moveResults?.skipped ? 'completed' : 'completed'
                         };
                     }
                 } else {
