@@ -491,17 +491,31 @@ export default function Inbox() {
 
   const bulkMarkAsRead = async () => {
     const count = selectedThreadIds.size;
+    const ids = Array.from(selectedThreadIds);
+    const BATCH_SIZE = 10;
+    
     try {
       const now = new Date().toISOString();
-      await Promise.all(
-        Array.from(selectedThreadIds).map((id) =>
-          base44.entities.EmailThread.update(id, {
-            isUnread: false,
-            lastReadAt: now,
-            unreadUpdatedAt: now,
-          })
-        )
-      );
+      
+      // Process in batches to avoid rate limits
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((id) =>
+            base44.entities.EmailThread.update(id, {
+              isUnread: false,
+              lastReadAt: now,
+              unreadUpdatedAt: now,
+            })
+          )
+        );
+        
+        // Small delay between batches
+        if (i + BATCH_SIZE < ids.length) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
+      
       await refetchThreads();
       setSelectedThreadIds(new Set());
       toast.success(`Marked ${count} thread${count !== 1 ? "s" : ""} as read`);
