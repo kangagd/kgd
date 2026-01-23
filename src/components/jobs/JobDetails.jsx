@@ -238,6 +238,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     v.status === 'draft' || v.status === 'open' || v.status === 'in_progress'
   ) || null;
 
+  // Compute visit with active check-ins (measurements editable only then)
+  const editableVisit = 
+    allVisits.find(v => v.status === 'in_progress') ||
+    allVisits.find(v => (v.checked_in_technicians?.length || 0) > 0) ||
+    null;
+
+  // Compute next scheduled visit
+  const scheduledNextVisit =
+    allVisits
+      .filter(v => !v.completed_at && v.status === 'scheduled')
+      .sort((a, b) => new Date(a.scheduled_date) - new Date(b.scheduled_date))[0] || null;
+
   // Legacy compatibility: also check completed_at
   const legacyActiveVisits = allVisits.filter(v => !v.completed_at);
   const activeVisitCompat = activeVisit || (legacyActiveVisits.length > 0 ? legacyActiveVisits[0] : null);
@@ -3436,33 +3448,82 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   />
                 )}
 
-                {/* VISIT MODEL: Editable form when visits_enabled */}
-                {visitsEnabled && activeVisit && (
+                {/* VISIT MODEL: Show editable form only if technician checked in */}
+                {visitsEnabled && editableVisit && (
                   <>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                      <div className="text-sm font-semibold text-blue-900">Visit #{activeVisit.visit_number}</div>
-                      {activeVisit.measurement_summary && (
-                        <div className="text-xs text-blue-700 mt-1">{activeVisit.measurement_summary}</div>
+                      <div className="text-sm font-semibold text-blue-900">Visit #{editableVisit.visit_number}</div>
+                      <div className="text-xs text-blue-700 mt-1">
+                        {editableVisit.checked_in_technicians?.length > 0 
+                          ? `Currently checked in: ${editableVisit.checked_in_names?.join(', ')}`
+                          : 'Check-in active'
+                        }
+                      </div>
+                      {editableVisit.measurement_summary && (
+                        <div className="text-xs text-blue-700 mt-1">{editableVisit.measurement_summary}</div>
                       )}
-                      {activeVisit.measurements_updated_at && (
+                      {editableVisit.measurements_updated_at && (
                         <div className="text-xs text-blue-600 mt-1">
-                          Updated {format(parseISO(activeVisit.measurements_updated_at), 'MMM d, h:mm a')}
-                          {activeVisit.measurements_updated_by && ` by ${activeVisit.measurements_updated_by}`}
+                          Updated {format(parseISO(editableVisit.measurements_updated_at), 'MMM d, h:mm a')}
+                          {editableVisit.measurements_updated_by && ` by ${editableVisit.measurements_updated_by}`}
                         </div>
                       )}
                     </div>
                     <MeasurementsForm
-                      measurements={measurements}
+                      measurements={safeJsonParse(editableVisit.measurements_json, measurements)}
                       onChange={handleMeasurementsChange}
                     />
                   </>
                 )}
 
-                {visitsEnabled && !activeVisit && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
-                    <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                    <p className="text-sm text-amber-800 font-medium">No active Visit</p>
-                  </div>
+                {/* VISIT MODEL: Show locked state when no active check-in */}
+                {visitsEnabled && !editableVisit && (
+                  <>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-amber-900">Measurements unlock once a technician checks in.</p>
+                          <p className="text-xs text-amber-700 mt-1">Start a visit and check in to edit measurements.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {scheduledNextVisit && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                        <div className="text-sm font-semibold text-blue-900 mb-2">Next Scheduled Visit</div>
+                        <div className="space-y-1 text-xs text-blue-800">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {format(parseISO(scheduledNextVisit.scheduled_date), 'EEEE, MMM d, yyyy')}
+                            {scheduledNextVisit.scheduled_time && ` at ${scheduledNextVisit.scheduled_time}`}
+                          </div>
+                          {scheduledNextVisit.checked_in_names?.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <User className="w-3.5 h-3.5" />
+                              {scheduledNextVisit.checked_in_names.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {job.current_measurements_json && (
+                      <div className="bg-white border border-[#E5E7EB] rounded-lg p-3 mt-4">
+                        <div className="text-sm font-semibold text-[#111827] mb-2">Current Measurements (Read-Only)</div>
+                        {(() => {
+                          const m = safeJsonParse(job.current_measurements_json, null);
+                          return m ? (
+                            <pre className="text-xs text-[#6B7280] bg-[#F9FAFB] p-2 rounded border border-[#E5E7EB] overflow-auto max-h-48">
+                              {JSON.stringify(m, null, 2)}
+                            </pre>
+                          ) : (
+                            <p className="text-xs text-[#9CA3AF]">No measurements recorded</p>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </>
                 )}
 
               </div>
