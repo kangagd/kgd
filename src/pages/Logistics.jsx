@@ -113,19 +113,10 @@ export default function Logistics() {
 
   const { data: jobs = [] } = useQuery({
     queryKey: ["jobs"],
-    queryFn: () => base44.entities.Job.list(),
-    enabled: isJobsView,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-    retry: (count, err) => err?.status !== 429 && count < 2,
-  });
-
-  const { data: stockLogisticsJobs = [] } = useQuery({
-    queryKey: ["stockLogisticsJobs"],
-    queryFn: () =>
-      base44.entities.Job.filter({
-        purchase_order_id: { $ne: null },
-      }),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getLogisticsJobsForRole', {});
+      return response.data?.jobs || [];
+    },
     enabled: isJobsView,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
