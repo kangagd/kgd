@@ -156,6 +156,17 @@ const getAvatarColor = (name) => {
   return avatarColors[index];
 };
 
+const safeJsonParse = (s, fallback = null) => {
+  try { return s ? JSON.parse(s) : fallback; } catch { return fallback; }
+};
+
+const buildMeasurementSummary = (m) => {
+  const doors = m?.new_doors?.length || (m?.new_door ? 1 : 0);
+  const width = m?.new_doors?.[0]?.width_mid || m?.new_door?.width_mid || m?.width || null;
+  const height = m?.new_doors?.[0]?.height_mid || m?.new_door?.height_mid || m?.height || null;
+  return `${doors || 1} door(s) • ${width ? `W ${width}mm` : ''}${height ? ` • H ${height}mm` : ''}`.trim();
+};
+
 export default function JobDetails({ job: initialJob, onClose, onStatusChange, onDelete }) {
   const navigate = useNavigate();
   const visitsEnabled = isFeatureEnabled('visits_enabled');
@@ -261,6 +272,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setCommunicationWithClient(source.communication_notes || source.communication_with_client || "");
     setOutcome(source.outcome || "");
   }, [job, activeVisit, visitsEnabled]);
+
+  // Initialize measurements from activeVisit (Visit model)
+  useEffect(() => {
+    if (visitsEnabled && activeVisit) {
+      const fromVisit = safeJsonParse(activeVisit.measurements_json, null);
+      const fromJob = safeJsonParse(job.current_measurements_json, null);
+      setMeasurements(fromVisit || fromJob || job.measurements || {});
+    }
+  }, [visitsEnabled, activeVisit?.id, activeVisit?.measurements_json, job?.current_measurements_json]);
 
   const { data: allJobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
@@ -777,9 +797,52 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   });
 
   const updateMeasurementsMutation = useMutation({
-    mutationFn: (data) => base44.entities.Job.update(job.id, { measurements: data }),
+    mutationFn: async (data) => {
+      const nowIso = new Date().toISOString();
+      const measurements_json = JSON.stringify(data);
+      const measurement_summary = buildMeasurementSummary(data);
+
+      if (visitsEnabled && activeVisit?.id) {
+        await base44.functions.invoke("manageVisit", {
+          action: "update",
+          visit_id: activeVisit.id,
+          data: {
+            measurements_json,
+            measurements_updated_at: nowIso,
+            measurements_updated_by: user?.email || null,
+            measurement_summary
+          }
+        });
+
+        await base44.functions.invoke("manageJob", {
+          action: "update",
+          id: job.id,
+          data: {
+            current_measurements_json: measurements_json,
+            current_measurements_from_visit_id: activeVisit.id,
+            current_measurements_updated_at: nowIso
+          }
+        });
+
+        return;
+      }
+
+      await base44.functions.invoke("manageJob", {
+        action: "update",
+        id: job.id,
+        data: {
+          current_measurements_json: measurements_json,
+          current_measurements_from_visit_id: null,
+          current_measurements_updated_at: nowIso
+        }
+      });
+
+      await base44.entities.Job.update(job.id, { measurements: data });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ["job", job.id] });
+      queryClient.invalidateQueries({ queryKey: ["activeVisits", job.id] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
     }
   });
 
@@ -3373,18 +3436,26 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   />
                 )}
 
-                {/* VISIT MODEL: Read-only display when visits_enabled */}
+                {/* VISIT MODEL: Editable form when visits_enabled */}
                 {visitsEnabled && activeVisit && (
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                    <p className="text-sm text-purple-800 font-medium mb-2">Measurements (Visit Model - Read Only)</p>
-                    {measurements && Object.keys(measurements).length > 0 ? (
-                      <pre className="text-xs text-purple-700 bg-white p-3 rounded-lg border border-purple-100 overflow-auto">
-                        {JSON.stringify(measurements, null, 2)}
-                      </pre>
-                    ) : (
-                      <p className="text-xs text-purple-700">No measurements recorded yet</p>
-                    )}
-                  </div>
+                  <>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                      <div className="text-sm font-semibold text-blue-900">Visit #{activeVisit.visit_number}</div>
+                      {activeVisit.measurement_summary && (
+                        <div className="text-xs text-blue-700 mt-1">{activeVisit.measurement_summary}</div>
+                      )}
+                      {activeVisit.measurements_updated_at && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          Updated {format(parseISO(activeVisit.measurements_updated_at), 'MMM d, h:mm a')}
+                          {activeVisit.measurements_updated_by && ` by ${activeVisit.measurements_updated_by}`}
+                        </div>
+                      )}
+                    </div>
+                    <MeasurementsForm
+                      measurements={measurements}
+                      onChange={handleMeasurementsChange}
+                    />
+                  </>
                 )}
 
                 {visitsEnabled && !activeVisit && (
