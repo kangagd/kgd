@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { computeLeadViews, groupByProjectId } from "@/components/leads/computeLeadViews";
 import { LEAD_STAGES, TEMP_BUCKETS } from "@/components/leads/leadViewModel";
 import LeadSidePanel from "@/components/leads/LeadSidePanel";
+import { createFollowUpTask } from "@/components/leads/createFollowUpTask";
+import { toast } from "sonner";
 
 // ============================================================================
 // FORMATTING HELPERS
@@ -46,6 +48,8 @@ export default function Leads() {
   const [tempFilter, setTempFilter] = useState("all");
   const [selectedLead, setSelectedLead] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [creatingTaskByProjectId, setCreatingTaskByProjectId] = useState({});
+  const [taskCreatedByProjectId, setTaskCreatedByProjectId] = useState({});
 
   const nowIso = useMemo(() => new Date().toISOString(), []);
 
@@ -163,6 +167,41 @@ export default function Leads() {
     setPanelOpen(true);
   };
 
+  // Create follow-up task handler
+  const handleCreateTask = async (lead, e) => {
+    e?.stopPropagation(); // Prevent row click
+
+    const projectId = lead.project_id;
+
+    // Check if already creating or created
+    if (creatingTaskByProjectId[projectId] || taskCreatedByProjectId[projectId]) {
+      return;
+    }
+
+    setCreatingTaskByProjectId((prev) => ({ ...prev, [projectId]: true }));
+
+    try {
+      const project = projects.find((p) => p.id === projectId);
+      const threadsForProject = threadsByProjectId[projectId] || [];
+
+      await createFollowUpTask({
+        lead,
+        project,
+        threadsForProject,
+        base44,
+        nowIso,
+      });
+
+      toast.success("Follow-up task created");
+      setTaskCreatedByProjectId((prev) => ({ ...prev, [projectId]: true }));
+    } catch (error) {
+      console.error("Error creating task:", error);
+      toast.error("Could not create task — please try again");
+    } finally {
+      setCreatingTaskByProjectId((prev) => ({ ...prev, [projectId]: false }));
+    }
+  };
+
   // ============================================================================
   // RENDER
   // ============================================================================
@@ -276,6 +315,7 @@ export default function Leads() {
                     <TableHead>Recommended Action</TableHead>
                     <TableHead>Follow-up Due</TableHead>
                     <TableHead className="w-12"></TableHead>
+                    <TableHead className="w-32"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -356,6 +396,25 @@ export default function Leads() {
                         {lead.has_unread && (
                           <Mail className="w-4 h-4 text-blue-600" title="Has unread messages" />
                         )}
+                      </TableCell>
+
+                      {/* Create Task button */}
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => handleCreateTask(lead, e)}
+                          disabled={
+                            creatingTaskByProjectId[lead.project_id] ||
+                            taskCreatedByProjectId[lead.project_id]
+                          }
+                        >
+                          {creatingTaskByProjectId[lead.project_id]
+                            ? "Creating..."
+                            : taskCreatedByProjectId[lead.project_id]
+                            ? "Created"
+                            : "Create Task"}
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -8,6 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { TEMP_BUCKETS } from "./leadViewModel";
+import { createFollowUpTask } from "./createFollowUpTask";
+import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 
 // ============================================================================
 // FORMATTING HELPERS
@@ -65,6 +68,16 @@ const formatDateTime = (dateStr) => {
 
 export default function LeadSidePanel({ open, onOpenChange, lead, project, threads = [], quotes = [] }) {
   const navigate = useNavigate();
+  const [creatingTask, setCreatingTask] = React.useState(false);
+  const [taskCreated, setTaskCreated] = React.useState(false);
+
+  // Reset task creation state when panel opens with new lead
+  React.useEffect(() => {
+    if (open && lead) {
+      setCreatingTask(false);
+      setTaskCreated(false);
+    }
+  }, [open, lead?.project_id]);
 
   // Guard: null lead
   if (!lead) {
@@ -80,6 +93,31 @@ export default function LeadSidePanel({ open, onOpenChange, lead, project, threa
   const handleOpenInbox = (threadId) => {
     navigate(createPageUrl("Inbox") + `?threadId=${threadId}`);
     onOpenChange(false);
+  };
+
+  const handleCreateTask = async () => {
+    if (creatingTask || taskCreated) return;
+
+    setCreatingTask(true);
+
+    try {
+      const nowIso = new Date().toISOString();
+      await createFollowUpTask({
+        lead,
+        project,
+        threadsForProject: threads,
+        base44,
+        nowIso,
+      });
+
+      toast.success("Follow-up task created");
+      setTaskCreated(true);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      toast.error("Could not create task — please try again");
+    } finally {
+      setCreatingTask(false);
+    }
   };
 
   // Sort threads by last message (most recent first)
@@ -272,14 +310,19 @@ export default function LeadSidePanel({ open, onOpenChange, lead, project, threa
         )}
 
         {/* Footer Actions */}
-        <div className="flex gap-3 pt-4 border-t sticky bottom-0 bg-background pb-4">
-          <Button onClick={handleOpenProject} className="flex-1">
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Open Project
+        <div className="flex flex-col gap-2 pt-4 border-t sticky bottom-0 bg-background pb-4">
+          <Button onClick={handleCreateTask} disabled={creatingTask || taskCreated}>
+            {creatingTask ? "Creating..." : taskCreated ? "Task Created" : "Create Follow-up Task"}
           </Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleOpenProject} variant="outline" className="flex-1">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Open Project
+            </Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
