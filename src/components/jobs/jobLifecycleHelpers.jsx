@@ -10,7 +10,7 @@ export function isLastCheckedInTechnician(checkIns, currentUserEmail) {
 export async function safeUpdateDraft(base44, jobId, incomingData) {
     const DRAFT_FIELDS = ['measurements', 'image_urls', 'other_documents', 'notes', 'overview', 'issues_found', 'resolution', 'pricing_provided', 'additional_info', 'next_steps', 'communication_with_client', 'completion_notes'];
 
-    const job = await base44.asServiceRole.entities.Job.get(jobId);
+    const job = await base44.entities.Job.get(jobId);
     let updatePayload = {};
 
     for (const field of DRAFT_FIELDS) {
@@ -38,6 +38,6 @@ export async function safeUpdateDraft(base44, jobId, incomingData) {
     }
 
     if (Object.keys(updatePayload).length > 0) {
-        await base44.asServiceRole.entities.Job.update(jobId, updatePayload);
+        await base44.entities.Job.update(jobId, updatePayload);
     }
 }
