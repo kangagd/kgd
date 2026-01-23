@@ -168,6 +168,10 @@ Deno.serve(async (req) => {
         updates.completed_at = checkOutTime;
         updates.completed_by_email = user.email;
         updates.completed_by_name = user.display_name || user.full_name;
+        updates.status = 'completed';
+      } else if (updatedTechnicians.length === 0) {
+        // All technicians checked out but no completion — keep as in_progress
+        updates.status = 'in_progress';
       }
 
       const updatedVisit = await base44.asServiceRole.entities.Visit.update(visit.id, updates);
