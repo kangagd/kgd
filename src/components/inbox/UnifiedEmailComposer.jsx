@@ -294,6 +294,7 @@ export default function UnifiedEmailComposer({
   const [draftId, setDraftId] = useState(existingDraft?.id || null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [saveError, setSaveError] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [confirmedLargeRecipients, setConfirmedLargeRecipients] = useState(false);
 
@@ -595,9 +596,11 @@ export default function UnifiedEmailComposer({
       // This prevents re-renders that cause Quill selection instability
       if (!editorFocusedRef.current) {
         setIsSavingDraft(true);
+        setSaveError(false);
       }
 
       try {
+        const now = new Date().toISOString();
         const draft = {
           thread_id: thread?.id || null,
           to_addresses: draftData.to || [],
@@ -606,7 +609,8 @@ export default function UnifiedEmailComposer({
           subject: draftData.subject,
           body_html: draftData.body,
           mode: mode !== "compose" ? mode : "compose",
-          status: "draft",
+          status: "active",
+          last_saved_at: now,
           // Link to project/contract if provided
           ...(linkTarget?.type === "project" && { project_id: linkTarget.id }),
           ...(linkTarget?.type === "contract" && { contract_id: linkTarget.id }),
@@ -623,10 +627,14 @@ export default function UnifiedEmailComposer({
         // GUARDRAIL: Only update lastSaved UI state if editor not focused (no re-render during active editing)
         if (!editorFocusedRef.current) {
           setLastSaved(new Date());
+          setSaveError(false);
         }
         if (onDraftSaved) onDraftSaved();
       } catch (error) {
         devLog("Failed to save draft:", error);
+        if (!editorFocusedRef.current) {
+          setSaveError(true);
+        }
       } finally {
         if (!editorFocusedRef.current) {
           setIsSavingDraft(false);
@@ -642,7 +650,7 @@ export default function UnifiedEmailComposer({
       if (!isTypingRef.current) {
         saveDraft(data);
       }
-    }, 2000),
+    }, 4000),
     [saveDraft]
   );
 
@@ -909,12 +917,15 @@ export default function UnifiedEmailComposer({
         throw new Error(response.data?.error || "Failed to send email");
       }
 
-      // Delete draft after successful send
+      // Mark draft as sent after successful send
       if (draftId) {
         try {
-          await base44.entities.EmailDraft.delete(draftId);
+          await base44.entities.EmailDraft.update(draftId, {
+            status: "sent",
+            sent_at: new Date().toISOString(),
+          });
         } catch (err) {
-          devLog("Failed to delete draft:", err);
+          devLog("Failed to update draft status:", err);
         }
       }
 
@@ -1465,31 +1476,26 @@ export default function UnifiedEmailComposer({
     </>
   );
 
-  // Draft status with relative time
-  const getRelativeTime = (date) => {
-    if (!date) return "";
-    const seconds = Math.floor((new Date() - date) / 1000);
-    if (seconds < 60) return "now";
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
-
   const draftStatus = (
     <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1.5">
       {isSavingDraft && (
         <>
           <Loader2 className="w-3 h-3 animate-spin" />
-          <span>Saving...</span>
+          <span>Saving…</span>
         </>
       )}
-      {!isSavingDraft && lastSaved && (
+      {!isSavingDraft && saveError && (
+        <>
+          <X className="w-3 h-3 text-amber-600" />
+          <span className="text-amber-600">Offline — changes not saved</span>
+        </>
+      )}
+      {!isSavingDraft && !saveError && lastSaved && (
         <>
           <Check className="w-3 h-3 text-green-600" />
-          <span className="text-green-600">Saved {getRelativeTime(lastSaved)}</span>
+          <span className="text-green-600">
+            Saved at {format(lastSaved, "HH:mm")}
+          </span>
         </>
       )}
     </div>
