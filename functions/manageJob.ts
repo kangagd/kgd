@@ -62,14 +62,14 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
         return;
     }
 
-    // Fetch parts linked to this logistics job
-    const parts = await base44.asServiceRole.entities.Part.filter({
+    // Fetch PO lines instead of Parts for reliable inventory tracking
+    const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
         purchase_order_id: job.purchase_order_id
     });
 
-    if (parts.length === 0) {
-        console.log(`[StockMovement] Job ${job.id} has no parts - skipping`);
-        return;
+    if (poLines.length === 0) {
+        console.log(`[StockMovement] Job ${job.id} has no PO lines - skipping`);
+        return { skipped: true, reason: 'no_po_lines' };
     }
 
     // DETERMINISTIC RULES: Map logistics_purpose → from/to
