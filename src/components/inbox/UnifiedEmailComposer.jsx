@@ -776,6 +776,26 @@ export default function UnifiedEmailComposer({
     }
   }, [autoOpenAttachments, variant]);
 
+  // Compute content hash for idempotency
+  const computeContentHash = (to, cc, bcc, subject, body, attachments) => {
+    const content = JSON.stringify({
+      to: to.sort(),
+      cc: cc.sort(),
+      bcc: bcc.sort(),
+      subject,
+      body,
+      attachments: attachments.map(a => ({ filename: a.filename, size: a.size }))
+    });
+    // Simple hash (SHA-256 would be better but this is sufficient)
+    let hash = 0;
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  };
+
   // Send email
   const handleSend = async () => {
     const textBody = body.replace(/<[^>]*>/g, "");
@@ -874,6 +894,9 @@ export default function UnifiedEmailComposer({
         );
       }
 
+      // Compute content hash for idempotency
+      const contentHash = computeContentHash(toChips, ccChips, bccChips, renderedSubject, renderedBodyHtml, cleanAttachments);
+
       const payload = {
         to: toChips,
         cc: ccChips.length > 0 ? ccChips : undefined,
@@ -883,6 +906,10 @@ export default function UnifiedEmailComposer({
         attachments: cleanAttachments.length > 0 ? cleanAttachments : undefined,
         thread_id: thread?.id || null,
         gmail_thread_id: thread?.gmail_thread_id || undefined,
+
+        // Idempotency
+        draft_id: draftId || undefined,
+        content_hash: contentHash,
 
         // Linking: Project or Contract ONLY (NO Job)
         project_id:
