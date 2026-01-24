@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import Inbox from './pages/Inbox';
 import InventoryDebugger from './pages/InventoryDebugger';
 import Jobs from './pages/Jobs';
+import Leads from './pages/Leads';
 import Logistics from './pages/Logistics';
 import ModelHealth from './pages/ModelHealth';
 import MyVehicle from './pages/MyVehicle';
@@ -34,7 +35,6 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
-import Leads from './pages/Leads';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +52,7 @@ export const PAGES = {
     "Inbox": Inbox,
     "InventoryDebugger": InventoryDebugger,
     "Jobs": Jobs,
+    "Leads": Leads,
     "Logistics": Logistics,
     "ModelHealth": ModelHealth,
     "MyVehicle": MyVehicle,
@@ -75,7 +76,6 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
-    "Leads": Leads,
 }
 
 export const pagesConfig = {

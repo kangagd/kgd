@@ -472,7 +472,7 @@ export default function Projects() {
 
         const hasCustomerIssue = useCallback((project) => {
           if (!project) return false;
-          return !project.customer_id || (!project.customer_phone && !project.customer_email);
+          return !project.customer_id;
         }, []);
 
   if (showForm) {
