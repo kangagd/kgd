@@ -81,10 +81,13 @@ export default function SupplyLogistics() {
     return normalized !== PO_STATUS.CANCELLED;
   });
   
-  const draftPOs = activePOs.filter(po => normaliseLegacyPoStatus(po.status) === PO_STATUS.DRAFT);
+  const draftPOs = activePOs.filter(po => {
+    const normalized = normaliseLegacyPoStatus(po.status);
+    return [PO_STATUS.DRAFT, PO_STATUS.SENT].includes(normalized);
+  });
   const onOrderPOs = activePOs.filter(po => {
     const normalized = normaliseLegacyPoStatus(po.status);
-    return [PO_STATUS.SENT, PO_STATUS.ON_ORDER].includes(normalized);
+    return normalized === PO_STATUS.ON_ORDER;
   });
   const inTransitPOs = activePOs.filter(po => {
     const normalized = normaliseLegacyPoStatus(po.status);
@@ -219,6 +222,9 @@ export default function SupplyLogistics() {
       {po.name && (
         <div className="text-[11px] text-[#4B5563] mb-1">{po.name}</div>
       )}
+      <div className="mt-1">
+        <StatusBadge value={po.status} entityType="purchase_order" size="xs" />
+      </div>
       <div className="mt-1 text-[11px] text-[#6B7280]">
         {supplierName}
       </div>
@@ -227,8 +233,14 @@ export default function SupplyLogistics() {
           ETA: {format(etaDate, "MMM d")}
         </div>
       )}
-      {po.project_name && (
-        <div className="mt-1 text-[11px] text-blue-600 font-medium">
+      {po.project_name && po.project_id && (
+        <div 
+          className="mt-1 text-[11px] text-blue-600 font-medium hover:underline cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`${createPageUrl("Projects")}?projectId=${po.project_id}`);
+          }}
+        >
           Project: {po.project_name}
         </div>
       )}
