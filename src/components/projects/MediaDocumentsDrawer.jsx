@@ -119,28 +119,47 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {project.image_urls.map((url, idx) => {
-                    const isVideo = url.match(/\.(mp4|mov|avi|webm|mkv)$/i);
+                  {project.image_urls.map((item, idx) => {
+                    const url = typeof item === 'string' ? item : item?.url;
+                    const uploadedAt = typeof item === 'object' ? item?.uploaded_at : null;
+                    const isVideo = url?.match(/\.(mp4|mov|avi|webm|mkv)$/i);
                     return (
                       <div 
                         key={idx} 
-                        className="relative aspect-square rounded-lg overflow-hidden border border-[#E5E7EB] hover:border-[#FAE008] transition-colors cursor-pointer group"
-                        onClick={() => !isVideo && setFullscreenImage(url) && setFullscreenIndex(idx)}
+                        className="relative rounded-lg overflow-hidden border border-[#E5E7EB] hover:border-[#FAE008] transition-colors group"
                       >
-                        {isVideo ? (
-                          <video 
-                            src={url} 
-                            className="w-full h-full object-cover"
-                            controls
-                          />
-                        ) : (
-                          <img 
-                            src={url} 
-                            alt={`Media ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
+                        <div 
+                          className="aspect-square cursor-pointer"
+                          onClick={() => !isVideo && setFullscreenImage(url) && setFullscreenIndex(idx)}
+                        >
+                          {isVideo ? (
+                            <video 
+                              src={url} 
+                              className="w-full h-full object-cover"
+                              controls
+                            />
+                          ) : (
+                            <img 
+                              src={url} 
+                              alt={`Media ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+                        </div>
+                        {uploadedAt && (
+                          <div className="px-2 py-1 bg-white/95 border-t border-[#E5E7EB]">
+                            <span className="text-[10px] text-[#9CA3AF]">
+                              {new Date(uploadedAt).toLocaleDateString('en-AU', { 
+                                day: 'numeric', 
+                                month: 'short', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
                         )}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
                       </div>
                     );
                   })}

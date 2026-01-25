@@ -1087,7 +1087,10 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       if (type === 'image') {
         const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
         const results = await Promise.all(uploadPromises);
-        const newImageUrls = results.map(r => r.file_url);
+        const newImageUrls = results.map(r => ({
+          url: r.file_url,
+          uploaded_at: new Date().toISOString()
+        }));
         const currentImages = project.image_urls || [];
         updateProjectMutation.mutate({ 
           field: 'image_urls', 
