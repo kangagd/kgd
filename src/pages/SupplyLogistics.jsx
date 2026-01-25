@@ -222,9 +222,6 @@ export default function SupplyLogistics() {
       {po.name && (
         <div className="text-[11px] text-[#4B5563] mb-1">{po.name}</div>
       )}
-      <div className="mt-1">
-        <StatusBadge value={po.status} entityType="purchase_order" size="xs" />
-      </div>
       <div className="mt-1 text-[11px] text-[#6B7280]">
         {supplierName}
       </div>
@@ -244,7 +241,23 @@ export default function SupplyLogistics() {
           Project: {po.project_name}
         </div>
       )}
-      <div className="mt-1 flex items-center gap-1">
+      <div className="mt-1 flex items-center gap-1 flex-wrap">
+        <Badge 
+          className={`text-[10px] px-1 py-0 ${
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.DRAFT ? 'bg-gray-100 text-gray-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.SENT ? 'bg-blue-100 text-blue-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.ON_ORDER ? 'bg-yellow-100 text-yellow-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.IN_TRANSIT ? 'bg-orange-100 text-orange-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.IN_LOADING_BAY ? 'bg-purple-100 text-purple-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.AT_SUPPLIER ? 'bg-amber-100 text-amber-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.IN_STORAGE ? 'bg-green-100 text-green-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.IN_VEHICLE ? 'bg-teal-100 text-teal-700' :
+            normaliseLegacyPoStatus(po.status) === PO_STATUS.INSTALLED ? 'bg-emerald-100 text-emerald-700' :
+            'bg-slate-100 text-slate-700'
+          }`}
+        >
+          {po.status}
+        </Badge>
         {po.delivery_method && (
           <Badge variant="outline" className="text-[10px] px-1 py-0">
             {po.delivery_method === PO_DELIVERY_METHOD.PICKUP ? "Pickup" : "Delivery"}
