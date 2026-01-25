@@ -1099,7 +1099,8 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
         const results = await Promise.all(uploadPromises);
         const newDocs = results.map((r, idx) => ({
           url: r.file_url,
-          name: files[idx].name
+          name: files[idx].name,
+          uploaded_at: new Date().toISOString()
         }));
         const currentDocs = project.other_documents || [];
         updateProjectMutation.mutate({ 

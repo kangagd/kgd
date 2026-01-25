@@ -280,14 +280,27 @@ export default function MediaDocumentsDrawer({ open, onClose, project, initialTa
                       key={idx}
                       className="flex items-center justify-between p-3 rounded-lg border border-[#E5E7EB] hover:border-[#FAE008] hover:bg-[#FFFEF5] transition-all group"
                     >
-                      <a 
-                        href={doc.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex-1 text-[14px] font-medium text-[#111827]"
-                      >
-                        {doc.name || `Document ${idx + 1}`}
-                      </a>
+                      <div className="flex-1">
+                        <a 
+                          href={doc.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-[14px] font-medium text-[#111827] block"
+                        >
+                          {doc.name || `Document ${idx + 1}`}
+                        </a>
+                        {doc.uploaded_at && (
+                          <span className="text-[11px] text-[#9CA3AF] mt-0.5 block">
+                            {new Date(doc.uploaded_at).toLocaleDateString('en-AU', { 
+                              day: 'numeric', 
+                              month: 'short', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex gap-1">
                         {onRenameDocument && (
                           <button
