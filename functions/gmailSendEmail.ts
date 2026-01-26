@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { persistAttachmentsToEntity } from './shared/emailAttachmentPersistence.js';
-import { normalizeUtf8, hasEncodingCorruption } from './shared/utf8Normalizer.js';
+import { persistAttachmentsToEntity } from './shared/emailAttachmentPersistence.ts';
+import { normalizeUtf8, hasEncodingCorruption } from './shared/utf8Normalizer.ts';
 
 // Helper to build RFC 2822 MIME message with attachments
 function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inReplyTo, references, threadId, attachments }) {
