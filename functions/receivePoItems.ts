@@ -6,8 +6,17 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Allow admin, manager, and technicians
+    const isAdmin = user.role === 'admin';
+    const isManager = user.extended_role === 'manager';
+    const isTechnician = user.is_field_technician === true;
+    
+    if (!isAdmin && !isManager && !isTechnician) {
+      return Response.json({ error: 'Forbidden: Admin, manager, or technician access required' }, { status: 403 });
     }
 
     const { po_id, location_id, receive_date_time, items, mark_po_received, notes } = await req.json();
