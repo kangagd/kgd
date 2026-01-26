@@ -460,11 +460,36 @@ export default function Schedule() {
       const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
       const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
       return `${format(start, 'MMM d')} – ${format(end, 'MMM d, yyyy')}`;
-    }
-    return format(selectedDate, 'MMMM yyyy');
-  };
+      }
+      return format(selectedDate, 'MMMM yyyy');
+      };
 
-  const handleAddressClick = useCallback((job) => {
+      // Shared modals for both technicians and admins
+      const sharedModals = (
+      <>
+      {/* Job Modal */}
+      <EntityModal
+        open={!!modalJob}
+        onClose={() => setModalJob(null)}
+        title={`Job #${modalJob?.job_number}`}
+        onOpenFullPage={() => handleOpenFullJob(modalJob)}
+        fullPageLabel="Open Full Job"
+      >
+        {modalJob && <JobModalView job={modalJob} />}
+      </EntityModal>
+
+      {/* Booking Detail Drawer */}
+      <BookingDetail
+        open={!!selectedBooking && !showBookingEditor}
+        onClose={() => setSelectedBooking(null)}
+        booking={selectedBooking}
+        allJobs={expandedJobs}
+        allBookings={allBookings}
+      />
+      </>
+      );
+
+      const handleAddressClick = useCallback((job) => {
     if (job.latitude && job.longitude) {
       window.open(`https://www.google.com/maps/dir/?api=1&destination=${job.latitude},${job.longitude}`, '_blank');
     } else if (job.address_full) {
@@ -998,31 +1023,6 @@ export default function Schedule() {
       </div>
     );
   }
-
-  // Shared modals for both technicians and admins
-  const sharedModals = (
-    <>
-      {/* Job Modal */}
-      <EntityModal
-        open={!!modalJob}
-        onClose={() => setModalJob(null)}
-        title={`Job #${modalJob?.job_number}`}
-        onOpenFullPage={() => handleOpenFullJob(modalJob)}
-        fullPageLabel="Open Full Job"
-      >
-        {modalJob && <JobModalView job={modalJob} />}
-      </EntityModal>
-
-      {/* Booking Detail Drawer */}
-      <BookingDetail
-        open={!!selectedBooking && !showBookingEditor}
-        onClose={() => setSelectedBooking(null)}
-        booking={selectedBooking}
-        allJobs={expandedJobs}
-        allBookings={allBookings}
-      />
-    </>
-  );
 
   // For mobile technicians - with Day/Week/Month views
   if (isTechnician) {
