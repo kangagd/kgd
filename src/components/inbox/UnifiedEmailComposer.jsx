@@ -998,9 +998,23 @@ export default function UnifiedEmailComposer({
           devLog("[UnifiedEmailComposer] Failed to refetch messages:", err);
         }
 
-        // If linked to project, also refetch project activity/emails
+        // STEP 3: Optimistic UI update - if sent from project, immediately show thread link
         const projId = linkTarget?.type === "project" ? linkTarget.id : thread?.project_id;
-        if (projId) {
+        if (projId && linkTarget?.type === "project" && baseThreadId) {
+          try {
+            // Optimistically update thread to show project link
+            await queryClient.invalidateQueries({ queryKey: inboxKeys.thread(baseThreadId) });
+            await queryClient.invalidateQueries({ queryKey: inboxKeys.list() });
+            
+            // Refetch project emails to show sent message immediately
+            await queryClient.invalidateQueries({ queryKey: ["project", projId] });
+            await queryClient.refetchQueries({ queryKey: ["projectActivity", projId] });
+            await queryClient.refetchQueries({ queryKey: ["projectEmails", projId] });
+          } catch (err) {
+            devLog("[UnifiedEmailComposer] Failed to refetch project activity:", err);
+          }
+        } else if (projId) {
+          // Thread already linked to project - just refetch activity
           try {
             await queryClient.invalidateQueries({ queryKey: ["project", projId] });
             await queryClient.refetchQueries({ queryKey: ["projectActivity", projId] });
