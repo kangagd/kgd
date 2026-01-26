@@ -515,8 +515,8 @@ Deno.serve(async (req) => {
                 }
             }
             
-            // Update project activity when job is created
-            if (job.project_id) {
+            // Update project activity when job is created (skip for logistics jobs)
+            if (job.project_id && !isLogisticsJob) {
                 await updateProjectActivity(base44, job.project_id, 'Job Created');
             }
         } else if (action === 'update') {
@@ -707,8 +707,8 @@ Deno.serve(async (req) => {
                 }
             }
 
-            // Update project activity when job is updated
-            if (job.project_id) {
+            // Update project activity when job is updated (skip for logistics jobs)
+            if (job.project_id && !isLogisticsJob) {
                 await updateProjectActivity(base44, job.project_id, 'Job Updated');
             }
 

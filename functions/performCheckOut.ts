@@ -207,8 +207,8 @@ Deno.serve(async (req) => {
             console.error("Failed to complete visit (non-critical):", e);
         }
 
-        // Post-completion actions
-         if (job.project_id) {
+        // Post-completion actions (skip for logistics jobs - don't update project stage)
+         if (job.project_id && !job.is_logistics_job) {
              await updateProjectActivity(base44, job.project_id, 'Visit Completed');
          }
 
