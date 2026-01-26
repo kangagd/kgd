@@ -45,6 +45,16 @@ export default function BookingEditor({ open, onClose, booking, defaultDate, def
     },
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => base44.entities.Project.list(),
+  });
+
+  const { data: contracts = [] } = useQuery({
+    queryKey: ["contracts"],
+    queryFn: () => base44.entities.Contract.list(),
+  });
+
   useEffect(() => {
     const loadUser = async () => {
       const currentUser = await base44.auth.me();
@@ -316,7 +326,9 @@ export default function BookingEditor({ open, onClose, booking, defaultDate, def
               <div>
                 <Label>Link to Project (optional)</Label>
                 <GlobalProjectSearch
-                  onSelect={(project) => setFormData({ ...formData, related_project_id: project.id })}
+                  projects={projects}
+                  value={formData.related_project_id}
+                  onChange={(project) => setFormData({ ...formData, related_project_id: project?.id || "" })}
                   placeholder="Search projects..."
                 />
                 {formData.related_project_id && (
@@ -334,7 +346,9 @@ export default function BookingEditor({ open, onClose, booking, defaultDate, def
               <div>
                 <Label>Link to Contract (optional)</Label>
                 <GlobalContractSearch
-                  onSelect={(contract) => setFormData({ ...formData, related_contract_id: contract.id })}
+                  contracts={contracts}
+                  value={formData.related_contract_id}
+                  onChange={(contract) => setFormData({ ...formData, related_contract_id: contract?.id || "" })}
                   placeholder="Search contracts..."
                 />
                 {formData.related_contract_id && (
