@@ -73,6 +73,9 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
 
       const response = await base44.functions.invoke('receivePoItems', {
         po_id: poId,
+        job_id: window.location.search.includes('jobId=') 
+          ? new URLSearchParams(window.location.search).get('jobId') 
+          : null,
         location_id: receiveLocation,
         receive_date_time: receiveDateTime,
         items: itemsToReceive,
