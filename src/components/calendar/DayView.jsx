@@ -533,8 +533,12 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                         );
                       })}
 
-                      {/* Render all bookings (visible to all users) */}
+                      {/* Render bookings assigned to this technician */}
                       {dayBookings
+                        .filter(booking => {
+                          const assignedUserIds = booking.assigned_user_ids || [];
+                          return assignedUserIds.includes(technician.id);
+                        })
                         .map(booking => {
                           const startTime = new Date(booking.start_at);
                           const endTime = new Date(booking.end_at);
