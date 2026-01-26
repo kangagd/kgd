@@ -40,8 +40,8 @@ export default function BookingEditor({ open, onClose, booking, defaultDate, def
   const { data: technicians = [] } = useQuery({
     queryKey: ["technicians"],
     queryFn: async () => {
-      const users = await base44.entities.User.list();
-      return users.filter(u => u.is_field_technician === true);
+      const response = await base44.functions.invoke('getTechnicians');
+      return response.data?.technicians || [];
     },
   });
 
