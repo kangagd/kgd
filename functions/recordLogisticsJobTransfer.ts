@@ -252,20 +252,25 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Create StockMovement record (canonical schema)
+      // Create StockMovement record (canonical schema with job reference)
+      // Only decrement supplier location if NOT a supplier source (unlimited stock)
+      let finalFromLocationId = isSupplierSource ? null : finalSourceLocationId;
+      
       const movement = await base44.asServiceRole.entities.StockMovement.create({
         price_list_item_id: price_list_item_id,
         item_name: itemName,
         quantity: quantity,
-        from_location_id: finalSourceLocationId,
-        from_location_name: sourceLocation.name,
+        from_location_id: finalFromLocationId,
+        from_location_name: isSupplierSource ? sourceLocation.name : sourceLocation.name,
         to_location_id: destination_location_id,
         to_location_name: destLocation.name,
         performed_by_user_email: user.email,
         performed_by_user_name: user.full_name || user.display_name || user.email,
         performed_at: new Date().toISOString(),
-        source: 'logistics_job',
-        notes: notes ? `Job #${job.job_number}: ${notes}` : `Transferred via Logistics Job #${job.job_number}`
+        source: 'logistics_job_completion',
+        reference_type: 'job',
+        reference_id: job.id,
+        notes: notes ? `Job #${job.job_number}: ${notes}` : null
       });
 
       stockMovementIds.push(movement.id);
