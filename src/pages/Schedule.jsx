@@ -1091,6 +1091,7 @@ export default function Schedule() {
             </>
           )}
         </div>
+        {sharedModals}
       </div>
     );
   }
@@ -1281,17 +1282,6 @@ export default function Schedule() {
           isSubmitting={false}
         />
 
-        {/* Job Modal */}
-        <EntityModal
-          open={!!modalJob}
-          onClose={() => setModalJob(null)}
-          title={`Job #${modalJob?.job_number}`}
-          onOpenFullPage={() => handleOpenFullJob(modalJob)}
-          fullPageLabel="Open Full Job"
-        >
-          {modalJob && <JobModalView job={modalJob} />}
-        </EntityModal>
-
         {showAvailabilityManager && (
           <AvailabilityManager
             open={showAvailabilityManager}
@@ -1322,14 +1312,7 @@ export default function Schedule() {
           allBookings={allBookings}
         />
 
-        {/* Booking Detail Drawer */}
-        <BookingDetail
-          open={!!selectedBooking && !showBookingEditor}
-          onClose={() => setSelectedBooking(null)}
-          booking={selectedBooking}
-          allJobs={expandedJobs}
-          allBookings={allBookings}
-        />
+        {sharedModals}
       </div>
     </div>
   );
