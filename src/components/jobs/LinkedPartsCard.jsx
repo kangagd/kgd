@@ -130,7 +130,9 @@ export default function LinkedPartsCard({ job }) {
                   <Box className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-medium text-sm text-slate-900">{part.category}</div>
+                  <div className="font-medium text-sm text-slate-900">
+                    {part.item_name || part.category}
+                  </div>
                   {part.price_list_item_id && priceListMap[part.price_list_item_id] && (
                     <div className="text-xs text-slate-500 mb-0.5">
                       {priceListMap[part.price_list_item_id].item}
