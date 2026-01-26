@@ -128,9 +128,8 @@ Deno.serve(async (req) => {
       // Create StockMovement record (standardized schema with optional job reference override)
       const mvRefType = reference_type || 'purchase_order';
       const mvRefId = reference_id || po_id;
-      
-      await base44.asServiceRole.entities.StockMovement.create({
-        price_list_item_id: poLine.price_list_item_id,
+
+      const smData = {
         item_name: poLine.item_name || 'Unknown Item',
         quantity: qtyReceived,
         to_location_id: finalLocationId,
@@ -142,7 +141,14 @@ Deno.serve(async (req) => {
         reference_type: mvRefType,
         reference_id: mvRefId,
         notes: notes ? `PO ${po.po_reference || po.id}: ${notes}` : `Received from PO ${po.po_reference || po.id}`
-      });
+      };
+
+      // Only add price_list_item_id if it exists
+      if (poLine.price_list_item_id) {
+        smData.price_list_item_id = poLine.price_list_item_id;
+      }
+
+      await base44.asServiceRole.entities.StockMovement.create(smData);
 
       // Upsert InventoryQuantity (add to on-hand)
       const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
