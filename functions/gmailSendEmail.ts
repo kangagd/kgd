@@ -237,8 +237,10 @@ Deno.serve(async (req) => {
       references,
       attachments,
       project_id,
+      project_name,
       contract_id,
       // Project-sent email context
+      source_context,
       origin,
       project_customer_id,
       project_address,
