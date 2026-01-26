@@ -150,27 +150,29 @@ Deno.serve(async (req) => {
 
       await base44.asServiceRole.entities.StockMovement.create(smData);
 
-      // Upsert InventoryQuantity (add to on-hand)
-      const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
-        price_list_item_id: poLine.price_list_item_id,
-        location_id: finalLocationId
-      });
-
-      const currentQty = existing[0]?.quantity || 0;
-      const newQty = currentQty + qtyReceived;
-
-      if (existing[0]) {
-        await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
-          quantity: newQty
-        });
-      } else {
-        await base44.asServiceRole.entities.InventoryQuantity.create({
+      // Upsert InventoryQuantity (add to on-hand) - only if price_list_item_id exists
+      if (poLine.price_list_item_id) {
+        const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
           price_list_item_id: poLine.price_list_item_id,
-          location_id: finalLocationId,
-          quantity: newQty,
-          item_name: poLine.item_name,
-          location_name: destLocation.name
+          location_id: finalLocationId
         });
+
+        const currentQty = existing[0]?.quantity || 0;
+        const newQty = currentQty + qtyReceived;
+
+        if (existing[0]) {
+          await base44.asServiceRole.entities.InventoryQuantity.update(existing[0].id, {
+            quantity: newQty
+          });
+        } else {
+          await base44.asServiceRole.entities.InventoryQuantity.create({
+            price_list_item_id: poLine.price_list_item_id,
+            location_id: finalLocationId,
+            quantity: newQty,
+            item_name: poLine.item_name,
+            location_name: destLocation.name
+          });
+        }
       }
 
       // Check if line is fully received
