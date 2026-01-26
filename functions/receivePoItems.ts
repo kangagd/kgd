@@ -65,6 +65,43 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // TECHNICIAN GUARDRAIL: Enforce warehouse/vehicle-only destinations
+      if (isTechnician) {
+        // Resolve technician's assigned vehicle
+        const techVehicles = await base44.asServiceRole.entities.Vehicle.filter({
+          assigned_user_id: user.id,
+          is_active: { $ne: false }
+        });
+
+        if (techVehicles.length === 0) {
+          return Response.json({ 
+            error: 'Technicians must have an assigned vehicle to receive stock' 
+          }, { status: 403 });
+        }
+
+        const techVehicleLocs = await base44.asServiceRole.entities.InventoryLocation.filter({
+          type: 'vehicle',
+          vehicle_id: techVehicles[0].id,
+          is_active: { $ne: false }
+        });
+
+        const warehouses = await base44.asServiceRole.entities.InventoryLocation.filter({
+          type: 'warehouse',
+          is_active: { $ne: false }
+        });
+
+        const allowedLocations = [
+          ...techVehicleLocs.map(l => l.id),
+          ...(warehouses.length > 0 ? [warehouses[0].id] : [])
+        ];
+
+        if (!allowedLocations.includes(location_id)) {
+          return Response.json({ 
+            error: 'Technicians can only receive to their vehicle or the main warehouse' 
+          }, { status: 403 });
+        }
+      }
+
       // Update PO line qty_received
       const newQtyReceived = (poLine.qty_received || 0) + qtyReceived;
       const qtyOrdered = poLine.qty_ordered || 0;
