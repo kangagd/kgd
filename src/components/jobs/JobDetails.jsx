@@ -35,8 +35,8 @@ import { getLoadingBayLocationId } from "../utils/inventoryLocationLookup";
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
 import JobVisitSummary from "./JobVisitSummary";
-import LogisticsJobTransferSection from "../logistics/LogisticsJobTransferSection";
 import ReceivePoItemsModal from "../logistics/ReceivePoItemsModal";
+import TransferItemsModal from "../logistics/TransferItemsModal";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
@@ -4096,13 +4096,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       />
 
       {isLogisticsJob && (
-        <ReceivePoItemsModal
-          open={showProcessStockModal && (job.purchase_order_id || job.reference_type === 'purchase_order')}
-          onOpenChange={setShowProcessStockModal}
-          poId={job.purchase_order_id}
-          poReference={purchaseOrder?.po_number}
-          lineItems={purchaseOrderLines}
-        />
+        <>
+          <ReceivePoItemsModal
+            open={showProcessStockModal && (job.purchase_order_id || job.reference_type === 'purchase_order')}
+            onOpenChange={setShowProcessStockModal}
+            poId={job.purchase_order_id}
+            poReference={purchaseOrder?.po_number}
+            lineItems={purchaseOrderLines}
+          />
+          <TransferItemsModal
+            open={showProcessStockModal && !(job.purchase_order_id || job.reference_type === 'purchase_order')}
+            onOpenChange={setShowProcessStockModal}
+            jobId={job.id}
+            sourceLocation={sourceLocation}
+            destinationLocation={destinationLocation}
+            items={jobParts}
+          />
+        </>
       )}
 
       {/* Tasks Modal */}
