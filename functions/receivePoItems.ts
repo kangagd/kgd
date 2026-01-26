@@ -19,13 +19,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin, manager, or technician access required' }, { status: 403 });
     }
 
-    const { po_id, location_id, receive_date_time, items, mark_po_received, notes, reference_type, reference_id, destination_location_id } = await req.json();
+    const { po_id, location_id, receive_date_time, items, mark_po_received, notes, reference_type, reference_id, destination_location_id, job_id } = await req.json();
     
     // Support both location_id and destination_location_id for backwards compatibility
     const finalLocationId = location_id || destination_location_id;
 
     if (!po_id || !finalLocationId || !items || items.length === 0) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Validate and default performed_at timestamp
+    let performedAt = receive_date_time;
+    try {
+      if (performedAt) {
+        new Date(performedAt).toISOString(); // Validate ISO format
+      } else {
+        performedAt = new Date().toISOString();
+      }
+    } catch {
+      performedAt = new Date().toISOString();
     }
 
     // Fetch PO and its line items
@@ -125,7 +137,7 @@ Deno.serve(async (req) => {
         to_location_name: destLocation.name,
         performed_by_user_email: user.email,
         performed_by_user_name: user.full_name || user.display_name || user.email,
-        performed_at: receive_date_time,
+        performed_at: performedAt,
         source: 'po_receipt',
         reference_type: mvRefType,
         reference_id: mvRefId,
@@ -148,7 +160,7 @@ Deno.serve(async (req) => {
       } else {
         await base44.asServiceRole.entities.InventoryQuantity.create({
           price_list_item_id: poLine.price_list_item_id,
-          location_id: location_id,
+          location_id: finalLocationId,
           quantity: newQty,
           item_name: poLine.item_name,
           location_name: destLocation.name
@@ -191,6 +203,18 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.PurchaseOrder.update(po_id, {
         status: newStatus
       });
+    }
+
+    // Update logistics job stock_transfer_status if job_id provided
+    if (job_id && totalItemsReceived > 0) {
+      try {
+        await base44.asServiceRole.entities.Job.update(job_id, {
+          stock_transfer_status: 'completed'
+        });
+      } catch (error) {
+        console.warn('Failed to update job stock_transfer_status:', error);
+        // Non-blocking - continue with success response
+      }
     }
 
     // Determine success status
