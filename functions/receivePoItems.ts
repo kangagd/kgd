@@ -69,11 +69,10 @@ Deno.serve(async (req) => {
       if (qtyReceived <= 0) continue;
 
       // GUARDRAIL: Check if line is inventory-tracked (allow custom items from logistics jobs)
-      const trackCheck = checkInventoryTrackability(poLine);
-      const isCustomItem = !poLine.price_list_item_id;
       const isLogisticsJob = job_id && reference_type === 'purchase_order';
+      const trackCheck = checkInventoryTrackability(poLine, isLogisticsJob);
 
-      if (!trackCheck.isInventoryTracked && !isLogisticsJob) {
+      if (!trackCheck.isInventoryTracked) {
         skippedLines.push({
           po_line_id: receiveItem.po_line_id,
           item_name: poLine.item_name || 'Unknown',
