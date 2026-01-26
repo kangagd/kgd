@@ -2472,7 +2472,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                                <Checkbox checked={checkedItems[part.id] || false} disabled className="opacity-50" />
                                <div className="flex-1 min-w-0 flex items-center gap-2">
                                  <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Item'}</span>
-                                 {part.primary_purchase_order_id ? (
+                                 {(part.primary_purchase_order_id || part.purchase_order_id) ? (
                                    <Badge className="bg-blue-100 text-blue-700 text-[11px] font-semibold">PO</Badge>
                                  ) : (
                                    <Badge className="bg-green-100 text-green-700 text-[11px] font-semibold">In Stock</Badge>
