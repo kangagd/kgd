@@ -71,11 +71,14 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
         throw new Error('Please enter quantities to receive for at least one item');
       }
 
+      const jobId = window.location.search.includes('jobId=') 
+        ? new URLSearchParams(window.location.search).get('jobId') 
+        : null;
+      
       const response = await base44.functions.invoke('receivePoItems', {
         po_id: poId,
-        job_id: window.location.search.includes('jobId=') 
-          ? new URLSearchParams(window.location.search).get('jobId') 
-          : null,
+        job_id: jobId,
+        reference_type: jobId ? 'purchase_order' : undefined,
         location_id: receiveLocation,
         receive_date_time: receiveDateTime,
         items: itemsToReceive,
