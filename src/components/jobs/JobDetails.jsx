@@ -1481,28 +1481,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   <PackageMinus className="w-4 h-4" />
                 </Button>
                 {isLogisticsJob && (
-                  <>
-                    <Badge className={`${
-                      stock_transfer_status === 'completed' ? 'bg-green-100 text-green-800' :
-                      stock_transfer_status === 'pending' ? 'bg-amber-100 text-amber-800' :
-                      stock_transfer_status === 'skipped' ? 'bg-gray-100 text-gray-800' :
-                      'bg-slate-100 text-slate-700'
-                    } text-[11px] font-medium px-2 py-1`}>
-                      {stock_transfer_status === 'completed' ? 'Stock processed' :
-                       stock_transfer_status === 'pending' ? 'Stock pending' :
-                       stock_transfer_status === 'skipped' ? 'Stock skipped' :
-                       'Stock not processed'}
-                    </Badge>
-                    {stock_transfer_status !== 'completed' && (
-                      <Button
-                        onClick={() => setShowProcessStockModal(true)}
-                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 px-4 rounded-lg text-xs"
-                        title="Process Stock">
-                        <Package className="w-4 h-4 mr-1.5" />
-                        Process Stock
-                      </Button>
-                    )}
-                  </>
+                  <Badge className={`${
+                    stock_transfer_status === 'completed' ? 'bg-green-100 text-green-800' :
+                    stock_transfer_status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                    stock_transfer_status === 'skipped' ? 'bg-gray-100 text-gray-800' :
+                    'bg-slate-100 text-slate-700'
+                  } text-[11px] font-medium px-2 py-1`}>
+                    {stock_transfer_status === 'completed' ? 'Stock processed' :
+                     stock_transfer_status === 'pending' ? 'Stock pending' :
+                     stock_transfer_status === 'skipped' ? 'Stock skipped' :
+                     'Stock not processed'}
+                  </Badge>
                 )}
               </div>
           </div>
@@ -2503,7 +2492,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Stock Processing Status</CardTitle>
                      </CardHeader>
-                     <CardContent className="p-4">
+                     <CardContent className="p-4 space-y-3">
                        {stock_transfer_status === 'completed' ? (
                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                            <div className="flex items-center gap-2 text-green-700 mb-2">
@@ -2519,7 +2508,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                            <p className="text-[14px] text-amber-800"><strong>Stock transfer skipped</strong> for this job.</p>
                          </div>
                        ) : (
-                         <p className="text-[14px] text-[#6B7280]">No inventory updates have been applied yet. Click <strong>Process Stock</strong> to proceed.</p>
+                         <p className="text-[14px] text-[#6B7280]">No inventory updates have been applied yet. Click <strong>Process Stock</strong> below to proceed.</p>
+                       )}
+                       {stock_transfer_status !== 'completed' && (
+                         <Button
+                           onClick={() => setShowProcessStockModal(true)}
+                           className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-10 rounded-lg text-sm"
+                           title="Process Stock">
+                           <Package className="w-4 h-4 mr-2" />
+                           Process Stock
+                         </Button>
                        )}
                      </CardContent>
                    </Card>
