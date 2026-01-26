@@ -2442,8 +2442,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                          <div className="space-y-2">
                            {purchaseOrderLines.map((line) => (
                              <div key={line.id} className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
-                               <div className="flex-1 min-w-0">
+                               <div className="flex-1 min-w-0 flex items-center gap-2">
                                  <div className="text-[14px] font-medium text-[#111827]">{line.item_name || 'Item'}</div>
+                                 <Badge className="bg-blue-100 text-blue-700 text-[11px] font-semibold">PO-{purchaseOrder?.po_number}</Badge>
                                </div>
                                <div className="flex gap-4 ml-4 text-[12px] text-[#6B7280] whitespace-nowrap">
                                  <div className="text-right">
@@ -2469,8 +2470,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                            {jobParts.map((part) => (
                              <div key={part.id} className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-lg">
                                <Checkbox checked={checkedItems[part.id] || false} disabled className="opacity-50" />
-                               <div className="flex-1 min-w-0">
+                               <div className="flex-1 min-w-0 flex items-center gap-2">
                                  <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Item'}</span>
+                                 {part.primary_purchase_order_id ? (
+                                   <Badge className="bg-blue-100 text-blue-700 text-[11px] font-semibold">PO</Badge>
+                                 ) : (
+                                   <Badge className="bg-green-100 text-green-700 text-[11px] font-semibold">In Stock</Badge>
+                                 )}
                                </div>
                                {part.quantity_required && (
                                  <div className="text-right whitespace-nowrap">
@@ -2483,9 +2489,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                            {jobSamples.map((sample) => (
                              <div key={sample.id} className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-lg">
                                <Checkbox checked={checkedItems[sample.id] || false} disabled className="opacity-50" />
-                               <div className="flex-1 min-w-0">
+                               <div className="flex-1 min-w-0 flex items-center gap-2">
                                  <span className="text-[14px] font-medium text-[#111827]">{sample.name || 'Sample'}</span>
-                                 <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
+                                 <Badge className="bg-purple-100 text-purple-700 text-[11px] font-semibold">Sample</Badge>
                                </div>
                              </div>
                            ))}
