@@ -26,16 +26,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    // Accept both 'source' (new) and 'movementType' (legacy) params
-    let finalSource = source || movementType || 'transfer';
-    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage'];
+    // moveInventory is for transfers and job usage only (no legacy movementType support)
+    let finalSource = source || 'transfer';
+    const validSources = ['transfer', 'job_usage'];
     if (!validSources.includes(finalSource)) {
-      finalSource = 'transfer'; // Coerce invalid values to transfer
+      return Response.json({ 
+        error: `Invalid source "${finalSource}". moveInventory supports: ${validSources.join(', ')}. Use receivePoItems for PO receipt or adjustStockCorrection for admin corrections.` 
+      }, { status: 400 });
     }
 
-    // Validate transfer requires both locations
+    // Transfer requires both locations; job_usage requires only source
     if (finalSource === 'transfer' && (!fromLocationId || !toLocationId)) {
       return Response.json({ error: 'Transfer requires both from and to locations' }, { status: 400 });
+    }
+    
+    if (finalSource === 'job_usage' && !fromLocationId) {
+      return Response.json({ error: 'Job usage requires source location' }, { status: 400 });
     }
 
     // TECHNICIAN AUTHORIZATION: enforce warehouse <-> own vehicle only
