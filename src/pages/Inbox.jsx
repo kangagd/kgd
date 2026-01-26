@@ -144,8 +144,15 @@ export default function Inbox() {
         devLog(`[Inbox] queryFn RETURNING ${result.length} threads`);
         return result;
       } catch (error) {
+        console.error(`[Inbox] Backend error - status: ${error.response?.status}, message: ${error.message}`);
+        
+        if (error.response?.status === 403) {
+          toast.error("Inbox is admin/manager only (permission).");
+        } else {
+          toast.error("Inbox failed to load (backend error).");
+        }
+        
         devLog(`[Inbox] Error fetching threads:`, error);
-        toast.error("Failed to load threads");
         return [];
       }
     },
