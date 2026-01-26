@@ -104,6 +104,14 @@ export default function Dashboard() {
       });
       return jobs.filter(job => {
         if (!job.scheduled_date || job.is_logistics_job) return false;
+        
+        // Exclude logistics jobs by job type name
+        const logisticsKeywords = ['material pick', 'stock –', 'supplier pickup', 'supplier delivery', 'sample dropoff', 'sample pickup'];
+        const jobTypeLower = (job.job_type_name || job.job_type || '').toLowerCase();
+        if (logisticsKeywords.some(keyword => jobTypeLower.includes(keyword))) {
+          return false;
+        }
+        
         const scheduledDate = new Date(job.scheduled_date);
         return scheduledDate >= new Date() && scheduledDate <= sevenDaysFromNow;
       });
