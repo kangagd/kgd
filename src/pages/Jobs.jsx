@@ -293,11 +293,22 @@ export default function Jobs() {
     }
   }, [jobIdFromUrl, directJob]);
 
-  const isAdmin = user?.role === 'admin';
-  const isManager = user?.role === 'manager';
+  // Get effective role (matches layout logic)
+  const getEffectiveRole = (user) => {
+    if (!user) return 'viewer';
+    if (user.role === 'admin') return 'admin';
+    if (user.extended_role === 'manager') return 'manager';
+    if (user.extended_role === 'technician' || user.is_field_technician === true) return 'technician';
+    if (user.extended_role === 'viewer') return 'viewer';
+    return 'viewer';
+  };
+  
+  const effectiveRole = getEffectiveRole(user);
+  const isAdmin = effectiveRole === 'admin';
+  const isManager = effectiveRole === 'manager';
   const isAdminOrManager = isAdmin || isManager;
-  const isTechnician = user?.is_field_technician && !isAdminOrManager;
-  const isViewer = user?.role === 'viewer';
+  const isTechnician = effectiveRole === 'technician';
+  const isViewer = effectiveRole === 'viewer';
   const canCreateJobs = isAdminOrManager;
 
   // Memoized job filtering and sorting to avoid re-computation on every render
