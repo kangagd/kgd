@@ -1966,23 +1966,25 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 </Button>
             }
               <Button
-              variant="outline"
-              onClick={() => setShowAssistant(true)}
-              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-[#FAE008]/10 hover:border-[#FAE008] transition-all rounded-lg">
+               variant="outline"
+               onClick={() => setShowAssistant(true)}
+               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-[#FAE008]/10 hover:border-[#FAE008] transition-all rounded-lg">
 
-                <Sparkles className="w-5 h-5 text-[#111827]" />
-                <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">AI</span>
-              </Button>
-              
-              <Button
-              variant="outline"
-              onClick={() => setShowItemsUsedModal(true)}
-              className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-[#FAE008]/10 hover:border-[#FAE008] transition-all rounded-lg col-span-4 mt-2">
-                <div className="flex items-center gap-2">
-                  <PackageMinus className="w-4 h-4 text-[#111827]" />
-                  <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Record Items Used</span>
-                </div>
-              </Button>
+                 <Sparkles className="w-5 h-5 text-[#111827]" />
+                 <span className="text-[10px] font-medium text-[#111827] leading-[1.35]">AI</span>
+               </Button>
+
+               {!isLogisticsJob && (
+               <Button
+               variant="outline"
+               onClick={() => setShowItemsUsedModal(true)}
+               className="flex flex-col items-center gap-1 h-auto py-3 hover:bg-[#FAE008]/10 hover:border-[#FAE008] transition-all rounded-lg col-span-4 mt-2">
+                 <div className="flex items-center gap-2">
+                   <PackageMinus className="w-4 h-4 text-[#111827]" />
+                   <span className="text-[12px] font-medium text-[#111827] leading-[1.35]">Record Items Used</span>
+                 </div>
+               </Button>
+               )}
             </div>
           </div>
         }
