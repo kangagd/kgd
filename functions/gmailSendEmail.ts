@@ -721,7 +721,8 @@ Deno.serve(async (req) => {
       contract_id: resolvedContractId,
       labelIds: result.labelIds,
       attachment_persist: attachmentPersistResult,
-      attempt_id: attemptId
+      attempt_id: attemptId,
+      thread_link_conflict: threadLinkConflict
     });
 
   } catch (error) {
