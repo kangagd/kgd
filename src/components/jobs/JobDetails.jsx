@@ -2584,15 +2584,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </div>
                   )}
 
-                  {/* Logistics Transfer Section */}
-                  {job.logistics_purpose !== 'sample_dropoff' && job.logistics_purpose !== 'sample_pickup' && (
-                    <LogisticsJobTransferSection 
-                      job={job}
-                      sourceLocation={sourceLocation}
-                      destinationLocation={destinationLocation}
-                      isAdmin={isAdmin}
-                    />
-                  )}
+
 
                   {/* Sample Outcome Selector - Only for sample_pickup jobs */}
                   {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose === 'sample_pickup' && (
