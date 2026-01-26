@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
           ...(warehouses.length > 0 ? [warehouses[0].id] : [])
         ];
 
-        if (!allowedLocations.includes(location_id)) {
+        if (!allowedLocations.includes(finalLocationId)) {
           return Response.json({ 
             error: 'Technicians can only receive to their vehicle or the main warehouse' 
           }, { status: 403 });
