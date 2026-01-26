@@ -62,18 +62,16 @@ Deno.serve(async (req) => {
     }
     const deducted = [];
 
-    // For each line item, decrement from vehicle inventory via canonical backend
+    // For each line item, decrement from vehicle inventory via canonical moveInventory
+    // moveInventory is the CANONICAL writer that handles InventoryQuantity + StockMovement ledger
     for (const lineItem of lineItems) {
       try {
-        // Call canonical recordStockMovement function (NEW SCHEMA)
-        // This handles InventoryQuantity updates + StockMovement audit ledger
-        const response = await base44.asServiceRole.functions.invoke('recordStockMovement', {
+        const response = await base44.asServiceRole.functions.invoke('moveInventory', {
           priceListItemId: lineItem.price_list_item_id,
           fromLocationId: vehicleLocation.id,
-          toLocationId: null, // Stock out (no destination)
+          toLocationId: null, // Stock out (no destination in vehicle)
           quantity: lineItem.quantity,
-          movementType: 'job_usage',
-          jobId: job_id,
+          source: 'job_usage',
           notes: `Used on job #${job.job_number}`
         });
 
