@@ -385,6 +385,16 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                       >
                         🧭 Navigate
                       </Button>
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] border-2 border-[#FAE008] font-semibold min-h-[44px]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.location.href = `/CheckIn?jobId=${job.id}`;
+                        }}
+                      >
+                        ✓ Check In
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
