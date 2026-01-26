@@ -138,7 +138,7 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
 
   const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
 
-  // Determine hour range
+  // Determine hour range (include bookings)
   let startHour = 7;
   let endHour = 17;
   
@@ -148,6 +148,17 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
       startHour = Math.min(startHour, Math.floor(jobTime));
       const jobDuration = job.expected_duration || 1;
       endHour = Math.max(endHour, Math.ceil(jobTime + jobDuration));
+    }
+  });
+
+  dayBookings.forEach(booking => {
+    if (booking.start_at && booking.end_at) {
+      const startTime = new Date(booking.start_at);
+      const endTime = new Date(booking.end_at);
+      const startHourDecimal = startTime.getHours() + startTime.getMinutes() / 60;
+      const endHourDecimal = endTime.getHours() + endTime.getMinutes() / 60;
+      startHour = Math.min(startHour, Math.floor(startHourDecimal));
+      endHour = Math.max(endHour, Math.ceil(endHourDecimal));
     }
   });
 
