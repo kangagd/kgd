@@ -119,8 +119,9 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         throw new Error('Please select at least one item to transfer');
       }
 
-      const response = await base44.functions.invoke('recordLogisticsJobTransfer', {
+      const response = await base44.functions.invoke('processLogisticsJobStockActions', {
         job_id: job.id,
+        mode: 'transfer',
         source_location_id: sourceLocation?.id,
         destination_location_id: destinationLocation?.id,
         items: itemsToTransfer,
