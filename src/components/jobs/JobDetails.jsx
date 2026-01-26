@@ -2404,7 +2404,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                            <div>
                              <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Purchase Order</div>
                              <div className="text-[14px] text-[#111827]">
-                               {purchaseOrder ? `PO-${purchaseOrder.po_number}` : 'Loading...'} {purchaseOrder?.supplier_name && `• ${purchaseOrder.supplier_name}`}
+                               {purchaseOrder ? `PO-${purchaseOrder.po_reference || purchaseOrder.po_number || purchaseOrder.id}` : 'Loading...'} {purchaseOrder?.supplier_name && `• ${purchaseOrder.supplier_name}`}
                              </div>
                            </div>
                          )}
