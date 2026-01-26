@@ -1,4 +1,4 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from './shared/sdk.ts';
 
 /**
  * Paginated email threads: returns threads before a given date
