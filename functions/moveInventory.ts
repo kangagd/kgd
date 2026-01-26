@@ -1,5 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+/**
+ * CANONICAL INVENTORY WRITE PATH
+ *
+ * InventoryQuantity is the SINGLE source of truth for on-hand stock.
+ * This function is one of the ONLY allowed writers.
+ *
+ * Rules:
+ * - Every InventoryQuantity mutation MUST create a StockMovement record
+ * - StockMovement is immutable (audit ledger)
+ * - UI components must NEVER write InventoryQuantity directly
+ * - recordStockMovement MUST NOT mutate inventory
+ *
+ * Approved writers:
+ * - receivePoItems        (PO receipts)
+ * - moveInventory         (location transfers) ← THIS FUNCTION
+ * - adjustStockCorrection (admin corrections)
+ * - autoDeductJobUsage    (job consumption)
+ * - seedBaselineStock     (day-0 initialization)
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -15,10 +34,7 @@ Deno.serve(async (req) => {
       fromLocationId, 
       toLocationId, 
       quantity, 
-      movementType = null,
-      source = null,
-      jobId = null,
-      vehicleId = null,
+      source = 'transfer',
       notes = null 
     } = body;
 
@@ -26,16 +42,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    // Accept both 'source' (new) and 'movementType' (legacy) params
-    let finalSource = source || movementType || 'transfer';
-    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage'];
-    if (!validSources.includes(finalSource)) {
-      finalSource = 'transfer'; // Coerce invalid values to transfer
+    // moveInventory is transfer-only: reject any other source
+    if (source !== 'transfer') {
+      return Response.json(
+        { 
+          error: 'moveInventory only supports source="transfer". For PO receipt, use receivePoItems. For admin correction, use adjustStockCorrection. For job usage, use autoDeductJobUsage.' 
+        }, 
+        { status: 400 }
+      );
     }
 
-    // Validate transfer requires both locations
-    if (finalSource === 'transfer' && (!fromLocationId || !toLocationId)) {
-      return Response.json({ error: 'Transfer requires both from and to locations' }, { status: 400 });
+    // Transfers require both from and to locations
+    if (!fromLocationId || !toLocationId) {
+      return Response.json({ error: 'Transfer requires both source and destination locations' }, { status: 400 });
     }
 
     // TECHNICIAN AUTHORIZATION: enforce warehouse <-> own vehicle only
