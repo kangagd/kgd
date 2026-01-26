@@ -113,19 +113,22 @@ Deno.serve(async (req) => {
         qty_received: newQtyReceived
       });
 
-      // Create StockMovement record (standardized schema)
+      // Create StockMovement record (standardized schema with optional job reference override)
+      const mvRefType = reference_type || 'purchase_order';
+      const mvRefId = reference_id || po_id;
+      
       await base44.asServiceRole.entities.StockMovement.create({
         price_list_item_id: poLine.price_list_item_id,
         item_name: poLine.item_name || 'Unknown Item',
         quantity: qtyReceived,
-        to_location_id: location_id,
+        to_location_id: finalLocationId,
         to_location_name: destLocation.name,
         performed_by_user_email: user.email,
         performed_by_user_name: user.full_name || user.display_name || user.email,
         performed_at: receive_date_time,
         source: 'po_receipt',
-        reference_type: 'purchase_order',
-        reference_id: po_id,
+        reference_type: mvRefType,
+        reference_id: mvRefId,
         notes: notes ? `PO ${po.po_reference || po.id}: ${notes}` : `Received from PO ${po.po_reference || po.id}`
       });
 
