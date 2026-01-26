@@ -35,9 +35,12 @@ Deno.serve(async (req) => {
             filter.scheduled_date = { $lte: date_to };
         }
 
-        // Technicians see only their own jobs
+        // Technicians see only their own jobs (handle both string and array assigned_to)
         if (isTechnician && !isAdmin && !isManager) {
-            filter.assigned_to = user.email;
+            filter.$or = [
+                { assigned_to: user.email },
+                { assigned_to: { $in: [user.email] } }
+            ];
         }
 
         // Use service role to bypass RLS
