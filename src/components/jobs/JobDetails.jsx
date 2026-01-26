@@ -2631,32 +2631,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     </Card>
                   )}
 
-                  {/* Logistics Outcome Selector */}
-                  {!activeCheckIn && job.status !== 'Completed' && job.logistics_purpose !== 'sample_pickup' && job.logistics_purpose !== 'sample_dropoff' && (
-                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
-                      <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
-                          Stock Outcome
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        <Label className="block text-[13px] md:text-[14px] font-medium text-[#4B5563] mb-1.5">
-                          Where should stock go after completion?
-                        </Label>
-                        <Select value={logisticsOutcome} onValueChange={handleLogisticsOutcomeChange}>
-                          <SelectTrigger className="h-11 text-sm border-2 border-slate-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 rounded-xl font-medium">
-                            <SelectValue placeholder="Select destination" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No stock movement yet</SelectItem>
-                            <SelectItem value="in_storage">Move to Storage</SelectItem>
-                            <SelectItem value="in_vehicle">Move to Vehicle</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </CardContent>
-                    </Card>
-                  )}
-
                   {/* Show applied outcome for completed jobs */}
                   {job.status === 'Completed' && job.sample_outcome && job.sample_outcome !== 'return_to_storage' && job.logistics_purpose === 'sample_pickup' && (
                     <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
@@ -2664,18 +2638,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                         <Package className="w-4 h-4" />
                         <span className="text-sm font-semibold">
                           Samples moved to {job.sample_outcome === 'move_to_vehicle' ? 'vehicle' : 'storage'} (transferring...)
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Show applied outcome for completed stock jobs */}
-                  {job.status === 'Completed' && job.logistics_outcome && job.logistics_outcome !== 'none' && job.logistics_purpose !== 'sample_pickup' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-green-700">
-                        <Package className="w-4 h-4" />
-                        <span className="text-sm font-semibold">
-                          Outcome applied: {job.logistics_outcome === 'in_storage' ? 'In Storage' : 'In Vehicle'} (PO updated & parts moved)
                         </span>
                       </div>
                     </div>
