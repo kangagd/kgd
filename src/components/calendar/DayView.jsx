@@ -257,7 +257,38 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
 
     return (
       <div className="space-y-2">
-        {myJobs.length === 0 ? (
+        {/* Bookings */}
+        {dayBookings.map(booking => (
+          <Card 
+            key={booking.id}
+            className="border-2 border-blue-300 shadow-sm hover:border-blue-400 transition-all cursor-pointer"
+            onClick={() => onBookingClick?.(booking)}
+          >
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <Badge className="bg-blue-500 text-white hover:bg-blue-500 border-0 font-bold text-sm px-3 py-1.5 rounded-lg">
+                    <Calendar className="w-4 h-4 mr-1.5" />
+                    {format(new Date(booking.start_at), 'h:mm a')} - {format(new Date(booking.end_at), 'h:mm a')}
+                  </Badge>
+                  <Badge className={getBookingTypeColor(booking.type) + " text-xs px-2.5 py-1"}>
+                    {getBookingTypeLabel(booking.type)}
+                  </Badge>
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#111827] leading-tight mb-1">
+                    {booking.title}
+                  </h3>
+                  {booking.description && (
+                    <p className="text-sm text-[#6B7280]">{booking.description}</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+
+        {myJobs.length === 0 && dayBookings.length === 0 ? (
           <Card className="p-8 text-center">
             <p className="text-[#6B7280] text-sm">No jobs scheduled for today</p>
           </Card>
