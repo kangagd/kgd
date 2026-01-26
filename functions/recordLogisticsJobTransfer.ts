@@ -37,10 +37,41 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // GUARDRAIL: Do NOT add admin-only check here. StockMovement entity RLS 
-    // already restricts creation to admin/manager/technician. Duplicating the 
-    // check here breaks non-admin users from recording logistics job transfers.
-    // If access should be restricted, modify StockMovement RLS instead.
+    // AUTH GUARDRAIL: Enforce permissions for transfer recording
+    const isAdmin = user.role === 'admin';
+    const isManager = user.extended_role === 'manager';
+    const isTechnician = user.is_field_technician === true || user.extended_role === 'technician';
+    
+    if (!isAdmin && !isManager && !isTechnician) {
+      return Response.json({ error: 'Forbidden: Only admin, manager, or technician can record transfers' }, { status: 403 });
+    }
+    
+    // TECHNICIAN CONSTRAINT: Limit to vehicle ↔ warehouse transfers only
+    if (isTechnician && !isAdmin && !isManager) {
+      // Get technician's vehicle and vehicle inventory location
+      const vehicles = await base44.asServiceRole.entities.Vehicle.filter({
+        assigned_user_id: user.id,
+        is_active: true
+      });
+      
+      if (vehicles.length !== 1) {
+        return Response.json({ 
+          error: 'Technician must have exactly one active assigned vehicle to transfer stock' 
+        }, { status: 403 });
+      }
+      
+      const techVehicle = vehicles[0];
+      const vehicleLocations = await base44.asServiceRole.entities.InventoryLocation.filter({
+        type: 'vehicle',
+        vehicle_id: techVehicle.id
+      });
+      
+      if (vehicleLocations.length === 0) {
+        return Response.json({ 
+          error: 'Vehicle has no inventory location configured' 
+        }, { status: 400 });
+      }
+    }
 
     const { job_id, source_location_id, destination_location_id, items, notes } = await req.json();
 
