@@ -1,4 +1,4 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from './shared/sdk.ts';
 import { updateProjectActivity } from './updateProjectActivity.js';
 import { normalizeParams } from './shared/parameterNormalizer.js';
 
