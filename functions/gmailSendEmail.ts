@@ -281,14 +281,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Inherit project_id/contract_id from thread if not explicitly provided
+    // Resolve project_id/contract_id: explicit payload takes priority over thread inheritance
     let resolvedProjectId = project_id;
     let resolvedContractId = contract_id;
+    let threadLinkConflict = false;
     
     if (thread_id && !resolvedProjectId && !resolvedContractId) {
       try {
         const thread = await base44.asServiceRole.entities.EmailThread.get(thread_id);
         if (thread) {
+          // Conflict detection: thread already linked to different entity
+          if (project_id && thread.project_id && thread.project_id !== project_id) {
+            threadLinkConflict = true;
+            console.warn(`[gmailSendEmail] Conflict: thread ${thread_id} linked to project ${thread.project_id}, payload wants ${project_id}`);
+          }
+          if (contract_id && thread.contract_id && thread.contract_id !== contract_id) {
+            threadLinkConflict = true;
+            console.warn(`[gmailSendEmail] Conflict: thread ${thread_id} linked to contract ${thread.contract_id}, payload wants ${contract_id}`);
+          }
+          
+          // Inherit if not explicitly provided
           if (thread.contract_id) {
             resolvedContractId = thread.contract_id;
             console.log(`[gmailSendEmail] Inherited contract_id=${resolvedContractId} from thread`);
