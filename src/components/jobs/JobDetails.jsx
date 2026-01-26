@@ -1472,14 +1472,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   </>
                 )}
                 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowItemsUsedModal(true)}
-                  className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                  title="Items Used">
-                  <PackageMinus className="w-4 h-4" />
-                </Button>
+                {!isLogisticsJob && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowItemsUsedModal(true)}
+                    className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                    title="Items Used">
+                    <PackageMinus className="w-4 h-4" />
+                  </Button>
+                )}
                 {isLogisticsJob && (
                   <Badge className={`${
                     stock_transfer_status === 'completed' ? 'bg-green-100 text-green-800' :
