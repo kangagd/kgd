@@ -85,6 +85,17 @@ Deno.serve(async (req) => {
     if (!job) {
         return Response.json({ error: 'Job not found' }, { status: 404 });
     }
+    
+    // IDEMPOTENCY: If transfer already completed, return success without duplication
+    if (job.stock_transfer_status === 'completed') {
+      return Response.json({
+        success: true,
+        message: 'Transfer already completed for this logistics job',
+        batch_id: job.linked_stock_movement_batch_id,
+        items_transferred: 0,
+        already_completed: true
+      });
+    }
 
     if (!finalSourceLocationId && job.purchase_order_id) {
         try {
