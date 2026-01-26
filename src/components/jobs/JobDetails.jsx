@@ -36,6 +36,7 @@ import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
 import JobVisitSummary from "./JobVisitSummary";
 import LogisticsJobTransferSection from "../logistics/LogisticsJobTransferSection";
+import ReceivePoItemsModal from "../logistics/ReceivePoItemsModal";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
@@ -210,6 +211,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
+  const [showProcessStockModal, setShowProcessStockModal] = useState(false);
   const queryClient = useQueryClient();
 
   // Sync checkedItems state when job data changes
@@ -1477,6 +1479,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   title="Items Used">
                   <PackageMinus className="w-4 h-4" />
                 </Button>
+                {isLogisticsJob && stock_transfer_status !== 'completed' && (
+                  <Button
+                    onClick={() => setShowProcessStockModal(true)}
+                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 px-4 rounded-lg text-xs"
+                    title="Process Stock">
+                    <Package className="w-4 h-4 mr-1.5" />
+                    Process Stock
+                  </Button>
+                )}
               </div>
           </div>
 
