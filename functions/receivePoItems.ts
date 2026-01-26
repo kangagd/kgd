@@ -68,9 +68,12 @@ Deno.serve(async (req) => {
       const qtyReceived = receiveItem.qty_received || 0;
       if (qtyReceived <= 0) continue;
 
-      // GUARDRAIL: Check if line is inventory-tracked
+      // GUARDRAIL: Check if line is inventory-tracked (allow custom items from logistics jobs)
       const trackCheck = checkInventoryTrackability(poLine);
-      if (!trackCheck.isInventoryTracked) {
+      const isCustomItem = !poLine.price_list_item_id;
+      const isLogisticsJob = job_id && reference_type === 'purchase_order';
+
+      if (!trackCheck.isInventoryTracked && !isLogisticsJob) {
         skippedLines.push({
           po_line_id: receiveItem.po_line_id,
           item_name: poLine.item_name || 'Unknown',
