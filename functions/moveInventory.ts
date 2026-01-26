@@ -176,17 +176,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Log the movement (canonical schema)
-    let referenceType = null;
-    let referenceId = null;
-    
-    if (jobId) {
-      referenceType = 'job';
-      referenceId = jobId;
-    } else if (vehicleId) {
-      referenceType = 'vehicle_transfer';
-      referenceId = vehicleId;
-    }
+    // Log the movement (canonical schema) - no reference for pure transfers
+    const referenceType = null;
+    const referenceId = null;
 
     await base44.entities.StockMovement.create({
       price_list_item_id: priceListItemId,
