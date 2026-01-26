@@ -363,9 +363,12 @@ export default function Leads() {
                         {formatCurrency(lead.primary_quote_value)}
                       </TableCell>
 
-                      {/* Last Customer Activity */}
+                      {/* Last Activity */}
                       <TableCell className="text-muted-foreground">
-                        {formatDaysSince(lead.days_since_customer)}
+                        <div className="flex flex-col text-xs">
+                          <span>Customer: {formatDaysSince(lead.days_since_customer)}</span>
+                          <span>Internal: {formatDaysSince(lead.days_since_internal)}</span>
+                        </div>
                       </TableCell>
 
                       {/* Recommended Action */}
