@@ -2451,11 +2451,24 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                        {job.purchase_order_id && purchaseOrderLines.length > 0 ? (
                          <div className="space-y-2">
                            {purchaseOrderLines.map((line) => (
-                             <div key={line.id} className="flex items-center justify-between p-2 bg-[#F9FAFB] rounded-lg">
-                               <div className="flex-1">
+                             <div key={line.id} className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
+                               <div className="flex-1 min-w-0">
                                  <div className="text-[14px] font-medium text-[#111827]">{line.item_name || 'Item'}</div>
-                                 <div className="text-[12px] text-[#6B7280] mt-0.5">
-                                   Ordered: {line.qty_ordered || 0} • Received: {line.qty_received || 0} • Remaining: {(line.qty_ordered || 0) - (line.qty_received || 0)}
+                               </div>
+                               <div className="flex gap-4 ml-4 text-[12px] text-[#6B7280] whitespace-nowrap">
+                                 <div className="text-right">
+                                   <div className="text-[11px] font-medium text-[#4B5563]">Ordered</div>
+                                   <div className="font-semibold text-[#111827]">{line.qty_ordered || 0}</div>
+                                 </div>
+                                 <div className="text-right">
+                                   <div className="text-[11px] font-medium text-[#4B5563]">Received</div>
+                                   <div className="font-semibold text-[#111827]">{line.qty_received || 0}</div>
+                                 </div>
+                                 <div className="text-right">
+                                   <div className="text-[11px] font-medium text-[#4B5563]">Remaining</div>
+                                   <div className={`font-semibold ${(line.qty_ordered || 0) - (line.qty_received || 0) === 0 ? 'text-green-600' : 'text-[#111827]'}`}>
+                                     {(line.qty_ordered || 0) - (line.qty_received || 0)}
+                                   </div>
                                  </div>
                                </div>
                              </div>
@@ -2464,17 +2477,23 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                        ) : jobParts.length > 0 || jobSamples.length > 0 ? (
                          <div className="space-y-2">
                            {jobParts.map((part) => (
-                             <div key={part.id} className="flex items-center gap-3 p-2 bg-[#F9FAFB] rounded-lg">
+                             <div key={part.id} className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-lg">
                                <Checkbox checked={checkedItems[part.id] || false} disabled className="opacity-50" />
-                               <div className="flex-1">
+                               <div className="flex-1 min-w-0">
                                  <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Item'}</span>
                                </div>
+                               {part.quantity_required && (
+                                 <div className="text-right whitespace-nowrap">
+                                   <div className="text-[11px] font-medium text-[#4B5563]">Required</div>
+                                   <div className="font-semibold text-[#111827]">{part.quantity_required}</div>
+                                 </div>
+                               )}
                              </div>
                            ))}
                            {jobSamples.map((sample) => (
-                             <div key={sample.id} className="flex items-center gap-3 p-2 bg-[#F9FAFB] rounded-lg">
+                             <div key={sample.id} className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-lg">
                                <Checkbox checked={checkedItems[sample.id] || false} disabled className="opacity-50" />
-                               <div className="flex-1">
+                               <div className="flex-1 min-w-0">
                                  <span className="text-[14px] font-medium text-[#111827]">{sample.name || 'Sample'}</span>
                                  <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
                                </div>
