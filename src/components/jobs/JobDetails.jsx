@@ -496,20 +496,36 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: jobParts = [] } = useQuery({
     queryKey: ['jobParts', job.id, job.purchase_order_id],
     queryFn: async () => {
+      let parts = [];
       if (job.purchase_order_id) {
         // For PO-based logistics jobs, fetch parts by primary_purchase_order_id
-        return await base44.entities.Part.filter({ 
+        parts = await base44.entities.Part.filter({ 
           primary_purchase_order_id: job.purchase_order_id 
         });
       } else {
         // For other logistics jobs, fetch by linked_logistics_jobs
         const allParts = await base44.entities.Part.list();
-        return allParts.filter(p => 
+        parts = allParts.filter(p => 
           p.linked_logistics_jobs && 
           Array.isArray(p.linked_logistics_jobs) && 
           p.linked_logistics_jobs.includes(job.id)
         );
       }
+      
+      // If item_name is missing, fetch from linked PO line
+      const enrichedParts = await Promise.all(parts.map(async (part) => {
+        if (!part.item_name && part.po_line_id) {
+          try {
+            const poLine = await base44.entities.PurchaseOrderLine.get(part.po_line_id);
+            return { ...part, item_name: poLine?.item_name || part.item_name };
+          } catch (error) {
+            return part;
+          }
+        }
+        return part;
+      }));
+      
+      return enrichedParts;
     },
     enabled: isLogisticsJob,
     staleTime: 30000, // 30 seconds
