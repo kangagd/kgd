@@ -968,6 +968,14 @@ export default function UnifiedEmailComposer({
         throw new Error(response.data?.error || "Failed to send email");
       }
 
+      // Warn if thread link conflict detected
+      if (response.data?.thread_link_conflict) {
+        toast.warning(
+          "This thread is linked to another project. Ask admin to relink if needed.",
+          { duration: 6000 }
+        );
+      }
+
       // Mark draft as sent after successful send
       if (draftId) {
         try {
