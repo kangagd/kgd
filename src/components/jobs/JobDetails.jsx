@@ -2428,21 +2428,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                          </div>
                        </div>
 
-                       {/* Schedule */}
-                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                         {job.scheduled_date && (
-                           <div>
-                             <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Scheduled</div>
-                             <div className="text-[14px] text-[#111827]">{format(parseISO(job.scheduled_date), 'MMM d, yyyy')}</div>
-                           </div>
-                         )}
-                         {job.assigned_to && job.assigned_to.length > 0 && (
-                           <div>
-                             <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Assigned</div>
-                             <div className="text-[14px] text-[#111827]">{Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : '—'}</div>
-                           </div>
-                         )}
-                       </div>
+
                      </CardContent>
                    </Card>
 
