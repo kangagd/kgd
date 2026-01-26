@@ -187,7 +187,7 @@ export default function Schedule() {
     ...QUERY_CONFIG.reference,
   });
 
-  // Fetch bookings (non-cancelled only)
+  // Fetch bookings (non-cancelled only, include soft-deleted)
   const { data: allBookings = [] } = useQuery({
     queryKey: bookingKeys.all,
     queryFn: async () => {
