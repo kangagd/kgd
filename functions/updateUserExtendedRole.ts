@@ -10,16 +10,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const { email, extended_role } = await req.json();
+    const body = await req.json();
+    const { email, extended_role } = body;
 
-    if (!email || !extended_role) {
-      return Response.json({ error: 'Email and extended_role are required' }, { status: 400 });
+    if (!email) {
+      return Response.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    // Valid extended_role values
-    const validRoles = ['manager', 'technician', null];
+    // Check if extended_role is missing from payload (undefined means not provided)
+    if (extended_role === undefined) {
+      return Response.json({ error: 'extended_role is required (use null to clear)' }, { status: 400 });
+    }
+
+    // Valid extended_role values (including viewer and null)
+    const validRoles = ['manager', 'technician', 'viewer', null];
     if (!validRoles.includes(extended_role)) {
-      return Response.json({ error: 'Invalid extended_role. Must be "manager", "technician", or null' }, { status: 400 });
+      return Response.json({ error: 'Invalid extended_role. Must be "manager", "technician", "viewer", or null' }, { status: 400 });
     }
 
     // Get the user to update
