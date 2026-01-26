@@ -1,16 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * NEW SCHEMA: Record stock movement via inventory location ledger
- * CANONICAL PATH for all manual stock adjustments
- * 
- * Writes to:
- * - InventoryQuantity (on-hand source of truth)
- * - StockMovement (audit ledger)
- * 
- * Does NOT write to:
- * - PriceListItem.stock_level (deprecated, cached only)
- * - VehicleStock (computed only)
+ * DEPRECATED: recordStockMovement is AUDIT-ONLY
+ *
+ * ⚠️  BREAKING CHANGE: This function NO LONGER mutates InventoryQuantity ⚠️
+ *
+ * The canonical inventory writers are:
+ * - receivePoItems        (PO receipts) → for procuring stock
+ * - moveInventory         (transfers + job deductions) → for stock allocation
+ * - adjustStockCorrection (admin corrections) → for inventory count fixes
+ * - seedBaselineStock     (day-0 initialization) → for baseline seeding
+ *
+ * This function now ONLY creates StockMovement audit records if auditOnly=true.
+ * All direct mutations have been replaced with calls to canonical functions above.
  */
 
 Deno.serve(async (req) => {
@@ -23,118 +25,73 @@ Deno.serve(async (req) => {
     }
 
     const {
+      auditOnly = false,
       priceListItemId,
       fromLocationId,
       toLocationId,
       quantity,
-      source = 'manual_adjustment',
-      notes = null,
-      reference_type = null,
-      reference_id = null,
+      source,
+      notes,
+      reference_type,
+      reference_id,
     } = await req.json();
 
-    // Validate required fields
-    if (!priceListItemId || !quantity || quantity <= 0) {
-      return Response.json({ error: 'Invalid parameters' }, { status: 400 });
-    }
-
-    if (!fromLocationId && !toLocationId) {
-      return Response.json({ error: 'At least one location required' }, { status: 400 });
-    }
-
-    // Validate source enum
-    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage'];
-    if (!validSources.includes(source)) {
-      return Response.json({ error: `Invalid source. Must be one of: ${validSources.join(', ')}` }, { status: 400 });
-    }
-
-    // Get item details
-    const item = await base44.entities.PriceListItem.get(priceListItemId);
-    if (!item) {
-      return Response.json({ error: 'Item not found' }, { status: 404 });
-    }
-
-    let fromLocation = null;
-    let toLocation = null;
-
-    // Validate from location has sufficient stock
-    if (fromLocationId) {
-      fromLocation = await base44.entities.InventoryLocation.get(fromLocationId);
-      if (!fromLocation) {
-        return Response.json({ error: 'Source location not found' }, { status: 404 });
-      }
-
-      const sourceQty = await base44.entities.InventoryQuantity.filter({
-        price_list_item_id: priceListItemId,
-        location_id: fromLocationId
-      });
-
-      const currentQty = sourceQty[0]?.quantity || 0;
-      if (currentQty < quantity) {
+    // Audit-only mode: allows admins/managers to log movements without mutating
+    if (auditOnly) {
+      if (user.role !== 'admin' && user.extended_role !== 'manager') {
         return Response.json({ 
-          error: `Insufficient stock. Available: ${currentQty}, Requested: ${quantity}` 
-        }, { status: 400 });
+          error: 'Forbidden: Only admin/manager can audit' 
+        }, { status: 403 });
       }
 
-      // Decrement from source
-      if (sourceQty[0]) {
-        await base44.asServiceRole.entities.InventoryQuantity.update(sourceQty[0].id, {
-          quantity: currentQty - quantity
-        });
-      }
-    }
-
-    // Add to destination
-    if (toLocationId) {
-      toLocation = await base44.entities.InventoryLocation.get(toLocationId);
-      if (!toLocation) {
-        return Response.json({ error: 'Destination location not found' }, { status: 404 });
+      // Minimal validation for audit entries
+      if (!priceListItemId || !source) {
+        return Response.json({ error: 'auditOnly requires priceListItemId and source' }, { status: 400 });
       }
 
-      const destQty = await base44.entities.InventoryQuantity.filter({
+      const item = await base44.entities.PriceListItem.get(priceListItemId);
+      if (!item) {
+        return Response.json({ error: 'Item not found' }, { status: 404 });
+      }
+
+      // Create audit-only entry (no mutation)
+      await base44.asServiceRole.entities.StockMovement.create({
         price_list_item_id: priceListItemId,
-        location_id: toLocationId
+        item_name: item.item,
+        quantity: quantity || 0,
+        from_location_id: fromLocationId || null,
+        to_location_id: toLocationId || null,
+        performed_by_user_email: user.email,
+        performed_by_user_name: user.full_name || user.display_name || user.email,
+        performed_at: new Date().toISOString(),
+        source: source,
+        reference_type: reference_type || null,
+        reference_id: reference_id || null,
+        notes: `[AUDIT ONLY] ${notes || 'Manual audit entry'}`
       });
 
-      if (destQty[0]) {
-        await base44.asServiceRole.entities.InventoryQuantity.update(destQty[0].id, {
-          quantity: (destQty[0].quantity || 0) + quantity
-        });
-      } else {
-        await base44.asServiceRole.entities.InventoryQuantity.create({
-          price_list_item_id: priceListItemId,
-          location_id: toLocationId,
-          quantity: quantity,
-          item_name: item.item,
-          location_name: toLocation.name
-        });
-      }
+      return Response.json({
+        success: true,
+        message: 'Audit entry created (no inventory mutation)',
+        audit_only: true
+      });
     }
 
-    // Create audit ledger entry (StockMovement) - canonical schema
-    await base44.asServiceRole.entities.StockMovement.create({
-      price_list_item_id: priceListItemId,
-      item_name: item.item,
-      quantity: quantity,
-      from_location_id: fromLocationId,
-      from_location_name: fromLocation?.name || null,
-      to_location_id: toLocationId,
-      to_location_name: toLocation?.name || null,
-      performed_by_user_email: user.email,
-      performed_by_user_name: user.full_name || user.display_name || user.email,
-      performed_at: new Date().toISOString(),
-      source: source,
-      reference_type: reference_type || null,
-      reference_id: reference_id || null,
-      notes: notes || null
-    });
-
-    return Response.json({
-      success: true,
-      message: `Moved ${quantity} ${item.item} ${fromLocation ? `from ${fromLocation.name}` : ''} ${toLocation ? `to ${toLocation.name}` : ''}`,
-      item_name: item.item,
-      quantity_moved: quantity
-    });
+    // Non-audit mode: FORBIDDEN - use canonical writers instead
+    return Response.json(
+      {
+        error: 'recordStockMovement is deprecated for mutations. Use canonical writers:',
+        canonical_functions: {
+          'transfers': 'moveInventory',
+          'po_receipt': 'receivePoItems',
+          'job_usage': 'moveInventory',
+          'admin_corrections': 'adjustStockCorrection',
+          'baseline_init': 'seedBaselineStock'
+        },
+        audit_mode: 'Pass auditOnly=true + admin/manager role to create audit-only entries'
+      },
+      { status: 410 } // Gone: this endpoint no longer mutates
+    );
 
   } catch (error) {
     console.error('[recordStockMovement] Error:', error);
