@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { generateJobNumber } from './shared/jobNumberGenerator.js';
 
 // Sample Job Types
 const SAMPLE_JOB_TYPES = {
@@ -114,8 +115,12 @@ Deno.serve(async (req) => {
       checkedItems[sample_id] = false;
     }
 
+    // Generate job_number for consistency
+    const jobNumber = await generateJobNumber(base44, project);
+
     // Create Job
     const job = await base44.asServiceRole.entities.Job.create({
+      job_number: jobNumber,
       project_id,
       project_name: project.title,
       project_number: project.project_number,
