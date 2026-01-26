@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       // Upsert InventoryQuantity (add to on-hand)
       const existing = await base44.asServiceRole.entities.InventoryQuantity.filter({
         price_list_item_id: poLine.price_list_item_id,
-        location_id: location_id
+        location_id: finalLocationId
       });
 
       const currentQty = existing[0]?.quantity || 0;
