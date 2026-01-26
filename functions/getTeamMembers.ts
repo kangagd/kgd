@@ -17,10 +17,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Only admins and managers can view team members' }, { status: 403 });
     }
 
-    // Use service role to bypass User entity RLS
-    const users = await base44.asServiceRole.entities.User.list();
+    // Fetch all users - filter to only show admins/managers for assignment
+    const allUsers = await base44.asServiceRole.entities.User.list();
+    
+    // Filter to only admins and managers (can be assigned threads)
+    const assignableUsers = allUsers.filter(u => u.role === 'admin' || u.extended_role === 'manager');
 
-    return Response.json({ users });
+    return Response.json({ users: assignableUsers });
   } catch (error) {
     console.error('Error fetching team members:', error);
     return Response.json({ error: error.message }, { status: 500 });
