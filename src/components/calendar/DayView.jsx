@@ -502,9 +502,8 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                         );
                       })}
 
-                      {/* Render bookings for this technician */}
+                      {/* Render all bookings (visible to all users) */}
                       {dayBookings
-                        .filter(booking => booking.assigned_user_emails?.includes(technician.email))
                         .map(booking => {
                           const startTime = new Date(booking.start_at);
                           const endTime = new Date(booking.end_at);
