@@ -1,24 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-/**
- * CANONICAL INVENTORY WRITE PATH
- *
- * InventoryQuantity is the SINGLE source of truth for on-hand stock.
- * This function is one of the ONLY allowed writers.
- *
- * Rules:
- * - Every InventoryQuantity mutation MUST create a StockMovement record
- * - StockMovement is immutable (audit ledger)
- * - UI components must NEVER write InventoryQuantity directly
- * - recordStockMovement MUST NOT mutate inventory
- *
- * Approved writers:
- * - receivePoItems        (PO receipts)
- * - moveInventory         (location transfers) ← THIS FUNCTION
- * - adjustStockCorrection (admin corrections)
- * - autoDeductJobUsage    (job consumption)
- * - seedBaselineStock     (day-0 initialization)
- */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -34,7 +15,10 @@ Deno.serve(async (req) => {
       fromLocationId, 
       toLocationId, 
       quantity, 
-      source = 'transfer',
+      movementType = null,
+      source = null,
+      jobId = null,
+      vehicleId = null,
       notes = null 
     } = body;
 
@@ -42,19 +26,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    // moveInventory is transfer-only: reject any other source
-    if (source !== 'transfer') {
-      return Response.json(
-        { 
-          error: 'moveInventory only supports source="transfer". For PO receipt, use receivePoItems. For admin correction, use adjustStockCorrection. For job usage, use autoDeductJobUsage.' 
-        }, 
-        { status: 400 }
-      );
+    // Accept both 'source' (new) and 'movementType' (legacy) params
+    let finalSource = source || movementType || 'transfer';
+    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage'];
+    if (!validSources.includes(finalSource)) {
+      finalSource = 'transfer'; // Coerce invalid values to transfer
     }
 
-    // Transfers require both from and to locations
-    if (!fromLocationId || !toLocationId) {
-      return Response.json({ error: 'Transfer requires both source and destination locations' }, { status: 400 });
+    // Validate transfer requires both locations
+    if (finalSource === 'transfer' && (!fromLocationId || !toLocationId)) {
+      return Response.json({ error: 'Transfer requires both from and to locations' }, { status: 400 });
     }
 
     // TECHNICIAN AUTHORIZATION: enforce warehouse <-> own vehicle only
@@ -176,19 +157,27 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Log the movement (canonical schema) - no reference for pure transfers
-    const referenceType = null;
-    const referenceId = null;
+    // Log the movement (canonical schema)
+    let referenceType = null;
+    let referenceId = null;
+    
+    if (jobId) {
+      referenceType = 'job';
+      referenceId = jobId;
+    } else if (vehicleId) {
+      referenceType = 'vehicle_transfer';
+      referenceId = vehicleId;
+    }
 
     await base44.entities.StockMovement.create({
       price_list_item_id: priceListItemId,
       item_name: item.item,
-      from_location_id: fromLocationId,
+      from_location_id: fromLocationId || null,
       from_location_name: fromLocation?.name || null,
-      to_location_id: toLocationId,
+      to_location_id: toLocationId || null,
       to_location_name: toLocation?.name || null,
       quantity: quantity,
-      source: 'transfer',
+      source: finalSource,
       performed_by_user_email: user.email,
       performed_by_user_name: user.full_name || user.display_name || user.email,
       performed_at: new Date().toISOString(),

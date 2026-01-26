@@ -1,24 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-/**
- * CANONICAL INVENTORY WRITE PATH
- *
- * InventoryQuantity is the SINGLE source of truth for on-hand stock.
- * This function is one of the ONLY allowed writers.
- *
- * Rules:
- * - Every InventoryQuantity mutation MUST create a StockMovement record
- * - StockMovement is immutable (audit ledger)
- * - UI components must NEVER write InventoryQuantity directly
- * - recordStockMovement MUST NOT mutate inventory
- *
- * Approved writers:
- * - receivePoItems        (PO receipts)
- * - moveInventory         (location transfers)
- * - adjustStockCorrection (admin corrections) ← THIS FUNCTION
- * - autoDeductJobUsage    (job consumption)
- * - seedBaselineStock     (day-0 initialization)
- */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
