@@ -68,11 +68,12 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
 
     const uniquePartIds = [...new Set(partIds)];
     
-    // Fetch all PurchaseOrderLines for this PO to get item_name
+    // Fetch all PurchaseOrderLines for this PO to get item_name and po_line_id
     const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ 
         purchase_order_id: purchaseOrderId 
     });
-    const poLineMap = new Map(poLines.map(line => [line.part_id, line]));
+    const poLineByPartId = new Map(poLines.map(line => [line.part_id, line]));
+    const poLineBySourceId = new Map(poLines.map(line => [line.source_id, line]));
 
     for (const partId of uniquePartIds) {
         try {
@@ -84,10 +85,25 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
                 synced_by: 'system:linkPartsToPO'
             };
 
-            // CRITICAL: Sync item_name from PurchaseOrderLine to Part
-            const poLine = poLineMap.get(partId);
-            if (poLine?.item_name) {
-                updateData.item_name = poLine.item_name;
+            // CRITICAL: Sync item_name and po_line_id from PurchaseOrderLine to Part
+            let poLine = poLineByPartId.get(partId);
+            
+            // If no line found by part_id, try to find by source_id
+            if (!poLine && part.id) {
+                poLine = poLineBySourceId.get(part.id);
+            }
+            
+            if (poLine) {
+                if (poLine.item_name) {
+                    updateData.item_name = poLine.item_name;
+                }
+                // Link the Part to the specific PO line for 1:1 mapping
+                updateData.po_line_id = poLine.id;
+                
+                // Sync quantity if the PO line has a quantity
+                if (poLine.qty_ordered) {
+                    updateData.quantity_required = poLine.qty_ordered;
+                }
             }
 
             // Build purchase_order_ids array
