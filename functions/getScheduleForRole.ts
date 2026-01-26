@@ -13,13 +13,14 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check role: admin or manager
+        // Check role: admin, manager, or technician
         const role = (user.extended_role || user.role || "").toLowerCase();
         const isAdmin = user.role === 'admin' || role === 'admin';
         const isManager = role === 'manager';
+        const isTechnician = user.is_field_technician === true || role === 'technician';
 
-        if (!(isAdmin || isManager)) {
-            return Response.json({ error: 'Forbidden: Only admins and managers can view full schedule' }, { status: 403 });
+        if (!(isAdmin || isManager || isTechnician)) {
+            return Response.json({ error: 'Forbidden: Only admins, managers, and technicians can view schedule' }, { status: 403 });
         }
 
         const { date_from = null, date_to = null } = await req.json().catch(() => ({}));
@@ -32,6 +33,11 @@ Deno.serve(async (req) => {
             filter.scheduled_date = { $gte: date_from };
         } else if (date_to) {
             filter.scheduled_date = { $lte: date_to };
+        }
+
+        // Technicians see only their own jobs
+        if (isTechnician && !isAdmin && !isManager) {
+            filter.assigned_to = user.email;
         }
 
         // Use service role to bypass RLS
