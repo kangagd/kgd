@@ -126,6 +126,16 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
       })
     : dayJobs;
 
+  // For technicians, filter to only their bookings
+  const myBookings = isTechnician
+    ? dayBookings.filter(booking => {
+        const assignedUserIds = booking.assigned_user_ids || [];
+        return assignedUserIds.includes(user.id);
+      }).sort((a, b) => {
+        return new Date(a.start_at) - new Date(b.start_at);
+      })
+    : dayBookings;
+
   const uniqueJobTypes = [...new Set(jobs.map(job => job.job_type_name).filter(Boolean))].sort();
 
   // Determine hour range
@@ -258,7 +268,7 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
     return (
       <div className="space-y-2">
         {/* Bookings */}
-        {dayBookings.map(booking => (
+        {myBookings.map(booking => (
           <Card 
             key={booking.id}
             className="border-2 border-blue-300 shadow-sm hover:border-blue-400 transition-all cursor-pointer"
@@ -288,9 +298,9 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
           </Card>
         ))}
 
-        {myJobs.length === 0 && dayBookings.length === 0 ? (
+        {myJobs.length === 0 && myBookings.length === 0 ? (
           <Card className="p-8 text-center">
-            <p className="text-[#6B7280] text-sm">No jobs scheduled for today</p>
+            <p className="text-[#6B7280] text-sm">No jobs or bookings scheduled for today</p>
           </Card>
         ) : (
           myJobs.map(job => {
