@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     // Support both location_id and destination_location_id for backwards compatibility
     const finalLocationId = location_id || destination_location_id;
 
-    if (!po_id || !location_id || !items || items.length === 0) {
+    if (!po_id || !finalLocationId || !items || items.length === 0) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     });
 
     // Fetch destination location to determine canonical status
-    const destLocation = await base44.asServiceRole.entities.InventoryLocation.get(location_id);
+    const destLocation = await base44.asServiceRole.entities.InventoryLocation.get(finalLocationId);
     if (!destLocation) {
       return Response.json({ error: 'Destination location not found' }, { status: 404 });
     }
