@@ -2356,9 +2356,161 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
               {isLogisticsJob ? (
                 <>
-                  {/* Order Items Checklist for Logistics Jobs */}
+                   {/* LOGISTICS JOB UX TIGHTENING - PART 1-4 IMPLEMENTATION */}
+                   {/* BEFORE:
+                       - Multiple stock actions / legacy "Record Transfer"
+                       - Unclear whether completion moves inventory
+                       - Inconsistent job numbers
+                       AFTER:
+                       - Single "Process Stock" button
+                       - Explicit helper copy
+                       - Clear stock_transfer_status badge
+                       - PO jobs route to receivePoItems modal
+                       - Internal jobs route to moveInventory modal
+                       - All logistics jobs have job_number
+                   */}
+
+                   {/* Helper Copy */}
+                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-blue-800">
+                     <p>Completing a logistics job does not move stock. Use <strong>Process Stock</strong> to update inventory.</p>
+                   </div>
+
+                   {/* SECTION A: Overview */}
+                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg mb-4">
+                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Overview</CardTitle>
+                     </CardHeader>
+                     <CardContent className="p-4 space-y-3">
+                       {/* Purpose */}
+                       <div className="pb-3 border-b border-[#E5E7EB]">
+                         <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Purpose</div>
+                         <div className="text-[14px] text-[#111827]">
+                           {job.logistics_purpose ? job.logistics_purpose.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '—'}
+                         </div>
+                       </div>
+
+                       {/* Linked Objects */}
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-3 border-b border-[#E5E7EB]">
+                         {job.purchase_order_id && (
+                           <div>
+                             <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Purchase Order</div>
+                             <div className="text-[14px] text-[#111827]">
+                               {purchaseOrder ? `PO-${purchaseOrder.po_number}` : 'Loading...'} {purchaseOrder?.supplier_name && `• ${purchaseOrder.supplier_name}`}
+                             </div>
+                           </div>
+                         )}
+                         {job.vehicle_id && (
+                           <div>
+                             <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Vehicle</div>
+                             <div className="text-[14px] text-[#111827]">{job.vehicle_id}</div>
+                           </div>
+                         )}
+                       </div>
+
+                       {/* Origin / Destination */}
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-3 border-b border-[#E5E7EB]">
+                         <div>
+                           <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">From</div>
+                           <div className="text-[14px] text-[#111827]">{sourceLocation?.name || '—'}</div>
+                         </div>
+                         <div>
+                           <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">To</div>
+                           <div className="text-[14px] text-[#111827]">{destinationLocation?.name || '—'}</div>
+                         </div>
+                       </div>
+
+                       {/* Schedule */}
+                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                         {job.scheduled_date && (
+                           <div>
+                             <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Scheduled</div>
+                             <div className="text-[14px] text-[#111827]">{format(parseISO(job.scheduled_date), 'MMM d, yyyy')}</div>
+                           </div>
+                         )}
+                         {job.assigned_to && job.assigned_to.length > 0 && (
+                           <div>
+                             <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">Assigned</div>
+                             <div className="text-[14px] text-[#111827]">{Array.isArray(job.assigned_to_name) ? job.assigned_to_name.join(', ') : '—'}</div>
+                           </div>
+                         )}
+                       </div>
+                     </CardContent>
+                   </Card>
+
+                   {/* SECTION B: Items to Process */}
+                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg mb-4">
+                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Items to Process</CardTitle>
+                     </CardHeader>
+                     <CardContent className="p-4">
+                       {job.purchase_order_id && purchaseOrderLines.length > 0 ? (
+                         <div className="space-y-2">
+                           {purchaseOrderLines.map((line) => (
+                             <div key={line.id} className="flex items-center justify-between p-2 bg-[#F9FAFB] rounded-lg">
+                               <div className="flex-1">
+                                 <div className="text-[14px] font-medium text-[#111827]">{line.item_name || 'Item'}</div>
+                                 <div className="text-[12px] text-[#6B7280] mt-0.5">
+                                   Ordered: {line.qty_ordered || 0} • Received: {line.qty_received || 0} • Remaining: {(line.qty_ordered || 0) - (line.qty_received || 0)}
+                                 </div>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       ) : jobParts.length > 0 || jobSamples.length > 0 ? (
+                         <div className="space-y-2">
+                           {jobParts.map((part) => (
+                             <div key={part.id} className="flex items-center gap-3 p-2 bg-[#F9FAFB] rounded-lg">
+                               <Checkbox checked={checkedItems[part.id] || false} disabled className="opacity-50" />
+                               <div className="flex-1">
+                                 <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Item'}</span>
+                               </div>
+                             </div>
+                           ))}
+                           {jobSamples.map((sample) => (
+                             <div key={sample.id} className="flex items-center gap-3 p-2 bg-[#F9FAFB] rounded-lg">
+                               <Checkbox checked={checkedItems[sample.id] || false} disabled className="opacity-50" />
+                               <div className="flex-1">
+                                 <span className="text-[14px] font-medium text-[#111827]">{sample.name || 'Sample'}</span>
+                                 <Badge className="ml-2 bg-purple-100 text-purple-700 text-[11px]">Sample</Badge>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       ) : (
+                         <p className="text-[14px] text-[#9CA3AF]">No items to process</p>
+                       )}
+                     </CardContent>
+                   </Card>
+
+                   {/* SECTION C: Stock Processing Outcome */}
+                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg mb-4">
+                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
+                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Stock Processing Status</CardTitle>
+                     </CardHeader>
+                     <CardContent className="p-4">
+                       {stock_transfer_status === 'completed' ? (
+                         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                           <div className="flex items-center gap-2 text-green-700 mb-2">
+                             <CheckCircle className="w-5 h-5" />
+                             <span className="font-semibold">Stock Processed</span>
+                           </div>
+                           {job.linked_stock_movement_batch_id && (
+                             <p className="text-[12px] text-green-700">Batch ID: {job.linked_stock_movement_batch_id}</p>
+                           )}
+                         </div>
+                       ) : stock_transfer_status === 'skipped' ? (
+                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                           <p className="text-[14px] text-amber-800"><strong>Stock transfer skipped</strong> for this job.</p>
+                         </div>
+                       ) : (
+                         <p className="text-[14px] text-[#6B7280]">No inventory updates have been applied yet. Click <strong>Process Stock</strong> to proceed.</p>
+                       )}
+                     </CardContent>
+                   </Card>
+
+                   {/* Order Items Checklist for Logistics Jobs */}
                   {/* DYNAMIC GUARDRAIL: Show Parts for project POs, PO Lines for non-project POs */}
-                  <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
+                  <Card className="border border-[#E5E7EB] shadow-sm rounded-lg" style={{display: 'none'}}>
                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB] flex flex-row items-center justify-between">
                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">
                         Pickup Checklist ({job.project_id ? (jobParts.length + jobSamples.length) : purchaseOrderLines.length})
