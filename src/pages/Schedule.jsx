@@ -999,7 +999,30 @@ export default function Schedule() {
     );
   }
 
+  // Shared modals for both technicians and admins
+  const sharedModals = (
+    <>
+      {/* Job Modal */}
+      <EntityModal
+        open={!!modalJob}
+        onClose={() => setModalJob(null)}
+        title={`Job #${modalJob?.job_number}`}
+        onOpenFullPage={() => handleOpenFullJob(modalJob)}
+        fullPageLabel="Open Full Job"
+      >
+        {modalJob && <JobModalView job={modalJob} />}
+      </EntityModal>
 
+      {/* Booking Detail Drawer */}
+      <BookingDetail
+        open={!!selectedBooking && !showBookingEditor}
+        onClose={() => setSelectedBooking(null)}
+        booking={selectedBooking}
+        allJobs={expandedJobs}
+        allBookings={allBookings}
+      />
+    </>
+  );
 
   // For mobile technicians - with Day/Week/Month views
   if (isTechnician) {
