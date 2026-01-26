@@ -6,8 +6,9 @@
 export function normalizeUtf8(text) {
   if (!text) return text;
 
-  // Quick check: if text looks clean, return early
-  if (!/â|é|ü|ö|ä|ñ|ç|™|–|—|"| |"|'/.test(text)) {
+  // Quick check: only normalize if text has corruption-specific markers
+  const looksCorrupt = /â€™|â€œ|â€|â€"|â€"|â€¦|Ã[A-Za-z0-9]{1,2}|Â\s/.test(text);
+  if (!looksCorrupt) {
     return text;
   }
 
