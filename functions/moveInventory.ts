@@ -163,10 +163,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Log the movement (canonical schema)
+    // Log the movement (canonical schema with reference fields)
     let referenceType = null;
     let referenceId = null;
-    
+
     if (jobId) {
       referenceType = 'job';
       referenceId = jobId;
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
       referenceId = vehicleId;
     }
 
-    await base44.entities.StockMovement.create({
+    await base44.asServiceRole.entities.StockMovement.create({
       price_list_item_id: priceListItemId,
       item_name: item.item,
       from_location_id: fromLocationId || null,
