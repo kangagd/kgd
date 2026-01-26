@@ -216,10 +216,8 @@ Deno.serve(async (req) => {
         console.log(`Total Parts for PO ${po.id}: ${existingParts.length + newlyCreatedParts.length} (${existingParts.length} existing, ${newlyCreatedParts.length} created)`);
 
         // ALWAYS use Part IDs in checked_items (deduplicated: existing + newly created)
-        for (const part of existingParts) {
-            checkedItems[part.id] = false;
-        }
-        for (const part of newlyCreatedParts) {
+        const allParts = [...existingParts, ...newlyCreatedParts];
+        for (const part of allParts) {
             checkedItems[part.id] = false;
         }
 
