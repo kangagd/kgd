@@ -1,141 +1,105 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * NEW SCHEMA: Record stock movement via inventory location ledger
- * CANONICAL PATH for all manual stock adjustments
- * 
- * Writes to:
- * - InventoryQuantity (on-hand source of truth)
- * - StockMovement (audit ledger)
- * 
- * Does NOT write to:
- * - PriceListItem.stock_level (deprecated, cached only)
- * - VehicleStock (computed only)
+ * DEPRECATED: recordStockMovement
+ *
+ * This function MUST NOT mutate InventoryQuantity.
+ * Canonical InventoryQuantity writers are:
+ * - moveInventory (transfers)
+ * - receivePoItems (PO receipts)
+ * - adjustStockCorrection (admin corrections)
+ * - seedBaselineStock (baseline)
+ * - autoDeductJobUsage (job consumption)
+ *
+ * This endpoint is kept only for:
+ * - legacy backfill / audit-only StockMovement entries (explicitly opted-in)
  */
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const {
       priceListItemId,
-      fromLocationId,
-      toLocationId,
+      fromLocationId = null,
+      toLocationId = null,
       quantity,
       source = 'manual_adjustment',
       notes = null,
       reference_type = null,
       reference_id = null,
+      // IMPORTANT: you must explicitly opt-in to legacy audit-only writes
+      auditOnly = false,
     } = await req.json();
 
-    // Validate required fields
     if (!priceListItemId || !quantity || quantity <= 0) {
       return Response.json({ error: 'Invalid parameters' }, { status: 400 });
     }
 
-    if (!fromLocationId && !toLocationId) {
-      return Response.json({ error: 'At least one location required' }, { status: 400 });
+    // Hard block normal use: forces all callers onto canonical functions.
+    if (!auditOnly) {
+      return Response.json(
+        {
+          error: 'recordStockMovement is deprecated.',
+          message:
+            'Use canonical functions instead: moveInventory (transfer), receivePoItems (PO receipt), adjustStockCorrection (admin correction), seedBaselineStock (baseline), autoDeductJobUsage (consumption).',
+          next_step: {
+            transfer: 'Call moveInventory({ priceListItemId, fromLocationId, toLocationId, quantity })',
+            adjustment: 'Call adjustStockCorrection({ priceListItemId, locationId, ... })',
+          },
+        },
+        { status: 410 } // Gone
+      );
     }
 
-    // Validate source enum
-    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage'];
+    // Audit-only mode (admin/manager only is safest)
+    if (!['admin', 'manager'].includes(user.role)) {
+      return Response.json({ error: 'Forbidden (auditOnly requires admin/manager)' }, { status: 403 });
+    }
+
+    // Validate source enum (keep aligned with your StockMovement schema)
+    const validSources = ['transfer', 'po_receipt', 'logistics_job_completion', 'manual_adjustment', 'job_usage', 'baseline_seed'];
     if (!validSources.includes(source)) {
-      return Response.json({ error: `Invalid source. Must be one of: ${validSources.join(', ')}` }, { status: 400 });
+      return Response.json(
+        { error: `Invalid source. Must be one of: ${validSources.join(', ')}` },
+        { status: 400 }
+      );
     }
 
-    // Get item details
+    // Resolve names for readability (no InventoryQuantity mutations)
     const item = await base44.entities.PriceListItem.get(priceListItemId);
-    if (!item) {
-      return Response.json({ error: 'Item not found' }, { status: 404 });
-    }
+    if (!item) return Response.json({ error: 'Item not found' }, { status: 404 });
 
-    let fromLocation = null;
-    let toLocation = null;
+    const fromLoc = fromLocationId ? await base44.entities.InventoryLocation.get(fromLocationId) : null;
+    const toLoc = toLocationId ? await base44.entities.InventoryLocation.get(toLocationId) : null;
 
-    // Validate from location has sufficient stock
-    if (fromLocationId) {
-      fromLocation = await base44.entities.InventoryLocation.get(fromLocationId);
-      if (!fromLocation) {
-        return Response.json({ error: 'Source location not found' }, { status: 404 });
-      }
+    if (fromLocationId && !fromLoc) return Response.json({ error: 'Source location not found' }, { status: 404 });
+    if (toLocationId && !toLoc) return Response.json({ error: 'Destination location not found' }, { status: 404 });
 
-      const sourceQty = await base44.entities.InventoryQuantity.filter({
-        price_list_item_id: priceListItemId,
-        location_id: fromLocationId
-      });
-
-      const currentQty = sourceQty[0]?.quantity || 0;
-      if (currentQty < quantity) {
-        return Response.json({ 
-          error: `Insufficient stock. Available: ${currentQty}, Requested: ${quantity}` 
-        }, { status: 400 });
-      }
-
-      // Decrement from source
-      if (sourceQty[0]) {
-        await base44.asServiceRole.entities.InventoryQuantity.update(sourceQty[0].id, {
-          quantity: currentQty - quantity
-        });
-      }
-    }
-
-    // Add to destination
-    if (toLocationId) {
-      toLocation = await base44.entities.InventoryLocation.get(toLocationId);
-      if (!toLocation) {
-        return Response.json({ error: 'Destination location not found' }, { status: 404 });
-      }
-
-      const destQty = await base44.entities.InventoryQuantity.filter({
-        price_list_item_id: priceListItemId,
-        location_id: toLocationId
-      });
-
-      if (destQty[0]) {
-        await base44.asServiceRole.entities.InventoryQuantity.update(destQty[0].id, {
-          quantity: (destQty[0].quantity || 0) + quantity
-        });
-      } else {
-        await base44.asServiceRole.entities.InventoryQuantity.create({
-          price_list_item_id: priceListItemId,
-          location_id: toLocationId,
-          quantity: quantity,
-          item_name: item.item,
-          location_name: toLocation.name
-        });
-      }
-    }
-
-    // Create audit ledger entry (StockMovement) - canonical schema
     await base44.asServiceRole.entities.StockMovement.create({
       price_list_item_id: priceListItemId,
       item_name: item.item,
-      quantity: quantity,
+      quantity,
       from_location_id: fromLocationId,
-      from_location_name: fromLocation?.name || null,
+      from_location_name: fromLoc?.name || null,
       to_location_id: toLocationId,
-      to_location_name: toLocation?.name || null,
+      to_location_name: toLoc?.name || null,
       performed_by_user_email: user.email,
       performed_by_user_name: user.full_name || user.display_name || user.email,
       performed_at: new Date().toISOString(),
-      source: source,
+      source,
       reference_type: reference_type || null,
       reference_id: reference_id || null,
-      notes: notes || null
+      notes: notes || '[auditOnly] legacy StockMovement record (no InventoryQuantity mutation)',
     });
 
     return Response.json({
       success: true,
-      message: `Moved ${quantity} ${item.item} ${fromLocation ? `from ${fromLocation.name}` : ''} ${toLocation ? `to ${toLocation.name}` : ''}`,
-      item_name: item.item,
-      quantity_moved: quantity
+      auditOnly: true,
+      message: `Audit-only StockMovement recorded for ${quantity} × ${item.item}. No InventoryQuantity was changed.`,
     });
-
   } catch (error) {
     console.error('[recordStockMovement] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
