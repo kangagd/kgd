@@ -4192,6 +4192,16 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         onClose={() => setShowItemsUsedModal(false)}
       />
 
+      {isLogisticsJob && (
+        <ReceivePoItemsModal
+          open={showProcessStockModal && (job.purchase_order_id || job.reference_type === 'purchase_order')}
+          onOpenChange={setShowProcessStockModal}
+          poId={job.purchase_order_id}
+          poReference={purchaseOrder?.po_number}
+          lineItems={purchaseOrderLines}
+        />
+      )}
+
       {/* Tasks Modal */}
       <Dialog open={showTasksModal} onOpenChange={setShowTasksModal}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
