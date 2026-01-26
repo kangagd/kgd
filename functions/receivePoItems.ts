@@ -19,7 +19,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin, manager, or technician access required' }, { status: 403 });
     }
 
-    const { po_id, location_id, receive_date_time, items, mark_po_received, notes } = await req.json();
+    const { po_id, location_id, receive_date_time, items, mark_po_received, notes, reference_type, reference_id, destination_location_id } = await req.json();
+    
+    // Support both location_id and destination_location_id for backwards compatibility
+    const finalLocationId = location_id || destination_location_id;
 
     if (!po_id || !location_id || !items || items.length === 0) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
