@@ -279,7 +279,7 @@ export default function Schedule() {
         onClick={() => setTodaysSectionExpanded(!todaysSectionExpanded)}
         className="w-full p-3 flex items-center justify-between hover:bg-slate-50 transition-colors rounded-xl"
       >
-        <h2 className="text-sm font-semibold text-slate-900">
+        <h2 className="text-[14px] font-semibold text-slate-900">
           Today's Jobs
         </h2>
         <div className="flex items-center gap-2">
@@ -293,7 +293,7 @@ export default function Schedule() {
       {todaysSectionExpanded && (
         <div className="px-3 pb-3">
           {todaysJobs.length === 0 ? (
-            <p className="text-xs text-slate-500 py-2 text-center italic">
+            <p className="text-[12px] text-slate-500 py-2 text-center italic">
               No jobs scheduled for today in this view.
             </p>
           ) : (
@@ -301,7 +301,7 @@ export default function Schedule() {
               {todaysJobs.map((job) => (
                 <li
                   key={job.id}
-                  className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-xs border border-slate-100"
+                  className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-[12px] border border-slate-100"
                 >
                   <div className="flex flex-col gap-0.5 overflow-hidden mr-2">
                     <div className="font-semibold text-slate-900 truncate">
@@ -322,14 +322,14 @@ export default function Schedule() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-6 text-[10px] px-2"
+                      className="h-6 text-[12px] px-2"
                       onClick={() => handleOpenJob(job)}
                     >
                       View
                     </Button>
                     <Button
                       size="sm"
-                      className="h-6 text-[10px] px-2 bg-[#FAE008] text-black hover:bg-[#E5CF07]"
+                      className="h-6 text-[12px] px-2 bg-[#FAE008] text-black hover:bg-[#E5CF07]"
                       onClick={() => handleOpenCheckIn(job)}
                     >
                       Check In
@@ -641,7 +641,7 @@ export default function Schedule() {
                   snapshot.isDraggingOver ? 'bg-orange-50 border-orange-300' : 'bg-[#F9FAFB] border-[#E5E7EB]'
                 }`}
               >
-                <div className="text-xs font-semibold text-[#6B7280] mb-2">Unscheduled (No Time)</div>
+                <div className="text-[12px] font-semibold text-[#6B7280] mb-2">Unscheduled (No Time)</div>
                 <div className="space-y-2">
                   {jobsByTimeSlot['unscheduled'].map((job, index) => (
                     <Draggable key={job.id} draggableId={job.id} index={index}>
@@ -676,14 +676,14 @@ export default function Schedule() {
           <div className="mb-3 space-y-2">
             {dayLeaves.map(leave => (
               <div key={leave.id} className="bg-gray-200 border-l-4 border-gray-500 p-3 rounded-lg">
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-[14px]">
                   <span className="font-medium text-gray-700">🚫 {leave.technician_name} Unavailable</span>
-                  <span className="text-xs text-gray-600 capitalize px-2 py-0.5 bg-gray-300 rounded">
+                  <span className="text-[12px] text-gray-600 capitalize px-2 py-0.5 bg-gray-300 rounded">
                     {leave.leave_type}
                   </span>
                 </div>
                 {leave.reason && (
-                  <div className="text-xs text-gray-600 mt-1">{leave.reason}</div>
+                  <div className="text-[12px] text-gray-600 mt-1">{leave.reason}</div>
                 )}
               </div>
             ))}
@@ -711,14 +711,14 @@ export default function Schedule() {
                     }`}
                   >
                     {/* Time Label */}
-                    <div className="w-16 flex-shrink-0 p-2 text-xs font-medium text-[#6B7280] border-r border-[#E5E7EB]">
+                    <div className="w-16 flex-shrink-0 p-2 text-[12px] font-medium text-[#6B7280] border-r border-[#E5E7EB]">
                       {slot.label}
                     </div>
                     
                     {/* Jobs Column */}
                     <div className="flex-1 p-2 space-y-2 relative">
                       {slotJobs.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-xs text-[#9CA3AF]">
+                        <div className="h-full flex items-center justify-center text-[12px] text-[#9CA3AF]">
                           {snapshot.isDraggingOver ? 'Drop here' : ''}
                         </div>
                       ) : (
@@ -804,9 +804,9 @@ export default function Schedule() {
                         : ''
                   }`}
                 >
-                  <h3 className={`text-lg font-semibold mb-3 ${isToday ? 'text-blue-600' : 'text-[#111827]'}`}>
+                  <h3 className={`text-[18px] font-semibold mb-3 ${isToday ? 'text-blue-600' : 'text-[#111827]'}`}>
                     {format(day, 'EEEE, MMM d')}
-                    {isToday && <span className="ml-2 text-xs font-normal text-blue-500">(Today)</span>}
+                    {isToday && <span className="ml-2 text-[12px] font-normal text-blue-500">(Today)</span>}
                   </h3>
                   {dayLeaves.length > 0 && (
                     <div className="mb-3 space-y-2">
@@ -814,7 +814,7 @@ export default function Schedule() {
                         <div key={leave.id} className="bg-gray-200 border-l-4 border-gray-500 p-2 rounded-lg">
                           <div className="flex items-center gap-2 text-xs">
                             <span className="font-medium text-gray-700">🚫 {leave.technician_name}</span>
-                            <span className="text-xs text-gray-600 capitalize px-1.5 py-0.5 bg-gray-300 rounded">
+                            <span className="text-[12px] text-gray-600 capitalize px-1.5 py-0.5 bg-gray-300 rounded">
                               {leave.leave_type}
                             </span>
                           </div>
@@ -823,7 +823,7 @@ export default function Schedule() {
                     </div>
                   )}
                   {dayJobs.length === 0 ? (
-                    <p className="text-sm text-[#9CA3AF] py-4 text-center">
+                    <p className="text-[14px] text-[#9CA3AF] py-4 text-center">
                       {snapshot.isDraggingOver ? 'Drop here to schedule' : 'No jobs'}
                     </p>
                   ) : (
@@ -900,7 +900,7 @@ export default function Schedule() {
         {/* Week day headers */}
         <div className="grid grid-cols-7 border-b border-[#E5E7EB]">
           {weekDayHeaders.map(day => (
-            <div key={day} className="p-2 text-center text-xs font-semibold text-[#6B7280] bg-[#F9FAFB]">
+            <div key={day} className="p-2 text-center text-[12px] font-semibold text-[#6B7280] bg-[#F9FAFB]">
               {day}
             </div>
           ))}
@@ -938,7 +938,7 @@ export default function Schedule() {
                          ? 'text-[#9CA3AF]' 
                          : 'text-[#111827]'
                    }`}>
-                     <span className={`text-sm ${isToday ? 'bg-blue-600 text-white rounded-full px-1.5 py-0.5' : ''}`}>
+                     <span className={`text-[14px] ${isToday ? 'bg-blue-600 text-white rounded-full px-1.5 py-0.5' : ''}`}>
                        {format(day, 'd')}
                      </span>
                    </div>
@@ -953,7 +953,7 @@ export default function Schedule() {
                        return false;
                      }
                    }).map(leave => (
-                     <div key={leave.id} className="text-xs p-1 mb-1 rounded bg-gray-200 border-l-2 border-gray-500 truncate">
+                     <div key={leave.id} className="text-[12px] p-1 mb-1 rounded bg-gray-200 border-l-2 border-gray-500 truncate">
                        🚫 {leave.technician_name?.split(' ')[0]}
                      </div>
                    ))}
@@ -970,7 +970,7 @@ export default function Schedule() {
                                 {...dragProvided.draggableProps}
                                 {...dragProvided.dragHandleProps}
                                 onClick={() => setModalJob(job)}
-                                className={`text-xs p-1.5 rounded cursor-grab active:cursor-grabbing transition-all border ${
+                                className={`text-[12px] p-1.5 rounded cursor-grab active:cursor-grabbing transition-all border ${
                                   dragSnapshot.isDragging 
                                     ? 'shadow-lg ring-2 ring-[#FAE008] rotate-1 opacity-90' 
                                     : 'hover:opacity-80'
@@ -1031,8 +1031,8 @@ export default function Schedule() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-4 flex flex-col gap-3">
             <div>
-              <h1 className="text-xl font-bold text-[#111827] leading-tight">Schedule</h1>
-              <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
+              <h1 className="text-[28px] font-bold text-[#111827] leading-tight">Schedule</h1>
+              <p className="text-[14px] text-[#4B5563] mt-1">{getDateRangeText()}</p>
             </div>
             
             <div className="inline-flex w-full items-center rounded-lg border bg-white p-1 text-xs shadow-sm">
@@ -1077,13 +1077,13 @@ export default function Schedule() {
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="text-center">
-              <div className="text-base font-bold text-[#111827]">
+              <div className="text-[16px] font-bold text-[#111827]">
                 {view === "day" && format(selectedDate, 'EEEE')}
                 {view === "week" && `Week of ${format(startOfWeek(selectedDate, { weekStartsOn: 1 }), 'MMM d')}`}
                 {view === "month" && format(selectedDate, 'MMMM yyyy')}
               </div>
               {view === "day" && (
-                <div className="text-sm text-[#4B5563]">{format(selectedDate, 'MMM d, yyyy')}</div>
+                <div className="text-[14px] text-[#4B5563]">{format(selectedDate, 'MMM d, yyyy')}</div>
               )}
             </div>
             <Button variant="outline" size="icon" onClick={handleNext} className="h-8 w-8 border-none hover:bg-[#F3F4F6]">
@@ -1128,8 +1128,8 @@ export default function Schedule() {
           <div className="flex flex-col gap-4 mb-4">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-3xl font-semibold text-[#111827] leading-tight">Schedule</h1>
-                <p className="text-sm text-[#4B5563] mt-1">{getDateRangeText()}</p>
+                <h1 className="text-[28px] font-bold text-[#111827] leading-tight">Schedule</h1>
+                <p className="text-[14px] text-[#4B5563] mt-1">{getDateRangeText()}</p>
               </div>
               
               {isAdminOrManager && (
