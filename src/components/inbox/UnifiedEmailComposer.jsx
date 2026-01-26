@@ -936,10 +936,14 @@ export default function UnifiedEmailComposer({
           linkTarget?.type === "project"
             ? linkTarget.id
             : thread?.project_id || undefined,
+        project_name: linkTarget?.type === "project" ? linkedProject?.title : undefined,
         contract_id:
           linkTarget?.type === "contract"
             ? linkTarget.id
             : thread?.contract_id || undefined,
+
+        // Source context for linking logic
+        source_context: linkTarget?.type === "project" ? "project" : linkTarget?.type === "contract" ? "contract" : undefined,
 
         // Project-sent email context (for immediate linking at send time)
         origin: linkTarget?.type === "project" ? "project" : undefined,
