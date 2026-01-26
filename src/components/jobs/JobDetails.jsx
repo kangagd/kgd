@@ -463,6 +463,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   // Detect logistics job - check is_logistics flag on JobType entity OR presence of logistics fields
   const isLogisticsJob = !!(currentJobType?.is_logistics === true || job.vehicle_id || job.purchase_order_id || job.third_party_trade_id || job.is_logistics_job === true);
+  const stock_transfer_status = job.stock_transfer_status || 'not_started';
   
   // Helper function to determine if this is a pickup job
   const isPickupJob = (jobData) => {
@@ -1479,14 +1480,29 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   title="Items Used">
                   <PackageMinus className="w-4 h-4" />
                 </Button>
-                {isLogisticsJob && stock_transfer_status !== 'completed' && (
-                  <Button
-                    onClick={() => setShowProcessStockModal(true)}
-                    className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 px-4 rounded-lg text-xs"
-                    title="Process Stock">
-                    <Package className="w-4 h-4 mr-1.5" />
-                    Process Stock
-                  </Button>
+                {isLogisticsJob && (
+                  <>
+                    <Badge className={`${
+                      stock_transfer_status === 'completed' ? 'bg-green-100 text-green-800' :
+                      stock_transfer_status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                      stock_transfer_status === 'skipped' ? 'bg-gray-100 text-gray-800' :
+                      'bg-slate-100 text-slate-700'
+                    } text-[11px] font-medium px-2 py-1`}>
+                      {stock_transfer_status === 'completed' ? 'Stock processed' :
+                       stock_transfer_status === 'pending' ? 'Stock pending' :
+                       stock_transfer_status === 'skipped' ? 'Stock skipped' :
+                       'Stock not processed'}
+                    </Badge>
+                    {stock_transfer_status !== 'completed' && (
+                      <Button
+                        onClick={() => setShowProcessStockModal(true)}
+                        className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-9 px-4 rounded-lg text-xs"
+                        title="Process Stock">
+                        <Package className="w-4 h-4 mr-1.5" />
+                        Process Stock
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
           </div>
