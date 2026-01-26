@@ -61,14 +61,11 @@ export default function StockAdjustmentAdminModal({
       }
 
       // qty can be + or -, allow it
-      const response = await base44.functions.invoke('recordStockMovement', {
-        priceListItemId: skuId,
-        fromLocationId: null,
-        toLocationId: locationId,
-        quantity: Math.abs(qty),
-        movementType: 'adjustment',
-        reference_type: 'manual_adjustment',
-        notes: reason,
+      const response = await base44.functions.invoke('adjustStockCorrection', {
+        price_list_item_id: skuId,
+        location_id: locationId,
+        adjustment_quantity: qty,
+        reason: reason,
       });
 
       if (response.data?.error) {
