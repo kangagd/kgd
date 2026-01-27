@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
       const moduleIssues = [];
       const poLineCandidates = ['PurchaseOrderLine', 'POLine', 'PurchaseOrderItem', 'PurchaseOrderLineItem'];
       const poEntity = await findEntity(base44, poLineCandidates) || { name: 'PurchaseOrderLine', timestampField: 'updated_date' };
-      const poLines = await getRecentRecords(base44, poEntity.name, 14);
+      const poLines = await base44.asServiceRole.entities[poEntity.name].list(undefined, 500);
 
       const noStatus = poLines.filter(l => !l.status);
       noStatus.forEach(l => {
@@ -175,25 +175,12 @@ Deno.serve(async (req) => {
         });
       });
 
-      // Check for receive regressions
-      const receiveMovements = movements.filter(m => m.source === 'po_receive');
-      const noFromLoc = receiveMovements.filter(m => !m.from_location_id);
-      if (noFromLoc.length > 0) {
-        moduleIssues.push({
-          severity: 'warning',
-          module: 'purchase_orders',
-          check: 'receive_source_location',
-          message: `${noFromLoc.length} PO receive movements missing source location`,
-          evidence: { count: noFromLoc.length, samples: noFromLoc.slice(0, 3).map(m => m.id) }
-        });
-      }
-
       modules.purchase_orders = {
-        checks_run: 4,
+        checks_run: 2,
         entity: poEntity.name,
         records_checked: poLines.length,
         issues: moduleIssues.filter(i => i.module === 'purchase_orders'),
-        summary: `${poLines.length} PO lines checked (last 14d), ${noStatus.length + invalidStatus.length} status issues`
+        summary: `${poLines.length} PO lines checked, ${noStatus.length + invalidStatus.length} status issues`
       };
       allIssues.push(...moduleIssues);
     } catch (err) {
