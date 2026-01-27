@@ -79,31 +79,14 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
     resolveId();
   }, [open, item]);
 
-  // Fetch inventory locations with stock for this item
+  // Fetch inventory locations with stock (only when resolved ID is available)
   const { data: availableLocations = [] } = useQuery({
-    queryKey: ['inventory-locations-for-item', item?.ref_id, item?.type],
+    queryKey: ['inventory-locations-for-item', resolvedPriceListItemId],
     queryFn: async () => {
-      if (!item?.ref_id) return [];
-
-      let priceListItemId = null;
-
-      // If this is a part reference, fetch the Part to get its price_list_item_id
-      if (item.type === 'part' && item.source === 'project') {
-        try {
-          const part = await base44.entities.Part.get(item.ref_id);
-          priceListItemId = part?.price_list_item_id;
-        } catch (err) {
-          console.warn('Could not fetch Part:', err);
-        }
-      } else if (item.type === 'part' && item.source === 'job') {
-        // For job-created parts, ref_id might already be price_list_item_id
-        priceListItemId = item.ref_id;
-      }
-
-      if (!priceListItemId) return [];
+      if (!resolvedPriceListItemId) return [];
 
       const quantities = await base44.entities.InventoryQuantity.filter({
-        price_list_item_id: priceListItemId
+        price_list_item_id: resolvedPriceListItemId
       });
       const allLocations = await base44.entities.InventoryLocation.list();
       const locationMap = new Map(allLocations.map(loc => [loc.id, loc]));
@@ -123,7 +106,7 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
       }
       return locationsWithStock;
     },
-    enabled: open && !!item?.ref_id,
+    enabled: open && !!resolvedPriceListItemId && !isResolving,
   });
 
   // Auto-suggest location (technician's vehicle if available)
