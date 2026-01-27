@@ -390,22 +390,29 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
     try {
       const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
       const results = await Promise.all(uploadPromises);
-      // Extract URL strings only - handle various response structures
+      
+      // Extract URL string only - strip all metadata
       const newImageUrls = results
         .map(result => {
-          // Handle different response structures
+          // Result can be: string, {file_url: string}, {file_url: {url: string}}, or {url: string, uploaded_at: string}
           if (typeof result === 'string') return result;
-          if (typeof result?.file_url === 'string') return result.file_url;
-          if (result?.file_url?.url) return result.file_url.url;
-          if (result?.url) return result.url;
+          
+          // Check file_url field first
+          const fileUrl = result?.file_url;
+          if (typeof fileUrl === 'string') return fileUrl;
+          if (fileUrl?.url) return fileUrl.url;
+          
+          // Check direct url field (handles {url: '...', uploaded_at: '...'})
+          if (result?.url && typeof result.url === 'string') return result.url;
+          
           return null;
         })
-        .filter(url => url);
+        .filter(url => url && typeof url === 'string');
       
       // Ensure existing URLs are strings too
       const existingUrls = (formData.image_urls || []).map(url => 
-        typeof url === 'string' ? url : (url?.url || url)
-      );
+        typeof url === 'string' ? url : (url?.url || '')
+      ).filter(url => url);
       
       setFormData({
         ...formData,
