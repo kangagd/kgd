@@ -34,16 +34,40 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Find the most recent N movements for this item from this location
-    const movements = await base44.entities.StockMovement.filter({
+    // Try to find StockMovement records first
+    let movements = await base44.entities.StockMovement.filter({
       price_list_item_id: priceListItemId,
       from_location_id: locationId
     });
 
+    // If no movements, update InventoryQuantity directly (for failed operations that already deducted)
     if (movements.length === 0) {
-      return Response.json({ 
-        error: 'No movements found for this item/location combination' 
-      }, { status: 404 });
+      const quantityRecord = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: priceListItemId,
+        location_id: locationId
+      });
+
+      if (quantityRecord.length === 0) {
+        return Response.json({ 
+          error: 'No InventoryQuantity record found for this item/location' 
+        }, { status: 404 });
+      }
+
+      // Add back the quantity
+      const qtyRecord = quantityRecord[0];
+      const newQuantity = (qtyRecord.quantity || 0) + (quantity * count);
+      const updated = await base44.entities.InventoryQuantity.update(qtyRecord.id, {
+        quantity: newQuantity
+      });
+
+      return Response.json({
+        success: true,
+        method: 'InventoryQuantity direct update',
+        previous_quantity: qtyRecord.quantity,
+        added: quantity * count,
+        new_quantity: newQuantity,
+        record_id: updated.id
+      });
     }
 
     // Sort by created_date descending and take the most recent 'count'
@@ -69,6 +93,7 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
+      method: 'StockMovement reversals',
       reverted_count: reversals.length,
       reversals: reversals.map(r => ({ id: r.id, quantity: r.quantity }))
     });
