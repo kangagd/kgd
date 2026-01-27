@@ -388,6 +388,8 @@ Deno.serve(async (req) => {
 
       modules.jobs_visits = {
         checks_run: 2,
+        entity: visitEntity.name,
+        records_checked: visits.length,
         issues: moduleIssues.filter(i => i.module === 'jobs_visits'),
         summary: `${visits.length} visits checked (last 30d)`
       };
