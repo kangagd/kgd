@@ -205,11 +205,9 @@ Deno.serve(async (req) => {
     // ==========================================
     try {
       const moduleIssues = [];
-      const last30Days = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      
-      const parts = await base44.asServiceRole.entities.Part.filter({
-        updated_date: { $gte: last30Days.toISOString() }
-      });
+      const partCandidates = ['Part', 'ProjectPart'];
+      const partEntity = await findEntity(base44, partCandidates) || { name: 'Part', timestampField: 'updated_date' };
+      const parts = await getRecentRecords(base44, partEntity.name, 30);
 
       const missingPrimaryPO = parts.filter(p => p.purchase_order_ids?.length > 0 && !p.primary_purchase_order_id);
       if (missingPrimaryPO.length > 0) {
