@@ -1,4 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import {
+  buildStockMovementIdempotencyKey,
+  normalizeStockMovementSource,
+  validateInventoryWrite,
+  enrichStockMovementWithDurableIdentity
+} from './shared/stockMovementGuardrails.js';
 
 /**
  * recordStockMovement - Intelligent classifier & router
