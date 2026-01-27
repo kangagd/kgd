@@ -766,13 +766,14 @@ export default function Projects() {
                     className="w-full md:w-[160px] h-10"
                   />
 
-                  {(stageFilter !== "all" || partsStatusFilter !== "all" || pricingStatusFilter !== "all" || startDate || endDate || sortBy !== "created_date") && (
+                  {(stageFilter !== "all" || partsStatusFilter !== "all" || pricingStatusFilter !== "all" || pricingChecklistFilter.length > 0 || startDate || endDate || sortBy !== "created_date") && (
                     <Button
                       variant="outline"
                       onClick={() => {
                         setStageFilter("all");
                         setPartsStatusFilter("all");
                         setPricingStatusFilter("all");
+                        setPricingChecklistFilter([]);
                         setStartDate("");
                         setEndDate("");
                         setSortBy("created_date");
