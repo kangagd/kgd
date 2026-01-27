@@ -106,6 +106,29 @@ Deno.serve(async (req) => {
             // PERMISSION CHECK: Validate restricted fields not being updated
             validateUpdate(user, 'Project', data);
             
+            // GUARDRAIL: Prevent unchecking of quote_checklist items (one-way lock)
+            if (data.quote_checklist && Array.isArray(data.quote_checklist)) {
+                const oldChecklist = oldProject.quote_checklist || [];
+                const newChecklist = data.quote_checklist;
+                
+                for (let i = 0; i < newChecklist.length; i++) {
+                    const oldItem = oldChecklist[i];
+                    const newItem = newChecklist[i];
+                    
+                    // If item was checked before, keep it checked (prevent rollback)
+                    if (oldItem?.checked === true && oldItem?.checked_at) {
+                        newChecklist[i] = {
+                            ...oldItem,
+                            ...newItem,
+                            checked: true,
+                            checked_at: oldItem.checked_at,
+                            checked_by: oldItem.checked_by
+                        };
+                    }
+                }
+                data.quote_checklist = newChecklist;
+            }
+            
             // Snapshot tags for historical reporting
             if (data.project_tag_ids !== undefined) {
                 if (Array.isArray(data.project_tag_ids) && data.project_tag_ids.length > 0) {
