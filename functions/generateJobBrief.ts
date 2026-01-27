@@ -187,11 +187,17 @@ Deno.serve(async (req) => {
     // Get job-type specific prompt block
     const jobTypeBlock = getJobTypePromptBlock(job.job_type_name || job.job_type);
 
+    // Warn if JobType missing in prompt
+    const jobTypeMissingWarning = jobTypeMissing 
+      ? '\n⚠️ WARNING: Job Type was not set. Brief quality is reduced. Please set Job Type and regenerate.\n' 
+      : '';
+
     const prompt = `You are generating a technician-ready JOB BRIEF for KangarooGD.
 
-CRITICAL: Job Type defines the lens. Everything below must be interpreted through these MANDATORY rules:
+    CRITICAL: Job Type defines the lens. Everything below must be interpreted through these MANDATORY rules:
 
-${jobTypeBlock}
+    ${jobTypeBlock}
+    ${jobTypeMissingWarning}
 
 CONTEXT FOR THIS BRIEF:
 ${context}
