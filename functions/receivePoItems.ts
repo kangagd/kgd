@@ -2,14 +2,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { checkInventoryTrackability } from './shared/inventoryTrackingGuardrails.js';
 
 Deno.serve(async (req) => {
-  console.log('🟢🟢🟢 receivePoItems CALLED');
-  const rawBody = await req.text();
-  console.log('🟢 RAW REQUEST BODY:', rawBody);
-  const parsedData = JSON.parse(rawBody);
-  console.log('🟢 PARSED DATA:', JSON.stringify(parsedData, null, 2));
-  console.log('🟢 job_id:', parsedData.job_id);
-  console.log('🟢 reference_type:', parsedData.reference_type);
-  
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
