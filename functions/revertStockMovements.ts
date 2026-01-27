@@ -10,7 +10,22 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { priceListItemId, locationId, quantity, count = 1 } = body;
+    let { priceListItemId, locationId, quantity, count = 1, skuOrId, locationNameOrId } = body;
+
+    // Lookup by SKU/name if IDs not provided
+    if (!priceListItemId && skuOrId) {
+      const items = await base44.entities.PriceListItem.filter({ sku: skuOrId });
+      if (items.length > 0) {
+        priceListItemId = items[0].id;
+      }
+    }
+
+    if (!locationId && locationNameOrId) {
+      const locations = await base44.entities.InventoryLocation.filter({ name: locationNameOrId });
+      if (locations.length > 0) {
+        locationId = locations[0].id;
+      }
+    }
 
     if (!priceListItemId || !locationId || !quantity) {
       return Response.json({ 
