@@ -1,4 +1,5 @@
 import AdminDuplicates from './pages/AdminDuplicates';
+import BackfillJobTypeAdmin from './pages/BackfillJobTypeAdmin';
 import BaselineStockSeed from './pages/BaselineStockSeed';
 import CheckIn from './pages/CheckIn';
 import Contracts from './pages/Contracts';
@@ -26,6 +27,7 @@ import Projects from './pages/Projects';
 import PurchaseOrders from './pages/PurchaseOrders';
 import Reports from './pages/Reports';
 import RoleSettings from './pages/RoleSettings';
+import RollbackAuditV2 from './pages/RollbackAuditV2';
 import SamplesLibrary from './pages/SamplesLibrary';
 import Schedule from './pages/Schedule';
 import Suppliers from './pages/Suppliers';
@@ -35,13 +37,12 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
-import RollbackAuditV2 from './pages/RollbackAuditV2';
-import BackfillJobTypeAdmin from './pages/BackfillJobTypeAdmin';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "AdminDuplicates": AdminDuplicates,
+    "BackfillJobTypeAdmin": BackfillJobTypeAdmin,
     "BaselineStockSeed": BaselineStockSeed,
     "CheckIn": CheckIn,
     "Contracts": Contracts,
@@ -69,6 +70,7 @@ export const PAGES = {
     "PurchaseOrders": PurchaseOrders,
     "Reports": Reports,
     "RoleSettings": RoleSettings,
+    "RollbackAuditV2": RollbackAuditV2,
     "SamplesLibrary": SamplesLibrary,
     "Schedule": Schedule,
     "Suppliers": Suppliers,
@@ -78,8 +80,6 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
-    "RollbackAuditV2": RollbackAuditV2,
-    "BackfillJobTypeAdmin": BackfillJobTypeAdmin,
 }
 
 export const pagesConfig = {

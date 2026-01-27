@@ -53,6 +53,7 @@ export default function Projects() {
   const [stageFilter, setStageFilter] = useState("all");
   const [partsStatusFilter, setPartsStatusFilter] = useState("all");
   const [pricingStatusFilter, setPricingStatusFilter] = useState("all");
+  const [pricingChecklistFilter, setPricingChecklistFilter] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [sortBy, setSortBy] = useState("created_date");
