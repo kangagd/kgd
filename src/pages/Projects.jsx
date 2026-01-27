@@ -884,9 +884,7 @@ export default function Projects() {
                         <ProjectTypeBadge value={project.project_type} />
                       )}
                       <ProjectStatusBadge value={project.status} />
-                      {(stageFilter === "Create Quote" || stageFilter === "Quote Sent" || stageFilter === "all") && (
-                        <PricingChecklistBadges project={project} />
-                      )}
+                      <PricingChecklistBadges project={project} />
                       {hasRequiredTrades(project.id) && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] text-amber-700 font-medium">
                           Third-party required
