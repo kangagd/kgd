@@ -87,7 +87,8 @@ Deno.serve(async (req) => {
           po_line_id: receiveItem.po_line_id,
           item_name: poLine.item_name || 'Unknown',
           warning_badge: 'Not inventory-tracked',
-          reason: trackCheck.reason
+          reason: trackCheck.reason,
+          debug_info: `job_id=${job_id}, ref_type=${reference_type}, isLogisticsJob=${isLogisticsJob}`
         });
         continue;
       }
