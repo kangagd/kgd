@@ -438,12 +438,25 @@ Deno.serve(async (req) => {
                 }
             }
 
-            // C) ALWAYS generate job_number (even for logistics jobs)
+            // C) ALWAYS generate job_number (STANDARD + LOGISTICS)
              try {
-                 jobData.job_number = await generateJobNumber(base44, jobData.project_id);
+                 if (isLogisticsJob) {
+                     // Logistics jobs ALWAYS have a job_number (purpose-based)
+                     if (!jobData.job_number || !isLogisticsJobNumber(jobData.job_number)) {
+                         jobData.job_number = await generateLogisticsJobNumber(base44, {
+                             project_id: jobData.project_id,
+                             project_number: jobData.project_number,
+                             logistics_purpose: jobData.logistics_purpose,
+                             job_id_for_fallback: null
+                         });
+                     }
+                 } else {
+                     // Standard jobs use existing generator
+                     jobData.job_number = await generateJobNumber(base44, jobData.project_id);
+                 }
              } catch (error) {
-                 // Fallback for logistics jobs if generateJobNumber fails
-                 console.warn(`[manageJob] generateJobNumber failed, using fallback:`, error.message);
+                 // Fallback for logistics jobs if generation fails
+                 console.warn(`[manageJob] job number generation failed:`, error.message);
                  jobData.job_number = `L-${Date.now().toString().slice(-6)}`;
              }
 
