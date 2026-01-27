@@ -176,7 +176,7 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
         used: true,
         used_qty: qty,
         used_at: new Date().toISOString(),
-        used_by: 'technician', // or fetch current user email
+        used_by: currentUser?.email || 'unknown',
         status: 'installed' // Mark as installed once used
       };
 
