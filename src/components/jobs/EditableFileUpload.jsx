@@ -102,6 +102,10 @@ export default function EditableFileUpload({
     return url && /\.(mp4|webm|ogg|mov|avi)$/i.test(url);
   };
 
+  const isMobileMedia = () => {
+    return (accept.includes('image') || accept.includes('video')) && typeof window !== 'undefined' && window.innerWidth < 768;
+  };
+
   // Filter out empty, null, undefined, or invalid URLs
   const validFiles = (multiple ? files : (files ? [files] : [])).filter(url => url && typeof url === 'string' && url.trim() !== '');
   const displayFiles = validFiles;
