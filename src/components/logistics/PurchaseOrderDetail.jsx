@@ -706,10 +706,37 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         category: updates.category || "Other"
       };
       
+      // Get the line to find linked part
+      const line = await base44.entities.PurchaseOrderLine.get(lineId);
       await base44.entities.PurchaseOrderLine.update(lineId, lineData);
+      
+      // Sync linked Part if one exists
+      if (line.part_id) {
+        const partUpdates = {};
+        
+        // Sync quantity if changed
+        if (updates.quantity !== undefined) {
+          partUpdates.quantity_required = updates.quantity || 1;
+        }
+        
+        // Sync item name if changed
+        if (updates.name !== undefined) {
+          partUpdates.item_name = updates.name;
+        }
+        
+        // Sync category if changed
+        if (updates.category !== undefined) {
+          partUpdates.category = updates.category;
+        }
+        
+        if (Object.keys(partUpdates).length > 0) {
+          await base44.entities.Part.update(line.part_id, partUpdates);
+        }
+      }
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['purchaseOrderLines', poId] });
+      await queryClient.invalidateQueries({ queryKey: ['parts'] });
     }
   });
 
