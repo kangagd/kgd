@@ -23,8 +23,19 @@ Deno.serve(async (req) => {
       idempotency_key = null
     } = body;
 
-    if (!priceListItemId || !quantity || quantity <= 0) {
-      return Response.json({ error: 'Invalid parameters' }, { status: 400 });
+    // Validate quantity
+    if (!quantity || quantity <= 0) {
+      return Response.json({ error: 'Quantity must be greater than 0' }, { status: 400 });
+    }
+
+    // Validate priceListItemId (required and must exist)
+    if (!priceListItemId) {
+      return Response.json({ error: 'ITEM_NOT_FOUND: price_list_item_id is required' }, { status: 400 });
+    }
+
+    const item = await base44.entities.PriceListItem.get(priceListItemId);
+    if (!item) {
+      return Response.json({ error: 'ITEM_NOT_FOUND: PriceListItem does not exist' }, { status: 404 });
     }
 
     // moveInventory is for transfers and job usage only (no legacy movementType support)
