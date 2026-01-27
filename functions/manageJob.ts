@@ -345,27 +345,36 @@ Deno.serve(async (req) => {
         let previousJob = null;
 
         if (action === 'create') {
-            // LOGISTICS JOB VALIDATION
-            if (data?.is_logistics_job === true) {
-                // Logistics jobs require logistics_purpose
-                if (!data?.logistics_purpose) {
-                    return Response.json({ error: 'Logistics purpose is required for logistics jobs' }, { status: 400 });
-                }
-                // Logistics jobs require origin OR destination address
-                if (!data?.origin_address && !data?.destination_address) {
-                    return Response.json({ error: 'Origin or destination address is required for logistics jobs' }, { status: 400 });
-                }
-            }
+             // GUARDRAIL: JobType enforcement (required unless admin override)
+             const allowMissingJobType = data?.allow_missing_job_type === true && user.role === 'admin';
+             if (!data?.job_type_id && !allowMissingJobType) {
+                 return Response.json({ 
+                     error: 'Job Type is required (it powers job briefs and technician context).',
+                     code: 'JOB_TYPE_REQUIRED'
+                 }, { status: 400 });
+             }
 
-            // GUARDRAIL: Validate required fields for standard jobs
-            if (data?.is_logistics_job !== true) {
-                if (!data?.customer_id?.trim() && !data?.supplier_id) {
-                    return Response.json({ error: 'Customer or Supplier is required' }, { status: 400 });
-                }
-            }
-            if (!data?.scheduled_date) {
-                return Response.json({ error: 'Scheduled date is required' }, { status: 400 });
-            }
+             // LOGISTICS JOB VALIDATION
+             if (data?.is_logistics_job === true) {
+                 // Logistics jobs require logistics_purpose
+                 if (!data?.logistics_purpose) {
+                     return Response.json({ error: 'Logistics purpose is required for logistics jobs' }, { status: 400 });
+                 }
+                 // Logistics jobs require origin OR destination address
+                 if (!data?.origin_address && !data?.destination_address) {
+                     return Response.json({ error: 'Origin or destination address is required for logistics jobs' }, { status: 400 });
+                 }
+             }
+
+             // GUARDRAIL: Validate required fields for standard jobs
+             if (data?.is_logistics_job !== true) {
+                 if (!data?.customer_id?.trim() && !data?.supplier_id) {
+                     return Response.json({ error: 'Customer or Supplier is required' }, { status: 400 });
+                 }
+             }
+             if (!data?.scheduled_date) {
+                 return Response.json({ error: 'Scheduled date is required' }, { status: 400 });
+             }
 
             // Handle creation
             let jobData = { ...data };
