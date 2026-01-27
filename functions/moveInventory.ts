@@ -28,6 +28,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Quantity must be greater than 0' }, { status: 400 });
     }
 
+    // IDEMPOTENCY CHECK: Early check before any mutations
+    if (idempotency_key) {
+      const existingMovements = await base44.entities.StockMovement.filter({
+        idempotency_key: idempotency_key
+      });
+      if (existingMovements.length > 0) {
+        return Response.json({
+          success: true,
+          idempotent: true,
+          message: `Movement already processed (idempotency_key: ${idempotency_key})`,
+          updated_quantities: []
+        });
+      }
+    }
+
     // Validate priceListItemId (required and must exist)
     if (!priceListItemId) {
       return Response.json({ error: 'ITEM_NOT_FOUND: price_list_item_id is required' }, { status: 400 });
