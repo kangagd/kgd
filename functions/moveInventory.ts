@@ -51,13 +51,13 @@ Deno.serve(async (req) => {
     if (finalSource === 'transfer' && (!fromLocationId || !toLocationId)) {
       return Response.json({ error: 'Transfer requires both from and to locations' }, { status: 400 });
     }
-    
+
     if (finalSource === 'job_usage' && !fromLocationId) {
       return Response.json({ error: 'Job usage requires source location' }, { status: 400 });
     }
 
-    // TECHNICIAN AUTHORIZATION: enforce warehouse <-> own vehicle only
-    if (user.role === 'technician') {
+    // TECHNICIAN AUTHORIZATION: enforce restrictions only for transfers
+    if (user.role === 'technician' && finalSource === 'transfer') {
       // Resolve technician's assigned vehicle
       const vehicles = await base44.asServiceRole.entities.Vehicle.filter({
         assigned_user_id: user.id,
