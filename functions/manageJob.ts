@@ -529,18 +529,27 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Created');
             }
         } else if (action === 'update') {
-              // GUARDRAIL: Verify job exists
-              if (!id) {
-                  return Response.json({ error: 'Job ID is required for update' }, { status: 400 });
-              }
+               // GUARDRAIL: Verify job exists
+               if (!id) {
+                   return Response.json({ error: 'Job ID is required for update' }, { status: 400 });
+               }
 
-              previousJob = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
-              if (!previousJob) {
-                  return Response.json({ error: 'Job not found' }, { status: 404 });
-              }
+               previousJob = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+               if (!previousJob) {
+                   return Response.json({ error: 'Job not found' }, { status: 404 });
+               }
 
-              // PERMISSION CHECK: Technicians can only update assigned jobs
-              enforceJobUpdatePermission(user, previousJob);
+               // PERMISSION CHECK: Technicians can only update assigned jobs
+               enforceJobUpdatePermission(user, previousJob);
+
+               // GUARDRAIL: JobType enforcement on update (cannot clear existing job_type_id)
+               const allowMissingJobType = data?.allow_missing_job_type === true && user.role === 'admin';
+               if (data.hasOwnProperty('job_type_id') && !data.job_type_id && previousJob.job_type_id && !allowMissingJobType) {
+                   return Response.json({ 
+                       error: 'Cannot remove Job Type from an existing job.',
+                       code: 'JOB_TYPE_IMMUTABLE'
+                   }, { status: 400 });
+               }
 
               // LOGISTICS JOB RULE: Logistics jobs do NOT require customer confirmation
               // Detect if this is a logistics job
