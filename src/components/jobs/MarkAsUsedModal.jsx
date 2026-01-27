@@ -26,6 +26,21 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
 
   const queryClient = useQueryClient();
 
+  // Fetch current user when modal opens
+  useEffect(() => {
+    if (!open) return;
+    const fetchUser = async () => {
+      try {
+        const user = await base44.auth.me();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Error fetching current user:', err);
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
+  }, [open]);
+
   // Resolver: determine inventory lookup ID from requirement item
   useEffect(() => {
     if (!open || !item) {
