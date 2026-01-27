@@ -197,20 +197,20 @@ Deno.serve(async (req) => {
     // ========================================
     const summary = {
       success: true,
-      dryRun: dryRun,
-      applied: !dryRun,
+      dryRun: isDryRun,
+      applied: !isDryRun,
       inventory_quantities: {
-        [dryRun ? 'would_update' : 'updated']: qtyUpdated,
+        [isDryRun ? 'would_update' : 'updated']: qtyUpdated,
         unresolved: qtyUnresolved
       },
       stock_movements: {
-        [dryRun ? 'would_update' : 'updated']: movementUpdated,
+        [isDryRun ? 'would_update' : 'updated']: movementUpdated,
         unresolved: movementUnresolved
       },
       sample_mappings: sampleMappings.slice(0, 10),
       needs_review: needsReview,
       summary: {
-        [dryRun ? 'would_backfill' : 'backfilled']: qtyUpdated + movementUpdated,
+        [isDryRun ? 'would_backfill' : 'backfilled']: qtyUpdated + movementUpdated,
         unresolved_count: qtyUnresolved + movementUnresolved
       }
     };
