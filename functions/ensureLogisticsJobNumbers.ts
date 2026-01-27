@@ -1,5 +1,38 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { getPurposeCode, buildLogisticsJobNumber, isLogisticsJobNumber } from './shared/logisticsJobNumbering.js';
+
+// Inline utility functions to avoid import issues
+const PURPOSE_CODES = {
+  po_delivery_to_warehouse: 'PO-DEL',
+  po_pickup_from_supplier: 'PO-PU',
+  part_pickup_for_install: 'PART-PU',
+  manual_client_dropoff: 'DROP',
+  sample_dropoff: 'SAMP-DO',
+  sample_pickup: 'SAMP-PU',
+};
+
+function getPurposeCode(logisticsPurpose) {
+  return PURPOSE_CODES[logisticsPurpose] || 'LOG';
+}
+
+function buildLogisticsJobNumber({ projectNumber, purposeCode, sequence = 1, fallbackShortId }) {
+  if (!projectNumber) {
+    return `LOG-${purposeCode}-${fallbackShortId}`;
+  }
+  
+  if (sequence === 1) {
+    return `${projectNumber}-${purposeCode}`;
+  }
+  
+  return `${projectNumber}-${purposeCode}-${sequence}`;
+}
+
+function isLogisticsJobNumber(jobNumber) {
+  if (!jobNumber) return false;
+  const str = String(jobNumber);
+  
+  const pattern = /^(\d+|LOG)-[A-Z]+-[A-Z]+(-[A-Za-z0-9]+)?$/;
+  return pattern.test(str);
+}
 
 Deno.serve(async (req) => {
   try {
