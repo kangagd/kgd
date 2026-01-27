@@ -31,7 +31,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import ReceivePoItemsModal from "./ReceivePoItemsModal";
+import ReceivePoItemsMixedModal from "./ReceivePoItemsMixedModal";
 import POLogisticsJobsSection from "./POLogisticsJobsSection";
 import { devLog } from "@/components/utils/devLog";
 
@@ -1450,12 +1450,13 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         )}
 
         {/* Receive Items Modal */}
-        <ReceivePoItemsModal
+        <ReceivePoItemsMixedModal
           open={showReceiveModal}
           onOpenChange={setShowReceiveModal}
           poId={poId}
           poReference={getPoDisplayReference(po)}
           lineItems={lineItems}
+          jobId={po?.linked_logistics_job_id || null}
         />
       </div>
     </div>
