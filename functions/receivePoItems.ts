@@ -19,9 +19,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin, manager, or technician access required' }, { status: 403 });
     }
 
-    const { po_id, location_id, receive_date_time, items, mark_po_received, notes, reference_type, reference_id, destination_location_id, job_id } = await req.json();
+    const data = await req.json();
     
-    console.log('[receivePoItems] Parameters received:', { po_id, job_id, reference_type, has_items: items?.length });
+    console.log('🟢🟢🟢 BACKEND RECEIVED DATA:', JSON.stringify(data, null, 2));
+    console.log('🟢 job_id:', data.job_id);
+    console.log('🟢 reference_type:', data.reference_type);
+    
+    const { po_id, location_id, receive_date_time, items, mark_po_received, notes, reference_type, reference_id, destination_location_id, job_id } = data;
+    
+    console.log('[receivePoItems] After destructure - job_id:', job_id, 'reference_type:', reference_type);
     
     // Support both location_id and destination_location_id for backwards compatibility
     const finalLocationId = location_id || destination_location_id;
