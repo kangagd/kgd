@@ -74,7 +74,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     invoice_url: "",
   });
 
-  const [isLogisticsJob, setIsLogisticsJob] = useState(isLogisticsContext);
+  const [isLogisticsJob, setIsLogisticsJob] = useState(job?.is_logistics_job ?? isLogisticsContext);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingQuote, setUploadingQuote] = useState(false);
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
