@@ -522,7 +522,10 @@ Deno.serve(async (req) => {
         total_issues: allIssues.length,
         critical: criticalCount,
         warnings: warningCount
-      }
+      },
+      audit_trend_saved: audit_trend_saved,
+      audit_trend_error: audit_trend_error,
+      audit_trend_storage: 'ChangeHistory'
     });
 
   } catch (error) {
