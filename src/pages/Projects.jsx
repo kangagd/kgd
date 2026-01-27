@@ -395,8 +395,16 @@ export default function Projects() {
           if (pricingStatusFilter === "pricing_received" && pricingStatus !== "received") matchesPricingStatus = false;
           if (pricingStatusFilter === "no_pricing" && pricingStatus !== "none") matchesPricingStatus = false;
         }
+
+        let matchesPricingChecklist = true;
+        if (pricingChecklistFilter.length > 0) {
+          const hasAllChecked = pricingChecklistFilter.every(filterItem =>
+            project.quote_checklist?.some(item => item.item === filterItem && item.checked === true)
+          );
+          if (!hasAllChecked) matchesPricingChecklist = false;
+        }
         
-        return matchesSearch && matchesStage && matchesPartsStatus && matchesTags && matchesDateRange && matchesDuplicateFilter && matchesPricingStatus;
+        return matchesSearch && matchesStage && matchesPartsStatus && matchesTags && matchesDateRange && matchesDuplicateFilter && matchesPricingStatus && matchesPricingChecklist;
       })
       .sort((a, b) => {
         if (sortBy === "pricing_status") {
