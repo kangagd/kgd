@@ -30,7 +30,7 @@ async function findEntity(base44, candidates) {
     }
   }
   return null;
-}
+} 
 
 // Helper: filter records by last N days, fallback to last N records
 async function getRecentRecords(base44, entityName, days = 30, fallbackLimit = 200) {
@@ -505,42 +505,35 @@ Deno.serve(async (req) => {
     const status = criticalCount > 0 ? 'CRITICAL' : warningCount > 0 ? 'WARNING' : 'OK';
 
     // ==========================================
-    // STORE TREND IN ChangeHistory
+    // STORE TREND IN SystemHealthCheck
     // ==========================================
-    let auditTrendSaved = false;
-    let auditTrendError = null;
-
     try {
-      const description = `Rollback audit: ${status}. Critical: ${criticalCount}, Warnings: ${warningCount}`;
-
-      await base44.asServiceRole.entities.ChangeHistory.create({
-        entity_type: 'SystemAudit',
-        entity_id: 'appRollbackAuditV2',
-        action: 'run',
-        title: 'System health audit',
-        description: description,
-        metadata_json: JSON.stringify({
-          status: status,
-          run_at: runAt,
-          critical_count: criticalCount,
-          warning_count: warningCount,
-          modules: modules,
-          summary: {
-            total_issues: allIssues.length,
-            critical: criticalCount,
-            warnings: warningCount
-          },
-          critical_issues: allIssues.filter(i => i.severity === 'critical'),
-          warning_issues: allIssues.filter(i => i.severity === 'warning')
-        }),
-        changed_by: user.email,
-        changed_by_name: user.full_name || user.display_name || user.email
+      const existingCheck = await base44.asServiceRole.entities.SystemHealthCheck.filter({
+        key: 'rollback_audit_v2'
       });
 
-      auditTrendSaved = true;
+      const auditRecord = {
+        key: 'rollback_audit_v2',
+        status: status,
+        critical_count: criticalCount,
+        warning_count: warningCount,
+        run_at: runAt,
+        last_run_counts: {
+          orphaned_quantities: allIssues.find(i => i.check === 'orphaned_quantities')?.evidence?.count || 0,
+          bad_image_urls: allIssues.find(i => i.check === 'image_upload_regression')?.evidence?.count || 0,
+          mojibake_count: allIssues.find(i => i.check === 'encoding_regression')?.evidence?.count || 0,
+          critical_stock_movements: allIssues.filter(i => i.check === 'stock_movement_integrity').length
+        },
+        data: JSON.stringify({ critical: allIssues.filter(i => i.severity === 'critical'), warnings: allIssues.filter(i => i.severity === 'warning') })
+      };
+
+      if (existingCheck.length > 0) {
+        await base44.asServiceRole.entities.SystemHealthCheck.update(existingCheck[0].id, auditRecord);
+      } else {
+        await base44.asServiceRole.entities.SystemHealthCheck.create(auditRecord);
+      }
     } catch (err) {
-      console.warn('Could not save audit trend to ChangeHistory:', err);
-      auditTrendError = err.message || String(err);
+      console.warn('Could not save audit trend:', err);
     }
 
     return Response.json({
@@ -554,10 +547,7 @@ Deno.serve(async (req) => {
         total_issues: allIssues.length,
         critical: criticalCount,
         warnings: warningCount
-      },
-      audit_trend_saved: auditTrendSaved,
-      audit_trend_error: auditTrendError,
-      audit_trend_storage: 'ChangeHistory'
+      }
     });
 
   } catch (error) {
