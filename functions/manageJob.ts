@@ -123,8 +123,13 @@ async function createStockMovementsForLogisticsJob(base44, job, user) {
             toLocationName = warehouseName;
             break;
 
+        case 'other':
+            // Unrecognized/unmapped purpose - log as warning, skip gracefully
+            console.warn(`[StockMovement] Unrecognized logistics_purpose '${job.logistics_purpose}' for job ${job.id} - skipping stock movement`);
+            return { skipped: true, reason: 'unrecognized_purpose' };
+
         default:
-            console.error(`[StockMovement] Unknown logistics_purpose: ${job.logistics_purpose}`);
+            console.error(`[StockMovement] Unexpected logistics_purpose: ${job.logistics_purpose}`);
             return;
     }
 
