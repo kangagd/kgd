@@ -108,10 +108,36 @@ Deno.serve(async (req) => {
           error: 'Technicians can only transfer between the main warehouse and their assigned vehicle.' 
         }, { status: 403 });
       }
-    }
+      }
 
-    let fromLocation = null;
-    let toLocation = null;
+      // For job_usage, enforce technician deducts from their own vehicle only
+      if (user.role === 'technician' && finalSource === 'job_usage') {
+      const vehicles = await base44.asServiceRole.entities.Vehicle.filter({
+        assigned_user_id: user.id,
+        is_active: { $ne: false }
+      });
+      if (vehicles.length === 0) {
+        return Response.json({ error: 'No vehicle assigned to this user' }, { status: 403 });
+      }
+      const techVehicle = vehicles[0];
+      const vehicleLocs = await base44.asServiceRole.entities.InventoryLocation.filter({
+        type: 'vehicle',
+        vehicle_id: techVehicle.id,
+        is_active: { $ne: false }
+      });
+      if (vehicleLocs.length === 0) {
+        return Response.json({ error: 'Vehicle inventory location missing' }, { status: 409 });
+      }
+      const vehicleLoc = vehicleLocs[0];
+      if (fromLocationId !== vehicleLoc.id) {
+        return Response.json({ 
+          error: 'Technicians can only deduct from their assigned vehicle.' 
+        }, { status: 403 });
+      }
+      }
+
+      let fromLocation = null;
+      let toLocation = null;
 
     // For transfers, validate source has enough stock
     if (fromLocationId) {
