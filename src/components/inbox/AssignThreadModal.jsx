@@ -73,10 +73,10 @@ export default function AssignThreadModal({ thread, open, onClose }) {
 
   const handleUnassign = async () => {
     try {
-      await base44.entities.EmailThread.update(thread.id, {
-        assigned_to: null,
-        assigned_to_name: null,
-        status: 'Open'
+      await base44.functions.invoke('assignEmailThread', {
+        thread_id: thread.id,
+        assigned_to_email: null,
+        note: null
       });
       queryClient.invalidateQueries({ queryKey: ['emailThreads'] });
       toast.success('Thread unassigned');
