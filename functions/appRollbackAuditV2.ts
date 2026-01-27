@@ -367,11 +367,9 @@ Deno.serve(async (req) => {
     // ==========================================
     try {
       const moduleIssues = [];
-      const last30Days = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      
-      const visits = await base44.asServiceRole.entities.Visit.filter({
-        created_date: { $gte: last30Days.toISOString() }
-      });
+      const visitCandidates = ['Visit', 'JobVisit', 'ScheduledVisit'];
+      const visitEntity = await findEntity(base44, visitCandidates) || { name: 'Visit', timestampField: 'created_date' };
+      const visits = await getRecentRecords(base44, visitEntity.name, 30);
 
       if (visits.length > 0) {
         const draftVisits = visits.filter(v => v.status === 'draft');
