@@ -438,6 +438,7 @@ Deno.serve(async (req) => {
                     if (item.part_id && !lineData.part_id) {
                         lineData.part_id = item.part_id;
                     }
+                    lineData.status = item.status ?? "draft";
                     await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
                 }
 
