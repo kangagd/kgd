@@ -1,5 +1,56 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Helper: detect timestamp field dynamically
+async function detectTimestampField(base44, entityName) {
+  try {
+    const sample = await base44.asServiceRole.entities[entityName].list(undefined, 1);
+    if (sample.length === 0) return null;
+    const record = sample[0];
+    const candidates = ['updated_at', 'updated_date', 'created_at', 'created_date', 'createdAt', 'createdDate'];
+    for (const field of candidates) {
+      if (record[field]) return field;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// Helper: try entity name candidates and return first with records
+async function findEntity(base44, candidates) {
+  for (const name of candidates) {
+    try {
+      const records = await base44.asServiceRole.entities[name].list(undefined, 1);
+      if (records.length > 0) {
+        const timestampField = await detectTimestampField(base44, name);
+        return { name, timestampField };
+      }
+    } catch (err) {
+      // try next candidate
+    }
+  }
+  return null;
+}
+
+// Helper: filter records by last N days, fallback to last N records
+async function getRecentRecords(base44, entityName, days = 30, fallbackLimit = 200) {
+  const timestampField = await detectTimestampField(base44, entityName);
+  if (!timestampField) {
+    // No date field; just fetch recent records by limit
+    return await base44.asServiceRole.entities[entityName].list(undefined, fallbackLimit);
+  }
+  
+  const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  try {
+    return await base44.asServiceRole.entities[entityName].filter({
+      [timestampField]: { $gte: cutoffDate }
+    });
+  } catch (err) {
+    // Fallback to recent records if filter fails
+    return await base44.asServiceRole.entities[entityName].list(undefined, fallbackLimit);
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
