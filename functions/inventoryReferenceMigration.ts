@@ -274,8 +274,11 @@ Deno.serve(async (req) => {
               item_name: item.item,
               location_name: mainWarehouse.name
             });
+            createdQuantities++;
+          } else {
+            // In dry-run, only count what would be created
+            createdQuantities++;
           }
-          createdQuantities++;
         }
       }
     }
