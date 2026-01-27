@@ -418,10 +418,14 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         ...formData,
         image_urls: [...existingUrls, ...newImageUrls]
       });
+      
+      toast.success(`${newImageUrls.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
+      toast.error("Failed to upload images");
     }
     setUploadingImages(false);
+    e.target.value = '';
   };
 
   const handleFileUpload = async (e) => {
