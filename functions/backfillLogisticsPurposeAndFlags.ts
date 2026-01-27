@@ -1,4 +1,4 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { normalizeLogisticsPurpose } from './shared/normalizeLogisticsPurpose.js';
 
 Deno.serve(async (req) => {
