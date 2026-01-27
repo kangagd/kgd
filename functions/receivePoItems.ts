@@ -74,6 +74,14 @@ Deno.serve(async (req) => {
       const isLogisticsJob = job_id && reference_type === 'purchase_order';
       const trackCheck = checkInventoryTrackability(poLine, isLogisticsJob);
 
+      console.log('[receivePoItems] Item check:', { 
+        po_line_id: receiveItem.po_line_id,
+        has_price_list_item_id: !!poLine.price_list_item_id,
+        isLogisticsJob,
+        isInventoryTracked: trackCheck.isInventoryTracked,
+        reason: trackCheck.reason
+      });
+
       if (!trackCheck.isInventoryTracked) {
         skippedLines.push({
           po_line_id: receiveItem.po_line_id,
