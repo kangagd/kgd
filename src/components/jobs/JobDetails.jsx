@@ -1382,6 +1382,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     <>
       <Card className={`border border-[#E5E7EB] shadow-sm ${isTechnician ? 'rounded-none' : 'rounded-lg'} overflow-hidden`}>
         <CardHeader className="border-b border-[#E5E7EB] bg-white p-3 md:p-4 space-y-3">
+          {isLogisticsJob && !job.job_number && isAdmin && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 p-2.5 rounded-lg flex items-center gap-2 text-sm font-bold">
+              <AlertTriangle className="w-4 h-4" />
+              Missing logistics job number — Run backfill function
+            </div>
+          )}
           {job.sla_due_at && isPast(parseISO(job.sla_due_at)) && job.status !== 'Completed' && (
             <div className="bg-red-50 border border-red-200 text-red-800 p-2.5 rounded-lg flex items-center gap-2 text-sm font-bold">
               <AlertTriangle className="w-4 h-4" />
@@ -1509,7 +1515,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                 {job.customer_name}
               </CardTitle>
               <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] font-medium text-[12px] leading-[1.35] px-2.5 py-0.5 rounded-lg hover:bg-white">
-                #{job.job_number}
+                #{job.job_number || 'LOG-UNKNOWN'}
               </Badge>
               {!isLogisticsJob && (
                  <button
