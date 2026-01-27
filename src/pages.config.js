@@ -36,6 +36,7 @@ import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
 import RollbackAuditV2 from './pages/RollbackAuditV2';
+import BackfillJobTypeAdmin from './pages/BackfillJobTypeAdmin';
 import __Layout from './Layout.jsx';
 
 
@@ -78,6 +79,7 @@ export const PAGES = {
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
     "RollbackAuditV2": RollbackAuditV2,
+    "BackfillJobTypeAdmin": BackfillJobTypeAdmin,
 }
 
 export const pagesConfig = {
