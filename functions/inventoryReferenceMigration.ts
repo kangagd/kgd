@@ -94,9 +94,9 @@ Deno.serve(async (req) => {
         // Item doesn't exist
       }
 
-      if (!itemValid && qty.sku) {
-        // Try to resolve via SKU
-        const resolvedItem = skuMap.get(qty.sku.toLowerCase());
+      if (!itemValid && qty.item_sku) {
+        // Try to resolve via item_sku (durable identity)
+        const resolvedItem = skuMap.get(qty.item_sku.toLowerCase());
         if (resolvedItem) {
           if (!dryRun) {
             await base44.asServiceRole.entities.InventoryQuantity.update(qty.id, {
@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
           needsReview.push({
             entity: 'InventoryQuantity',
             id: qty.id,
-            sku: qty.sku,
+            item_sku: qty.item_sku,
             reason: 'unresolved_sku'
           });
         }
@@ -118,8 +118,8 @@ Deno.serve(async (req) => {
         needsReview.push({
           entity: 'InventoryQuantity',
           id: qty.id,
-          sku: qty.sku || null,
-          reason: 'no_sku_to_resolve'
+          item_sku: qty.item_sku || null,
+          reason: 'no_item_sku_to_resolve'
         });
       }
     }
