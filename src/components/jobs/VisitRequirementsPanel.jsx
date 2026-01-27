@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Package, Wrench, FileText, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Package, Wrench, FileText, AlertCircle, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import AddCustomItemModal from "./AddCustomItemModal";
 import SelectFromPriceListModal from "./SelectFromPriceListModal";
+import MarkAsUsedModal from "./MarkAsUsedModal";
 
 /**
  * Dual-mode Requirements UI for Jobs/Visits
@@ -46,6 +47,7 @@ export default function VisitRequirementsPanel({
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [showPriceListPicker, setShowPriceListPicker] = useState(false);
   const [customItemType, setCustomItemType] = useState(null);
+  const [selectedItemForMarking, setSelectedItemForMarking] = useState(null);
 
   const hasActiveVisit = !!activeVisit;
   const visitCovers = activeVisit?.visit_covers_items || job?.visit_scope || [];
@@ -279,36 +281,59 @@ export default function VisitRequirementsPanel({
                       <h4 className="text-[13px] font-semibold text-[#111827]">{config.label} ({items.length})</h4>
                     </div>
                     <div className="space-y-1.5">
-                      {items.map((item) => (
-                        <div key={item.key} className="flex items-center justify-between gap-2 rounded-lg border border-[#E5E7EB] bg-white p-2 hover:bg-[#F9FAFB] transition-colors">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[13px] font-medium text-[#111827] truncate">
-                                {item.label}
-                              </span>
-                              {item.source === 'job' && (
-                                <Badge className="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0">Job-only</Badge>
-                              )}
-                            </div>
-                            {item.qty && (
-                              <span className="text-[11px] text-[#6B7280]">Qty: {item.qty}</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {item.status && item.status !== 'required' && getStatusBadge(item.status)}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveItem(item.key)}
-                              disabled={updateRequirementsMutation.isPending}
-                              className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                       {items.map((item) => (
+                         <div key={item.key} className="flex items-center justify-between gap-2 rounded-lg border border-[#E5E7EB] bg-white p-2 hover:bg-[#F9FAFB] transition-colors">
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2">
+                               <span className="text-[13px] font-medium text-[#111827] truncate">
+                                 {item.label}
+                               </span>
+                               {item.source === 'job' && (
+                                 <Badge className="bg-blue-100 text-blue-700 text-[9px] px-1.5 py-0">Job-only</Badge>
+                               )}
+                               {item.used && (
+                                 <Badge className="bg-green-100 text-green-700 text-[9px] px-1.5 py-0 flex items-center gap-1">
+                                   <Check className="w-2.5 h-2.5" />
+                                   Used
+                                 </Badge>
+                               )}
+                             </div>
+                             {item.qty && (
+                               <span className="text-[11px] text-[#6B7280]">
+                                 Qty: {item.qty}
+                                 {item.used && item.used_qty && (
+                                   <span className="ml-1 text-green-700">({item.used_qty} used)</span>
+                                 )}
+                               </span>
+                             )}
+                           </div>
+                           <div className="flex items-center gap-2 flex-shrink-0">
+                             {item.status && item.status !== 'required' && getStatusBadge(item.status)}
+                             {item.type === 'part' && !item.used && (
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 onClick={() => setSelectedItemForMarking(item)}
+                                 disabled={updateRequirementsMutation.isPending}
+                                 className="h-6 w-6 text-green-600 hover:text-green-700 hover:bg-green-50 transition-colors"
+                                 title="Mark as used"
+                               >
+                                 <Check className="w-3.5 h-3.5" />
+                               </Button>
+                             )}
+                             <Button
+                               variant="ghost"
+                               size="icon"
+                               onClick={() => handleRemoveItem(item.key)}
+                               disabled={updateRequirementsMutation.isPending}
+                               className="h-6 w-6 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                             >
+                               <Trash2 className="w-3.5 h-3.5" />
+                             </Button>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
                   </div>
                 );
               })}
@@ -363,6 +388,16 @@ export default function VisitRequirementsPanel({
         onClose={() => setShowPriceListPicker(false)}
         onSelect={handlePriceListSelect}
       />
+
+      {/* Mark as Used Modal */}
+      {selectedItemForMarking && (
+        <MarkAsUsedModal
+          item={selectedItemForMarking}
+          job={job}
+          open={!!selectedItemForMarking}
+          onClose={() => setSelectedItemForMarking(null)}
+        />
+      )}
       </>
     );
   }
