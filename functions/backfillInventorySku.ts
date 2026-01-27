@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
           });
         } else {
           // Accept and update
-          if (!dryRun) {
+          if (!isDryRun) {
             await base44.asServiceRole.entities.InventoryQuantity.update(qty.id, {
               item_sku: match.sku
             });
