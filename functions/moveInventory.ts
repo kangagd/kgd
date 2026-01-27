@@ -210,22 +210,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // IDEMPOTENCY: Check if this movement already happened
-    let idempotencyCheckResult = null;
-    if (idempotency_key) {
-      const existingMovements = await base44.entities.StockMovement.filter({
-        idempotency_key: idempotency_key
-      });
-      if (existingMovements.length > 0) {
-        // Already processed - return success without double-deducting
-        return Response.json({
-          success: true,
-          idempotent: true,
-          message: `Movement already processed (idempotency_key: ${idempotency_key})`,
-          updated_quantities: []
-        });
-      }
-    }
+
 
     // Track updated/created quantity records for response
     const updated_quantities = [];
