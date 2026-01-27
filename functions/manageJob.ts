@@ -467,14 +467,27 @@ Deno.serve(async (req) => {
                 }
             }
 
-            // Auto-assign job number (skip for logistics jobs)
-             if (!isLogisticsJob) {
+            // C) ALWAYS generate job_number (even for logistics jobs)
+             try {
                  jobData.job_number = await generateJobNumber(base44, jobData.project_id);
-                 if (jobData.project_id) {
+             } catch (error) {
+                 // Fallback for logistics jobs if generateJobNumber fails
+                 console.warn(`[manageJob] generateJobNumber failed, using fallback:`, error.message);
+                 jobData.job_number = `L-${Date.now().toString().slice(-6)}`;
+             }
+
+             // D) Populate project cached fields (BOTH logistics + non-logistics)
+             if (jobData.project_id) {
+                 try {
                      const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
-                     jobData.project_number = project.project_number;
-                 } else {
-                     jobData.project_number = null;
+                     if (!jobData.project_number && project?.project_number) {
+                         jobData.project_number = project.project_number;
+                     }
+                     if (!jobData.project_name && project?.title) {
+                         jobData.project_name = project.title;
+                     }
+                 } catch (error) {
+                     console.error(`[manageJob] Error fetching project ${jobData.project_id}:`, error.message);
                  }
              }
 
