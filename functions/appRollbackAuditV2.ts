@@ -69,10 +69,7 @@ Deno.serve(async (req) => {
     // ==========================================
     try {
       const moduleIssues = [];
-      const last7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const movements = await base44.asServiceRole.entities.StockMovement.filter({
-        created_date: { $gte: last7Days.toISOString() }
-      });
+      const movements = await getRecentRecords(base44, 'StockMovement', 7);
 
       const badMovements = movements.filter(m => !m.idempotency_key || !m.source);
       badMovements.forEach(m => {
