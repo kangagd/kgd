@@ -19,7 +19,8 @@ Deno.serve(async (req) => {
       source = null,
       jobId = null,
       vehicleId = null,
-      notes = null 
+      notes = null,
+      idempotency_key = null
     } = body;
 
     if (!priceListItemId || !quantity || quantity <= 0) {
