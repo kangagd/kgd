@@ -9,15 +9,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { purchase_order_id } = await req.json();
+    const { purchase_order_ids, batch_all } = await req.json();
     
-    if (!purchase_order_id) {
-      return Response.json({ error: 'purchase_order_id required' }, { status: 400 });
+    let posToProcess = [];
+    
+    if (batch_all) {
+      // Process all POs
+      posToProcess = await base44.asServiceRole.entities.PurchaseOrder.list('-created_date', 1000);
+    } else if (purchase_order_ids && Array.isArray(purchase_order_ids)) {
+      // Process specified POs
+      for (const id of purchase_order_ids) {
+        const po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+        if (po) posToProcess.push(po);
+      }
+    } else {
+      return Response.json({ error: 'purchase_order_ids array or batch_all=true required' }, { status: 400 });
     }
 
-    const po = await base44.asServiceRole.entities.PurchaseOrder.get(purchase_order_id);
-    if (!po) {
-      return Response.json({ error: 'PO not found' }, { status: 404 });
+    if (posToProcess.length === 0) {
+      return Response.json({ error: 'No POs found to process' }, { status: 404 });
     }
 
     // Get all parts linked to this PO (both primary and legacy)
