@@ -4074,11 +4074,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         currentInvoiceId={job.xero_invoice_id}
       />
 
-      <JobItemsUsedModal
+      <ManageJobStockModal
         job={job}
-        vehicle={null} // For now, defaulting to null (Warehouse) as per instructions
-        open={showItemsUsedModal}
-        onClose={() => setShowItemsUsedModal(false)}
+        projectParts={enrichedProjectParts}
+        open={showManageJobStockModal}
+        onClose={() => setShowManageJobStockModal(false)}
       />
 
       {isLogisticsJob && (
