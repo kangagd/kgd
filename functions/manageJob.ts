@@ -598,6 +598,32 @@ Deno.serve(async (req) => {
 
                const isCurrentLogisticsJob = previousJob.is_logistics_job === true || data.is_logistics_job === true;
 
+               // GUARDRAIL: Logistics job number backfill + immutability
+               if (isCurrentLogisticsJob) {
+                 // BLOCK: prevent clearing/changing job_number once set
+                 if (data.hasOwnProperty("job_number")) {
+                   // If previous exists, do not allow change
+                   if (previousJob.job_number && String(data.job_number || "") !== String(previousJob.job_number)) {
+                     delete data.job_number;
+                   }
+                   // If attempt to clear, block
+                   if (previousJob.job_number && (!data.job_number || String(data.job_number).trim() === "")) {
+                     delete data.job_number;
+                   }
+                 }
+
+                 // BACKFILL: if still missing after patch, generate one
+                 const willHaveNumber = previousJob.job_number || data.job_number;
+                 if (!willHaveNumber) {
+                   data.job_number = await generateLogisticsJobNumber(base44, {
+                     project_id: previousJob.project_id || data.project_id,
+                     project_number: previousJob.project_number || data.project_number,
+                     logistics_purpose: previousJob.logistics_purpose || data.logistics_purpose,
+                     job_id_for_fallback: id
+                   });
+                 }
+               }
+
                // GUARDRAIL: JobType enforcement on update (cannot clear existing job_type_id)
                const allowMissingJobType = data.allow_missing_job_type === true && user.role === 'admin';
                if (data.hasOwnProperty('job_type_id') && !data.job_type_id && previousJob.job_type_id && !allowMissingJobType) {
