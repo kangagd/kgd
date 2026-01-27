@@ -307,7 +307,7 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !locationId}
+              disabled={isSubmitting || (resolvedPriceListItemId && !locationId)}
               className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
             >
               {isSubmitting ? (
