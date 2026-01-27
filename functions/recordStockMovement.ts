@@ -99,8 +99,11 @@ Deno.serve(async (req) => {
         }, { status: 400 });
       }
 
-      // Create audit-only entry (no item/location validation required)
-      const movementRecord = {
+      // Normalize source
+      const sourceNorm = normalizeStockMovementSource(source);
+
+      // Create audit-only entry with guardrails
+      let movementRecord = {
         price_list_item_id: priceListItemId || null,
         item_name: item?.item || 'Unknown Item',
         quantity: quantity || 0,
@@ -109,11 +112,34 @@ Deno.serve(async (req) => {
         performed_by_user_email: user.email,
         performed_by_user_name: user.full_name || user.display_name || user.email,
         performed_at: new Date().toISOString(),
-        source: source,
+        source: sourceNorm.normalized,
         reference_type: reference_type || null,
         reference_id: reference_id || null,
         notes: `[AUDIT ONLY] ${notes || 'Manual audit entry'}`
       };
+
+      // Enrich with durable identity
+      movementRecord = await enrichStockMovementWithDurableIdentity(base44, movementRecord);
+
+      // Generate idempotency key
+      movementRecord.idempotency_key = buildStockMovementIdempotencyKey(movementRecord);
+
+      // Check for existing record with same idempotency key
+      const existing = await base44.asServiceRole.entities.StockMovement.filter(
+        { idempotency_key: movementRecord.idempotency_key },
+        undefined,
+        1
+      );
+
+      if (existing.length > 0) {
+        return Response.json({
+          success: true,
+          mode: 'audit_only',
+          message: 'Audit entry already exists (idempotent)',
+          existing_id: existing[0].id,
+          warnings: []
+        });
+      }
 
       await base44.asServiceRole.entities.StockMovement.create(movementRecord);
 
