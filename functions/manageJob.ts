@@ -4,9 +4,11 @@ import { PO_STATUS, PART_STATUS, PART_LOCATION } from './shared/constants.js';
 import { LOGISTICS_PURPOSE, ALL_LOGISTICS_PURPOSES } from './shared/logisticsPurpose.js';
 import { resolveCoreLocations } from './shared/locationResolver.js';
 import { generateJobNumber } from './shared/jobNumberGenerator.js';
+import { generateLogisticsJobNumber } from './shared/generateLogisticsJobNumber.js';
 import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
 import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.js';
 import { normalizeLogisticsPurpose, getPurposeCode } from './shared/normalizeLogisticsPurpose.js';
+import { isLogisticsJobNumber } from './shared/logisticsJobNumbering.js';
 import { ensureLogisticsCanon, stripRollbackWrites } from './shared/logisticsGuardrails.js';
 
 // Helper: Process sample transfers (explicit action on completion)
