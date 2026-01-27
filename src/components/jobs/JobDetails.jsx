@@ -35,7 +35,7 @@ import { getLoadingBayLocationId } from "../utils/inventoryLocationLookup";
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
 import JobVisitSummary from "./JobVisitSummary";
-import ReceivePoItemsModal from "../logistics/ReceivePoItemsModal";
+import ReceivePoItemsMixedModal from "../logistics/ReceivePoItemsMixedModal";
 import TransferItemsModal from "../logistics/TransferItemsModal";
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
@@ -4072,12 +4072,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
       {isLogisticsJob && (
         <>
-          <ReceivePoItemsModal
+          <ReceivePoItemsMixedModal
             open={showProcessStockModal && (job.purchase_order_id || job.reference_type === 'purchase_order')}
             onOpenChange={setShowProcessStockModal}
             poId={job.purchase_order_id}
             poReference={purchaseOrder?.po_number}
             lineItems={purchaseOrderLines}
+            jobId={job.id}
           />
           <TransferItemsModal
             open={showProcessStockModal && !(job.purchase_order_id || job.reference_type === 'purchase_order')}
