@@ -1320,9 +1320,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   };
 
   const handleImagesChange = async (urls) => {
+    // Ensure urls is an array
+    const urlArray = Array.isArray(urls) ? urls : (urls ? [urls] : []);
+    
     // Find removed images and delete corresponding Photo records
     const currentUrls = job.image_urls || [];
-    const removedUrls = currentUrls.filter(url => !urls.includes(url));
+    const removedUrls = currentUrls.filter(url => !urlArray.includes(url));
 
     if (removedUrls.length > 0) {
       try {
@@ -1341,7 +1344,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
 
     // Update job with new images
-    updateJobMutation.mutate({ field: 'image_urls', value: urls });
+    updateJobMutation.mutate({ field: 'image_urls', value: urlArray });
   };
 
   const handleOtherDocumentsChange = (urls) => {
