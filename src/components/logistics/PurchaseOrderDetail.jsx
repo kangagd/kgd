@@ -536,20 +536,56 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         category: newItem.category || "Other"
       };
       
+      // CRITICAL: If project PO and no part_id, create Part
+      let partIdToLink = newItem.part_id;
+      if (isProjectPO && !newItem.part_id) {
+        const isDraftPO = po.status === PO_STATUS.DRAFT;
+        const partStatus = isDraftPO ? 'pending' : 'on_order';
+        
+        const newPart = await base44.entities.Part.create({
+          project_id: formData.project_id,
+          item_name: newItem.name || '',
+          category: newItem.category || "Other",
+          quantity_required: newItem.quantity || 1,
+          price_list_item_id: newItem.source_type === "price_list" ? newItem.source_id : null,
+          supplier_id: formData.supplier_id,
+          supplier_name: suppliers.find(s => sameId(s.id, formData.supplier_id))?.name || "",
+          status: partStatus,
+          location: 'supplier',
+          source_type: newItem.source_type || "supplier_delivery",
+          purchase_order_ids: [poId],
+          primary_purchase_order_id: poId,
+          purchase_order_id: poId, // legacy mirror
+          po_number: formData.po_reference || getPoDisplayReference(po),
+          order_date: !isDraftPO ? (po.order_date || po.created_date) : null,
+          eta: !isDraftPO ? (formData.eta || po.expected_date) : null
+        });
+        partIdToLink = newPart.id;
+      }
+      
+      // Link part_id to line if we have one
+      if (partIdToLink) {
+        lineData.part_id = partIdToLink;
+      }
+      
       const created = await base44.entities.PurchaseOrderLine.create(lineData);
       
-      // Sync with Part entity - use PO status to determine part status
-      const isDraftPO = po.status === 'draft';
-      const partStatus = isDraftPO ? 'pending' : 'on_order';
-      const partOrderData = isDraftPO ? {} : {
-        order_date: po.order_date || po.created_date,
-        eta: formData.eta || po.expected_date,
-      };
+      // If we created a part, update it with po_line_id
+      if (partIdToLink && !newItem.part_id) {
+        await base44.entities.Part.update(partIdToLink, {
+          po_line_id: created.id
+        });
+      }
       
+      // For existing parts, sync the linking
       if (newItem.part_id) {
-        // If part_id exists, update the Part
+        const isDraftPO = po.status === PO_STATUS.DRAFT;
+        const partStatus = isDraftPO ? 'pending' : 'on_order';
+        
         await base44.entities.Part.update(newItem.part_id, {
+          primary_purchase_order_id: poId,
           purchase_order_id: poId,
+          purchase_order_ids: [poId],
           status: partStatus,
           category: newItem.category || "Other",
           price_list_item_id: lineData.price_list_item_id,
@@ -558,7 +594,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
           supplier_name: suppliers.find(s => sameId(s.id, formData.supplier_id))?.name || "",
           po_number: formData.po_reference || getPoDisplayReference(po),
           source_type: newItem.source_type || "supplier_delivery",
-          ...partOrderData
+          po_line_id: created.id
         });
       }
       
