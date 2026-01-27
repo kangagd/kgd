@@ -161,9 +161,14 @@ Deno.serve(async (req) => {
     // Get job-type specific prompt block
     const jobTypeBlock = getJobTypePromptBlock(job.job_type_name || job.job_type);
 
-    const prompt = `${context}
+    const prompt = `You are generating a technician-ready JOB BRIEF for KangarooGD.
+
+CRITICAL: Job Type defines the lens. Everything below must be interpreted through these MANDATORY rules:
 
 ${jobTypeBlock}
+
+CONTEXT FOR THIS BRIEF:
+${context}
 
 OUTPUT FORMAT (HTML ONLY, no markdown):
 
