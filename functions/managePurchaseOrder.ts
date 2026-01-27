@@ -278,6 +278,7 @@ Deno.serve(async (req) => {
             // Create line items with source type support
             for (const item of line_items) {
                 const lineData = await buildLineItemData(base44, po.id, item);
+                lineData.status = item.status ?? "draft";
                 await base44.asServiceRole.entities.PurchaseOrderLine.create(lineData);
             }
 
