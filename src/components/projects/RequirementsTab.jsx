@@ -54,10 +54,16 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
   const handleChecklistToggle = async (index) => {
     if (!canEdit) return;
     
-    const user = await base44.auth.me();
     const currentChecklist = project.quote_checklist || [];
+    const item = currentChecklist[index];
+    
+    // Guardrail: Prevent unchecking items that were already checked (prevent accidental rollback)
+    if (item.checked && item.checked_at) {
+      return;
+    }
+    
+    const user = await base44.auth.me();
     const updatedChecklist = [...currentChecklist];
-    const item = updatedChecklist[index];
     
     updatedChecklist[index] = {
       ...item,
