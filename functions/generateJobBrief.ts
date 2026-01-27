@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { computeVisitDelta } from './shared/computeVisitDelta.js';
+import { getJobTypePromptBlock } from './shared/jobTypeBriefPrompts.js';
 
 Deno.serve(async (req) => {
   try {
