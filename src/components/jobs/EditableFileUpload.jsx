@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Video } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 import FilePreviewModal from "../common/FilePreviewModal";
 
 export default function EditableFileUpload({ 
