@@ -383,17 +383,25 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
   };
 
   const handleImageUpload = async (e) => {
+    console.log('handleImageUpload called', e.target.files);
     const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+    console.log('Files array:', files);
+    if (files.length === 0) {
+      console.log('No files selected');
+      return;
+    }
 
     setUploadingImages(true);
     try {
+      console.log('Starting upload for', files.length, 'files');
       const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
       const results = await Promise.all(uploadPromises);
+      console.log('Upload results:', results);
       
       // Extract URL string only - strip all metadata
       const newImageUrls = results
         .map(result => {
+          console.log('Processing result:', result);
           // Result can be: string, {file_url: string}, {file_url: {url: string}}, or {url: string, uploaded_at: string}
           if (typeof result === 'string') return result;
           
@@ -409,20 +417,25 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         })
         .filter(url => url && typeof url === 'string');
       
+      console.log('Extracted URLs:', newImageUrls);
+      
       // Ensure existing URLs are strings too
       const existingUrls = (formData.image_urls || []).map(url => 
         typeof url === 'string' ? url : (url?.url || '')
       ).filter(url => url);
       
+      const updatedUrls = [...existingUrls, ...newImageUrls];
+      console.log('Updated URLs array:', updatedUrls);
+      
       setFormData({
         ...formData,
-        image_urls: [...existingUrls, ...newImageUrls]
+        image_urls: updatedUrls
       });
       
       toast.success(`${newImageUrls.length} image(s) uploaded`);
     } catch (error) {
       console.error("Error uploading images:", error);
-      toast.error("Failed to upload images");
+      toast.error(`Failed to upload images: ${error.message}`);
     }
     setUploadingImages(false);
     e.target.value = '';
