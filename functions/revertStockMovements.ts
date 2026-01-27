@@ -27,9 +27,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!priceListItemId || !locationId || !quantity) {
+    if (!priceListItemId || !locationId) {
       return Response.json({ 
-        error: 'Missing required fields: priceListItemId, locationId, quantity' 
+        error: 'Could not find priceListItemId or locationId',
+        provided: { skuOrId, locationNameOrId, priceListItemId, locationId }
       }, { status: 400 });
     }
 
