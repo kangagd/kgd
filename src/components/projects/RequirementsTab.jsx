@@ -66,7 +66,7 @@ export default function RequirementsTab({ project, onUpdateProject, canEdit }) {
       checked_by: !item.checked ? user.email : null
     };
     
-    onUpdateProject({ quote_checklist: updatedChecklist });
+    await onUpdateProject({ quote_checklist: updatedChecklist });
   };
 
   return (
