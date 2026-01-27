@@ -362,7 +362,19 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       formData.scheduled_date = today;
     }
 
-    // Backend handles job_number assignment based on logistics vs regular job
+    if (!job) {
+      // Generate job number based on logistics vs regular job
+      if (isLogisticsJob && formData.project_id) {
+        // Logistics format: projectNumber-PURPOSE_CODE (e.g., "4781-PART-PU")
+        // Backend/manageJob function will handle full numbering
+        formData.job_number = null; // Let manageJob handle it
+      } else {
+        // Regular job: simple increment
+        const allJobs = await base44.entities.Job.filter({ is_logistics_job: { $ne: true } }, '-job_number', 1);
+        const lastJobNumber = allJobs && allJobs[0]?.job_number ? parseInt(String(allJobs[0].job_number).split('-')[0]) : 4999;
+        formData.job_number = lastJobNumber + 1;
+      }
+    }
     
     const submitData = {
       ...formData,
