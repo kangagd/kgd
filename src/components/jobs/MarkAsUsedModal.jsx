@@ -1,0 +1,253 @@
+import React, { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { AlertCircle, Loader2, Check } from "lucide-react";
+
+export default function MarkAsUsedModal({ item, job, open, onClose }) {
+  const [qtyUsed, setQtyUsed] = useState(String(item?.qty || 1));
+  const [locationId, setLocationId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  // Fetch inventory locations with stock for this item (if linked to price list item)
+  const { data: availableLocations = [] } = useQuery({
+    queryKey: ['inventory-locations-for-item', item?.ref_id],
+    queryFn: async () => {
+      if (!item?.ref_id) return [];
+      const quantities = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: item.ref_id
+      });
+      const allLocations = await base44.entities.InventoryLocation.list();
+      const locationMap = new Map(allLocations.map(loc => [loc.id, loc]));
+
+      const locationsWithStock = [];
+      for (const qty of quantities) {
+        const qtyValue = qty.quantity ?? 0;
+        if (qtyValue > 0) {
+          const location = locationMap.get(qty.location_id);
+          if (location && location.is_active !== false) {
+            locationsWithStock.push({
+              ...location,
+              available_quantity: qtyValue,
+            });
+          }
+        }
+      }
+      return locationsWithStock;
+    },
+    enabled: open && !!item?.ref_id,
+  });
+
+  // Auto-suggest location (technician's vehicle if available)
+  const suggestedLocationId = useMemo(() => {
+    if (!job?.assigned_to?.[0]) return "";
+    // Try to find the technician's vehicle location
+    // For now, return empty to require explicit selection
+    // In future, could query for Vehicle and its InventoryLocation
+    return "";
+  }, [job?.assigned_to]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const qty = Number(qtyUsed);
+    if (!qty || qty <= 0) {
+      toast.error("Please enter a valid quantity");
+      return;
+    }
+
+    if (!locationId) {
+      toast.error("Please select a source location");
+      return;
+    }
+
+    const selectedLocation = availableLocations.find(loc => loc.id === locationId);
+    if (selectedLocation && qty > selectedLocation.available_quantity) {
+      toast.error(`Insufficient stock. Only ${selectedLocation.available_quantity} available.`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Record stock movement from location to null (deduction)
+      const movementResponse = await base44.functions.invoke('recordStockMovement', {
+        priceListItemId: item.ref_id,
+        fromLocationId: locationId,
+        toLocationId: null,
+        quantity: qty,
+        movementType: 'job_usage',
+        reference_type: 'requirement',
+        reference_id: item.key,
+        jobId: job.id,
+        projectId: job.project_id,
+        notes: `Mark as used: ${item.label} on ${job.job_number || 'Job'}`
+      });
+
+      // Update requirement item with used tracking
+      const updatedItem = {
+        ...item,
+        used: true,
+        used_qty: qty,
+        used_at: new Date().toISOString(),
+        used_by: 'technician', // or fetch current user email
+        status: 'installed' // Mark as installed once used
+      };
+
+      // Update visit_covers_items or job.visit_scope
+      if (job.activeVisit) {
+        await base44.functions.invoke('manageVisit', {
+          action: 'update',
+          visit_id: job.activeVisit.id,
+          data: {
+            visit_covers_items: (job.activeVisit.visit_covers_items || []).map(i =>
+              i.key === item.key ? updatedItem : i
+            )
+          }
+        });
+      } else {
+        await base44.functions.invoke('manageJob', {
+          action: 'update',
+          id: job.id,
+          data: {
+            visit_scope: (job.visit_scope || []).map(i =>
+              i.key === item.key ? updatedItem : i
+            )
+          }
+        });
+      }
+
+      // If item is linked to a PO line, update it to "installed"
+      if (item.ref_id && job.project_id) {
+        try {
+          // Try to find and update PO line
+          const poLines = await base44.entities.PurchaseOrderLine.filter({
+            product_id: item.ref_id
+          });
+          if (poLines.length > 0) {
+            await Promise.all(
+              poLines.map(line =>
+                base44.entities.PurchaseOrderLine.update(line.id, { status: 'installed' })
+              )
+            );
+          }
+        } catch (err) {
+          // Silently ignore PO line update failures
+          console.warn('Could not update PO line status:', err);
+        }
+      }
+
+      toast.success(`Marked "${item.label}" as used (${qty} qty)`);
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-quantities'] });
+      onClose();
+    } catch (error) {
+      console.error("Error marking as used:", error);
+      toast.error(error.message || "Failed to mark as used");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[450px]">
+        <DialogHeader>
+          <DialogTitle>Mark as Used: {item?.label}</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Qty Used */}
+          <div className="space-y-2">
+            <Label>Quantity Used</Label>
+            <Input
+              type="number"
+              min="0.1"
+              step="0.1"
+              value={qtyUsed}
+              onChange={(e) => setQtyUsed(e.target.value)}
+              placeholder="1"
+            />
+            {item?.qty && (
+              <p className="text-xs text-gray-500">Required qty: {item.qty}</p>
+            )}
+          </div>
+
+          {/* Source Location */}
+          <div className="space-y-2">
+            <Label>Source Location</Label>
+            <Select value={locationId} onValueChange={setLocationId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select location..." />
+              </SelectTrigger>
+              <SelectContent className="max-h-[200px]">
+                {availableLocations.length === 0 ? (
+                  <div className="p-2 text-center text-sm text-gray-500">
+                    {item?.ref_id ? "No stock available" : "Item not linked to price list"}
+                  </div>
+                ) : (
+                  availableLocations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name} - {location.available_quantity} available
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {!item?.ref_id && (
+              <div className="flex items-start gap-2 text-amber-700 bg-amber-50 p-2 rounded-lg">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p className="text-xs">Custom items require manual location selection</p>
+              </div>
+            )}
+          </div>
+
+          {/* Preview */}
+          {locationId && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-900">
+                This will deduct <strong>{qtyUsed}</strong> from{" "}
+                <strong>{availableLocations.find(l => l.id === locationId)?.name}</strong>
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose} type="button">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !locationId}
+              className="bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Mark as Used
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
