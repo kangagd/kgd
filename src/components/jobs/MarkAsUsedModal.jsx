@@ -140,21 +140,30 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
 
     setIsSubmitting(true);
     try {
-      // Get or find client_site location for consumption movement
-      let clientSiteLocationId = null;
+      // Get destination location for consumption movement (client_site or unknown_source)
+      let destinationLocationId = null;
       try {
         const allLocations = await base44.entities.InventoryLocation.list();
+        // Try client_site first, fall back to unknown_source if not found
         const clientSite = allLocations.find(loc => loc.type === 'client_site');
-        clientSiteLocationId = clientSite?.id;
+        const unknownSource = allLocations.find(loc => loc.type === 'unknown_source');
+        destinationLocationId = clientSite?.id || unknownSource?.id;
+        
+        if (!destinationLocationId) {
+          throw new Error('No valid destination location found (client_site or unknown_source)');
+        }
       } catch (err) {
-        console.warn('Could not find client_site location:', err);
+        console.error('Error finding destination location:', err);
+        toast.error('Cannot mark as used: destination location not configured');
+        setIsSubmitting(false);
+        return;
       }
 
-      // Record stock movement as consumption: from selected location to client site
+      // Record stock movement as consumption: from selected location to destination
       await base44.functions.invoke('moveInventory', {
         priceListItemId: resolvedPriceListItemId,
         fromLocationId: locationId,
-        toLocationId: clientSiteLocationId || 'client_site', // Use ID if found, else type
+        toLocationId: destinationLocationId,
         quantity: qty,
         reference_type: 'requirement',
         reference_id: item.key,
