@@ -260,7 +260,8 @@ Keep it concise and actionable. Return ONLY the HTML, no markdown code fences.`;
     return Response.json({
       success: true,
       job_brief: jobBrief,
-      generated_at: new Date().toISOString()
+      generated_at: new Date().toISOString(),
+      warnings: jobTypeMissing ? ['Job Type missing — brief quality reduced. Please set Job Type.'] : []
     });
 
   } catch (error) {
