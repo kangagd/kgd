@@ -212,13 +212,12 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
         if (!resolvedPriceListItemId && currentUser && job.project_id) {
           try {
             await base44.entities.ProjectMessage.create({
-              project_id: job.project_id,
-              message_type: 'activity',
-              title: 'Marked as used (no stock deduction)',
-              body: `Marked used (non-stock-tracked): ${item.label}, qty ${qty}`,
-              created_by_email: currentUser.email,
-              created_by_name: currentUser.display_name || currentUser.full_name
-            });
+  project_id: job.project_id,
+  sender_email: currentUser.email,
+  sender_name: currentUser.display_name || currentUser.full_name || currentUser.email,
+  message_type: "manual_activity",
+  content: `Marked as used (no stock deduction)\n\nMarked used (non-stock-tracked): ${item.label}, qty ${qty}`,
+});
           } catch (err) {
             console.warn('Could not create activity log:', err);
           }
