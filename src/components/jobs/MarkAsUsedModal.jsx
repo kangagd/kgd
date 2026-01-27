@@ -127,7 +127,8 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
       return;
     }
 
-    if (!locationId) {
+    // If stock-tracked, require location; if not, skip stock movement
+    if (resolvedPriceListItemId && !locationId) {
       toast.error("Please select a source location");
       return;
     }
@@ -140,18 +141,18 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
 
     setIsSubmitting(true);
     try {
-      // Record stock movement as deduction from source location
-      await base44.functions.invoke('moveInventory', {
-        priceListItemId: resolvedPriceListItemId,
-        fromLocationId: locationId,
-        toLocationId: null,
-        quantity: qty,
-        reference_type: 'requirement',
-        reference_id: item.key,
-        jobId: job.id,
-        projectId: job.project_id,
-        notes: `Mark as used: ${item.label} on ${job.job_number || 'Job'}`
-      });
+      // If stock-tracked, record inventory deduction
+      if (resolvedPriceListItemId) {
+        await base44.functions.invoke('moveInventory', {
+          priceListItemId: resolvedPriceListItemId,
+          fromLocationId: locationId,
+          toLocationId: null,
+          quantity: qty,
+          source: 'job_usage',
+          jobId: job.id,
+          notes: `Mark as used: ${item.label} on ${job.job_number || 'Job'}`
+        });
+      }
 
       // Update requirement item with used tracking
       const updatedItem = {
