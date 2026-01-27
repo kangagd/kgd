@@ -39,13 +39,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Job not found' }, { status: 404 });
     }
 
-    // Skip if job is Cancelled or Completed
-    if (job.status === 'Cancelled' || job.status === 'Completed') {
+    // Skip if job is Cancelled
+    if (job.status === 'Cancelled') {
       return Response.json({ 
         visit: null, 
         created: false, 
-        reason: 'Job is Cancelled or Completed' 
+        reason: 'Job is Cancelled' 
       });
+    }
+
+    // If Completed, update to Scheduled to allow new visit
+    if (job.status === 'Completed') {
+      await base44.asServiceRole.entities.Job.update(job_id, { status: 'Scheduled' });
+      job.status = 'Scheduled';
     }
 
     // Check for active Visit (completed_at is null)
