@@ -583,6 +583,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         const partStatus = isDraftPO ? 'pending' : 'on_order';
         
         await base44.entities.Part.update(newItem.part_id, {
+          project_id: formData.project_id, // CRITICAL: ensure project link is set
           primary_purchase_order_id: poId,
           purchase_order_id: poId,
           purchase_order_ids: [poId],
