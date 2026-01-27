@@ -787,7 +787,7 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
                           <X className="w-3 h-3" />
                         </button>
                       </div>
-                    ))}
+                    )})}
                   </div>
                 )}
               </div>
