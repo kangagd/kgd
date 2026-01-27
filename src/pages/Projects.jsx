@@ -648,6 +648,41 @@ export default function Projects() {
                 </div>
               </div>
             )}
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <Label className="text-sm text-[#4B5563]">Filter by pricing status:</Label>
+              <div className="flex flex-wrap gap-1">
+                {['Pricing Requested', 'Pricing Received'].map(item => (
+                  <button
+                    key={item}
+                    onClick={() => {
+                      if (pricingChecklistFilter.includes(item)) {
+                        setPricingChecklistFilter(pricingChecklistFilter.filter(i => i !== item));
+                      } else {
+                        setPricingChecklistFilter([...pricingChecklistFilter, item]);
+                      }
+                    }}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-medium transition-all ${
+                      pricingChecklistFilter.includes(item)
+                        ? 'bg-[#FAE008] text-[#111827] ring-2 ring-offset-1 ring-[#FAE008]'
+                        : 'bg-[#F3F4F6] text-[#4B5563] opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+                {pricingChecklistFilter.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPricingChecklistFilter([])}
+                    className="h-7 text-[11px] px-2"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
 
           {showFilters && (
