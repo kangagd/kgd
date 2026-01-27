@@ -322,8 +322,10 @@ Deno.serve(async (req) => {
 
       modules.emails = {
         checks_run: 4,
+        entities: { drafts: draftEntity.name, messages: msgEntity.name },
+        records_checked: { drafts: drafts.length, messages: messages.length, threads: threads.length },
         issues: moduleIssues.filter(i => i.module === 'emails'),
-        summary: `${drafts.length} drafts, ${messages.length} messages checked (last 30d), ${badImageDrafts.length} critical image issues`
+        summary: `${drafts.length} drafts, ${messages.length} messages, ${threads.length} threads checked (last 30d), ${badImageDrafts.length} critical image issues`
       };
       allIssues.push(...moduleIssues);
     } catch (err) {
