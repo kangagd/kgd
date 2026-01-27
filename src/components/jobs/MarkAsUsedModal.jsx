@@ -140,11 +140,21 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
 
     setIsSubmitting(true);
     try {
-      // Record stock movement from location to null (deduction)
+      // Get or find client_site location for consumption movement
+      let clientSiteLocationId = null;
+      try {
+        const allLocations = await base44.entities.InventoryLocation.list();
+        const clientSite = allLocations.find(loc => loc.type === 'client_site');
+        clientSiteLocationId = clientSite?.id;
+      } catch (err) {
+        console.warn('Could not find client_site location:', err);
+      }
+
+      // Record stock movement as consumption: from selected location to client site
       await base44.functions.invoke('moveInventory', {
         priceListItemId: resolvedPriceListItemId,
         fromLocationId: locationId,
-        toLocationId: null,
+        toLocationId: clientSiteLocationId || 'client_site', // Use ID if found, else type
         quantity: qty,
         reference_type: 'requirement',
         reference_id: item.key,
