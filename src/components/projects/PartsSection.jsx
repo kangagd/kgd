@@ -94,7 +94,12 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
       // Fetch ALL parts, then filter to those on our POs (client-side filtering as fallback)
       const allPartsList = await base44.entities.Part.list();
       const poIds = new Set(pos.map(p => p.id));
-      const poParts = allPartsList.filter(p => p.purchase_order_id && poIds.has(p.purchase_order_id));
+      const poParts = allPartsList.filter(p => {
+        // Match via any of: legacy purchase_order_id, canonical primary_purchase_order_id, or array purchase_order_ids
+        return (p.purchase_order_id && poIds.has(p.purchase_order_id)) ||
+               (p.primary_purchase_order_id && poIds.has(p.primary_purchase_order_id)) ||
+               (p.purchase_order_ids && Array.isArray(p.purchase_order_ids) && p.purchase_order_ids.some(id => poIds.has(id)));
+      });
       
       // Merge and dedupe by id
       const combined = [...directParts, ...poParts];
