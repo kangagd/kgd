@@ -25,6 +25,22 @@ Deno.serve(async (req) => {
 
     console.log(`[inventoryReferenceMigration] Starting (dryRun=${dryRun})`);
 
+    // Guard: prevent writes if dryRun is true
+    if (dryRun) {
+      const originalCreate = base44.asServiceRole.entities.InventoryQuantity.create;
+      const originalUpdate = base44.asServiceRole.entities.InventoryQuantity.update;
+      base44.asServiceRole.entities.InventoryQuantity.create = async () => {
+        throw new Error('Dry-run mode: no writes allowed');
+      };
+      base44.asServiceRole.entities.InventoryQuantity.update = async () => {
+        throw new Error('Dry-run mode: no writes allowed');
+      };
+      // Same for StockMovement
+      base44.asServiceRole.entities.StockMovement.update = async () => {
+        throw new Error('Dry-run mode: no writes allowed');
+      };
+    }
+
     // ========================================
     // Step 1: Build lookup maps
     // ========================================
