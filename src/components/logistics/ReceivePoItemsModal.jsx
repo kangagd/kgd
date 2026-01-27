@@ -55,46 +55,74 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
 
   const receiveMutation = useMutation({
     mutationFn: async () => {
-      console.log('🔴 [START] Receive mutation triggered');
-      console.log('🔴 URL search params:', window.location.search);
-      
       if (!receiveLocation) {
         throw new Error('Receive location is required');
       }
 
       const receiveDateTime = `${receiveDate}T${receiveTime}:00Z`;
-      const itemsToReceive = lineItems
-        .filter(line => receiveQtys[line.id] > 0)
-        .map(line => ({
-          po_line_id: line.id,
-          qty_received: receiveQtys[line.id]
-        }));
+      const itemsToReceive = lineItems.filter(line => receiveQtys[line.id] > 0);
 
       if (itemsToReceive.length === 0) {
         throw new Error('Please enter quantities to receive for at least one item');
       }
 
+      // Split lines into inventory (SKU) vs Part lines
+      const inventoryLines = itemsToReceive.filter(line => line.price_list_item_id);
+      const partLines = itemsToReceive.filter(line => !line.price_list_item_id);
+
       const jobId = window.location.search.includes('jobId=') 
         ? new URLSearchParams(window.location.search).get('jobId') 
         : null;
-      
-      console.log('🔴 Extracted jobId:', jobId);
-      console.log('🔴 Will send reference_type:', jobId ? 'purchase_order' : undefined);
-      
-      const payload = {
-        po_id: poId,
-        job_id: jobId,
-        reference_type: jobId ? 'purchase_order' : undefined,
-        location_id: receiveLocation,
-        receive_date_time: receiveDateTime,
-        items: itemsToReceive,
-        mark_po_received: markPoAsReceived,
-        notes: notes
+
+      let inventoryResult = null;
+      let partResult = null;
+
+      // Handle inventory lines via receivePoItems
+      if (inventoryLines.length > 0) {
+        const response = await base44.functions.invoke('receivePoItems', {
+          po_id: poId,
+          job_id: jobId,
+          reference_type: jobId ? 'purchase_order' : undefined,
+          location_id: receiveLocation,
+          receive_date_time: receiveDateTime,
+          items: inventoryLines.map(line => ({
+            po_line_id: line.id,
+            qty_received: receiveQtys[line.id]
+          })),
+          mark_po_received: markPoAsReceived,
+          notes: notes
+        });
+        inventoryResult = response.data;
+      }
+
+      // Handle Part lines directly
+      if (partLines.length > 0) {
+        const response = await base44.functions.invoke('receivePartLines', {
+          po_id: poId,
+          location_id: receiveLocation,
+          receive_date_time: receiveDateTime,
+          items: partLines.map(line => ({
+            po_line_id: line.id,
+            qty_received: receiveQtys[line.id]
+          })),
+          notes: notes
+        });
+        partResult = response.data;
+      }
+
+      // Combine results
+      const totalReceived = (inventoryResult?.items_received || 0) + (partResult?.items_received || 0);
+      const totalSkipped = (inventoryResult?.skipped_items || 0) + (partResult?.skipped_items || 0);
+
+      const response = {
+        success: totalReceived > 0,
+        items_received: totalReceived,
+        skipped_items: totalSkipped,
+        skipped_lines: [
+          ...(inventoryResult?.skipped_lines || []),
+          ...(partResult?.skipped_lines || [])
+        ]
       };
-      
-      console.log('🔴 FULL PAYLOAD:', JSON.stringify(payload, null, 2));
-      
-      const response = await base44.functions.invoke('receivePoItems', payload);
       
       console.log('🔴 RESPONSE:', JSON.stringify(response, null, 2));
 
