@@ -249,13 +249,15 @@ Deno.serve(async (req) => {
     // ==========================================
     try {
       const moduleIssues = [];
-      const last30Days = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const draftCandidates = ['EmailDraft', 'DraftEmail'];
+      const msgCandidates = ['EmailMessage', 'EmailThreadMessage', 'GmailMessage'];
+      const draftEntity = await findEntity(base44, draftCandidates) || { name: 'EmailDraft', timestampField: 'created_date' };
+      const msgEntity = await findEntity(base44, msgCandidates) || { name: 'EmailMessage', timestampField: 'created_date' };
+      
+      const drafts = await getRecentRecords(base44, draftEntity.name, 30);
+      const messages = await getRecentRecords(base44, msgEntity.name, 30);
 
-      // 1) Check EmailDraft image_urls structure (array-of-objects regression = CRITICAL)
-      const drafts = await base44.asServiceRole.entities.EmailDraft.filter({
-        created_date: { $gte: last30Days.toISOString() }
-      });
-
+      // 1) Check image_urls structure (array-of-objects regression = CRITICAL)
       const badImageDrafts = drafts.filter(d => {
         if (!d.image_urls || !Array.isArray(d.image_urls)) return false;
         return d.image_urls.some(img => typeof img === 'object');
@@ -273,10 +275,6 @@ Deno.serve(async (req) => {
       }
 
       // 2) Check for mojibake (encoding regression)
-      const messages = await base44.asServiceRole.entities.EmailMessage.filter({
-        created_date: { $gte: last30Days.toISOString() }
-      });
-
       const mojibakePattern = /[â€¢â€œâ€™â¯]/;
       const mojibakeMessages = messages.filter(m => {
         const body = m.body_text || m.body_html || '';
@@ -295,9 +293,7 @@ Deno.serve(async (req) => {
       }
 
       // 3) Assignment regression: check if all recent assignments are to self
-      const threads = await base44.asServiceRole.entities.EmailThread.filter({
-        assigned_at: { $gte: last30Days.toISOString() }
-      });
+      const threads = await getRecentRecords(base44, 'EmailThread', 30);
 
       const selfAssigned = threads.filter(t => t.assigned_to === t.created_by);
       const assignmentRate = threads.length > 0 ? selfAssigned.length / threads.length : 0;
