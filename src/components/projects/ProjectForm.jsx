@@ -402,9 +402,14 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
         })
         .filter(url => url);
       
+      // Ensure existing URLs are strings too
+      const existingUrls = (formData.image_urls || []).map(url => 
+        typeof url === 'string' ? url : (url?.url || url)
+      );
+      
       setFormData({
         ...formData,
-        image_urls: [...(formData.image_urls || []), ...newImageUrls]
+        image_urls: [...existingUrls, ...newImageUrls]
       });
     } catch (error) {
       console.error("Error uploading images:", error);
