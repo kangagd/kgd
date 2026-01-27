@@ -130,32 +130,47 @@ Deno.serve(async (req) => {
 
      context += deltaSection;
 
+    // Get job-type specific prompt block
+    const jobTypeBlock = getJobTypePromptBlock(job.job_type_name || job.job_type);
+
     const prompt = `${context}
 
-Create a brief for the technician using HTML formatting.
+${jobTypeBlock}
 
-Use this EXACT structure:
+OUTPUT FORMAT (HTML ONLY, no markdown):
 
-<p><strong>Purpose:</strong> [One clear sentence about the main goal]</p>
+<p><strong>Job Type Context:</strong> [1–3 sentences: why this visit exists]</p>
 
-<p><strong>What to do today:</strong></p>
+<p><strong>What changed since last visit:</strong></p>
 <ul>
-<li>[Bullet 1]</li>
-<li>[Bullet 2]</li>
-<li>[Bullet 3]</li>
-<li>[Optional bullet 4-6]</li>
+<li>...</li>
 </ul>
 
-<p><strong>Bring/expect:</strong></p>
+<p><strong>What you are doing today:</strong></p>
 <ul>
-<li>[Equipment or parts needed]</li>
-<li>[What to expect on site]</li>
-<li>[Optional 2-4 bullets total]</li>
+<li>...</li>
 </ul>
 
-<p><strong>Commercial:</strong> [One sentence about pricing, quotes, or payment status]</p>
+<p><strong>What's already been done:</strong></p>
+<ul>
+<li>...</li>
+</ul>
 
-Keep it concise and actionable. Use <strong> for bold headings. Return ONLY the HTML, no markdown code fences.`;
+<p><strong>Important notes & constraints:</strong></p>
+<ul>
+<li>...</li>
+</ul>
+
+<p><strong>Commercial status:</strong><br/>Quote: [status]. Invoice: [status]. Instruction: [Proceed / Hold / Call office].</p>
+
+<p><strong>What to confirm / watch out for:</strong></p>
+<ul>
+<li>...</li>
+</ul>
+
+<p><strong>If something doesn't match:</strong><br/>Pause work and contact the office with photos and notes.</p>
+
+Keep it concise and actionable. Return ONLY the HTML, no markdown code fences.`;
 
     // Generate brief using AI
     const aiResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
