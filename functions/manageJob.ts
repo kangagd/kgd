@@ -587,6 +587,15 @@ Deno.serve(async (req) => {
                // NO REGRESSION GUARDRAIL: Apply canonical logistics normalization
                patch = ensureLogisticsCanon(patch, previousJob);
 
+               // GUARDRAIL: Ensure logistics_purpose is never null (fixes PURPOSE_CODES mapping)
+               if (patch.is_logistics_job === true && (!patch.logistics_purpose || patch.logistics_purpose === null)) {
+                   if (previousJob.logistics_purpose) {
+                       patch.logistics_purpose = previousJob.logistics_purpose;
+                   } else {
+                       patch.logistics_purpose = 'other';
+                   }
+               }
+
                // Log canonical changes
                const changedFields = Object.keys(patch).filter(k => patch[k] !== data[k]);
                if (changedFields.length > 0) {
