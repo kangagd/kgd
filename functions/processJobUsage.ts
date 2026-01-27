@@ -205,15 +205,19 @@ Deno.serve(async (req) => {
       
       for (const item of validItems) {
         try {
-          await base44.asServiceRole.integrations.InventoryCore.moveInventory({
+          const result = await base44.asServiceRole.functions.invoke('moveInventory', {
             priceListItemId: item.price_list_item_id,
             fromLocationId: vehicleLocation.id,
             toLocationId: null, // Deduction (no destination)
             quantity: item.quantity,
             source: 'job_usage',
             jobId: job_id,
-            notes: deductionNotes
+            notes: deductionNotes,
+            idempotency_key: `${job_id}-${item.price_list_item_id}`
           });
+          if (!result.data?.success) {
+            throw new Error(result.data?.error || 'Unknown error');
+          }
         } catch (err) {
           console.error(`[processJobUsage] Failed to deduct ${item.item_name}:`, err);
           // Don't fail entire job; add to skipped
