@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import {
@@ -19,8 +19,65 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
   const [qtyUsed, setQtyUsed] = useState(String(item?.qty || 1));
   const [locationId, setLocationId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resolvedPriceListItemId, setResolvedPriceListItemId] = useState(null);
+  const [resolveError, setResolveError] = useState(null);
+  const [isResolving, setIsResolving] = useState(false);
 
   const queryClient = useQueryClient();
+
+  // Resolver: determine inventory lookup ID from requirement item
+  useEffect(() => {
+    if (!open || !item) {
+      setResolvedPriceListItemId(null);
+      setResolveError(null);
+      return;
+    }
+
+    const resolveId = async () => {
+      setIsResolving(true);
+      setResolveError(null);
+
+      try {
+        let priceListItemId = null;
+
+        // Check if already has price_list_item_id
+        if (item.price_list_item_id) {
+          priceListItemId = item.price_list_item_id;
+        }
+        // If part reference, fetch Part to get price_list_item_id
+        else if (item.type === 'part' && item.ref_id) {
+          try {
+            const part = await base44.entities.Part.get(item.ref_id);
+            priceListItemId = part?.price_list_item_id;
+          } catch (err) {
+            console.warn('Could not fetch Part:', err);
+            priceListItemId = null;
+          }
+        }
+        // If direct ref_id and not a part, assume it's price_list_item_id
+        else if (item.ref_id && item.type !== 'part') {
+          priceListItemId = item.ref_id;
+        }
+
+        if (priceListItemId) {
+          setResolvedPriceListItemId(priceListItemId);
+          setResolveError(null);
+        } else {
+          // Custom item or no mapping
+          setResolvedPriceListItemId(null);
+          setResolveError('stock_tracking_unavailable');
+        }
+      } catch (err) {
+        console.error('Error resolving price list item ID:', err);
+        setResolvedPriceListItemId(null);
+        setResolveError('resolve_failed');
+      } finally {
+        setIsResolving(false);
+      }
+    };
+
+    resolveId();
+  }, [open, item]);
 
   // Fetch inventory locations with stock for this item
   const { data: availableLocations = [] } = useQuery({
