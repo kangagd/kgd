@@ -356,6 +356,12 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       }
     }
 
+    // Ensure scheduled_date is set for new jobs (required by backend)
+    if (!job && !formData.scheduled_date) {
+      const today = new Date().toISOString().split('T')[0];
+      formData.scheduled_date = today;
+    }
+
     if (!job) {
       const allJobs = await base44.entities.Job.list('-job_number', 1);
       const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
