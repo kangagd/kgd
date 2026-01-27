@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { getPurposeCode, buildLogisticsJobNumber, getNextSequence } from '../src/components/utils/logisticsJobNumbering.js';
+import { getPurposeCode, buildLogisticsJobNumber, getNextSequence } from './shared/logisticsJobNumbering.js';
 
 // Sample Job Types
 const SAMPLE_JOB_TYPES = {

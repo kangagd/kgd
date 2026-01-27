@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { PO_DELIVERY_METHOD, LOGISTICS_PURPOSE } from './shared/constants.ts';
 import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.ts';
-import { getPurposeCode, buildLogisticsJobNumber, getProjectNumberForJob, getNextSequence } from '../src/components/utils/logisticsJobNumbering.js';
+import { getPurposeCode, buildLogisticsJobNumber, getNextSequence } from './shared/logisticsJobNumbering.js';
 
 Deno.serve(async (req) => {
     try {
