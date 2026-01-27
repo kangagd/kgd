@@ -433,11 +433,7 @@ Deno.serve(async (req) => {
     // ==========================================
     try {
       const moduleIssues = [];
-      const last30Days = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      
-      const jobs = await base44.asServiceRole.entities.Job.filter({
-        job_brief_last_generated_at: { $gte: last30Days.toISOString() }
-      });
+      const jobs = await getRecentRecords(base44, 'Job', 30).then(jj => jj.filter(j => j.job_brief_last_generated_at));
 
       const noJobTypes = jobs.filter(j => !j.job_type);
       if (noJobTypes.length > 0) {
