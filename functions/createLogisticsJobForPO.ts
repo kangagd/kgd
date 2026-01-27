@@ -189,22 +189,26 @@ Deno.serve(async (req) => {
         const newlyCreatedParts = [];
         for (const line of poLines) {
             // Check if Part already exists for this PO line
-            if (existingPartsByLineId.has(line.id)) {
-                const part = existingPartsByLineId.get(line.id);
-                // Ensure item_name and primary_purchase_order_id are populated
-                const updates = {};
-                if (!part.item_name && line.item_name) {
-                    updates.item_name = line.item_name;
-                }
-                if (!part.primary_purchase_order_id) {
-                    updates.primary_purchase_order_id = po.id;
-                }
-                if (Object.keys(updates).length > 0) {
-                    await base44.asServiceRole.entities.Part.update(part.id, updates);
-                    Object.assign(part, updates);
-                }
-                continue;
-            }
+             if (existingPartsByLineId.has(line.id)) {
+                 const part = existingPartsByLineId.get(line.id);
+                 // Ensure required fields are populated
+                 const updates = {};
+                 if (!part.item_name && line.item_name) {
+                     updates.item_name = line.item_name;
+                 }
+                 if (!part.primary_purchase_order_id) {
+                     updates.primary_purchase_order_id = po.id;
+                 }
+                 // CRITICAL: Ensure project_id is set for project POs
+                 if (po.project_id && !part.project_id) {
+                     updates.project_id = po.project_id;
+                 }
+                 if (Object.keys(updates).length > 0) {
+                     await base44.asServiceRole.entities.Part.update(part.id, updates);
+                     Object.assign(part, updates);
+                 }
+                 continue;
+             }
 
             // No Part exists - create one
             console.log(`Creating Part for PO line ${line.id}: ${line.item_name}`);
