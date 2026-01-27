@@ -47,10 +47,13 @@ export default function EditableFileUpload({
       );
       const results = await Promise.all(uploadPromises);
       const newUrls = results.map(result => result.file_url);
-      
+
       if (multiple) {
-        onFilesChange([...files, ...newUrls]);
+        const updatedFiles = [...files, ...newUrls];
+        console.log("Updated files:", updatedFiles);
+        onFilesChange(updatedFiles);
       } else {
+        console.log("Single file uploaded:", newUrls[0]);
         onFilesChange(newUrls[0]);
       }
     } catch (error) {
