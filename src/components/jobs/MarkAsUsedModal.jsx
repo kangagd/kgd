@@ -204,11 +204,27 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
           });
         }
       } catch (err) {
-        console.warn('Could not update job/visit scope:', err);
-        // Don't fail the whole operation if scope update fails
-      }
+          console.warn('Could not update job/visit scope:', err);
+          // Don't fail the whole operation if scope update fails
+        }
 
-      // If item is linked to a PO line, update it to "installed"
+        // Create Activity log for non-stock-tracked items
+        if (!resolvedPriceListItemId && currentUser && job.project_id) {
+          try {
+            await base44.entities.ProjectMessage.create({
+              project_id: job.project_id,
+              message_type: 'activity',
+              title: 'Marked as used (no stock deduction)',
+              body: `Marked used (non-stock-tracked): ${item.label}, qty ${qty}`,
+              created_by_email: currentUser.email,
+              created_by_name: currentUser.display_name || currentUser.full_name
+            });
+          } catch (err) {
+            console.warn('Could not create activity log:', err);
+          }
+        }
+
+        // If item is linked to a PO line, update it to "installed"
       if (item.ref_id && job.project_id) {
         try {
           const poLines = await base44.entities.PurchaseOrderLine.filter({
