@@ -1,5 +1,70 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { normalizeLogisticsPurpose } from './shared/normalizeLogisticsPurpose.js';
+
+// Inline normalization logic
+const LOGISTICS_PURPOSES = {
+  PO_DELIVERY_TO_WAREHOUSE: 'po_delivery_to_warehouse',
+  PO_PICKUP_FROM_SUPPLIER: 'po_pickup_from_supplier',
+  PART_PICKUP_FOR_INSTALL: 'part_pickup_for_install',
+  MANUAL_CLIENT_DROPOFF: 'manual_client_dropoff',
+  SAMPLE_DROPOFF: 'sample_dropoff',
+  SAMPLE_PICKUP: 'sample_pickup',
+};
+
+const PURPOSE_CODES = {
+  [LOGISTICS_PURPOSES.PO_DELIVERY_TO_WAREHOUSE]: 'PO-DEL',
+  [LOGISTICS_PURPOSES.PO_PICKUP_FROM_SUPPLIER]: 'PO-PU',
+  [LOGISTICS_PURPOSES.PART_PICKUP_FOR_INSTALL]: 'PART-PU',
+  [LOGISTICS_PURPOSES.MANUAL_CLIENT_DROPOFF]: 'DROP',
+  [LOGISTICS_PURPOSES.SAMPLE_DROPOFF]: 'SAMP-DO',
+  [LOGISTICS_PURPOSES.SAMPLE_PICKUP]: 'SAMP-PU',
+};
+
+const HUMAN_LABELS = {
+  'po delivery to warehouse': LOGISTICS_PURPOSES.PO_DELIVERY_TO_WAREHOUSE,
+  'po pickup from supplier': LOGISTICS_PURPOSES.PO_PICKUP_FROM_SUPPLIER,
+  'part pickup for install': LOGISTICS_PURPOSES.PART_PICKUP_FOR_INSTALL,
+  'manual client dropoff': LOGISTICS_PURPOSES.MANUAL_CLIENT_DROPOFF,
+  'sample dropoff': LOGISTICS_PURPOSES.SAMPLE_DROPOFF,
+  'sample pickup': LOGISTICS_PURPOSES.SAMPLE_PICKUP,
+  'drop': LOGISTICS_PURPOSES.MANUAL_CLIENT_DROPOFF,
+  'sample drop-off': LOGISTICS_PURPOSES.SAMPLE_DROPOFF,
+  'sample pick-up': LOGISTICS_PURPOSES.SAMPLE_PICKUP,
+};
+
+function normalizeLogisticsPurpose(input) {
+  if (!input) return { purpose_code: 'other', purpose_raw: null, ok: false };
+  
+  const raw = String(input).trim();
+  
+  // Check canonical codes
+  if (Object.values(LOGISTICS_PURPOSES).includes(raw)) {
+    return { purpose_code: raw, purpose_raw: raw, ok: true };
+  }
+  
+  // Check PURPOSE_CODES
+  if (Object.values(PURPOSE_CODES).includes(raw)) {
+    for (const [code, purposeCode] of Object.entries(PURPOSE_CODES)) {
+      if (purposeCode === raw) {
+        return { purpose_code: code, purpose_raw: raw, ok: true };
+      }
+    }
+  }
+  
+  // Try human label
+  const normalized = raw.toLowerCase().replace(/[\-_]+/g, ' ');
+  if (HUMAN_LABELS[normalized]) {
+    return { purpose_code: HUMAN_LABELS[normalized], purpose_raw: raw, ok: true };
+  }
+  
+  // Loose match
+  for (const [label, code] of Object.entries(HUMAN_LABELS)) {
+    if (label.includes(normalized) || normalized.includes(label)) {
+      return { purpose_code: code, purpose_raw: raw, ok: false };
+    }
+  }
+  
+  return { purpose_code: 'other', purpose_raw: raw, ok: false };
+}
 
 Deno.serve(async (req) => {
   try {
