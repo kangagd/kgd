@@ -22,6 +22,7 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
   const [resolvedPriceListItemId, setResolvedPriceListItemId] = useState(null);
   const [resolveError, setResolveError] = useState(null);
   const [isResolving, setIsResolving] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const queryClient = useQueryClient();
 
