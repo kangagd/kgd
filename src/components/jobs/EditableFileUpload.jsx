@@ -177,14 +177,13 @@ export default function EditableFileUpload({
           )}
         </div>
         <input
-          ref={fileInputRef}
-          type="file"
-          accept={accept}
-          multiple={multiple}
-          capture={accept.includes('image') || accept.includes('video') ? "environment" : undefined}
-          className="hidden"
-          onChange={handleFileSelect}
-        />
+           ref={fileInputRef}
+           type="file"
+           accept={accept}
+           multiple={multiple}
+           className="hidden"
+           onChange={handleFileSelect}
+         />
       </div>
 
       <div
