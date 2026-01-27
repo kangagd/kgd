@@ -307,24 +307,45 @@ export default function Inbox() {
   const { data: teamUsers = [] } = useQuery({
     queryKey: ["teamUsers"],
     queryFn: async () => {
+      const normalize = (users = []) =>
+        (users || [])
+          .filter(u => u?.email)
+          .map(u => ({
+            id: u.id,
+            email: u.email,
+            display_name: u.display_name || u.full_name || u.email,
+            full_name: u.full_name,
+            aliases: u.aliases || [],
+            org_emails: u.org_emails || []
+          }));
+
+      const fallbackSelf = () => {
+        if (!user?.email) return [];
+        return [{ email: user.email, display_name: user.display_name || user.full_name || user.email }];
+      };
+
       try {
-        const response = await base44.functions.invoke("getTeamUsers", {});
-        const users = response?.users ?? response?.data?.users ?? [];
-        
-        if (users.length === 0 && user?.email) {
-          devLog("Team users list empty, using current user only");
-          toast.info("Team roster unavailable, using current user");
-          return [{ email: user.email, display_name: user.display_name || user.full_name }];
+        // 1) Preferred
+        const r1 = await base44.functions.invoke("getTeamUsers", {});
+        const u1 = normalize(r1?.users ?? r1?.data?.users ?? []);
+        if (u1.length > 0) return u1;
+
+        // 2) Fallback
+        const r2 = await base44.functions.invoke("getAllUsers", {});
+        const u2 = normalize(r2?.users ?? r2?.data?.users ?? []);
+        if (u2.length > 0) return u2;
+
+        // 3) Last resort
+        return fallbackSelf();
+      } catch (e1) {
+        try {
+          const r2 = await base44.functions.invoke("getAllUsers", {});
+          const u2 = normalize(r2?.users ?? r2?.data?.users ?? []);
+          if (u2.length > 0) return u2;
+          return fallbackSelf();
+        } catch (e2) {
+          return fallbackSelf();
         }
-        
-        return users;
-      } catch (error) {
-        devLog("Error fetching team users:", error);
-        // Graceful fallback
-        if (user?.email) {
-          return [{ email: user.email, display_name: user.display_name || user.full_name }];
-        }
-        return [];
       }
     },
     enabled: !!user,
