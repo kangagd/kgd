@@ -245,29 +245,40 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
           {/* Source Location */}
           <div className="space-y-2">
             <Label>Source Location</Label>
-            <Select value={locationId} onValueChange={setLocationId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select location..." />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px]">
-                {availableLocations.length === 0 ? (
-                  <div className="p-2 text-center text-sm text-gray-500">
-                    {item?.ref_id ? "No stock available" : "Item not linked to price list"}
-                  </div>
-                ) : (
-                  availableLocations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name} - {location.available_quantity} available
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            {!item?.ref_id && (
-              <div className="flex items-start gap-2 text-amber-700 bg-amber-50 p-2 rounded-lg">
-                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <p className="text-xs">Custom items require manual location selection</p>
+            {isResolving ? (
+              <div className="flex items-center justify-center p-4 text-gray-500">
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <span className="text-sm">Looking up inventory...</span>
               </div>
+            ) : resolveError === 'stock_tracking_unavailable' ? (
+              <div className="flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p className="text-xs">No stock tracking available for this item. Manually select deduction location below.</p>
+              </div>
+            ) : resolveError === 'resolve_failed' ? (
+              <div className="flex items-start gap-2 text-red-700 bg-red-50 p-3 rounded-lg border border-red-200">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <p className="text-xs">Failed to resolve item inventory. Please try again or contact support.</p>
+              </div>
+            ) : (
+              <Select value={locationId} onValueChange={setLocationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location..." />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {availableLocations.length === 0 ? (
+                    <div className="p-2 text-center text-sm text-gray-500">
+                      No stock available in any location
+                    </div>
+                  ) : (
+                    availableLocations.map((location) => (
+                      <SelectItem key={location.id} value={location.id}>
+                        {location.name} - {location.available_quantity} available
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             )}
           </div>
 
