@@ -362,11 +362,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       formData.scheduled_date = today;
     }
 
-    if (!job) {
-      const allJobs = await base44.entities.Job.list('-job_number', 1);
-      const lastJobNumber = allJobs && allJobs[0]?.job_number ? allJobs[0].job_number : 4999;
-      formData.job_number = lastJobNumber + 1;
-    }
+    // Backend handles job_number assignment based on logistics vs regular job
     
     const submitData = {
       ...formData,
