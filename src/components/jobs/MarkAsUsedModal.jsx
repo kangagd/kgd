@@ -142,7 +142,7 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
     try {
       // Record stock movement from location to null (deduction)
       await base44.functions.invoke('moveInventory', {
-        priceListItemId: item.ref_id,
+        priceListItemId: resolvedPriceListItemId,
         fromLocationId: locationId,
         toLocationId: null,
         quantity: qty,
