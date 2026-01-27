@@ -130,6 +130,34 @@ Deno.serve(async (req) => {
 
      context += deltaSection;
 
+     // Add quote and invoice status to context
+     if (job.project_id) {
+       try {
+         // Fetch quotes linked to the project
+         const quotes = await base44.asServiceRole.entities.Quote.filter({ project_id: job.project_id }, '-created_date', 5);
+         if (quotes && quotes.length > 0) {
+           const latestQuote = quotes[0];
+           context += `\n\nQUOTE STATUS: ${latestQuote.status || 'Unknown'}\n`;
+           if (latestQuote.total) {
+             context += `Quote Amount: $${latestQuote.total}\n`;
+           }
+         }
+
+         // Fetch invoices linked to the project
+         const invoices = await base44.asServiceRole.entities.Invoice.filter({ project_id: job.project_id }, '-created_date', 5);
+         if (invoices && invoices.length > 0) {
+           const latestInvoice = invoices[0];
+           context += `\nINVOICE STATUS: ${latestInvoice.status || 'Unknown'}\n`;
+           if (latestInvoice.total) {
+             context += `Invoice Amount: $${latestInvoice.total}\n`;
+           }
+         }
+       } catch (err) {
+         // Continue without quote/invoice if fetch fails
+         console.error('[generateJobBrief] Quote/Invoice fetch failed:', err);
+       }
+     }
+
     // Get job-type specific prompt block
     const jobTypeBlock = getJobTypePromptBlock(job.job_type_name || job.job_type);
 
