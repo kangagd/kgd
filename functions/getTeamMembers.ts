@@ -9,15 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only allow admins and managers to fetch team members
-    const isAdmin = user.role === 'admin';
-    const isManager = user.extended_role === 'manager';
-
-    if (!isAdmin && !isManager) {
-      return Response.json({ error: 'Forbidden: Only admins and managers can view team members' }, { status: 403 });
-    }
-
-    // Fetch all users - filter to only show admins/managers for assignment
+    // Fetch all users using service role
     const allUsers = await base44.asServiceRole.entities.User.list();
     
     // Filter to only admins and managers (can be assigned threads)
