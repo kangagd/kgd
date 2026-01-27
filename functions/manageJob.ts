@@ -7,6 +7,7 @@ import { generateJobNumber } from './shared/jobNumberGenerator.js';
 import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
 import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.js';
 import { normalizeLogisticsPurpose, getPurposeCode } from './shared/normalizeLogisticsPurpose.js';
+import { ensureLogisticsCanon, stripRollbackWrites } from './shared/logisticsGuardrails.js';
 
 // Helper: Process sample transfers (explicit action on completion)
 async function processSampleTransfers(base44, job) {
@@ -360,62 +361,30 @@ Deno.serve(async (req) => {
                  }, { status: 400 });
              }
 
-             // A) UNIFIED LOGISTICS DETECTION: Compute ONE canonical boolean EARLY
-             const jobTypeName = (data?.job_type_name || data?.job_type || '').toLowerCase();
-             const matchesLogisticsType = /delivery|pickup|return|logistics/.test(jobTypeName);
+             // NO REGRESSION GUARDRAIL: Apply canonical logistics normalization
+             let jobData = ensureLogisticsCanon({ ...data }, null);
+             const isLogisticsJob = jobData.is_logistics_job === true;
 
-             const indicatesLogistics =
-               data?.is_logistics_job === true ||
-               matchesLogisticsType ||
-               data?.logistics_purpose ||
-               data?.logisticsPurpose ||
-               data?.logistics_purpose_raw ||
-               data?.vehicle_id ||
-               data?.purchase_order_id ||
-               data?.third_party_trade_id;
-
-             // B) IF INDICATES LOGISTICS: Normalize + Enforce
-             if (indicatesLogistics) {
-                 // Force is_logistics_job = true
-                 data.is_logistics_job = true;
-
-                 // Normalize purpose (never null)
-                 const purposeInput = data.logistics_purpose || data.logisticsPurpose || data.logistics_purpose_raw || jobTypeName;
-                 const normalized = normalizeLogisticsPurpose(purposeInput);
-                 data.logistics_purpose = (normalized.ok && normalized.purpose_code) ? normalized.purpose_code : 'other';
-
-                 // Store raw if different
-                 if (purposeInput && purposeInput !== data.logistics_purpose) {
-                   data.logistics_purpose_raw = purposeInput;
-                 }
-
-                 // Ensure defaults
-                 if (!data.logistics_outcome) {
-                   data.logistics_outcome = 'none';
-                 }
-                 if (!data.stock_transfer_status) {
-                   data.stock_transfer_status = 'not_started';
-                 }
-
-                 // Logistics jobs require origin OR destination address
-                 if (!data?.origin_address && !data?.destination_address) {
-                     return Response.json({ error: 'Origin or destination address is required for logistics jobs' }, { status: 400 });
-                 }
+             // Log canonical changes
+             const changedFields = Object.keys(jobData).filter(k => jobData[k] !== data[k]);
+             if (changedFields.length > 0) {
+                 console.info(`[NO_REGRESSION] canonicalized job create: changes=${changedFields.join(', ')}`);
              }
 
-             // GUARDRAIL: Validate required fields for standard jobs
-             if (data?.is_logistics_job !== true) {
-                 if (!data?.customer_id?.trim() && !data?.supplier_id) {
+             // Logistics jobs require origin OR destination address
+             if (isLogisticsJob && !jobData.origin_address && !jobData.destination_address) {
+                 return Response.json({ error: 'Origin or destination address is required for logistics jobs' }, { status: 400 });
+             }
+
+             // GUARDRAIL: Validate required fields for standard jobs only
+             if (!isLogisticsJob) {
+                 if (!jobData.customer_id?.trim() && !jobData.supplier_id) {
                      return Response.json({ error: 'Customer or Supplier is required' }, { status: 400 });
                  }
              }
-             if (!data?.scheduled_date) {
+             if (!jobData.scheduled_date) {
                  return Response.json({ error: 'Scheduled date is required' }, { status: 400 });
              }
-
-           // Handle creation
-           let jobData = { ...data };
-           const isLogisticsJob = indicatesLogistics;
 
             // Inherit address, customer, and project fields from project if missing
             if (jobData.project_id) {
@@ -597,8 +566,25 @@ Deno.serve(async (req) => {
                // PERMISSION CHECK: Technicians can only update assigned jobs
                enforceJobUpdatePermission(user, previousJob);
 
+               // NO REGRESSION GUARDRAIL: Strip rollback attempts first
+               let patch = stripRollbackWrites(previousJob, { ...data });
+
+               // NO REGRESSION GUARDRAIL: Apply canonical logistics normalization
+               patch = ensureLogisticsCanon(patch, previousJob);
+
+               // Log canonical changes
+               const changedFields = Object.keys(patch).filter(k => patch[k] !== data[k]);
+               if (changedFields.length > 0) {
+                   console.info(`[NO_REGRESSION] canonicalized job update ${id}: changes=${changedFields.join(', ')}`);
+               }
+
+               // Replace data with guarded patch
+               data = patch;
+
+               const isCurrentLogisticsJob = previousJob.is_logistics_job === true || data.is_logistics_job === true;
+
                // GUARDRAIL: JobType enforcement on update (cannot clear existing job_type_id)
-               const allowMissingJobType = data?.allow_missing_job_type === true && user.role === 'admin';
+               const allowMissingJobType = data.allow_missing_job_type === true && user.role === 'admin';
                if (data.hasOwnProperty('job_type_id') && !data.job_type_id && previousJob.job_type_id && !allowMissingJobType) {
                    return Response.json({ 
                        error: 'Cannot remove Job Type from an existing job.',
@@ -606,21 +592,10 @@ Deno.serve(async (req) => {
                    }, { status: 400 });
                }
 
-              // LOGISTICS JOB RULE: Logistics jobs do NOT require customer confirmation
-              // Detect if this is a logistics job
-              let isCurrentLogisticsJob = false;
-              if (previousJob.job_type_id) {
-                  try {
-                      const jobType = await base44.asServiceRole.entities.JobType.get(previousJob.job_type_id);
-                      isCurrentLogisticsJob = jobType?.is_logistics === true;
-                  } catch (e) {}
-              }
-              isCurrentLogisticsJob = isCurrentLogisticsJob || previousJob.is_logistics_job === true || previousJob.purchase_order_id || previousJob.vehicle_id || previousJob.third_party_trade_id;
-
-              // If this is a logistics job, force client_confirmed to true (skip requirement)
-              if (isCurrentLogisticsJob && data.hasOwnProperty('client_confirmed') === false) {
+               // If this is a logistics job, force client_confirmed to true (skip requirement)
+               if (isCurrentLogisticsJob && data.hasOwnProperty('client_confirmed') === false) {
                   data.client_confirmed = true;
-              }
+               }
 
              // CRITICAL GUARDRAIL: Apply job update rules (draft vs final completion)
              // Only admins can write completion fields; technicians/regular users are in draft mode
@@ -724,17 +699,8 @@ Deno.serve(async (req) => {
                 } catch (e) {}
             }
             
-            // Detect if job is becoming a logistics job
-            const wasLogisticsJob = previousJobTypeIsLogistics ||
-                                   previousJob.purchase_order_id || 
-                                   previousJob.vehicle_id || 
-                                   previousJob.third_party_trade_id;
-            
-            const isLogisticsJob = newJobTypeIsLogistics ||
-                                  data.purchase_order_id || 
-                                  data.vehicle_id || 
-                                  data.third_party_trade_id ||
-                                  wasLogisticsJob;
+            // Use canonical logistics flag from guardrails
+            const isLogisticsJob = data.is_logistics_job === true;
             
             // Address provenance: track if user manually overrides address (only on explicit changes)
             let updateData = { ...data };
