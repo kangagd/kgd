@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
         code: 'PERMISSION_DENIED'
       }, { status: 403 });
     }
-
+ 
     const { dryRun = true } = await req.json();
 
     console.log(`[backfillInventorySku] Starting (dryRun=${dryRun})`);
