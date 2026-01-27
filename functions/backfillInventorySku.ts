@@ -23,6 +23,7 @@ Deno.serve(async (req) => {
     }
  
     const { dryRun = true } = await req.json();
+    const isDryRun = dryRun === false || dryRun === 'false' ? false : true;
 
     console.log(`[backfillInventorySku] Starting (dryRun=${dryRun})`);
 
