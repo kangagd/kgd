@@ -169,6 +169,26 @@ Deno.serve(async (req) => {
       }
     }
 
+    // IDEMPOTENCY: Check if this movement already happened
+    let idempotencyCheckResult = null;
+    if (idempotency_key) {
+      const existingMovements = await base44.entities.StockMovement.filter({
+        idempotency_key: idempotency_key
+      });
+      if (existingMovements.length > 0) {
+        // Already processed - return success without double-deducting
+        return Response.json({
+          success: true,
+          idempotent: true,
+          message: `Movement already processed (idempotency_key: ${idempotency_key})`,
+          updated_quantities: []
+        });
+      }
+    }
+
+    // Track updated/created quantity records for response
+    const updated_quantities = [];
+
     // Log the movement (canonical schema with reference fields)
     let referenceType = null;
     let referenceId = null;
@@ -179,6 +199,37 @@ Deno.serve(async (req) => {
     } else if (vehicleId) {
       referenceType = 'vehicle_transfer';
       referenceId = vehicleId;
+    }
+
+    // Determine quantity IDs that were modified (for response)
+    if (fromLocationId) {
+      const srcQtys = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: priceListItemId,
+        location_id: fromLocationId
+      });
+      if (srcQtys[0]) {
+        updated_quantities.push({
+          id: srcQtys[0].id,
+          location_id: fromLocationId,
+          location_name: fromLocation?.name,
+          new_balance: srcQtys[0].quantity - quantity
+        });
+      }
+    }
+
+    if (toLocationId) {
+      const destQtys = await base44.entities.InventoryQuantity.filter({
+        price_list_item_id: priceListItemId,
+        location_id: toLocationId
+      });
+      if (destQtys[0]) {
+        updated_quantities.push({
+          id: destQtys[0].id,
+          location_id: toLocationId,
+          location_name: toLocation?.name,
+          new_balance: (destQtys[0].quantity || 0) + quantity
+        });
+      }
     }
 
     await base44.asServiceRole.entities.StockMovement.create({
@@ -195,12 +246,14 @@ Deno.serve(async (req) => {
       performed_at: new Date().toISOString(),
       reference_type: referenceType,
       reference_id: referenceId,
-      notes: notes
+      notes: notes,
+      idempotency_key: idempotency_key || null
     });
 
     return Response.json({
       success: true,
-      message: `Moved ${quantity} ${item.item} ${fromLocation ? `from ${fromLocation.name}` : ''} ${toLocation ? `to ${toLocation.name}` : ''}`
+      message: `Moved ${quantity} ${item.item} ${fromLocation ? `from ${fromLocation.name}` : ''} ${toLocation ? `to ${toLocation.name}` : ''}`,
+      updated_quantities: updated_quantities
     });
 
   } catch (error) {
