@@ -6,6 +6,7 @@ import { resolveCoreLocations } from './shared/locationResolver.js';
 import { generateJobNumber } from './shared/jobNumberGenerator.js';
 import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
 import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.js';
+import { normalizeLogisticsPurpose, getPurposeCode } from './shared/normalizeLogisticsPurpose.js';
 
 // Helper: Process sample transfers (explicit action on completion)
 async function processSampleTransfers(base44, job) {
@@ -354,12 +355,41 @@ Deno.serve(async (req) => {
                  }, { status: 400 });
              }
 
-             // LOGISTICS JOB VALIDATION
-             if (data?.is_logistics_job === true) {
-                 // Logistics jobs require logistics_purpose
-                 if (!data?.logistics_purpose) {
-                     return Response.json({ error: 'Logistics purpose is required for logistics jobs' }, { status: 400 });
+             // LOGISTICS PURPOSE NORMALIZATION + ENFORCEMENT
+             // Check if this is a logistics job (multiple indicators)
+             const indicatesLogistics = data?.is_logistics_job === true ||
+                                       data?.logistics_purpose ||
+                                       data?.logisticsPurpose ||
+                                       data?.logistics_purpose_raw ||
+                                       data?.vehicle_id ||
+                                       data?.purchase_order_id ||
+                                       data?.third_party_trade_id;
+
+             let logisticsPurposeNormalized = null;
+             if (indicatesLogistics) {
+                 // Always force is_logistics_job = true
+                 data.is_logistics_job = true;
+
+                 // Normalize purpose from any input variant
+                 const purposeInput = data.logistics_purpose || data.logisticsPurpose || data.logistics_purpose_raw;
+                 const normalized = normalizeLogisticsPurpose(purposeInput);
+                 logisticsPurposeNormalized = normalized.purpose_code; // Never null
+
+                 data.logistics_purpose = logisticsPurposeNormalized;
+                 
+                 // Store raw if different
+                 if (purposeInput !== normalized.purpose_code) {
+                   data.logistics_purpose_raw = purposeInput;
                  }
+
+                 // Ensure defaults
+                 if (!data.logistics_outcome) {
+                   data.logistics_outcome = 'none';
+                 }
+                 if (!data.stock_transfer_status) {
+                   data.stock_transfer_status = 'not_started';
+                 }
+
                  // Logistics jobs require origin OR destination address
                  if (!data?.origin_address && !data?.destination_address) {
                      return Response.json({ error: 'Origin or destination address is required for logistics jobs' }, { status: 400 });
@@ -381,11 +411,19 @@ Deno.serve(async (req) => {
 
             // Check if this is a logistics job
             const jobTypeName = (jobData.job_type_name || jobData.job_type || '').toLowerCase();
-            const isLogisticsJob = /delivery|pickup|return|logistics/.test(jobTypeName);
+            const isLogisticsJob = jobData.is_logistics_job === true || /delivery|pickup|return|logistics/.test(jobTypeName);
 
-            // Inherit address and customer fields from project if missing
+            // Inherit address, customer, and project fields from project if missing
             if (jobData.project_id) {
                 const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
+                
+                // Populate project cached fields
+                if (!jobData.project_number && project?.project_number) {
+                  jobData.project_number = project.project_number;
+                }
+                if (!jobData.project_name && project?.title) {
+                  jobData.project_name = project.title;
+                }
                 
                 // Inherit customer fields if missing
                 if (!jobData.customer_id && project.customer_id) {
