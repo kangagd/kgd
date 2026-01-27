@@ -64,9 +64,9 @@ export function getJobTypePromptBlock(jobTypeName) {
   
   const normalized = jobTypeName.toLowerCase().trim();
   
-  // Map variations to keys
+  // Map variations to keys - check in priority order
+  if (normalized.includes('measure') || normalized.includes('site visit') || normalized.includes('final measure')) return JOB_TYPE_PROMPTS.measure;
   if (normalized.includes('install')) return JOB_TYPE_PROMPTS.install;
-  if (normalized.includes('measure') || normalized.includes('site visit')) return JOB_TYPE_PROMPTS.measure;
   if (normalized.includes('repair') || normalized.includes('service')) return JOB_TYPE_PROMPTS.service;
   if (normalized.includes('logistics')) return JOB_TYPE_PROMPTS.logistics;
   if (normalized.includes('warranty') || normalized.includes('defect')) return JOB_TYPE_PROMPTS.warranty;
