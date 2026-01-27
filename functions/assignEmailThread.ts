@@ -11,8 +11,25 @@ Deno.serve(async (req) => {
     
     const { thread_id, assigned_to_email, note } = await req.json();
     
-    if (!thread_id || !assigned_to_email) {
-      return Response.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!thread_id) {
+      return Response.json({ error: 'Thread ID is required' }, { status: 400 });
+    }
+    
+    // Handle unassignment
+    if (!assigned_to_email || assigned_to_email === null) {
+      await base44.asServiceRole.entities.EmailThread.update(thread_id, {
+        assigned_to: null,
+        assigned_to_name: null,
+        last_worked_by: user.email,
+        last_worked_by_name: user.display_name || user.full_name,
+        last_worked_at: new Date().toISOString()
+      });
+      
+      return Response.json({ 
+        success: true,
+        assigned_to: null,
+        assigned_to_name: null
+      });
     }
     
     // Get assigned user details
@@ -32,8 +49,7 @@ Deno.serve(async (req) => {
       assigned_at: new Date().toISOString(),
       last_worked_by: user.email,
       last_worked_by_name: user.display_name || user.full_name,
-      last_worked_at: new Date().toISOString(),
-      status: 'In Progress'
+      last_worked_at: new Date().toISOString()
     });
     
     // Get thread details for notification
