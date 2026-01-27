@@ -127,12 +127,12 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
       console.log('🔴 RESPONSE:', JSON.stringify(response, null, 2));
 
       // Check if operation fully failed (all items skipped)
-      if (!response.data?.success) {
-        const skipReasons = response.data?.skipped_lines?.map(s => `${s.po_line_id}: ${s.reason}`).join(', ') || 'unknown';
-        throw new Error(response.data?.error || `Failed to receive any items. ${skipReasons}`);
+      if (!response.success) {
+        const skipReasons = response.skipped_lines?.map(s => `${s.po_line_id}: ${s.reason}`).join(', ') || 'unknown';
+        throw new Error(`Failed to receive any items. ${skipReasons}`);
       }
 
-      return response.data;
+      return response;
     },
     onSuccess: (data) => {
       // Show success with warning if items were skipped
