@@ -61,6 +61,7 @@ import {
 import TasksPanel from "../tasks/TasksPanel";
 import QuotesSection from "../quotes/QuotesSection";
 import JobItemsUsedModal from "./JobItemsUsedModal";
+import ManageJobStockModal from "./ManageJobStockModal";
 import JobContactsPanel from "./JobContactsPanel";
 import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
@@ -208,6 +209,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showLinkInvoiceModal, setShowLinkInvoiceModal] = useState(false);
   const [showItemsUsedModal, setShowItemsUsedModal] = useState(false);
+  const [showManageJobStockModal, setShowManageJobStockModal] = useState(false);
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
@@ -1485,9 +1487,9 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setShowItemsUsedModal(true)}
+                    onClick={() => setShowManageJobStockModal(true)}
                     className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
-                    title="Items Used">
+                    title="Manage Job Stock">
                     <PackageMinus className="w-4 h-4" />
                   </Button>
                 )}
@@ -2792,63 +2794,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                       queryClient.invalidateQueries({ queryKey: ['job', job.id] });
                     }}
                   />
-
-                  {/* Stock Deduction Section */}
-                  {!isLogisticsJob && user && (isTechnician || isAdmin) && (
-                    <Card className="border border-[#E5E7EB] shadow-sm rounded-lg bg-blue-50">
-                      <CardHeader className="bg-blue-50 px-4 py-3 border-b border-blue-200">
-                        <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2] flex items-center gap-2">
-                          <PackageMinus className="w-5 h-5 text-blue-600" />
-                          Stock Deduction
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4">
-                        {job.stock_usage_status === 'completed' ? (
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                            <div className="flex items-center gap-2 text-green-700 mb-2">
-                              <CheckCircle className="w-5 h-5" />
-                              <span className="font-semibold">Stock Already Deducted</span>
-                            </div>
-                            <p className="text-[12px] text-green-700">
-                              Inventory for items used has been deducted from technician's vehicle stock.
-                            </p>
-                          </div>
-                        ) : (
-                          <>
-                            <p className="text-[14px] text-[#6B7280] mb-4">
-                              Deduct consumed items from your assigned vehicle's stock when checking out.
-                            </p>
-                            <Button
-                              onClick={() => {
-                                (async () => {
-                                  try {
-                                    const response = await base44.functions.invoke('processJobUsage', {
-                                      job_id: job.id,
-                                      mode: 'deduct'
-                                    });
-                                    if (response.data.success) {
-                                      toast.success(`Deducted ${response.data.deducted_count} item(s) from stock`);
-                                      if (response.data.skipped_count > 0) {
-                                        toast.info(`${response.data.skipped_count} item(s) skipped (cost-only or unavailable)`);
-                                      }
-                                      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-                                      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-                                    }
-                                  } catch (error) {
-                                    toast.error(error.message || 'Failed to deduct stock');
-                                  }
-                                })();
-                              }}
-                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 rounded-lg text-sm"
-                            >
-                              <PackageMinus className="w-4 h-4 mr-2" />
-                              Deduct from Vehicle Stock
-                            </Button>
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
 
                   {!isTechnician && (
                     <div className="flex flex-col gap-2">
