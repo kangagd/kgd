@@ -234,6 +234,8 @@ Deno.serve(async (req) => {
 
       modules.parts = {
         checks_run: 3,
+        entity: partEntity.name,
+        records_checked: parts.length,
         issues: moduleIssues.filter(i => i.module === 'parts'),
         summary: `${parts.length} parts checked (last 30d), ${missingPrimaryPO.length} primary PO issues`
       };
