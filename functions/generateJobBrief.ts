@@ -60,9 +60,35 @@ Deno.serve(async (req) => {
       }
     }
 
+    // GUARDRAIL: Warn if JobType missing
+    let jobTypeMissing = false;
+    if (!job.job_type_id) {
+      jobTypeMissing = true;
+      console.warn(`[generateJobBrief] Job ${job_id} missing job_type_id - brief quality reduced`);
+    }
+
     // Build context for AI
      let context = `Generate a concise job brief for a technician.\n\n`;
-     context += `Job Type: ${job.job_type_name || job.job_type || 'Service'}\n`;
+     
+     // Prioritize JobType context if available
+     if (job.job_type_id) {
+       try {
+         const jobType = await base44.asServiceRole.entities.JobType.get(job.job_type_id);
+         if (jobType) {
+           context += `Job Type: ${jobType.name}\n`;
+           if (jobType.description) {
+             context += `Job Type Details: ${jobType.description}\n`;
+           }
+         } else {
+           context += `Job Type: ${job.job_type_name || job.job_type || 'Service'}\n`;
+         }
+       } catch (err) {
+         context += `Job Type: ${job.job_type_name || job.job_type || 'Service'}\n`;
+       }
+     } else {
+       context += `Job Type: [MISSING - brief quality reduced]\n`;
+     }
+     
      context += `Customer: ${job.customer_name || 'Unknown'}\n`;
 
      if (job.address_full) {
