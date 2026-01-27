@@ -8,6 +8,7 @@ import QuoteCard from "./QuoteCard";
 import CreateQuoteModal from "./CreateQuoteModal";
 import LinkQuoteModal from "./LinkQuoteModal";
 import QuoteSummaryModal from "./QuoteSummaryModal";
+import PricingChecklistBadges from "../projects/PricingChecklistBadges";
 
 export default function QuotesSection({ 
   project = null, 
@@ -161,13 +162,15 @@ export default function QuotesSection({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
-          <FileText className="w-5 h-5 text-[#FAE008]" />
-          Quotes
-          {quotes.length > 0 && (
-            <span className="text-[12px] font-normal text-[#6B7280]">({quotes.length})</span>
-          )}
-        </h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-[16px] font-semibold text-[#111827] flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[#FAE008]" />
+            Quotes
+            {quotes.length > 0 && (
+              <span className="text-[12px] font-normal text-[#6B7280]">({quotes.length})</span>
+            )}
+          </h3>
+          {project && <PricingChecklistBadges project={project} />}
         <div className="flex gap-2">
           <Button
             size="sm"
