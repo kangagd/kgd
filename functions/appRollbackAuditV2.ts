@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     // ==========================================
     try {
       const moduleIssues = [];
-      const movements = await getRecentRecords(base44, 'StockMovement', 7);
+      const movements = await base44.asServiceRole.entities.StockMovement.list(undefined, 300);
 
       const badMovements = movements.filter(m => !m.idempotency_key || !m.source);
       badMovements.forEach(m => {
@@ -105,8 +105,8 @@ Deno.serve(async (req) => {
       }
 
       // Orphan InventoryQuantity checks
-      const quantities = await base44.asServiceRole.entities.InventoryQuantity.list();
-      const priceItems = await base44.asServiceRole.entities.PriceListItem.list();
+      const quantities = await base44.asServiceRole.entities.InventoryQuantity.list(undefined, 300);
+      const priceItems = await base44.asServiceRole.entities.PriceListItem.list(undefined, 500);
       const priceItemIds = new Set(priceItems.map(p => p.id));
 
       const orphanedQties = quantities.filter(q => !priceItemIds.has(q.price_list_item_id));
@@ -116,11 +116,19 @@ Deno.serve(async (req) => {
           module: 'inventory',
           check: 'orphaned_quantities',
           message: `${orphanedQties.length} InventoryQuantity records reference deleted PriceListItems`,
-          evidence: { count: orphanedQties.length, samples: orphanedQties.slice(0, 3).map(q => q.id) }
+          evidence: { 
+            count: orphanedQties.length, 
+            samples: orphanedQties.slice(0, 3).map(q => ({ 
+              id: q.id, 
+              price_list_item_id: q.price_list_item_id, 
+              quantity: q.quantity,
+              location_id: q.location_id
+            })) 
+          }
         });
       }
 
-      const invalidSources = movements.filter(m => !['transfer', 'job_usage'].includes(m.source));
+      const invalidSources = movements.filter(m => !['transfer', 'job_usage', 'po_receive'].includes(m.source));
       if (invalidSources.length > 0) {
         moduleIssues.push({
           severity: 'warning',
@@ -133,10 +141,10 @@ Deno.serve(async (req) => {
 
       modules.inventory = {
         checks_run: 5,
-        entity: 'StockMovement',
-        records_checked: movements.length,
+        entities: ['StockMovement', 'InventoryQuantity', 'PriceListItem'],
+        records_checked: movements.length + quantities.length,
         issues: moduleIssues.filter(i => i.module === 'inventory'),
-        summary: `${movements.length} movements checked (last 7d), ${badMovements.length} critical issues`
+        summary: `${movements.length} movements + ${quantities.length} quantities checked, ${badMovements.length} critical issues`
       };
       allIssues.push(...moduleIssues);
     } catch (err) {
