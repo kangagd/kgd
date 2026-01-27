@@ -298,12 +298,12 @@ Deno.serve(async (req) => {
         resolved: movementResolved,
         unresolved: movementUnresolved
       },
-      created_quantities: createdQuantities,
+      [dryRun ? 'would_create_quantities' : 'created_quantities']: createdQuantities,
       needs_review: needsReview,
       summary: {
         total_issues_found: qtyUnresolved + movementUnresolved,
         total_issues_fixed: qtyResolved + movementResolved,
-        records_created: createdQuantities
+        [dryRun ? 'would_create' : 'created']: createdQuantities
       }
     };
 
