@@ -61,21 +61,26 @@ Deno.serve(async (req) => {
             console.log(`[backfillLogisticsPurposeAndFlags] Job ${job.id}: Flagged as logistics job`);
           }
 
+          // Compute effective logistics flag (includes what we're about to set)
+          const willBeLogistics = Boolean(job.is_logistics_job || updateData.is_logistics_job);
+
           // Fix logistics_purpose
-          if (job.is_logistics_job && (!job.logistics_purpose || job.logistics_purpose === 'unknown')) {
+          if (willBeLogistics && (!job.logistics_purpose || job.logistics_purpose === 'unknown')) {
             let normalized = null;
 
             // Try logistics_purpose_raw
             if (job.logistics_purpose_raw) {
               const result = normalizeLogisticsPurpose(job.logistics_purpose_raw);
-              normalized = result.purpose_code;
+              if (result.ok && result.purpose_code) {
+                normalized = result.purpose_code;
+              }
             }
 
-            // Try to infer from notes or legacy_notes
+            // Try to infer from notes or legacy_notes only if not already found
             if (!normalized && (job.notes || job.legacy_notes)) {
               const searchText = (job.notes || '') + ' ' + (job.legacy_notes || '');
               const result = normalizeLogisticsPurpose(searchText);
-              if (result.ok) {
+              if (result.ok && result.purpose_code) {
                 normalized = result.purpose_code;
               }
             }
@@ -92,7 +97,7 @@ Deno.serve(async (req) => {
           }
 
           // Fix project_number
-          if (job.is_logistics_job && job.project_id && !job.project_number) {
+          if (willBeLogistics && job.project_id && !job.project_number) {
             try {
               const project = await base44.asServiceRole.entities.Project.get(job.project_id);
               if (project?.project_number) {
