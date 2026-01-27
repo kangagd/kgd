@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { getPurposeCode, buildLogisticsJobNumber, isLogisticsJobNumber, getNextSequence } from './shared/logisticsJobNumbering.js';
+import { getPurposeCode, buildLogisticsJobNumber, isLogisticsJobNumber, getNextSequence } from './shared/logisticsJobNumbering';
 
 Deno.serve(async (req) => {
   try {
