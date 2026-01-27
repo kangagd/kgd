@@ -360,30 +360,32 @@ Deno.serve(async (req) => {
                  }, { status: 400 });
              }
 
-             // LOGISTICS PURPOSE NORMALIZATION + ENFORCEMENT
-             // Check if this is a logistics job (multiple indicators)
-             const indicatesLogistics = data?.is_logistics_job === true ||
-                                       data?.logistics_purpose ||
-                                       data?.logisticsPurpose ||
-                                       data?.logistics_purpose_raw ||
-                                       data?.vehicle_id ||
-                                       data?.purchase_order_id ||
-                                       data?.third_party_trade_id;
+             // A) UNIFIED LOGISTICS DETECTION: Compute ONE canonical boolean EARLY
+             const jobTypeName = (data?.job_type_name || data?.job_type || '').toLowerCase();
+             const matchesLogisticsType = /delivery|pickup|return|logistics/.test(jobTypeName);
 
-             let logisticsPurposeNormalized = null;
+             const indicatesLogistics =
+               data?.is_logistics_job === true ||
+               matchesLogisticsType ||
+               data?.logistics_purpose ||
+               data?.logisticsPurpose ||
+               data?.logistics_purpose_raw ||
+               data?.vehicle_id ||
+               data?.purchase_order_id ||
+               data?.third_party_trade_id;
+
+             // B) IF INDICATES LOGISTICS: Normalize + Enforce
              if (indicatesLogistics) {
-                 // Always force is_logistics_job = true
+                 // Force is_logistics_job = true
                  data.is_logistics_job = true;
 
-                 // Normalize purpose from any input variant
-                 const purposeInput = data.logistics_purpose || data.logisticsPurpose || data.logistics_purpose_raw;
+                 // Normalize purpose (never null)
+                 const purposeInput = data.logistics_purpose || data.logisticsPurpose || data.logistics_purpose_raw || jobTypeName;
                  const normalized = normalizeLogisticsPurpose(purposeInput);
-                 logisticsPurposeNormalized = normalized.purpose_code; // Never null
+                 data.logistics_purpose = (normalized.ok && normalized.purpose_code) ? normalized.purpose_code : 'other';
 
-                 data.logistics_purpose = logisticsPurposeNormalized;
-                 
                  // Store raw if different
-                 if (purposeInput !== normalized.purpose_code) {
+                 if (purposeInput && purposeInput !== data.logistics_purpose) {
                    data.logistics_purpose_raw = purposeInput;
                  }
 
@@ -411,12 +413,9 @@ Deno.serve(async (req) => {
                  return Response.json({ error: 'Scheduled date is required' }, { status: 400 });
              }
 
-            // Handle creation
-            let jobData = { ...data };
-
-            // Check if this is a logistics job
-            const jobTypeName = (jobData.job_type_name || jobData.job_type || '').toLowerCase();
-            const isLogisticsJob = jobData.is_logistics_job === true || /delivery|pickup|return|logistics/.test(jobTypeName);
+           // Handle creation
+           let jobData = { ...data };
+           const isLogisticsJob = indicatesLogistics;
 
             // Inherit address, customer, and project fields from project if missing
             if (jobData.project_id) {
