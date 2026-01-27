@@ -777,17 +777,18 @@ export default function ProjectForm({ project, initialData, onSubmit, onCancel, 
                     {formData.image_urls.map((url, index) => {
                       const imgUrl = typeof url === 'string' ? url : (url?.url || url);
                       return (
-                      <div key={index} className="relative group">
-                        <img src={imgUrl} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded-lg border-2 border-slate-200" />
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )})}
+                        <div key={index} className="relative group">
+                          <img src={imgUrl} alt={`Upload ${index + 1}`} className="w-full h-24 object-cover rounded-lg border-2 border-slate-200" />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
