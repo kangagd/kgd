@@ -447,7 +447,7 @@ export default function Projects() {
     
     devLog('[Projects] Filter & sort');
     return filtered;
-  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, pricingStatusFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
+  }, [projects, debouncedSearchTerm, stageFilter, partsStatusFilter, pricingStatusFilter, pricingChecklistFilter, tagFilter, startDate, endDate, sortBy, showDuplicatesOnly, indexes]);
 
         const getJobCount = useCallback((projectId) => {
           return (indexes.jobsByProjectId.get(projectId) || []).length;
