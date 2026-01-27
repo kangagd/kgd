@@ -171,6 +171,7 @@ export default function QuotesSection({
             )}
           </h3>
           {project && <PricingChecklistBadges project={project} />}
+        </div>
         <div className="flex gap-2">
           <Button
             size="sm"
