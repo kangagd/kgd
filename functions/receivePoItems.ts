@@ -21,6 +21,8 @@ Deno.serve(async (req) => {
 
     const { po_id, location_id, receive_date_time, items, mark_po_received, notes, reference_type, reference_id, destination_location_id, job_id } = await req.json();
     
+    console.log('[receivePoItems] Parameters received:', { po_id, job_id, reference_type, has_items: items?.length });
+    
     // Support both location_id and destination_location_id for backwards compatibility
     const finalLocationId = location_id || destination_location_id;
 
