@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
             project_tags_snapshot: p.project_tags_snapshot,
             total_project_value: p.total_project_value,
             financial_status: p.financial_status,
+            quote_checklist: p.quote_checklist,
         }));
 
         return Response.json({ projects: sanitized });
