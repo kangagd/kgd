@@ -75,6 +75,13 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
         ? new URLSearchParams(window.location.search).get('jobId') 
         : null;
       
+      console.log('[ReceivePoItemsModal] Invoking receivePoItems with:', {
+        po_id: poId,
+        job_id: jobId,
+        reference_type: jobId ? 'purchase_order' : undefined,
+        has_items: itemsToReceive.length
+      });
+      
       const response = await base44.functions.invoke('receivePoItems', {
         po_id: poId,
         job_id: jobId,
@@ -85,6 +92,8 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
         mark_po_received: markPoAsReceived,
         notes: notes
       });
+      
+      console.log('[ReceivePoItemsModal] Response:', response);
 
       // Check if operation fully failed (all items skipped)
       if (!response.data?.success) {
