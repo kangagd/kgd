@@ -215,16 +215,30 @@ Deno.serve(async (req) => {
     // Step 5: Call moveInventory for stock-tracked, valid refs
     // ============================================================
     try {
+      // Normalize source
+      const sourceNorm = normalizeStockMovementSource(source || 'manual');
+
+      // Build idempotency key with guardrails
+      const idempotencyKey = buildStockMovementIdempotencyKey({
+        source: sourceNorm.normalized,
+        source_id: reference_id || null,
+        price_list_item_id: priceListItemId,
+        from_location_id: from_location_id,
+        to_location_id: to_location_id || null,
+        quantity: quantity,
+        occurred_at: new Date().toISOString()
+      });
+
       const moveResult = await base44.asServiceRole.functions.invoke('moveInventory', {
         priceListItemId: priceListItemId,
         fromLocationId: from_location_id,
         toLocationId: to_location_id || null,
         quantity: quantity,
-        source: source || 'manual',
+        source: sourceNorm.normalized,
         jobId: reference_type === 'job' ? reference_id : null,
         vehicleId: reference_type === 'vehicle' ? reference_id : null,
         notes: notes,
-        idempotency_key: reference_id ? `${reference_type}-${reference_id}-${priceListItemId}` : null
+        idempotency_key: idempotencyKey
       });
 
       if (!moveResult.data?.success) {
