@@ -1087,16 +1087,30 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       if (type === 'image') {
         const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
         const results = await Promise.all(uploadPromises);
-        const newImageUrls = results.map(r => ({
-          url: r.file_url,
-          uploaded_at: new Date().toISOString()
-        }));
-        const currentImages = project.image_urls || [];
-        updateProjectMutation.mutate({ 
-          field: 'image_urls', 
-          value: [...currentImages, ...newImageUrls] 
+
+        // Normalize CURRENT images (support legacy object records)
+        const currentImages = (project.image_urls || [])
+          .map(item => (typeof item === "string" ? item : item?.url))
+          .filter(Boolean);
+
+        // Extract NEW urls as strings only
+        const newUrls = results
+          .map(r => {
+            if (typeof r === "string") return r;
+            const fileUrl = r?.file_url;
+            if (typeof fileUrl === "string") return fileUrl;
+            if (fileUrl?.url && typeof fileUrl.url === "string") return fileUrl.url;
+            if (r?.url && typeof r.url === "string") return r.url;
+            return null;
+          })
+          .filter(Boolean);
+
+        updateProjectMutation.mutate({
+          field: "image_urls",
+          value: [...currentImages, ...newUrls],
         });
-        toast.success(`${files.length} file(s) uploaded successfully`);
+
+        toast.success(`${newUrls.length} file(s) uploaded successfully`);
       } else if (type === 'other') {
         const uploadPromises = files.map(file => base44.integrations.Core.UploadFile({ file }));
         const results = await Promise.all(uploadPromises);
@@ -1127,9 +1141,15 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
   };
 
   const handleImagesChange = async (urls) => {
-    // Find removed images and delete corresponding Photo records
-    const currentUrls = project.image_urls || [];
-    const removedUrls = currentUrls.filter(url => !urls.includes(url));
+    const currentUrls = (project.image_urls || [])
+      .map(item => (typeof item === "string" ? item : item?.url))
+      .filter(Boolean);
+
+    const nextUrls = (urls || [])
+      .map(item => (typeof item === "string" ? item : item?.url))
+      .filter(Boolean);
+
+    const removedUrls = currentUrls.filter(u => !nextUrls.includes(u));
 
     if (removedUrls.length > 0) {
       try {
@@ -1146,8 +1166,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       }
     }
 
-    // Update project with new images
-    updateProjectMutation.mutate({ field: 'image_urls', value: urls });
+    updateProjectMutation.mutate({ field: 'image_urls', value: nextUrls });
   };
 
   const handleAddDoor = () => {
