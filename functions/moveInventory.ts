@@ -110,12 +110,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get item details
-    const item = await base44.entities.PriceListItem.get(priceListItemId);
-    if (!item) {
-      return Response.json({ error: 'Item not found' }, { status: 404 });
-    }
-
     let fromLocation = null;
     let toLocation = null;
 
