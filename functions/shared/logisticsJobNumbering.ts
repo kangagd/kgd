@@ -30,11 +30,17 @@ export function buildLogisticsJobNumber({ projectNumber, purposeCode, sequence =
 export function isLogisticsJobNumber(jobNumber) {
   if (!jobNumber) return false;
   const str = String(jobNumber);
-  
-  // Match: 1234-PO-PU or 1234-PO-PU-2 or LOG-PO-PU-abc123
-  // Do NOT match: 1234-A or 1234-B (legacy project job pattern)
-  const pattern = /^(\d+|LOG)-[A-Z]+-[A-Z]+(-[A-Za-z0-9]+)?$/;
-  return pattern.test(str);
+
+  // Project-linked logistics:
+  //   1234-PO-PU
+  //   1234-PO-PU-2
+  const projectPattern = /^\d+-[A-Z]+-[A-Z]+(-\d+)?$/;
+
+  // No-project logistics fallback:
+  //   LOG-PO-PU-abc123
+  const noProjectPattern = /^LOG-[A-Z]+-[A-Z]+-[A-Za-z0-9]{3,}$/;
+
+  return projectPattern.test(str) || noProjectPattern.test(str);
 }
 
 export function getNextSequence(existingJobs, projectNumber, purposeCode) {
