@@ -55,6 +55,9 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
 
   const receiveMutation = useMutation({
     mutationFn: async () => {
+      console.log('🔴 [START] Receive mutation triggered');
+      console.log('🔴 URL search params:', window.location.search);
+      
       if (!receiveLocation) {
         throw new Error('Receive location is required');
       }
@@ -75,14 +78,10 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
         ? new URLSearchParams(window.location.search).get('jobId') 
         : null;
       
-      console.log('[ReceivePoItemsModal] Invoking receivePoItems with:', {
-        po_id: poId,
-        job_id: jobId,
-        reference_type: jobId ? 'purchase_order' : undefined,
-        has_items: itemsToReceive.length
-      });
+      console.log('🔴 Extracted jobId:', jobId);
+      console.log('🔴 Will send reference_type:', jobId ? 'purchase_order' : undefined);
       
-      const response = await base44.functions.invoke('receivePoItems', {
+      const payload = {
         po_id: poId,
         job_id: jobId,
         reference_type: jobId ? 'purchase_order' : undefined,
@@ -91,9 +90,13 @@ export default function ReceivePoItemsModal({ open, onOpenChange, poId, poRefere
         items: itemsToReceive,
         mark_po_received: markPoAsReceived,
         notes: notes
-      });
+      };
       
-      console.log('[ReceivePoItemsModal] Response:', response);
+      console.log('🔴 FULL PAYLOAD:', JSON.stringify(payload, null, 2));
+      
+      const response = await base44.functions.invoke('receivePoItems', payload);
+      
+      console.log('🔴 RESPONSE:', JSON.stringify(response, null, 2));
 
       // Check if operation fully failed (all items skipped)
       if (!response.data?.success) {
