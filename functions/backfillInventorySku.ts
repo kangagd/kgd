@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     const { dryRun = true } = await req.json();
     const isDryRun = dryRun === false || dryRun === 'false' ? false : true;
 
-    console.log(`[backfillInventorySku] Starting (dryRun=${dryRun})`);
+    console.log(`[backfillInventorySku] Starting (dryRun=${isDryRun})`);
 
     // Build normalized name → PriceListItem map
     const allItems = await base44.asServiceRole.entities.PriceListItem.list();
