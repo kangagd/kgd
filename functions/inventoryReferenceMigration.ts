@@ -22,11 +22,12 @@ Deno.serve(async (req) => {
     }
 
     const { dryRun = true } = await req.json();
+    const isDryRun = dryRun === false || dryRun === 'false' ? false : true;
 
-    console.log(`[inventoryReferenceMigration] Starting (dryRun=${dryRun})`);
+    console.log(`[inventoryReferenceMigration] Starting (dryRun=${isDryRun})`);
 
-    // Guard: prevent writes if dryRun is true
-    if (dryRun) {
+    // Guard: prevent writes if isDryRun is true
+    if (isDryRun) {
       const originalCreate = base44.asServiceRole.entities.InventoryQuantity.create;
       const originalUpdate = base44.asServiceRole.entities.InventoryQuantity.update;
       base44.asServiceRole.entities.InventoryQuantity.create = async () => {
@@ -98,11 +99,11 @@ Deno.serve(async (req) => {
         // Try to resolve via item_sku (durable identity)
         const resolvedItem = skuMap.get(qty.item_sku.toLowerCase());
         if (resolvedItem) {
-          if (!dryRun) {
-            await base44.asServiceRole.entities.InventoryQuantity.update(qty.id, {
-              price_list_item_id: resolvedItem.id
-            });
-          }
+          if (!isDryRun) {
+              await base44.asServiceRole.entities.InventoryQuantity.update(qty.id, {
+                price_list_item_id: resolvedItem.id
+              });
+            }
           qtyResolved++;
         } else {
           qtyUnresolved++;
@@ -224,7 +225,7 @@ Deno.serve(async (req) => {
 
       // If all resolvable, apply patch
       if (!itemResolutionNeeded && !locationResolutionNeeded.from && !locationResolutionNeeded.to) {
-        if (!dryRun) {
+        if (!isDryRun) {
           const patch = {};
           if (itemId !== movement.price_list_item_id) {
             patch.price_list_item_id = itemId;
@@ -266,7 +267,7 @@ Deno.serve(async (req) => {
         // Check if this item has any InventoryQuantity records
         const existingQties = allQuantities.filter(q => q.price_list_item_id === item.id);
         if (existingQties.length === 0) {
-          if (!dryRun) {
+          if (!isDryRun) {
             await base44.asServiceRole.entities.InventoryQuantity.create({
               price_list_item_id: item.id,
               location_id: mainWarehouse.id,
@@ -288,8 +289,8 @@ Deno.serve(async (req) => {
     // ========================================
     const summary = {
       success: true,
-      dryRun: dryRun,
-      applied: !dryRun,
+      dryRun: isDryRun,
+      applied: !isDryRun,
       inventory_quantities: {
         resolved: qtyResolved,
         unresolved: qtyUnresolved
