@@ -792,6 +792,25 @@ Deno.serve(async (req) => {
                     console.error('Error backfilling logistics job data:', error);
                 }
             }
+
+            // CRITICAL: If job just BECAME logistics (transition), link any existing parts from the project
+            if (isLogisticsJob && previousJob && previousJob.is_logistics_job !== true && job.project_id) {
+                try {
+                    const projectParts = await base44.asServiceRole.entities.Part.filter({
+                        project_id: job.project_id
+                    });
+                    for (const part of projectParts) {
+                        const currentLinks = Array.isArray(part.linked_logistics_jobs) ? part.linked_logistics_jobs : [];
+                        if (!currentLinks.includes(job.id)) {
+                            await base44.asServiceRole.entities.Part.update(part.id, {
+                                linked_logistics_jobs: [...currentLinks, job.id]
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error linking parts to newly converted logistics job:', error);
+                }
+            }
             
             // SILENT VISIT CREATION: If job just became Scheduled, ensure active Visit exists
             if (job.status === 'Scheduled' && previousJob.status !== 'Scheduled') {
