@@ -459,6 +459,8 @@ Deno.serve(async (req) => {
 
       modules.ai_job_brief = {
         checks_run: 2,
+        entity: 'Job',
+        records_checked: jobs.length,
         issues: moduleIssues.filter(i => i.module === 'ai_job_brief'),
         summary: `${jobs.length} jobs with recent briefs checked`
       };
