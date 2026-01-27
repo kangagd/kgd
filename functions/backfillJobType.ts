@@ -298,14 +298,7 @@ Deno.serve(async (req) => {
             notes: `Backfilled via backfillJobType (confidence: ${prop.confidence})`
           });
 
-          // Optional: add internal note
-          await base44.asServiceRole.entities.JobMessage.create({
-            job_id: prop.job_id,
-            message_type: 'internal',
-            body: `Job Type auto-set to "${prop.proposed_job_type_name}" (confidence: ${prop.confidence}). Please review.`,
-            created_by_email: user.email,
-            created_by_name: user.full_name || user.display_name || user.email
-          });
+          // Skip JobMessage creation—just rely on ChangeHistory audit trail
 
           applied_count++;
         } catch (error) {
