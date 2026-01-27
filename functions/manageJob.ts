@@ -367,6 +367,12 @@ Deno.serve(async (req) => {
              let jobData = ensureLogisticsCanon({ ...data }, null);
              const isLogisticsJob = jobData.is_logistics_job === true;
 
+             // GUARDRAIL: Ensure logistics_purpose is never null on create (fixes PURPOSE_CODES mapping)
+             if (isLogisticsJob && (!jobData.logistics_purpose || jobData.logistics_purpose === null)) {
+                 const normalized = normalizeLogisticsPurpose(jobData.logistics_purpose || '');
+                 jobData.logistics_purpose = normalized?.purpose_code || 'other';
+             }
+
              // Log canonical changes
              const changedFields = Object.keys(jobData).filter(k => jobData[k] !== data[k]);
              if (changedFields.length > 0) {
