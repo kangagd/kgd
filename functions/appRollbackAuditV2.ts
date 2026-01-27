@@ -176,10 +176,7 @@ Deno.serve(async (req) => {
       });
 
       // Check for receive regressions
-      const receiveMovements = await base44.asServiceRole.entities.StockMovement.filter({
-        source: 'po_receive',
-        created_date: { $gte: last14Days.toISOString() }
-      });
+      const receiveMovements = movements.filter(m => m.source === 'po_receive');
       const noFromLoc = receiveMovements.filter(m => !m.from_location_id);
       if (noFromLoc.length > 0) {
         moduleIssues.push({
@@ -193,6 +190,8 @@ Deno.serve(async (req) => {
 
       modules.purchase_orders = {
         checks_run: 4,
+        entity: poEntity.name,
+        records_checked: poLines.length,
         issues: moduleIssues.filter(i => i.module === 'purchase_orders'),
         summary: `${poLines.length} PO lines checked (last 14d), ${noStatus.length + invalidStatus.length} status issues`
       };
