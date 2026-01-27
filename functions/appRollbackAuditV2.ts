@@ -133,8 +133,10 @@ Deno.serve(async (req) => {
 
       modules.inventory = {
         checks_run: 5,
+        entity: 'StockMovement',
+        records_checked: movements.length,
         issues: moduleIssues.filter(i => i.module === 'inventory'),
-        summary: `${movements.length} movements checked, ${badMovements.length} critical issues`
+        summary: `${movements.length} movements checked (last 7d), ${badMovements.length} critical issues`
       };
       allIssues.push(...moduleIssues);
     } catch (err) {
