@@ -61,46 +61,74 @@ Deno.serve(async (req) => {
     }
 
     // Build context for AI
-    let context = `Generate a concise job brief for a technician.\n\n`;
-    context += `Job Type: ${job.job_type_name || job.job_type || 'Service'}\n`;
-    context += `Customer: ${job.customer_name || 'Unknown'}\n`;
-    
-    if (job.address_full) {
-      context += `Address: ${job.address_full}\n`;
-    }
+     let context = `Generate a concise job brief for a technician.\n\n`;
+     context += `Job Type: ${job.job_type_name || job.job_type || 'Service'}\n`;
+     context += `Customer: ${job.customer_name || 'Unknown'}\n`;
 
-    if (job.product) {
-      context += `Product: ${job.product}\n`;
-    }
+     if (job.address_full) {
+       context += `Address: ${job.address_full}\n`;
+     }
 
-    if (job.additional_info) {
-      context += `\nJob Details:\n${job.additional_info}\n`;
-    }
+     if (job.product) {
+       context += `Product: ${job.product}\n`;
+     }
 
-    if (job.notes) {
-      context += `\nInternal Notes:\n${job.notes}\n`;
-    }
+     if (job.additional_info) {
+       context += `\nJob Details:\n${job.additional_info}\n`;
+     }
 
-    if (job.overview) {
-      context += `\nPrevious Work:\n${job.overview}\n`;
-    }
+     if (job.notes) {
+       context += `\nInternal Notes:\n${job.notes}\n`;
+     }
 
-    // Fetch project context if available
-    if (job.project_id) {
-      try {
-        const project = await base44.asServiceRole.entities.Project.get(job.project_id);
-        if (project) {
-          if (project.description) {
-            context += `\nProject Description:\n${project.description}\n`;
-          }
-          if (project.special_requirements) {
-            context += `\nSpecial Requirements:\n${project.special_requirements}\n`;
-          }
-        }
-      } catch (err) {
-        // Project not found or error - continue without it
-      }
-    }
+     if (job.overview) {
+       context += `\nPrevious Work:\n${job.overview}\n`;
+     }
+
+     // Fetch project context if available
+     let project = null;
+     if (job.project_id) {
+       try {
+         project = await base44.asServiceRole.entities.Project.get(job.project_id);
+         if (project) {
+           if (project.description) {
+             context += `\nProject Description:\n${project.description}\n`;
+           }
+           if (project.special_requirements) {
+             context += `\nSpecial Requirements:\n${project.special_requirements}\n`;
+           }
+         }
+       } catch (err) {
+         // Project not found or error - continue without it
+       }
+     }
+
+     // Compute what changed since last visit (if any)
+     let deltaSection = '';
+     try {
+       let priorVisit = null;
+       if (job.project_id) {
+         // Fetch visits to find the most recent one before this job
+         const visits = await base44.asServiceRole.entities.Visit.filter({ project_id: job.project_id }, '-created_date', 100);
+         if (visits && visits.length > 0) {
+           priorVisit = visits[0]; // Most recent
+         }
+       }
+
+       const deltas = computeVisitDelta(job, project, priorVisit, []);
+       if (deltas.length > 0) {
+         deltaSection = `\n\nWHAT CHANGED SINCE LAST VISIT:\n${deltas.map(d => `- ${d}`).join('\n')}\n`;
+       } else if (priorVisit) {
+         deltaSection = `\n\nWHAT CHANGED SINCE LAST VISIT:\nNo material changes detected.\n`;
+       } else {
+         deltaSection = `\n\nWHAT CHANGED SINCE LAST VISIT:\nNo prior visits recorded. Confirm unknowns onsite.\n`;
+       }
+     } catch (err) {
+       // If delta computation fails, continue without it
+       console.error('[generateJobBrief] Delta computation failed:', err);
+     }
+
+     context += deltaSection;
 
     const prompt = `${context}
 
