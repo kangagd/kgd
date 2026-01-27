@@ -177,9 +177,9 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Try to resolve item via SKU
-      if (itemResolutionNeeded && movement.sku) {
-        const resolvedItem = skuMap.get(movement.sku.toLowerCase());
+      // Try to resolve item via item_sku (durable identity)
+      if (itemResolutionNeeded && movement.item_sku) {
+        const resolvedItem = skuMap.get(movement.item_sku.toLowerCase());
         if (resolvedItem) {
           itemId = resolvedItem.id;
           itemResolutionNeeded = false;
