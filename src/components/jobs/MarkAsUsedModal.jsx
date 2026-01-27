@@ -292,7 +292,7 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
           )}
 
           {/* Preview */}
-          {locationId && (
+          {resolvedPriceListItemId && locationId && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-900">
                 This will deduct <strong>{qtyUsed}</strong> from{" "}
