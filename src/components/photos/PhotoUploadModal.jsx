@@ -251,24 +251,58 @@ Return ONLY a JSON object.`,
           {/* File Selection */}
           <div>
             <Label>Select Photos</Label>
-            <label className="block mt-1.5">
-              <div className="border-2 border-dashed border-[#E5E7EB] rounded-lg p-8 text-center hover:border-[#FAE008] transition-colors cursor-pointer">
-                <Upload className="w-8 h-8 mx-auto mb-2 text-[#6B7280]" />
-                <p className="text-sm text-[#4B5563] font-medium">
-                  Click to upload or drag and drop
-                </p>
-                <p className="text-xs text-[#6B7280] mt-1">
-                  Images (PNG, JPG) or Videos (MP4, MOV)
-                </p>
+            <div className="mt-1.5 space-y-2">
+              {/* Camera & Library buttons for mobile */}
+              <div className="grid grid-cols-2 gap-2 md:hidden">
+                <label className="block">
+                  <div className="border-2 border-[#E5E7EB] rounded-lg p-4 text-center hover:border-[#FAE008] transition-colors cursor-pointer hover:bg-[#FAE008]/5">
+                    <Upload className="w-6 h-6 mx-auto mb-1 text-[#6B7280]" />
+                    <p className="text-xs font-medium text-[#111827]">Camera</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    capture="environment"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
+                <label className="block">
+                  <div className="border-2 border-[#E5E7EB] rounded-lg p-4 text-center hover:border-[#FAE008] transition-colors cursor-pointer hover:bg-[#FAE008]/5">
+                    <Upload className="w-6 h-6 mx-auto mb-1 text-[#6B7280]" />
+                    <p className="text-xs font-medium text-[#111827]">Library</p>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </label>
               </div>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </label>
+
+              {/* Desktop drag-and-drop */}
+              <label className="hidden md:block">
+                <div className="border-2 border-dashed border-[#E5E7EB] rounded-lg p-8 text-center hover:border-[#FAE008] transition-colors cursor-pointer">
+                  <Upload className="w-8 h-8 mx-auto mb-2 text-[#6B7280]" />
+                  <p className="text-sm text-[#4B5563] font-medium">
+                    Click to upload or drag and drop
+                  </p>
+                  <p className="text-xs text-[#6B7280] mt-1">
+                    Images (PNG, JPG) or Videos (MP4, MOV)
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </label>
+            </div>
 
             {files.length > 0 && (
               <div className="mt-3 space-y-2">
