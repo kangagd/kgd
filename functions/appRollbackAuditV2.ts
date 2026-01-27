@@ -492,35 +492,23 @@ Deno.serve(async (req) => {
     const status = criticalCount > 0 ? 'CRITICAL' : warningCount > 0 ? 'WARNING' : 'OK';
 
     // ==========================================
-    // STORE TREND IN SystemHealthCheck
+    // STORE TREND IN ChangeHistory
     // ==========================================
+    let audit_trend_saved = false;
+    let audit_trend_error = null;
     try {
-      const existingCheck = await base44.asServiceRole.entities.SystemHealthCheck.filter({
-        key: 'rollback_audit_v2'
+      await base44.asServiceRole.entities.ChangeHistory.create({
+        field_name: 'audit_rollback_v2_status',
+        old_value: null,
+        new_value: status,
+        changed_by: user.email,
+        changed_by_name: user.full_name || user.display_name || user.email,
+        notes: `Rollback audit run: ${criticalCount} critical, ${warningCount} warnings, ${allIssues.length} total issues`
       });
-
-      const auditRecord = {
-        key: 'rollback_audit_v2',
-        status: status,
-        critical_count: criticalCount,
-        warning_count: warningCount,
-        run_at: runAt,
-        last_run_counts: {
-          orphaned_quantities: allIssues.find(i => i.check === 'orphaned_quantities')?.evidence?.count || 0,
-          bad_image_urls: allIssues.find(i => i.check === 'image_upload_regression')?.evidence?.count || 0,
-          mojibake_count: allIssues.find(i => i.check === 'encoding_regression')?.evidence?.count || 0,
-          critical_stock_movements: allIssues.filter(i => i.check === 'stock_movement_integrity').length
-        },
-        data: JSON.stringify({ critical: allIssues.filter(i => i.severity === 'critical'), warnings: allIssues.filter(i => i.severity === 'warning') })
-      };
-
-      if (existingCheck.length > 0) {
-        await base44.asServiceRole.entities.SystemHealthCheck.update(existingCheck[0].id, auditRecord);
-      } else {
-        await base44.asServiceRole.entities.SystemHealthCheck.create(auditRecord);
-      }
+      audit_trend_saved = true;
     } catch (err) {
-      console.warn('Could not save audit trend:', err);
+      audit_trend_error = err.message;
+      console.warn('Could not save audit trend to ChangeHistory:', err);
     }
 
     return Response.json({
