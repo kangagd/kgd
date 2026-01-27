@@ -45,7 +45,11 @@ export default function JobModalView({ job, onJobUpdated }) {
   const { data: technicians = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
-    enabled: isEditing
+    enabled: isEditing,
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchInterval: false
   });
 
   const updateMutation = useMutation({
