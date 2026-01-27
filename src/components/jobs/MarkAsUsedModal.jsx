@@ -22,13 +22,31 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
 
   const queryClient = useQueryClient();
 
-  // Fetch inventory locations with stock for this item (if linked to price list item)
+  // Fetch inventory locations with stock for this item
   const { data: availableLocations = [] } = useQuery({
-    queryKey: ['inventory-locations-for-item', item?.ref_id],
+    queryKey: ['inventory-locations-for-item', item?.ref_id, item?.type],
     queryFn: async () => {
       if (!item?.ref_id) return [];
+
+      let priceListItemId = null;
+
+      // If this is a part reference, fetch the Part to get its price_list_item_id
+      if (item.type === 'part' && item.source === 'project') {
+        try {
+          const part = await base44.entities.Part.get(item.ref_id);
+          priceListItemId = part?.price_list_item_id;
+        } catch (err) {
+          console.warn('Could not fetch Part:', err);
+        }
+      } else if (item.type === 'part' && item.source === 'job') {
+        // For job-created parts, ref_id might already be price_list_item_id
+        priceListItemId = item.ref_id;
+      }
+
+      if (!priceListItemId) return [];
+
       const quantities = await base44.entities.InventoryQuantity.filter({
-        price_list_item_id: item.ref_id
+        price_list_item_id: priceListItemId
       });
       const allLocations = await base44.entities.InventoryLocation.list();
       const locationMap = new Map(allLocations.map(loc => [loc.id, loc]));
