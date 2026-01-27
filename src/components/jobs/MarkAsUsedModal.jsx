@@ -164,32 +164,36 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
       };
 
       // Update visit_covers_items or job.visit_scope
-      if (job.activeVisit) {
-        await base44.functions.invoke('manageVisit', {
-          action: 'update',
-          visit_id: job.activeVisit.id,
-          data: {
-            visit_covers_items: (job.activeVisit.visit_covers_items || []).map(i =>
-              i.key === item.key ? updatedItem : i
-            )
-          }
-        });
-      } else {
-        await base44.functions.invoke('manageJob', {
-          action: 'update',
-          id: job.id,
-          data: {
-            visit_scope: (job.visit_scope || []).map(i =>
-              i.key === item.key ? updatedItem : i
-            )
-          }
-        });
+      try {
+        if (job.activeVisit) {
+          await base44.functions.invoke('manageVisit', {
+            action: 'update',
+            visit_id: job.activeVisit.id,
+            data: {
+              visit_covers_items: (job.activeVisit.visit_covers_items || []).map(i =>
+                i.key === item.key ? updatedItem : i
+              )
+            }
+          });
+        } else {
+          await base44.functions.invoke('manageJob', {
+            action: 'update',
+            id: job.id,
+            data: {
+              visit_scope: (job.visit_scope || []).map(i =>
+                i.key === item.key ? updatedItem : i
+              )
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Could not update job/visit scope:', err);
+        // Don't fail the whole operation if scope update fails
       }
 
       // If item is linked to a PO line, update it to "installed"
       if (item.ref_id && job.project_id) {
         try {
-          // Try to find and update PO line
           const poLines = await base44.entities.PurchaseOrderLine.filter({
             product_id: item.ref_id
           });
@@ -201,7 +205,6 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
             );
           }
         } catch (err) {
-          // Silently ignore PO line update failures
           console.warn('Could not update PO line status:', err);
         }
       }
