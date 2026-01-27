@@ -149,9 +149,9 @@ Deno.serve(async (req) => {
     // 1. Find jobs missing job_type_id
     // ========================================
     let allJobs = await base44.asServiceRole.entities.Job.list(undefined, 9999);
-    
-    // Filter to missing job_type_id
-    let missingJobs = allJobs.filter(j => !j.job_type_id);
+
+    // Filter to missing job_type_id and exclude soft-deleted jobs
+    let missingJobs = allJobs.filter(j => !j.job_type_id && !j.deleted_at);
 
     // Apply include/exclude filters
     if (include_job_ids.length > 0) {
