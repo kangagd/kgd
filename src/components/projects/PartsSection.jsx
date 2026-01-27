@@ -83,7 +83,28 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
 
   const { data: allParts = [] } = useQuery({
     queryKey: ['parts', projectId],
-    queryFn: () => base44.entities.Part.filter({ project_id: projectId }, '-order_date')
+    queryFn: async () => {
+      // Fetch parts directly linked to project
+      const directParts = await base44.entities.Part.filter({ project_id: projectId }, '-order_date');
+      
+      // Fetch POs for project, then find parts on those POs
+      const pos = await base44.entities.PurchaseOrder.filter({ project_id: projectId });
+      const poIds = pos.map(p => p.id);
+      
+      if (poIds.length === 0) return directParts;
+      
+      // Fetch parts linked to any of these POs
+      const poParts = await base44.entities.Part.filter({ purchase_order_id: { $in: poIds } }, '-order_date');
+      
+      // Merge and dedupe by id
+      const combined = [...directParts, ...poParts];
+      const seen = new Set();
+      return combined.filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
+    }
   });
 
   // Split parts: Ready to pick (available) vs Not ready (unavailable)
