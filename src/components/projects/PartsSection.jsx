@@ -87,14 +87,14 @@ export default function PartsSection({ projectId, autoExpand = false, registerAd
       // Fetch parts directly linked to project
       const directParts = await base44.entities.Part.filter({ project_id: projectId }, '-order_date');
       
-      // Fetch POs for project, then find parts on those POs
+      // Fetch POs for project
       const pos = await base44.entities.PurchaseOrder.filter({ project_id: projectId });
-      const poIds = pos.map(p => p.id);
+      if (pos.length === 0) return directParts;
       
-      if (poIds.length === 0) return directParts;
-      
-      // Fetch parts linked to any of these POs
-      const poParts = await base44.entities.Part.filter({ purchase_order_id: { $in: poIds } }, '-order_date');
+      // Fetch ALL parts, then filter to those on our POs (client-side filtering as fallback)
+      const allPartsList = await base44.entities.Part.list();
+      const poIds = new Set(pos.map(p => p.id));
+      const poParts = allPartsList.filter(p => p.purchase_order_id && poIds.has(p.purchase_order_id));
       
       // Merge and dedupe by id
       const combined = [...directParts, ...poParts];
