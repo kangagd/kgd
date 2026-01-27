@@ -39,29 +39,36 @@ export default function EditableFileUpload({
   };
 
   const uploadFiles = async (selectedFiles) => {
-    if (selectedFiles.length === 0) return;
+     if (selectedFiles.length === 0) return;
 
-    setUploading(true);
-    try {
-      const uploadPromises = selectedFiles.map(file => 
-        base44.integrations.Core.UploadFile({ file })
-      );
-      const results = await Promise.all(uploadPromises);
-      const newUrls = results.map(result => result.file_url);
+     const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+     const oversizedFiles = selectedFiles.filter(file => file.size > MAX_FILE_SIZE);
 
-      if (multiple) {
-        const updatedFiles = [...files, ...newUrls];
-        console.log("Updated files:", updatedFiles);
-        onFilesChange(updatedFiles);
-      } else {
-        console.log("Single file uploaded:", newUrls[0]);
-        onFilesChange(newUrls[0]);
-      }
-    } catch (error) {
-      console.error("Error uploading files:", error);
-    }
-    setUploading(false);
-  };
+     if (oversizedFiles.length > 0) {
+       toast.error(`File too large. Max size is 50MB. ${oversizedFiles[0].name} is ${(oversizedFiles[0].size / 1024 / 1024).toFixed(1)}MB.`);
+       return;
+     }
+
+     setUploading(true);
+     try {
+       const uploadPromises = selectedFiles.map(file => 
+         base44.integrations.Core.UploadFile({ file })
+       );
+       const results = await Promise.all(uploadPromises);
+       const newUrls = results.map(result => result.file_url);
+
+       if (multiple) {
+         const updatedFiles = [...files, ...newUrls];
+         onFilesChange(updatedFiles);
+       } else {
+         onFilesChange(newUrls[0]);
+       }
+     } catch (error) {
+       console.error("Error uploading files:", error);
+       toast.error("Upload failed. Please try a smaller file.");
+     }
+     setUploading(false);
+   };
 
   const handleFileSelect = async (e) => {
     const selectedFiles = Array.from(e.target.files);
