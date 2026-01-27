@@ -148,11 +148,9 @@ Deno.serve(async (req) => {
     // ==========================================
     try {
       const moduleIssues = [];
-      const last14Days = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-      
-      const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
-        updated_date: { $gte: last14Days.toISOString() }
-      });
+      const poLineCandidates = ['PurchaseOrderLine', 'POLine', 'PurchaseOrderItem', 'PurchaseOrderLineItem'];
+      const poEntity = await findEntity(base44, poLineCandidates) || { name: 'PurchaseOrderLine', timestampField: 'updated_date' };
+      const poLines = await getRecentRecords(base44, poEntity.name, 14);
 
       const noStatus = poLines.filter(l => !l.status);
       noStatus.forEach(l => {
