@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { generateJobNumber } from './shared/jobNumberGenerator.js';
+import { getPurposeCode, buildLogisticsJobNumber, getNextSequence } from '../src/components/utils/logisticsJobNumbering.js';
 
 // Sample Job Types
 const SAMPLE_JOB_TYPES = {
@@ -115,8 +115,27 @@ Deno.serve(async (req) => {
       checkedItems[sample_id] = false;
     }
 
-    // Generate job_number for consistency
-    const jobNumber = await generateJobNumber(base44, project);
+    // Generate logistics job number
+    const projectNumber = project?.project_number ? String(project.project_number) : null;
+    const purposeCode = getPurposeCode(logisticsPurpose);
+    
+    // Get sequence by checking existing logistics jobs for this project + purpose
+    let sequence = 1;
+    if (projectNumber) {
+      const existingLogisticsJobs = await base44.asServiceRole.entities.Job.filter({
+        is_logistics_job: true,
+        project_id
+      });
+      sequence = getNextSequence(existingLogisticsJobs, projectNumber, purposeCode);
+    }
+
+    const fallbackShortId = project_id.substring(0, 6);
+    const jobNumber = buildLogisticsJobNumber({
+      projectNumber,
+      purposeCode,
+      sequence: projectNumber ? sequence : null,
+      fallbackShortId
+    });
 
     // Create Job
     const job = await base44.asServiceRole.entities.Job.create({

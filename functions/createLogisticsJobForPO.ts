@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { PO_DELIVERY_METHOD, LOGISTICS_PURPOSE } from './shared/constants.ts';
-import { generateJobNumber } from './shared/jobNumberGenerator.ts';
 import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.ts';
+import { getPurposeCode, buildLogisticsJobNumber, getProjectNumberForJob, getNextSequence } from '../src/components/utils/logisticsJobNumbering.js';
 
 Deno.serve(async (req) => {
     try {
@@ -130,8 +130,32 @@ Deno.serve(async (req) => {
             destinationAddress = warehouseAddress;
         }
 
-        // Generate job number using shared utility
-        const jobNumber = await generateJobNumber(base44, po.project_id);
+        // Generate logistics job number
+        let projectNumber = null;
+        if (po.project_id) {
+            const project = await base44.asServiceRole.entities.Project.get(po.project_id);
+            projectNumber = project?.project_number ? String(project.project_number) : null;
+        }
+
+        const purposeCode = getPurposeCode(logisticsPurpose);
+        
+        // Get sequence by checking existing logistics jobs
+        let sequence = 1;
+        if (projectNumber) {
+            const existingLogisticsJobs = await base44.asServiceRole.entities.Job.filter({
+                is_logistics_job: true,
+                project_id: po.project_id
+            });
+            sequence = getNextSequence(existingLogisticsJobs, projectNumber, purposeCode);
+        }
+
+        const fallbackShortId = po.id.substring(0, 6);
+        const jobNumber = buildLogisticsJobNumber({
+            projectNumber,
+            purposeCode,
+            sequence: projectNumber ? sequence : null,
+            fallbackShortId
+        });
 
         // Get PO lines
         const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
