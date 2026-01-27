@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
       referenceId = vehicleId;
     }
 
-    // Determine quantity IDs that were modified (for response)
+    // Determine quantity IDs that were modified (for response) - fetch fresh to get actual stored values
     if (fromLocationId) {
       const srcQtys = await base44.entities.InventoryQuantity.filter({
         price_list_item_id: priceListItemId,
@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
           id: srcQtys[0].id,
           location_id: fromLocationId,
           location_name: fromLocation?.name,
-          new_balance: srcQtys[0].quantity - quantity
+          new_balance: srcQtys[0].quantity
         });
       }
     }
@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
           id: destQtys[0].id,
           location_id: toLocationId,
           location_name: toLocation?.name,
-          new_balance: (destQtys[0].quantity || 0) + quantity
+          new_balance: destQtys[0].quantity
         });
       }
     }
