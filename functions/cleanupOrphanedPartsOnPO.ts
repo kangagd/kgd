@@ -135,7 +135,9 @@ Deno.serve(async (req) => {
       orphaned_parts_deleted: deletedIds.length,
       deleted_part_ids: deletedIds,
       missing_parts_created: createdIds.length,
-      created_part_ids: createdIds
+      created_part_ids: createdIds,
+      po_lines_updated_with_part_id: updatedLineIds.length,
+      updated_line_ids: updatedLineIds
     });
 
   } catch (error) {
