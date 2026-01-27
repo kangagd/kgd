@@ -101,12 +101,11 @@ export default function MarkAsUsedModal({ item, job, open, onClose }) {
     setIsSubmitting(true);
     try {
       // Record stock movement from location to null (deduction)
-      const movementResponse = await base44.functions.invoke('recordStockMovement', {
+      await base44.functions.invoke('moveInventory', {
         priceListItemId: item.ref_id,
         fromLocationId: locationId,
         toLocationId: null,
         quantity: qty,
-        movementType: 'job_usage',
         reference_type: 'requirement',
         reference_id: item.key,
         jobId: job.id,
