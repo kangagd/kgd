@@ -30,40 +30,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No POs found to process' }, { status: 404 });
     }
 
-    // Get all parts linked to this PO (both primary and legacy)
-    const partsByPrimary = await base44.asServiceRole.entities.Part.filter({
-      primary_purchase_order_id: po.id
-    });
-    
-    const partsByLegacy = await base44.asServiceRole.entities.Part.filter({
-      purchase_order_id: po.id
-    });
-
-    const allParts = [...partsByPrimary, ...partsByLegacy];
-
-    // Find orphaned parts (po_line_id is null)
-    const orphanedParts = allParts.filter(p => !p.po_line_id);
-
-    // Delete orphaned parts
-    const deletedIds = [];
-    for (const orphan of orphanedParts) {
-      try {
-        await base44.asServiceRole.entities.Part.delete(orphan.id);
-        deletedIds.push(orphan.id);
-      } catch (err) {
-        console.error(`Failed to delete orphaned part ${orphan.id}:`, err.message);
-      }
-    }
-
-    // Get PO lines and create parts for any missing ones
-    const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
-      purchase_order_id: po.id
-    });
-
-    // Map existing parts by po_line_id
-    const partsWithLineIds = allParts.filter(p => p.po_line_id);
-    const existingLineIds = new Set(partsWithLineIds.map(p => p.po_line_id));
-
     // Helper: Map PO status to part status
     const mapPoStatusToPartStatus = (poStatus) => {
       const statusMap = {
@@ -98,56 +64,108 @@ Deno.serve(async (req) => {
       return locationMap[poStatus] || 'supplier';
     };
 
-    // Create parts for missing PO lines
-    const createdIds = [];
-    const updatedLineIds = [];
-    for (const line of poLines) {
-      if (!existingLineIds.has(line.id)) {
-        try {
-          const newPart = await base44.asServiceRole.entities.Part.create({
-            project_id: po.project_id || null,
-            po_line_id: line.id,
-            item_name: line.item_name || line.description || 'Part',
-            category: line.category || 'Other',
-            quantity_required: line.qty_ordered || 1,
-            price_list_item_id: line.price_list_item_id || null,
-            supplier_id: po.supplier_id || null,
-            supplier_name: po.supplier_name || null,
-            status: mapPoStatusToPartStatus(po.status),
-            location: mapPoStatusToLocation(po.status),
-            source_type: 'supplier_delivery',
-            purchase_order_ids: [po.id],
-            primary_purchase_order_id: po.id,
-            purchase_order_id: po.id, // legacy mirror
-            po_number: po.po_reference || po.po_number || null,
-            order_reference: line.order_reference || null
-          });
-          createdIds.push(newPart.id);
-          
-          // Link PO line back to part
+    // Process cleanup for each PO
+    const results = [];
+    for (const po of posToProcess) {
+      try {
+        // Get all parts linked to this PO (both primary and legacy)
+        const partsByPrimary = await base44.asServiceRole.entities.Part.filter({
+          primary_purchase_order_id: po.id
+        });
+        
+        const partsByLegacy = await base44.asServiceRole.entities.Part.filter({
+          purchase_order_id: po.id
+        });
+
+        const allParts = [...partsByPrimary, ...partsByLegacy];
+
+        // Find orphaned parts (po_line_id is null)
+        const orphanedParts = allParts.filter(p => !p.po_line_id);
+
+        // Delete orphaned parts
+        const deletedIds = [];
+        for (const orphan of orphanedParts) {
           try {
-            await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
-              part_id: newPart.id
-            });
-            updatedLineIds.push(line.id);
+            await base44.asServiceRole.entities.Part.delete(orphan.id);
+            deletedIds.push(orphan.id);
           } catch (err) {
-            console.error(`Failed to update PO line ${line.id} with part_id:`, err.message);
+            console.error(`Failed to delete orphaned part ${orphan.id}:`, err.message);
           }
-        } catch (err) {
-          console.error(`Failed to create part for PO line ${line.id}:`, err.message);
         }
+
+        // Get PO lines and create parts for any missing ones
+        const poLines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({
+          purchase_order_id: po.id
+        });
+
+        // Map existing parts by po_line_id
+        const partsWithLineIds = allParts.filter(p => p.po_line_id);
+        const existingLineIds = new Set(partsWithLineIds.map(p => p.po_line_id));
+
+        // Create parts for missing PO lines
+        const createdIds = [];
+        const updatedLineIds = [];
+        for (const line of poLines) {
+          if (!existingLineIds.has(line.id)) {
+            try {
+              const newPart = await base44.asServiceRole.entities.Part.create({
+                project_id: po.project_id || null,
+                po_line_id: line.id,
+                item_name: line.item_name || line.description || 'Part',
+                category: line.category || 'Other',
+                quantity_required: line.qty_ordered || 1,
+                price_list_item_id: line.price_list_item_id || null,
+                supplier_id: po.supplier_id || null,
+                supplier_name: po.supplier_name || null,
+                status: mapPoStatusToPartStatus(po.status),
+                location: mapPoStatusToLocation(po.status),
+                source_type: 'supplier_delivery',
+                purchase_order_ids: [po.id],
+                primary_purchase_order_id: po.id,
+                purchase_order_id: po.id, // legacy mirror
+                po_number: po.po_reference || po.po_number || null,
+                order_reference: line.order_reference || null
+              });
+              createdIds.push(newPart.id);
+              
+              // Link PO line back to part
+              try {
+                await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
+                  part_id: newPart.id
+                });
+                updatedLineIds.push(line.id);
+              } catch (err) {
+                console.error(`Failed to update PO line ${line.id} with part_id:`, err.message);
+              }
+            } catch (err) {
+              console.error(`Failed to create part for PO line ${line.id}:`, err.message);
+            }
+          }
+        }
+
+        results.push({
+          po_id: po.id,
+          po_reference: po.po_reference,
+          orphaned_parts_deleted: deletedIds.length,
+          deleted_part_ids: deletedIds,
+          missing_parts_created: createdIds.length,
+          created_part_ids: createdIds,
+          po_lines_updated_with_part_id: updatedLineIds.length,
+          updated_line_ids: updatedLineIds
+        });
+      } catch (err) {
+        console.error(`Failed to process PO ${po.id}:`, err.message);
+        results.push({
+          po_id: po.id,
+          po_reference: po.po_reference,
+          error: err.message
+        });
       }
     }
 
     return Response.json({
-      po_id: po.id,
-      po_reference: po.po_reference,
-      orphaned_parts_deleted: deletedIds.length,
-      deleted_part_ids: deletedIds,
-      missing_parts_created: createdIds.length,
-      created_part_ids: createdIds,
-      po_lines_updated_with_part_id: updatedLineIds.length,
-      updated_line_ids: updatedLineIds
+      total_pos_processed: posToProcess.length,
+      results
     });
 
   } catch (error) {
