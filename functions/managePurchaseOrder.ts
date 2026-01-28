@@ -409,10 +409,7 @@ Deno.serve(async (req) => {
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
             await syncPartReferencesWithPO(base44, updatedPO);
 
-            // Update project activity if PO is linked to a project
-            if (updatedPO.project_id) {
-                await updateProjectActivity(base44, updatedPO.project_id, 'PO Updated');
-            }
+
 
             // Update line items if provided
             if (line_items && Array.isArray(line_items)) {
