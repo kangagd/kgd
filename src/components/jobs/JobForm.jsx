@@ -996,10 +996,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   <div className="space-y-2">
                     <Label htmlFor="destination_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">To Location (Destination) *</Label>
                     <Select 
-                       value={formData.destination_location_id || ""} 
-                       onValueChange={(val) => setFormData({ ...formData, destination_location_id: val, locations_manually_set: true })}
-                       required={!formData.project_id} // Only required if no project (no auto-detect)
-                     >
+                      value={formData.destination_location_id || ""} 
+                      onValueChange={(val) => setFormData({ ...formData, destination_location_id: val, locations_manually_set: true })}
+                      required={!formData.project_id} // Only required if no project (no auto-detect)
+                    >
                       <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                         <SelectValue placeholder={formData.project_id ? "Auto-detected from project or select vehicle..." : "Select vehicle or customer site..."} />
                       </SelectTrigger>
@@ -1013,6 +1013,17 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     </Select>
                     {formData.project_id && !formData.destination_location_id && (
                       <p className="text-[12px] text-blue-600">Will auto-deliver to linked project address unless you select a vehicle</p>
+                    )}
+                    {formData.locations_manually_set && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData(prev => ({ ...prev, locations_manually_set: false }))}
+                        className="w-full text-amber-600 hover:bg-amber-50 border-amber-300"
+                      >
+                        Reset to Auto
+                      </Button>
                     )}
                   </div>
                 </div>
