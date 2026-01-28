@@ -8,7 +8,7 @@ import {
   resolvePoRef, 
   mapPoStatusToPartStatus, 
   linkPartsToPO 
-} from './shared/index.js';
+} from './shared/index.ts';
 
 console.log("[DEPLOY_SENTINEL] managePurchaseOrder_v20260129 v=2026-01-29");
 
