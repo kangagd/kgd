@@ -503,9 +503,14 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
 
   return (
     <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
-      <div className="text-sm font-semibold text-blue-900">Stock Processing</div>
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold text-blue-900">Stock Processing</div>
+        <div className="px-2.5 py-1 bg-blue-100 border border-blue-300 rounded text-xs font-medium text-blue-900">
+          {getModeLabel()}
+        </div>
+      </div>
 
-      {jobParts.length === 0 ? (
+      {validItems.length === 0 ? (
         <div className="text-sm text-blue-700">
           No parts found for this logistics job
           <br />
