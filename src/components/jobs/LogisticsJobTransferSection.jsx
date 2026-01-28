@@ -132,45 +132,8 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Location Summary */}
-        {!editingLocations ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-medium text-gray-700">Transfer Route</div>
-              {status !== 'completed' && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditingLocations(true)}
-                  className="h-8 gap-1"
-                >
-                  <Edit2 className="w-3 h-3" />
-                  Edit
-                </Button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-xs text-gray-600 mb-1">From Location</div>
-                <div className="font-medium text-gray-900">
-                  {sourceLocation?.name || '—'}
-                </div>
-                {sourceLocation?.address && (
-                  <div className="text-xs text-gray-500 mt-1">{sourceLocation.address}</div>
-                )}
-              </div>
-              <div className="flex items-center justify-center">
-                <ArrowRight className="w-5 h-5 text-gray-400" />
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-xs text-gray-600 mb-1">To Location</div>
-                <div className="font-medium text-gray-900">
-                  {destinationLocation?.name || '—'}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
+        {/* Location Edit Mode */}
+        {editingLocations ? (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
             <div className="text-sm font-medium text-blue-900">Edit Transfer Route</div>
             <div className="space-y-3">
