@@ -394,6 +394,27 @@ Deno.serve(async (req) => {
                  return Response.json({ error: 'Scheduled date is required' }, { status: 400 });
              }
 
+             // GUARDRAIL: Check for double-booking (overlapping jobs for same technician)
+             if (jobData.assigned_to && jobData.assigned_to.length > 0) {
+                 const conflictingJobs = await base44.asServiceRole.entities.Job.filter({
+                     assigned_to: { $elemMatch: { $in: jobData.assigned_to } },
+                     scheduled_date: jobData.scheduled_date,
+                     status: { $in: ['Open', 'Scheduled'] },
+                     deleted_at: null
+                 });
+
+                 if (conflictingJobs.length > 0) {
+                     const conflictingTechs = jobData.assigned_to.filter(tech => 
+                         conflictingJobs.some(j => j.assigned_to?.includes(tech))
+                     );
+                     return Response.json({ 
+                         error: `Cannot double-book ${conflictingTechs.join(', ')} on ${jobData.scheduled_date}. They have existing scheduled jobs.`,
+                         code: 'DOUBLE_BOOKING_CONFLICT',
+                         conflicts: conflictingJobs.map(j => ({ id: j.id, job_number: j.job_number, technician: j.assigned_to }))
+                     }, { status: 409 });
+                 }
+             }
+
             // Inherit address, customer, and project fields from project if missing
             if (jobData.project_id) {
                 const project = await base44.asServiceRole.entities.Project.get(jobData.project_id);
