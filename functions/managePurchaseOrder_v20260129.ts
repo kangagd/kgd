@@ -1,17 +1,116 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { 
-  PO_STATUS, 
-  PART_STATUS, 
-  PART_LOCATION, 
-  PO_DELIVERY_METHOD,
-  normaliseLegacyPoStatus, 
-  resolvePoRef, 
-  mapPoStatusToPartStatus, 
-  linkPartsToPO 
-} from './shared/index.js';
 
 // VERSION SENTINEL: 2026-01-29
 console.log('🔥 [managePurchaseOrder_v20260129] VERSION_SENTINEL_2026_01_29 - New artifact deployed');
+
+// ===== INLINED CONSTANTS =====
+const PO_STATUS = {
+  DRAFT: "draft",
+  SENT: "sent",
+  ON_ORDER: "on_order",
+  IN_TRANSIT: "in_transit",
+  IN_LOADING_BAY: "in_loading_bay",
+  AT_SUPPLIER: "at_supplier",
+  IN_STORAGE: "in_storage",
+  IN_VEHICLE: "in_vehicle",
+  INSTALLED: "installed",
+  CANCELLED: "cancelled",
+};
+
+const PART_STATUS = {
+  PENDING: "pending",
+  ON_ORDER: "on_order",
+  IN_TRANSIT: "in_transit",
+  IN_LOADING_BAY: "in_loading_bay",
+  AT_SUPPLIER: "at_supplier",
+  IN_STORAGE: "in_storage",
+  IN_VEHICLE: "in_vehicle",
+  INSTALLED: "installed",
+  CANCELLED: "cancelled",
+};
+
+const PART_LOCATION = {
+  SUPPLIER: "supplier",
+  LOADING_BAY: "loading_bay",
+  WAREHOUSE_STORAGE: "warehouse_storage",
+  VEHICLE: "vehicle",
+  CLIENT_SITE: "client_site",
+};
+
+const PO_DELIVERY_METHOD = {
+  DELIVERY: "delivery",
+  PICKUP: "pickup",
+};
+
+// ===== INLINED HELPERS =====
+function normaliseLegacyPoStatus(status) {
+  if (!status) return PO_STATUS.DRAFT;
+  const normalized = status.toLowerCase().trim().replace(/[\s_-]/g, '');
+  switch (normalized) {
+    case "draft": return PO_STATUS.DRAFT;
+    case "sent": return PO_STATUS.SENT;
+    case "onorder": return PO_STATUS.ON_ORDER;
+    case "partiallyreceived":
+    case "intransit": return PO_STATUS.IN_TRANSIT;
+    case "received":
+    case "delivered":
+    case "deliveredloadingbay":
+    case "deliveredtodeliverybay":
+    case "deliveredtoloadingbay":
+    case "readyforpickup":
+    case "readytopickup":
+    case "arrived":
+    case "atdeliverybay":
+    case "indeliverybay":
+    case "loadingbay":
+    case "inloadingbay": return PO_STATUS.IN_LOADING_BAY;
+    case "atsupplier": return PO_STATUS.AT_SUPPLIER;
+    case "instorage":
+    case "completedinstorage": return PO_STATUS.IN_STORAGE;
+    case "invehicle":
+    case "completedinvehicle": return PO_STATUS.IN_VEHICLE;
+    case "installed": return PO_STATUS.INSTALLED;
+    case "cancelled": return PO_STATUS.CANCELLED;
+    default: return status;
+  }
+}
+
+function mapPoStatusToPartStatus(poStatus) {
+  switch (poStatus) {
+    case PO_STATUS.DRAFT: return PART_STATUS.PENDING;
+    case PO_STATUS.SENT:
+    case PO_STATUS.ON_ORDER: return PART_STATUS.ON_ORDER;
+    case PO_STATUS.IN_TRANSIT: return PART_STATUS.IN_TRANSIT;
+    case PO_STATUS.IN_LOADING_BAY: return PART_STATUS.IN_LOADING_BAY;
+    case PO_STATUS.AT_SUPPLIER: return PART_STATUS.AT_SUPPLIER;
+    case PO_STATUS.IN_STORAGE: return PART_STATUS.IN_STORAGE;
+    case PO_STATUS.IN_VEHICLE: return PART_STATUS.IN_VEHICLE;
+    case PO_STATUS.INSTALLED: return PART_STATUS.INSTALLED;
+    case PO_STATUS.CANCELLED: return PART_STATUS.CANCELLED;
+    default: return PART_STATUS.PENDING;
+  }
+}
+
+function validatePartStatusTransition(oldStatus, newStatus) {
+  return { valid: true };
+}
+
+async function linkPartsToPO(base44, poId, lineItems) {
+  if (!lineItems || lineItems.length === 0) return;
+  for (const item of lineItems) {
+    if (item.part_id) {
+      try {
+        await base44.asServiceRole.entities.Part.update(item.part_id, {
+          purchase_order_id: poId,
+          purchase_order_ids: [poId],
+          primary_purchase_order_id: poId,
+        });
+      } catch (err) {
+        console.error(`Failed to link part ${item.part_id} to PO ${poId}:`, err);
+      }
+    }
+  }
+}
 
 // Helper: Sync Parts with PurchaseOrder status
 // CRITICAL: Only syncs parts where primary_purchase_order_id matches (prevents circular references)
