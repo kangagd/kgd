@@ -495,6 +495,17 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
 
+            // 🔒 VALIDATION: Enforce po_reference before allowing non-draft status
+            if (normalizedStatus !== PO_STATUS.DRAFT) {
+                if (!existing.po_reference || existing.po_reference.trim() === "") {
+                    return Response.json({ 
+                        success: false,
+                        error: 'PO Reference is required before changing status. Please save the PO with a reference first.',
+                        error_code: 'po_reference_required'
+                    }, { status: 400 });
+                }
+            }
+
             // 🔒 DEV GUARD: Block any attempt to modify identity fields via updateStatus
             if (po_reference || po_number || reference || order_reference || name || supplier_name || data?.po_reference || data?.po_number || data?.name || data?.supplier_name) {
                 console.warn('⚠️ updateStatus attempted to modify identity fields — blocked', {
