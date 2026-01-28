@@ -14,6 +14,7 @@ export default function QuickBookModal({ open, onClose, selectedDate }) {
   const [jobTypeId, setJobTypeId] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [assignedTo, setAssignedTo] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: customers = [] } = useQuery({
