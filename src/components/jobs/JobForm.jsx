@@ -1058,48 +1058,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
               </div>
             </div>
 
-            {/* Location fields for existing logistics jobs */}
-            {job && job.is_logistics_job && allLocations.length > 0 && (
-              <div className="grid md:grid-cols-2 gap-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                <div className="space-y-2">
-                  <Label htmlFor="source_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">From Location (Source)</Label>
-                  <Select 
-                    value={formData.source_location_id || ""} 
-                    onValueChange={(val) => setFormData({ ...formData, source_location_id: val })}
-                  >
-                    <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
-                      <SelectValue placeholder="Select source location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allLocations.filter(loc => loc.type === 'warehouse').map((loc) => (
-                        <SelectItem key={loc.id} value={loc.id}>
-                          {loc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="destination_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">To Location (Destination)</Label>
-                  <Select 
-                    value={formData.destination_location_id || ""} 
-                    onValueChange={(val) => setFormData({ ...formData, destination_location_id: val })}
-                  >
-                    <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
-                      <SelectValue placeholder="Select destination location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allLocations.filter(loc => loc.type === 'vehicle').map((loc) => (
-                        <SelectItem key={loc.id} value={loc.id}>
-                          {loc.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
 
             {/* Show scheduling fields only when editing existing job */}
             {job && (
