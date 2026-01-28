@@ -1,18 +1,15 @@
-import { createClientFromRequest } from './shared/sdk.ts';
-import { updateProjectActivity } from './updateProjectActivity.ts';
-import { PO_STATUS, PART_STATUS, PART_LOCATION } from './shared/constants.ts';
-import { LOGISTICS_PURPOSE, ALL_LOGISTICS_PURPOSES } from './shared/logisticsPurpose.ts';
-import { resolveCoreLocations } from './shared/locationResolver.ts';
-import { generateJobNumber } from './shared/jobNumberGenerator.ts';
-import { generateLogisticsJobNumber } from './shared/generateLogisticsJobNumber.ts';
-import { enforceJobUpdatePermission } from './shared/permissionHelpers.ts';
-import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.ts';
-import { normalizeLogisticsPurpose, getPurposeCode } from './shared/normalizeLogisticsPurpose.ts';
-import { isLogisticsJobNumber } from './shared/logisticsJobNumbering.ts';
-import { ensureLogisticsCanon, stripRollbackWrites } from './shared/logisticsGuardrails.ts';
-
-// DEPLOY SENTINEL: manageJob v=2026-01-29
-console.log('[DEPLOY_SENTINEL] manageJob v=2026-01-29 - Import fix for .ts files');
+import { createClientFromRequest } from './shared/sdk.js';
+import { updateProjectActivity } from './updateProjectActivity.js';
+import { PO_STATUS, PART_STATUS, PART_LOCATION } from './shared/constants.js';
+import { LOGISTICS_PURPOSE, ALL_LOGISTICS_PURPOSES } from './shared/logisticsPurpose.js';
+import { resolveCoreLocations } from './shared/locationResolver.js';
+import { generateJobNumber } from './shared/jobNumberGenerator.js';
+import { generateLogisticsJobNumber } from './shared/generateLogisticsJobNumber.js';
+import { enforceJobUpdatePermission } from './shared/permissionHelpers.js';
+import { applyJobUpdateGuardrails, logBlockedCompletionWrite } from './shared/jobUpdateGuardrails.js';
+import { normalizeLogisticsPurpose, getPurposeCode } from './shared/normalizeLogisticsPurpose.js';
+import { isLogisticsJobNumber } from './shared/logisticsJobNumbering.js';
+import { ensureLogisticsCanon, stripRollbackWrites } from './shared/logisticsGuardrails.js';
 
 // Helper: Process sample transfers (explicit action on completion)
 async function processSampleTransfers(base44, job) {

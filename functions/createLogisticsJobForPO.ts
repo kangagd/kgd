@@ -1,11 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { PO_DELIVERY_METHOD, LOGISTICS_PURPOSE } from './shared/constants.ts';
 import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.ts';
-import { getPurposeCode, buildLogisticsJobNumber } from './shared/logisticsJobNumbering.ts';
-import { getNextLogisticsSequence, buildCounterKey } from './shared/atomicLogisticsCounter.ts';
-
-// DEPLOY SENTINEL: createLogisticsJobForPO v=2026-01-29
-console.log('[DEPLOY_SENTINEL] createLogisticsJobForPO v=2026-01-29 - Import fix for .ts files');
+import { getPurposeCode, buildLogisticsJobNumber } from './shared/logisticsJobNumbering.js';
+import { getNextLogisticsSequence, buildCounterKey } from './shared/atomicLogisticsCounter.js';
 
 Deno.serve(async (req) => {
     try {
