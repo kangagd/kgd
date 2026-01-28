@@ -179,10 +179,10 @@ export default function QuickBookModal({ open, onClose, selectedDate }) {
             </Button>
             <Button
               type="submit"
-              disabled={createJobMutation.isPending}
+              disabled={createJobMutation.isPending || isSubmitting}
               className="flex-1 bg-[#fae008] text-slate-950 hover:bg-[#fae008]/90"
             >
-              {createJobMutation.isPending ? 'Booking...' : 'Book Job'}
+              {createJobMutation.isPending || isSubmitting ? 'Booking...' : 'Book Job'}
             </Button>
           </div>
         </form>
