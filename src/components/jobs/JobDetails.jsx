@@ -35,8 +35,7 @@ import { getLoadingBayLocationId } from "../utils/inventoryLocationLookup";
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
 import JobVisitSummary from "./JobVisitSummary";
-import ReceivePoItemsMixedModal from "../logistics/ReceivePoItemsMixedModal";
-import TransferItemsModal from "../logistics/TransferItemsModal";
+
 import XeroInvoiceCard from "../invoices/XeroInvoiceCard";
 import CreateInvoiceModal from "../invoices/CreateInvoiceModal";
 import TakePaymentModal from "../invoices/TakePaymentModal";
