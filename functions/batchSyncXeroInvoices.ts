@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { refreshAndGetXeroConnection, getXeroHeaders, xeroFetchWithRetry } from './shared/xeroHelpers.ts';
 
-import { refreshAndGetXeroConnection, getXeroHeaders, xeroFetchWithRetry } from './shared/xeroHelpers.js';
+console.log("[DEPLOY_SENTINEL] batchSyncXeroInvoices_v20260129 v=2026-01-29");
 
 // Batch sync all Xero invoice statuses - scheduled task
 Deno.serve(async (req) => {
