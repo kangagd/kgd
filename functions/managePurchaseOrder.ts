@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { updateProjectActivity } from './updateProjectActivity.js';
 import { PO_STATUS, PART_STATUS, PART_LOCATION, PO_DELIVERY_METHOD } from './shared/constants.js';
 import { mapPoStatusToPartStatus, linkPartsToPO } from './shared/partHelpers.js';
 import { normaliseLegacyPoStatus, resolvePoRef, firstNonEmpty } from './shared/poHelpers.js';
