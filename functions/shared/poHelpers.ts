@@ -33,7 +33,7 @@ export function resolvePoRef({ data, po_reference, po_number, reference, order_r
 export function normaliseLegacyPoStatus(status) {
   if (!status) return PO_STATUS.DRAFT;
 
-  const normalized = status.toLowerCase().replace(/[\s_-]/g, '');
+  const normalized = status.toLowerCase().trim().replace(/[\s_-]/g, '');
 
   switch (normalized) {
     case "draft":
