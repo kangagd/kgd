@@ -207,7 +207,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     // Only apply preselectedCustomerId if no project is being used
     const projectId = preselectedProjectId || projectIdFromUrl;
     if (projectId) return; // Skip if project-based
-    
+
     if (preselectedCustomerId && customers.length > 0 && !job) {
       const customer = customers.find(c => String(c.id) === String(preselectedCustomerId));
       if (customer) {
@@ -223,6 +223,18 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
       }
     }
   }, [preselectedCustomerId, customers.length, job, preselectedProjectId, projectIdFromUrl]);
+
+  // Auto-populate supplier from linked PO
+  useEffect(() => {
+    if (!linkedPO || !isLogisticsJob || job) return; // Only for new logistics jobs
+
+    if (linkedPO.supplier_id && suppliers.length > 0) {
+      const supplier = suppliers.find(s => s.id === linkedPO.supplier_id);
+      if (supplier && !formData.supplier_id) {
+        handleSupplierChange(linkedPO.supplier_id);
+      }
+    }
+  }, [linkedPO, suppliers, isLogisticsJob, job, formData.supplier_id]);
 
   const generateNotes = async (project, jobTypeId) => {
     if (!project || !jobTypeId) return;
