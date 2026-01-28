@@ -4,7 +4,7 @@ import { PO_STATUS, PART_STATUS, PART_LOCATION, PO_DELIVERY_METHOD } from './sha
 import { mapPoStatusToPartStatus, linkPartsToPO } from './shared/partHelpers.js';
 import { normaliseLegacyPoStatus, resolvePoRef, firstNonEmpty } from './shared/poHelpers.js';
 import { validatePartStatusTransition } from './shared/partStatusTransitions.js';
-import { assertWriteVersion, incrementWriteVersion } from './shared/writeGuards.ts';
+import { assertWriteVersion, incrementWriteVersion } from './shared/writeGuards.js';
 
 // Helper: Sync Parts with PurchaseOrder status
 // CRITICAL: Only syncs parts where primary_purchase_order_id matches (prevents circular references)
