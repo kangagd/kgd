@@ -20,7 +20,6 @@ const transferStatusConfig = {
 
 export default function LogisticsJobTransferSection({ job, sourceLocation, destinationLocation }) {
   const queryClient = useQueryClient();
-  const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedItems, setSelectedItems] = useState({});
   const [notes, setNotes] = useState('');
   const [editingLocations, setEditingLocations] = useState(false);
