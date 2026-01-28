@@ -132,7 +132,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* One-line route summary with edit */}
+        {/* Transfer Route */}
         {!editingLocations && (
           <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-3 flex-1 text-sm">
