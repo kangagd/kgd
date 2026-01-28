@@ -351,7 +351,7 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                     {/* Job Type and Status */}
                     <div className="flex items-center gap-2 flex-wrap">
                       {(job.job_type_name || job.job_type) && (
-                        <Badge className={`${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} ${getJobTypeColor(job.job_type_name || job.job_type, uniqueJobTypes).replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} border-0 font-semibold text-xs px-2.5 py-1 rounded-lg`}>
+                        <Badge className={`${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} ${(getJobTypeColor(job.job_type_name || job.job_type, uniqueJobTypes) || 'bg-slate-500').replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} border-0 font-semibold text-xs px-2.5 py-1 rounded-lg`}>
                           <Briefcase className="w-3.5 h-3.5 mr-1" />
                           {job.job_type_name || job.job_type}
                         </Badge>
@@ -554,7 +554,7 @@ export default function DayView({ jobs, bookings = [], currentDate, onJobClick, 
                               )}
 
                               {(job.job_type_name || job.job_type) && (
-                                <Badge className={`${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} ${getJobTypeColor(job.job_type_name || job.job_type, uniqueJobTypes).replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} border-0 font-semibold text-[9px] px-1.5 py-0.5 rounded-md truncate w-full justify-start`}>
+                                <Badge className={`${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} ${(getJobTypeColor(job.job_type_name || job.job_type, uniqueJobTypes) || 'bg-slate-500').replace('bg-', 'text-')} hover:${getJobTypeBgColor(job.job_type_name || job.job_type, uniqueJobTypes)} border-0 font-semibold text-[9px] px-1.5 py-0.5 rounded-md truncate w-full justify-start`}>
                                   <Briefcase className="w-2.5 h-2.5 mr-0.5 flex-shrink-0" />
                                   <span className="truncate">{job.job_type_name || job.job_type}</span>
                                 </Badge>
