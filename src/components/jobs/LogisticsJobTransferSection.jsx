@@ -132,8 +132,30 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* One-line route summary with edit */}
+        {!editingLocations && (
+          <div className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3 flex-1 text-sm">
+              <span className="font-medium text-gray-700">{sourceLocation?.name || '—'}</span>
+              <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="font-medium text-gray-700">{destinationLocation?.name || '—'}</span>
+            </div>
+            {status !== 'completed' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditingLocations(true)}
+                className="h-7 gap-1 px-2"
+              >
+                <Edit2 className="w-3 h-3" />
+                Edit
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Location Edit Mode */}
-        {editingLocations ? (
+        {editingLocations && (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
             <div className="text-sm font-medium text-blue-900">Edit Transfer Route</div>
             <div className="space-y-3">
