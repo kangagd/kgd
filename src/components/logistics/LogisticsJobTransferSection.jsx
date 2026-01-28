@@ -350,7 +350,7 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
   const queryClient = useQueryClient();
 
   const selectedCount = Object.values(selectedItems).filter(qty => qty > 0).length;
-  
+
   const getActionLabel = () => {
     const purpose = job.logistics_purpose || '';
     if (purpose.includes('pickup_from_supplier') || purpose.includes('po_pickup')) return 'Receive Items';
@@ -373,6 +373,15 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
   };
 
   const mode = getMode();
+
+  // Filter items based on mode
+  const validItems = jobParts.filter(part => {
+    if (mode === 'po_receipt') return !!part.po_line_id;
+    return !!part.price_list_item_id;
+  });
+
+  const getModeLabel = () => mode === 'po_receipt' ? 'Processing PO Receipt' : 'Transferring Stock';
+  const getQtyLabel = () => mode === 'po_receipt' ? 'Qty Received' : 'Qty to Transfer';
   const canProcess = sourceLocation && destinationLocation && selectedCount > 0 && !isProcessing;
 
   const handleProcess = async () => {
