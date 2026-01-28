@@ -231,9 +231,9 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
                   </Button>
                 )}
               </div>
-            </div>
-          </div>
-        )}
+              </div>
+              </div>
+              )}
 
         {/* Status Messages */}
         {status === 'completed' && (
