@@ -2544,15 +2544,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                        ) : (
                          <p className="text-[14px] text-[#6B7280]">No inventory updates have been applied yet. Click <strong>Process Stock</strong> below to proceed.</p>
                        )}
-                       {stock_transfer_status !== 'completed' && (
-                         <Button
-                           onClick={() => setShowProcessStockModal(true)}
-                           className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07] font-semibold h-10 rounded-lg text-sm"
-                           title="Process Stock">
-                           <Package className="w-4 h-4 mr-2" />
-                           Process Stock
-                         </Button>
-                       )}
+
                      </CardContent>
                    </Card>
 
