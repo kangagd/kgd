@@ -219,9 +219,11 @@ export default function Jobs() {
       queryClient.invalidateQueries({ queryKey: jobKeys.all });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       refetch();
-      const jobId = response.data?.id;
+      const createdJob = response?.data?.job || response?.data?.data?.job || response?.data?.data || null;
+      const jobId = createdJob?.id || response?.data?.job?.id;
       if (jobId) {
         navigate(createPageUrl("Jobs") + "?jobId=" + jobId);
+        if (createdJob) setSelectedJob(createdJob);
       }
       setShowForm(false);
       setEditingJob(null);
