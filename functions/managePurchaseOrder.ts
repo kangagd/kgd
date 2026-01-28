@@ -187,7 +187,8 @@ Deno.serve(async (req) => {
           supplier_id, project_id, delivery_method, delivery_location,
           line_items, status, supplier_name, notes,
           reference, po_number, po_reference, order_reference,
-          name, eta, expected_date, attachments, vehicle_id
+          name, eta, expected_date, attachments, vehicle_id,
+          expected_write_version, write_source
         } = await req.json();
 
         // Action: create (fully functional)
@@ -497,7 +498,6 @@ Deno.serve(async (req) => {
             }
 
             // 🔒 OPTIMISTIC LOCK: Check write_version if provided
-            const { expected_write_version, write_source } = await req.json();
             if (expected_write_version !== undefined) {
                 try {
                     await assertWriteVersion(base44, 'PurchaseOrder', id, expected_write_version);
