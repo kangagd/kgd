@@ -238,13 +238,14 @@ export default function Jobs() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all });
       refetch();
-      const jobId = response.data?.id;
+      const updatedJob = response?.data?.job || response?.data?.data?.job || response?.data?.data || null;
+      const jobId = updatedJob?.id || response?.data?.job?.id;
       if (jobId) {
         navigate(createPageUrl("Jobs") + "?jobId=" + jobId);
+        if (updatedJob) setSelectedJob(updatedJob);
       }
       setShowForm(false);
       setEditingJob(null);
-      setSelectedJob(null);
       setSearchParams({});
       notifySuccess('Job updated successfully');
     },
