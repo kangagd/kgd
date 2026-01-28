@@ -78,6 +78,8 @@ export default function QuickBookModal({ open, onClose, selectedDate }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     createJobMutation.mutate();
   };
 
