@@ -492,7 +492,11 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
       <div className="text-sm font-semibold text-blue-900">Stock Processing</div>
 
       {jobParts.length === 0 ? (
-        <div className="text-sm text-blue-700">No parts found for this logistics job</div>
+        <div className="text-sm text-blue-700">
+          No parts found for this logistics job
+          <br />
+          <span className="text-xs text-blue-600">visit_scope items: {job.visit_scope?.length || 0}</span>
+        </div>
       ) : (
         <>
           <div className="space-y-2">
