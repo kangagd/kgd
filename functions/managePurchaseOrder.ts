@@ -480,7 +480,18 @@ Deno.serve(async (req) => {
 
             // Normalize the status first before validation
             const normalizedStatus = normaliseLegacyPoStatus(status);
-            const validStatuses = Object.values(PO_STATUS);
+            const validStatuses = [
+                PO_STATUS.DRAFT,
+                PO_STATUS.SENT,
+                PO_STATUS.ON_ORDER,
+                PO_STATUS.IN_TRANSIT,
+                PO_STATUS.IN_LOADING_BAY,
+                PO_STATUS.AT_SUPPLIER,
+                PO_STATUS.IN_STORAGE,
+                PO_STATUS.IN_VEHICLE,
+                PO_STATUS.INSTALLED,
+                PO_STATUS.CANCELLED
+            ];
             
             console.log('[managePurchaseOrder] action=updateStatus Status validation:', {
                 received: status,
