@@ -637,14 +637,7 @@ Deno.serve(async (req) => {
                 name: updatedPO.name
             });
 
-            // STEP 3: Update project activity if PO is linked to a project
-            if (updatedPO.project_id) {
-                const activityType = newStatus === PO_STATUS.IN_LOADING_BAY ? 'PO Delivered' :
-                                   newStatus === PO_STATUS.IN_STORAGE ? 'PO in Storage' :
-                                   newStatus === PO_STATUS.IN_VEHICLE ? 'PO in Vehicle' :
-                                   'PO Status Updated';
-                await updateProjectActivity(base44, updatedPO.project_id, activityType);
-            }
+
 
             // STEP 4: Sync linked Parts status/location and references
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);
