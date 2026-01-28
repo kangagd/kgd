@@ -481,33 +481,21 @@ Deno.serve(async (req) => {
             // Normalize the status first before validation
             const normalizedStatus = normaliseLegacyPoStatus(status);
             
-            console.log('[managePurchaseOrder] DEBUG PO_STATUS:', PO_STATUS);
-            
+            // Valid statuses (hardcoded to bypass import cache issues)
             const validStatuses = [
-                PO_STATUS.DRAFT,
-                PO_STATUS.SENT,
-                PO_STATUS.ON_ORDER,
-                PO_STATUS.IN_TRANSIT,
-                PO_STATUS.IN_LOADING_BAY,
-                PO_STATUS.AT_SUPPLIER,
-                PO_STATUS.IN_STORAGE,
-                PO_STATUS.IN_VEHICLE,
-                PO_STATUS.INSTALLED,
-                PO_STATUS.CANCELLED
+                "draft",
+                "sent",
+                "on_order",
+                "in_transit",
+                "in_loading_bay",
+                "at_supplier",
+                "in_storage",
+                "in_vehicle",
+                "installed",
+                "cancelled"
             ];
             
-            console.log('[managePurchaseOrder] action=updateStatus Status validation:', {
-                received: status,
-                normalized: normalizedStatus,
-                validStatusesCount: validStatuses.length,
-                validStatuses
-            });
-            
             if (!validStatuses.includes(normalizedStatus)) {
-                console.error('[managePurchaseOrder] Status not in valid list', {
-                    normalized: normalizedStatus,
-                    validStatuses
-                });
                 return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
             }
 
