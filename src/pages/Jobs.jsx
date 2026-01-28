@@ -233,9 +233,13 @@ export default function Jobs() {
 
   const updateJobMutation = useMutation({
     mutationFn: ({ id, data }) => base44.functions.invoke('manageJob', { action: 'update', id, data }),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all });
       refetch();
+      const jobId = response.data?.id;
+      if (jobId) {
+        navigate(createPageUrl("Jobs") + "?jobId=" + jobId);
+      }
       setShowForm(false);
       setEditingJob(null);
       setSelectedJob(null);
