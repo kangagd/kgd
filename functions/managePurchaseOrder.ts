@@ -4,6 +4,7 @@ import { PO_STATUS, PART_STATUS, PART_LOCATION, PO_DELIVERY_METHOD } from './sha
 import { mapPoStatusToPartStatus, linkPartsToPO } from './shared/partHelpers.js';
 import { normaliseLegacyPoStatus, resolvePoRef, firstNonEmpty } from './shared/poHelpers.js';
 import { validatePartStatusTransition } from './shared/partStatusTransitions.js';
+import { assertWriteVersion, incrementWriteVersion } from './shared/writeGuards.ts';
 
 // Helper: Sync Parts with PurchaseOrder status
 // CRITICAL: Only syncs parts where primary_purchase_order_id matches (prevents circular references)
@@ -495,6 +496,21 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
             }
 
+            // 🔒 OPTIMISTIC LOCK: Check write_version if provided
+            const { expected_write_version, write_source } = await req.json();
+            if (expected_write_version !== undefined) {
+                try {
+                    await assertWriteVersion(base44, 'PurchaseOrder', id, expected_write_version);
+                } catch (versionError) {
+                    return Response.json({
+                        success: false,
+                        error: versionError.message,
+                        error_code: 'stale_write',
+                        current_write_version: existing.write_version || 1
+                    }, { status: 409 }); // 409 Conflict
+                }
+            }
+
             // 🔒 VALIDATION: Enforce po_reference before allowing non-draft status
             if (normalizedStatus !== PO_STATUS.DRAFT) {
                 if (!existing.po_reference || existing.po_reference.trim() === "") {
@@ -539,6 +555,9 @@ Deno.serve(async (req) => {
                 name: existing.name || null,
                 supplier_name: existing.supplier_name || null,
                 supplier_id: existing.supplier_id || null,
+                
+                // Increment write_version to detect future stale writes
+                ...incrementWriteVersion(existing, write_source || 'ui')
             };
 
             // Enforce po_reference constraint: required once status ≠ draft
