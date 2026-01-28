@@ -350,26 +350,19 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           </div>
         )}
 
-        {/* Record Transfer Button */}
-        {canTransfer && (
-          <Button
-            onClick={() => setShowTransferModal(true)}
-            className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
-            disabled={!sourceLocation || !destinationLocation}
-          >
-            Record Transfer
-          </Button>
-        )}
-
-        {/* Legacy Helper Button */}
-        {isLegacy && (
-          <Button
-            onClick={() => setShowTransferModal(true)}
-            variant="outline"
-            className="w-full border-orange-300 text-orange-700 hover:bg-orange-50"
-          >
-            Link Inventory Transfer
-          </Button>
+        {/* Inline Stock Processing Section */}
+        {(canTransfer || isLegacy) && (
+          <InlineStockProcessor
+            job={job}
+            jobParts={jobParts}
+            sourceLocation={sourceLocation}
+            destinationLocation={destinationLocation}
+            selectedItems={selectedItems}
+            onSelectedItemsChange={setSelectedItems}
+            notes={notes}
+            onNotesChange={setNotes}
+            isLegacy={isLegacy}
+          />
         )}
 
         {/* Info */}
