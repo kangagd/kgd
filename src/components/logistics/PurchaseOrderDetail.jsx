@@ -31,6 +31,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { BackendFn } from "@/components/config/backendFunctions";
 import ReceivePoItemsMixedModal from "./ReceivePoItemsMixedModal";
 import POLogisticsJobsSection from "./POLogisticsJobsSection";
 import { devLog } from "@/components/utils/devLog";
@@ -235,7 +236,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   const createLogisticsJobMutation = useMutation({
     mutationFn: async () => {
-      const response = await base44.functions.invoke('createLogisticsJobForPO_v20260129', {
+      const response = await base44.functions.invoke(BackendFn.createLogisticsJobForPO, {
         purchase_order_id: poId
       });
       const data = fnData(response);
@@ -463,12 +464,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       devLog("[Send to Supplier - fields persisted]");
       
       // Then update status using managePurchaseOrder for side effects
-      const response = await base44.functions.invoke('managePurchaseOrder', {
-        action: 'updateStatus',
-        id: poId,
-        status: PO_STATUS.ON_ORDER,
-        eta: formData.eta || null
-      });
+       const response = await base44.functions.invoke(BackendFn.managePurchaseOrderStatus, {
+         action: 'updateStatus',
+         id: poId,
+         status: PO_STATUS.ON_ORDER,
+         eta: formData.eta || null
+       });
       
       if (response?.data?.success) {
         const statusUpdatedPO = response.data.purchaseOrder;
@@ -1054,7 +1055,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData((prev) => ({ ...prev, status: value }));
 
                   try {
-                    const response = await base44.functions.invoke("managePurchaseOrder_v20260129", {
+                    const response = await base44.functions.invoke(BackendFn.managePurchaseOrderStatus, {
                       action: 'updateStatus',
                       id: po.id,
                       status: value,

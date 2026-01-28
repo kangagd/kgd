@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { showSyncToast } from "@/components/utils/emailSyncToast";
 import { devLog } from "@/components/utils/devLog";
 
+import { BackendFn } from "@/components/config/backendFunctions";
 import EmailMessageItem from "./EmailMessageItem";
 
 /* ---------- helpers ---------- */
@@ -97,7 +98,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
 
     setIsSyncing(true);
     try {
-      const response = await base44.functions.invoke('gmailSyncThreadMessages', {
+      const response = await base44.functions.invoke(BackendFn.gmailSync, {
           gmail_thread_id: thread.gmail_thread_id,
         });
 
