@@ -103,16 +103,19 @@ Deno.serve(async (req) => {
          const warehouseAddress = warehouseLocation.address;
          const warehouseLocationId = warehouseLocation.id;
 
-         // Get or create supplier inventory location
-         let supplierLocation = null;
-         let supplierLocationId = null;
-         if (po.supplier_id) {
-             try {
-                 supplierLocation = await getOrCreateSupplierInventoryLocation(base44, po.supplier_id);
-                 supplierLocationId = supplierLocation.id;
-             } catch (err) {
-                 console.error('Error creating supplier location:', err);
-             }
+         // Get or create supplier inventory location (FAIL-FAST: required for logistics job)
+         if (!po.supplier_id) {
+             return Response.json({ 
+                 success: false, 
+                 error: 'PO must have a supplier_id to create logistics job' 
+             }, { status: 400 });
+         }
+
+         const supplierLocation = await getOrCreateSupplierInventoryLocation(base44, po.supplier_id);
+         const supplierLocationId = supplierLocation?.id;
+
+         if (!supplierLocationId) {
+             throw new Error('Failed to create or retrieve supplier inventory location. Cannot create logistics job without source_location_id.');
          }
          let jobTitle, jobAddressFull;
         
