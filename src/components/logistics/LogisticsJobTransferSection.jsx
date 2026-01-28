@@ -546,8 +546,25 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
             {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {getActionLabel()} {selectedCount > 0 ? `(${selectedCount})` : ''}
           </Button>
-        </>
-      )}
-    </div>
-  );
-}
+
+          {/* Item-level failure details */}
+          {processingErrorDetails && processingErrorDetails.length > 0 && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm font-medium text-red-900 mb-2">Some items failed</p>
+              <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                {processingErrorDetails.map((failure, idx) => (
+                  <div key={idx} className="text-xs text-red-800 p-2 bg-white rounded border border-red-100">
+                    <span className="font-medium">{failure.price_list_item_id || failure.purchase_order_line_id}</span>
+                    {' • Qty: '}{failure.qty}
+                    {' • '}<span className="italic">{failure.error}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-red-700 mt-2">Review and try again</p>
+            </div>
+          )}
+          </>
+          )}
+          </div>
+          );
+          }
