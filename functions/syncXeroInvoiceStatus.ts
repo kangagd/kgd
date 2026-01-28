@@ -1,6 +1,8 @@
-import { createClientFromRequest } from './shared/sdk.js';
-import { normalizeParams } from './shared/parameterNormalizer.js';
-import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { normalizeParams } from './shared/parameterNormalizer.ts';
+import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.ts';
+
+console.log("[DEPLOY_SENTINEL] syncXeroInvoiceStatus_v20260129 v=2026-01-29");
 
 Deno.serve(async (req) => {
   try {
