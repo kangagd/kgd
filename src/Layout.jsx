@@ -180,8 +180,8 @@ export default function Layout({ children, currentPageName }) {
         setUser(currentUser);
         
         // Check if user needs onboarding
-        if (currentUser && !currentUser.onboarding_completed) {
-          setShowOnboarding(true);
+        if (currentUser && !currentUser.data?.onboarding_completed) {
+          setShowOnboarding(false);
         }
       } catch (error) {
         console.error("Error loading user:", error);
