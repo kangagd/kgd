@@ -272,10 +272,7 @@ Deno.serve(async (req) => {
                 name: po.name
             });
 
-            // Update project activity if PO is linked to a project
-            if (po.project_id) {
-                await updateProjectActivity(base44, po.project_id, 'PO Created');
-            }
+
 
             // Create line items with source type support
             for (const item of line_items) {
