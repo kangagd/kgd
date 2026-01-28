@@ -82,7 +82,7 @@ export default function EmailMessageView({ message, isFirst, isLast, linkedJobId
   useEffect(() => {
     if (expanded && message.isHistorical && !message.body_html && !fullContent && !loadingFullContent) {
       setLoadingFullContent(true);
-      base44.functions.invoke('fetchGmailMessage', { gmail_message_id: gmailMessageId })
+      base44.functions.invoke('fetchGmailMessage_v20260129', { gmail_message_id: gmailMessageId })
         .then(res => {
           setFullContent(res.data);
         })
