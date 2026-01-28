@@ -57,23 +57,28 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         return Array.from(uniqueParts.values());
       }
       
-      // Method 2: Extract part IDs from visit_scope (warehouse pickups, etc)
+      // Method 2: Fallback to linked_logistics_jobs (most reliable)
+      const allParts = await base44.entities.Part.list();
+      const linkedParts = allParts.filter(p => 
+        p.linked_logistics_jobs && 
+        Array.isArray(p.linked_logistics_jobs) && 
+        p.linked_logistics_jobs.includes(job.id)
+      );
+      
+      if (linkedParts.length > 0) {
+        return linkedParts;
+      }
+      
+      // Fallback: Extract part IDs from visit_scope if no linked parts found
       const partIdsFromScope = (job.visit_scope || [])
         .filter(item => item.type === 'part' && item.ref_id)
         .map(item => item.ref_id);
       
       if (partIdsFromScope.length > 0) {
-        const allParts = await base44.entities.Part.list();
         return allParts.filter(p => partIdsFromScope.includes(p.id));
       }
       
-      // Method 3: Fallback to linked_logistics_jobs (backward compatibility)
-      const allParts = await base44.entities.Part.list();
-      return allParts.filter(p => 
-        p.linked_logistics_jobs && 
-        Array.isArray(p.linked_logistics_jobs) && 
-        p.linked_logistics_jobs.includes(job.id)
-      );
+      return [];
     },
   });
 
