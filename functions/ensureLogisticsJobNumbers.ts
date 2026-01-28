@@ -15,25 +15,33 @@ function getPurposeCode(logisticsPurpose) {
 }
 
 function buildLogisticsJobNumber({ projectNumber, purposeCode, sequence = 1, fallbackShortId }) {
+  const safePurposeCode = purposeCode || 'LOG';
+  
   if (!projectNumber) {
-    return `#LOG-${purposeCode}-${fallbackShortId}`;
+    const safeFallback = fallbackShortId || Math.random().toString(36).substring(2, 8);
+    return `#LOG-${safePurposeCode}-${safeFallback}`;
   }
   
   if (sequence === 1) {
-    return `#${projectNumber}-${purposeCode}`;
+    return `#${projectNumber}-${safePurposeCode}`;
   }
   
-  return `#${projectNumber}-${purposeCode}-${sequence}`;
+  return `#${projectNumber}-${safePurposeCode}-${sequence}`;
 }
 
 function isLogisticsJobNumber(jobNumber) {
   if (!jobNumber) return false;
-  const str = String(jobNumber);
   
-  // Project-linked: #1234-PO-PU or #1234-PO-PU-2
-  // No-project: #LOG-PO-PU-abc123
-  const pattern = /^#(\d+|LOG)-[A-Z]+-[A-Z]+(-[A-Za-z0-9]+)?$/;
-  return pattern.test(str);
+  try {
+    const str = String(jobNumber);
+    // Project-linked: #1234-PO-PU or #1234-PO-PU-2
+    // No-project: #LOG-PO-PU-abc123
+    const pattern = /^#(\d+|LOG)-[A-Z]+-[A-Z]+(-[A-Za-z0-9]+)?$/;
+    return pattern.test(str);
+  } catch (error) {
+    console.error('[isLogisticsJobNumber] Error:', error);
+    return false;
+  }
 }
 
 Deno.serve(async (req) => {
