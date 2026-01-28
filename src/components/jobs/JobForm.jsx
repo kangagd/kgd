@@ -575,6 +575,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
         newFormData.logistics_purpose = logisticsPurpose;
       }
 
+      // Clear free-text supplier address when job type changes
+      newFormData.origin_address = "";
+
       setFormData(newFormData);
 
       // Generate notes if we have a project and notes are currently empty
