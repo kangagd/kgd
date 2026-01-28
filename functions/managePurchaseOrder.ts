@@ -581,7 +581,7 @@ Deno.serve(async (req) => {
                 supplier_id: existing.supplier_id || null,
                 
                 // Increment write_version to detect future stale writes
-                ...incrementWriteVersion(existing, write_source || 'ui')
+                write_version: (existing.write_version || 1) + 1
             };
 
             // Enforce po_reference constraint: required once status ≠ draft
