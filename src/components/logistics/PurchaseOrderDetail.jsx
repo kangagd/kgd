@@ -235,7 +235,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
   const createLogisticsJobMutation = useMutation({
     mutationFn: async () => {
-      const response = await base44.functions.invoke('createLogisticsJobForPO', {
+      const response = await base44.functions.invoke('createLogisticsJobForPO_v20260129', {
         purchase_order_id: poId
       });
       const data = fnData(response);
