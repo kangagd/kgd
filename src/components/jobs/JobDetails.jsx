@@ -2452,75 +2452,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                      </CardContent>
                    </Card>
 
-                   {/* SECTION B: Items to Process */}
-                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg mb-4">
-                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Items to Process</CardTitle>
-                     </CardHeader>
-                     <CardContent className="p-4">
-                       {job.purchase_order_id && purchaseOrderLines.length > 0 ? (
-                         <div className="space-y-2">
-                           {purchaseOrderLines.map((line) => (
-                             <div key={line.id} className="flex items-center justify-between p-3 bg-[#F9FAFB] rounded-lg">
-                               <div className="flex-1 min-w-0 flex items-center gap-2">
-                                 <div className="text-[14px] font-medium text-[#111827]">{line.item_name || 'Item'}</div>
-                                 <Badge className="bg-blue-100 text-blue-700 text-[11px] font-semibold">PO-{purchaseOrder?.po_number}</Badge>
-                               </div>
-                               <div className="flex gap-4 ml-4 text-[12px] text-[#6B7280] whitespace-nowrap">
-                                 <div className="text-right">
-                                   <div className="text-[11px] font-medium text-[#4B5563]">Ordered</div>
-                                   <div className="font-semibold text-[#111827]">{line.qty_ordered || 0}</div>
-                                 </div>
-                                 <div className="text-right">
-                                   <div className="text-[11px] font-medium text-[#4B5563]">Received</div>
-                                   <div className="font-semibold text-[#111827]">{line.qty_received || 0}</div>
-                                 </div>
-                                 <div className="text-right">
-                                   <div className="text-[11px] font-medium text-[#4B5563]">Remaining</div>
-                                   <div className={`font-semibold ${(line.qty_ordered || 0) - (line.qty_received || 0) === 0 ? 'text-green-600' : 'text-[#111827]'}`}>
-                                     {(line.qty_ordered || 0) - (line.qty_received || 0)}
-                                   </div>
-                                 </div>
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       ) : jobParts.length > 0 || jobSamples.length > 0 ? (
-                         <div className="space-y-2">
-                           {jobParts.map((part) => (
-                             <div key={part.id} className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-lg">
-                               <Checkbox checked={checkedItems[part.id] || false} disabled className="opacity-50" />
-                               <div className="flex-1 min-w-0 flex items-center gap-2">
-                                 <span className="text-[14px] font-medium text-[#111827]">{part.item_name || 'Item'}</span>
-                                 {(part.primary_purchase_order_id || part.purchase_order_id) ? (
-                                   <Badge className="bg-blue-100 text-blue-700 text-[11px] font-semibold">PO</Badge>
-                                 ) : (
-                                   <Badge className="bg-green-100 text-green-700 text-[11px] font-semibold">In Stock</Badge>
-                                 )}
-                               </div>
-                               {part.quantity_required && (
-                                 <div className="text-right whitespace-nowrap">
-                                   <div className="text-[11px] font-medium text-[#4B5563]">Required</div>
-                                   <div className="font-semibold text-[#111827]">{part.quantity_required}</div>
-                                 </div>
-                               )}
-                             </div>
-                           ))}
-                           {jobSamples.map((sample) => (
-                             <div key={sample.id} className="flex items-center gap-3 p-3 bg-[#F9FAFB] rounded-lg">
-                               <Checkbox checked={checkedItems[sample.id] || false} disabled className="opacity-50" />
-                               <div className="flex-1 min-w-0 flex items-center gap-2">
-                                 <span className="text-[14px] font-medium text-[#111827]">{sample.name || 'Sample'}</span>
-                                 <Badge className="bg-purple-100 text-purple-700 text-[11px] font-semibold">Sample</Badge>
-                               </div>
-                             </div>
-                           ))}
-                         </div>
-                       ) : (
-                         <p className="text-[14px] text-[#9CA3AF]">No items to process</p>
-                       )}
-                     </CardContent>
-                   </Card>
+
 
                    {/* SECTION C: Inventory Transfer */}
                    <LogisticsJobTransferSection 
