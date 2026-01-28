@@ -64,7 +64,11 @@ export default function QuickBookModal({ open, onClose, selectedDate }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      setIsSubmitting(false);
       handleClose();
+    },
+    onError: () => {
+      setIsSubmitting(false);
     }
   });
 
