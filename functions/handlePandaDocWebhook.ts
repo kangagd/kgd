@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { updateProjectActivity } from './updateProjectActivity.js';
+import { updateProjectActivity } from './updateProjectActivity.ts';
+
+console.log("[DEPLOY_SENTINEL] handlePandaDocWebhook_v20260129 v=2026-01-29");
 
 Deno.serve(async (req) => {
   try {

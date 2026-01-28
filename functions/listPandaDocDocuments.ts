@@ -1,4 +1,6 @@
-import { createClientFromRequest } from './shared/sdk.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+console.log("[DEPLOY_SENTINEL] listPandaDocDocuments_v20260129 v=2026-01-29");
 
 const PANDADOC_API_KEY = Deno.env.get("PANDADOC_API_KEY");
 const PANDADOC_API_URL = "https://api.pandadoc.com/public/v1";
