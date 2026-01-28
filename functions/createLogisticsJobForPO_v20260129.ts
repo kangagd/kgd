@@ -351,11 +351,19 @@ Deno.serve(async (req) => {
              jobData.project_id = po.project_id;
          }
 
+         console.log("[Logistics] creating new job (no existing found)", { poId: purchase_order_id });
+
          const job = await base44.asServiceRole.entities.Job.create(jobData);
 
          // Update PO with linked job reference
          const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
              linked_logistics_job_id: job.id
+         });
+
+         console.log("[Logistics] idempotency new job created", { 
+             poId: purchase_order_id, 
+             jobId: job.id,
+             reused: false 
          });
 
          // Link Parts to this Job with error handling
