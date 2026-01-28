@@ -118,55 +118,6 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
     }
   });
 
-  const recordTransferMutation = useMutation({
-    mutationFn: async () => {
-      // Map selectedItems - send both price_list_item_id and part_id so backend can use either
-      const itemsToTransfer = Object.entries(selectedItems)
-        .filter(([_, qty]) => qty > 0)
-        .map(([partId, qty]) => {
-          const part = jobParts.find(p => p.id === partId);
-          return { 
-            part_id: partId,
-            price_list_item_id: part?.price_list_item_id || null,
-            quantity: qty 
-          };
-        });
-
-      if (itemsToTransfer.length === 0) {
-        throw new Error('Please select at least one item to transfer');
-      }
-
-      const response = await base44.functions.invoke('processLogisticsJobStockActions', {
-        job_id: job.id,
-        mode: 'transfer',
-        from_location_id: sourceLocation?.id,
-        to_location_id: destinationLocation?.id,
-        transfer_items: itemsToTransfer.map(item => ({
-          price_list_item_id: item.price_list_item_id,
-          qty: item.quantity
-        })),
-        notes: notes
-      });
-
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to record transfer');
-      }
-
-      return response.data;
-    },
-    onSuccess: (data) => {
-      toast.success(`Transferred ${data.items_transferred} item(s)`);
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['inventoryQuantities'] });
-      setShowTransferModal(false);
-      setSelectedItems({});
-      setNotes('');
-    },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to record transfer');
-    }
-  });
-
   // Show different UI based on job type
   const isWarehouseTransfer = destinationLocation?.type === 'vehicle' && sourceLocation?.type === 'warehouse';
   // Require both locations (supplier locations now exist as InventoryLocations)
