@@ -122,9 +122,12 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
       const response = await base44.functions.invoke('processLogisticsJobStockActions', {
         job_id: job.id,
         mode: 'transfer',
-        source_location_id: sourceLocation?.id,
-        destination_location_id: destinationLocation?.id,
-        items: itemsToTransfer,
+        from_location_id: sourceLocation?.id,
+        to_location_id: destinationLocation?.id,
+        transfer_items: itemsToTransfer.map(item => ({
+          price_list_item_id: item.price_list_item_id,
+          qty: item.quantity
+        })),
         notes: notes
       });
 
