@@ -4090,30 +4090,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         onClose={() => setShowManageJobStockModal(false)}
       />
 
-      {isLogisticsJob && showProcessStockModal && job?.id && (
-        <>
-          {(job.purchase_order_id || job.reference_type === 'purchase_order') ? (
-            <ReceivePoItemsMixedModal
-              open={true}
-              onOpenChange={setShowProcessStockModal}
-              poId={job.purchase_order_id}
-              poReference={purchaseOrder?.po_number}
-              lineItems={purchaseOrderLines || []}
-              jobId={job.id}
-            />
-          ) : (
-            <TransferItemsModal
-              open={true}
-              onOpenChange={setShowProcessStockModal}
-              jobId={job.id}
-              sourceLocation={sourceLocation || null}
-              destinationLocation={destinationLocation || null}
-              items={jobParts || []}
-            />
-          )}
-        </>
-      )}
-
       {/* Tasks Modal */}
       <Dialog open={showTasksModal} onOpenChange={setShowTasksModal}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
