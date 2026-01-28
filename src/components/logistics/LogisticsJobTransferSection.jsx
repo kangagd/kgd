@@ -383,20 +383,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         </div>
       </CardContent>
 
-      {/* Transfer Modal */}
-      <TransferModal
-        open={showTransferModal}
-        onOpenChange={setShowTransferModal}
-        sourceLocation={sourceLocation}
-        destinationLocation={destinationLocation}
-        jobParts={jobParts}
-        selectedItems={selectedItems}
-        onSelectedItemsChange={setSelectedItems}
-        onConfirm={() => recordTransferMutation.mutate()}
-        isLoading={recordTransferMutation.isPending}
-        notes={notes}
-        onNotesChange={setNotes}
-      />
+
     </Card>
   );
 }
