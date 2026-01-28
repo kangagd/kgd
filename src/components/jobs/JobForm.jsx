@@ -950,13 +950,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   )}
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                  <div className="space-y-2">
+                <div className="space-y-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                  {/* From Location Section */}
+                  <div className="space-y-3">
                     <Label htmlFor="source_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">From Location (Source) *</Label>
                     <Select 
                       value={formData.source_location_id || ""} 
                       onValueChange={(val) => setFormData({ ...formData, source_location_id: val })}
-                      required
+                      required={!formData.origin_address} // Only required if no free-text override
                     >
                       <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                         <SelectValue placeholder={formData.logistics_purpose === 'po_pickup_from_supplier' ? "Select supplier" : "Select warehouse"} />
@@ -972,8 +973,26 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                         })()}
                       </SelectContent>
                     </Select>
+
+                    {/* Free-text supplier override - only for po_pickup_from_supplier */}
+                    {formData.logistics_purpose === 'po_pickup_from_supplier' && (
+                      <div className="space-y-2 pt-2 border-t border-blue-200">
+                        <Label htmlFor="origin_address" className="text-[13px] font-medium text-[#6B7280] leading-[1.4]">Or enter one-off supplier address</Label>
+                        <Input
+                          id="origin_address"
+                          placeholder="Enter supplier name/address for one-off pickup..."
+                          value={formData.origin_address || ""}
+                          onChange={(e) => setFormData({ ...formData, origin_address: e.target.value })}
+                          className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 text-sm"
+                        />
+                        {formData.origin_address && (
+                          <p className="text-[12px] text-blue-600">This will override the location dropdown</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
+                  {/* To Location Section */}
                   <div className="space-y-2">
                     <Label htmlFor="destination_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">To Location (Destination) *</Label>
                     <Select 
@@ -982,7 +1001,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                       required
                     >
                       <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
-                        <SelectValue placeholder="Select vehicle or destination" />
+                        <SelectValue placeholder={formData.project_id ? "Auto-detected from project or select vehicle..." : "Select vehicle or customer site..."} />
                       </SelectTrigger>
                       <SelectContent>
                         {allLocations.filter(loc => loc.type === 'vehicle').map((loc) => (
@@ -992,6 +1011,9 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                         ))}
                       </SelectContent>
                     </Select>
+                    {formData.project_id && !formData.destination_location_id && (
+                      <p className="text-[12px] text-blue-600">If no vehicle selected, delivery will go to project location</p>
+                    )}
                   </div>
                 </div>
               </>
