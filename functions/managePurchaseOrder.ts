@@ -272,9 +272,16 @@ Deno.serve(async (req) => {
                 name: po.name
             });
 
-            // Update project activity if PO is linked to a project
+            // Update project last_activity_at if linked
             if (po.project_id) {
-                await updateProjectActivity(base44, po.project_id, 'PO Created');
+                try {
+                    await base44.asServiceRole.entities.Project.update(po.project_id, {
+                        last_activity_at: new Date().toISOString(),
+                        last_activity_type: 'PO Created'
+                    });
+                } catch (err) {
+                    console.error('Error updating project activity:', err);
+                }
             }
 
             // Create line items with source type support
