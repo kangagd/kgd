@@ -11,6 +11,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * A) Single:    { job_id: string, dry_run?: boolean }
  * B) Bulk:      { job_ids: string[], dry_run?: boolean }
  * C) Bulk-by-PO: { purchase_order_id: string, limit?: number, dry_run?: boolean }
+ * D) Bulk-by-POs: { purchase_order_ids: string[], dry_run?: boolean }
+ * E) All POs:   { all_pos: true, limit?: number, dry_run?: boolean }
  * 
  * Output (Single Mode): { 
  *   updated: boolean, 
@@ -48,16 +50,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { job_id, job_ids, purchase_order_id, limit = 50, dry_run = false } = await req.json();
+    const { job_id, job_ids, purchase_order_id, purchase_order_ids, all_pos, limit = 50, dry_run = false } = await req.json();
 
     // Determine mode
     const isSingleMode = !!job_id;
     const isBulkMode = Array.isArray(job_ids) && job_ids.length > 0;
     const isBulkByPO = !!purchase_order_id;
+    const isBulkByPOs = Array.isArray(purchase_order_ids) && purchase_order_ids.length > 0;
+    const isAllPOs = all_pos === true;
 
-    if (!isSingleMode && !isBulkMode && !isBulkByPO) {
+    if (!isSingleMode && !isBulkMode && !isBulkByPO && !isBulkByPOs && !isAllPOs) {
       return Response.json({ 
-        error: 'Must provide job_id, job_ids, or purchase_order_id' 
+        error: 'Must provide job_id, job_ids, purchase_order_id, purchase_order_ids, or all_pos' 
       }, { status: 400 });
     }
 
@@ -69,13 +73,34 @@ Deno.serve(async (req) => {
     } else if (isBulkMode) {
       jobIdsToProcess = job_ids;
     } else if (isBulkByPO) {
-      // Fetch jobs for this PO
+      // Fetch jobs for this single PO
       const jobs = await base44.asServiceRole.entities.Job.filter(
         { purchase_order_id, is_logistics_job: true },
         '-created_date',
         limit
       );
       jobIdsToProcess = jobs.map(j => j.id);
+    } else if (isBulkByPOs) {
+      // Fetch jobs for multiple POs
+      for (const poId of purchase_order_ids) {
+        const jobs = await base44.asServiceRole.entities.Job.filter(
+          { purchase_order_id: poId, is_logistics_job: true },
+          '-created_date',
+          limit
+        );
+        jobIdsToProcess.push(...jobs.map(j => j.id));
+      }
+    } else if (isAllPOs) {
+      // Fetch all POs and their logistics jobs
+      const allPOs = await base44.asServiceRole.entities.PurchaseOrder.list('-created_date');
+      for (const po of allPOs) {
+        const jobs = await base44.asServiceRole.entities.Job.filter(
+          { purchase_order_id: po.id, is_logistics_job: true },
+          '-created_date',
+          limit
+        );
+        jobIdsToProcess.push(...jobs.map(j => j.id));
+      }
     }
 
     if (jobIdsToProcess.length === 0) {
