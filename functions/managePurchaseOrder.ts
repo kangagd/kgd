@@ -10,6 +10,9 @@ import {
   linkPartsToPO 
 } from './shared/index.js';
 
+// DEPLOYMENT CACHE BUSTER: 2026-01-28T12:00:00Z
+// Forces platform to pick up latest bytecode instead of serving stale cache
+
 // Helper: Sync Parts with PurchaseOrder status
 // CRITICAL: Only syncs parts where primary_purchase_order_id matches (prevents circular references)
 async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId = null) {
