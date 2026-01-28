@@ -480,6 +480,9 @@ Deno.serve(async (req) => {
 
             // Normalize the status first before validation
             const normalizedStatus = normaliseLegacyPoStatus(status);
+            
+            console.log('[managePurchaseOrder] DEBUG PO_STATUS:', PO_STATUS);
+            
             const validStatuses = [
                 PO_STATUS.DRAFT,
                 PO_STATUS.SENT,
@@ -496,10 +499,15 @@ Deno.serve(async (req) => {
             console.log('[managePurchaseOrder] action=updateStatus Status validation:', {
                 received: status,
                 normalized: normalizedStatus,
+                validStatusesCount: validStatuses.length,
                 validStatuses
             });
             
             if (!validStatuses.includes(normalizedStatus)) {
+                console.error('[managePurchaseOrder] Status not in valid list', {
+                    normalized: normalizedStatus,
+                    validStatuses
+                });
                 return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
             }
 
