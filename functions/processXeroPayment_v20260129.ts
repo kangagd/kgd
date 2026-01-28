@@ -11,14 +11,14 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
 
     if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Unauthorized - Admin access required' }, { status: 403 });
+      return Response.json({ success: false, error: 'Unauthorized - Admin access required', version: VERSION }, { status: 403 });
     }
 
     const body = await req.json();
     const { xero_invoice_id, amount, payment_date } = body;
 
     if (!xero_invoice_id || amount === undefined || amount === null) {
-      return Response.json({ error: 'xero_invoice_id and amount are required' }, { status: 400 });
+      return Response.json({ success: false, error: 'xero_invoice_id and amount are required', version: VERSION }, { status: 400 });
     }
 
     const connection = await refreshAndGetXeroConnection(base44);
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     if (!paymentResponse.ok) {
       const error = await paymentResponse.text();
       console.error('Xero payment error:', error);
-      return Response.json({ error: `Failed to process payment: ${error}` }, { status: 500 });
+      return Response.json({ success: false, error: `Failed to process payment: ${error}`, version: VERSION }, { status: 500 });
     }
 
     const paymentResult = await paymentResponse.json();
