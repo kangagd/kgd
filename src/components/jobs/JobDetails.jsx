@@ -1427,6 +1427,15 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                     <Button
                     variant="ghost"
                     size="icon"
+                    onClick={() => navigate(`${createPageUrl("Jobs")}?jobId=${job.id}&action=edit`)}
+                    className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
+                    title="Edit Job">
+    
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowTasksModal(true)}
                     className="h-9 w-9 hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] transition-all rounded-lg"
                     title="Tasks">
