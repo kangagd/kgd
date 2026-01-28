@@ -2436,17 +2436,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                          )}
                        </div>
 
-                       {/* Origin / Destination */}
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-3 border-b border-[#E5E7EB]">
-                         <div>
-                           <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">From</div>
-                           <div className="text-[14px] text-[#111827]">{sourceLocation?.name || '—'}</div>
-                         </div>
-                         <div>
-                           <div className="text-[12px] font-semibold text-[#6B7280] mb-1 uppercase tracking-wide">To</div>
-                           <div className="text-[14px] text-[#111827]">{destinationLocation?.name || '—'}</div>
-                         </div>
-                       </div>
+
 
 
                      </CardContent>
