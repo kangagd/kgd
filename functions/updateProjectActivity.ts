@@ -1,4 +1,10 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+
+// This line re-exports everything from the file updateProjectActivity.ts.
+// The updateProjectActivity function is now expected to be defined in that separate file,
+// and is no longer directly defined within this file.
+export * from "./updateProjectActivity.ts";
 
 /**
  * Updates the last_activity_at timestamp for a project
@@ -33,28 +39,3 @@ Deno.serve(async (req) => {
         return Response.json({ error: error.message }, { status: 500 });
     }
 });
-
-/**
- * Helper function to be imported in other backend functions
- * Can be called with base44 client instance and project_id
- */
-export async function updateProjectActivity(base44, project_id, activity_type = null) {
-    if (!project_id) return;
-    
-    try {
-        const timestamp = new Date().toISOString();
-        const updates = {
-            last_activity_at: timestamp
-        };
-        
-        if (activity_type) {
-            updates.last_activity_type = activity_type;
-        }
-        
-        await base44.asServiceRole.entities.Project.update(project_id, updates);
-        console.log(`Project freshness updated: ${project_id} → ${timestamp} [${activity_type || 'No type specified'}]`);
-    } catch (error) {
-        console.error('Error updating project activity:', error);
-        // Don't throw - this is a background update
-    }
-}

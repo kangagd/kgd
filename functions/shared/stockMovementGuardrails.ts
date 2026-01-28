@@ -1,3 +1,4 @@
+
 import crypto from 'crypto';
 
 /**
@@ -163,3 +164,5 @@ export async function enrichStockMovementWithDurableIdentity(base44, payload) {
 
   return payload;
 }
+
+export * from "./stockMovementGuardrails.ts";

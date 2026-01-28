@@ -1,3 +1,4 @@
+
 /**
  * Xero Integration Helpers
  * 
@@ -205,3 +206,5 @@ export async function ensureXeroConnectionHealthy(base44) {
     throw error;
   }
 }
+
+export * from "./xeroHelpers.ts";

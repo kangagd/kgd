@@ -1,3 +1,4 @@
+
 import { LOGISTICS_PURPOSE, ALL_LOGISTICS_PURPOSES } from './logisticsPurpose.js';
 
 /**
@@ -20,7 +21,7 @@ const HUMAN_LABELS = {
   'po pickup from supplier': LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER,
   'part pickup for install': LOGISTICS_PURPOSE.PART_PICKUP_FOR_INSTALL,
   'manual client dropoff': LOGISTICS_PURPOSE.MANUAL_CLIENT_DROPOFF,
-  'sample dropoff': LOGISTICS_PURPOSE.SAMPLE_DROPOFF,
+  'sample dropoff': LOGISTICS_PURISTICS_PURPOSE.SAMPLE_DROPOFF,
   'sample pickup': LOGISTICS_PURPOSE.SAMPLE_PICKUP,
   // Variants
   'drop': LOGISTICS_PURPOSE.MANUAL_CLIENT_DROPOFF,
@@ -113,3 +114,5 @@ export function getPurposeCode(logisticsPurpose) {
   if (!logisticsPurpose) return 'LOG';
   return PURPOSE_CODES[logisticsPurpose] || 'LOG';
 }
+
+export * from "./normalizeLogisticsPurpose.ts";

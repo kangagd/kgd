@@ -1,3 +1,4 @@
+
 /**
  * Parameter Normalization Helper
  * 
@@ -50,7 +51,7 @@ export function normalizeParams(params) {
  * Extract specific normalized params (convenience helper)
  * 
  * Usage:
- *   const { project_id, job_id } = extractParams(body, ['project_id', 'job_id']);
+ *   const { project_id, job_id } = extractParams(params, ['project_id', 'job_id']);
  */
 export function extractParams(params, keys) {
   const normalized = normalizeParams(params);

@@ -1,3 +1,4 @@
+
 // Logistics Job Numbering Utility (Backend Version)
 // Format: #<project_number>-<purposeCode> or #<project_number>-<purposeCode>-<n> for multiples
 // Fallback (no project): #LOG-<purposeCode>-<shortId>
@@ -58,3 +59,5 @@ export function getNextSequence(existingJobs, projectNumber, purposeCode) {
   
   return sequences.length > 0 ? Math.max(...sequences) + 1 : 1;
 }
+
+export * from "./logisticsJobNumbering.ts";

@@ -1,3 +1,4 @@
+
 /**
  * Job-type specific prompt blocks that force the LLM into the right lens.
  * Each block emphasizes what matters for that job type.
@@ -73,3 +74,5 @@ export function getJobTypePromptBlock(jobTypeName) {
   
   return JOB_TYPE_PROMPTS.general;
 }
+
+export * from "./jobTypeBriefPrompts.ts";
