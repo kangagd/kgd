@@ -757,6 +757,34 @@ Deno.serve(async (req) => {
             if (data.hasOwnProperty('scheduled_date') && !data.scheduled_date && previousJob.status === 'Scheduled') {
                 return Response.json({ error: 'Cannot remove scheduled date from scheduled job' }, { status: 400 });
             }
+
+            // GUARDRAIL: Check for double-booking when rescheduling or reassigning
+            const newAssignedTo = data.assigned_to !== undefined ? data.assigned_to : previousJob.assigned_to;
+            const newScheduledDate = data.scheduled_date !== undefined ? data.scheduled_date : previousJob.scheduled_date;
+            const dateOrAssignmentChanged = (data.assigned_to !== undefined) || (data.scheduled_date !== undefined);
+
+            if (dateOrAssignmentChanged && newAssignedTo && newAssignedTo.length > 0 && newScheduledDate) {
+                const conflictingJobs = await base44.asServiceRole.entities.Job.filter({
+                    assigned_to: { $elemMatch: { $in: newAssignedTo } },
+                    scheduled_date: newScheduledDate,
+                    status: { $in: ['Open', 'Scheduled'] },
+                    deleted_at: null
+                });
+
+                // Exclude the current job from conflict check
+                const actualConflicts = conflictingJobs.filter(j => j.id !== id);
+
+                if (actualConflicts.length > 0) {
+                    const conflictingTechs = newAssignedTo.filter(tech => 
+                        actualConflicts.some(j => j.assigned_to?.includes(tech))
+                    );
+                    return Response.json({ 
+                        error: `Cannot reschedule: ${conflictingTechs.join(', ')} already booked on ${newScheduledDate}. Resolve conflicts first.`,
+                        code: 'DOUBLE_BOOKING_CONFLICT',
+                        conflicts: actualConflicts.map(j => ({ id: j.id, job_number: j.job_number, technician: j.assigned_to }))
+                    }, { status: 409 });
+                }
+            }
             
             // CRITICAL: Check JobType entity for is_logistics flag
             let previousJobTypeIsLogistics = false;
