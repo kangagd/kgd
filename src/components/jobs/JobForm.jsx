@@ -955,10 +955,10 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                   <div className="space-y-3">
                     <Label htmlFor="source_location_id" className="text-[14px] font-medium text-[#111827] leading-[1.4]">From Location (Source) *</Label>
                     <Select 
-                      value={formData.source_location_id || ""} 
-                      onValueChange={(val) => setFormData({ ...formData, source_location_id: val })}
-                      required={!formData.origin_address} // Only required if no free-text override
-                    >
+                       value={formData.source_location_id || ""} 
+                       onValueChange={(val) => setFormData({ ...formData, source_location_id: val, locations_manually_set: true })}
+                       required={!formData.origin_address} // Only required if no free-text override
+                     >
                       <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                         <SelectValue placeholder={formData.logistics_purpose === 'po_pickup_from_supplier' ? "Select supplier" : "Select warehouse"} />
                       </SelectTrigger>
