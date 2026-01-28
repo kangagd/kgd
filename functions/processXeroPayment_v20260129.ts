@@ -3,6 +3,8 @@ import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelper
 
 console.log("[DEPLOY_SENTINEL] processXeroPayment_v20260129 v=2026-01-29");
 
+const VERSION = "2026-01-29";
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -65,11 +67,11 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       payment: payment,
-      version: '2026-01-29'
+      version: VERSION
     });
 
   } catch (error) {
     console.error('Process payment error:', error);
-    return Response.json({ error: error.message, version: '2026-01-29' }, { status: 500 });
+    return Response.json({ error: error.message, version: VERSION }, { status: 500 });
   }
 });

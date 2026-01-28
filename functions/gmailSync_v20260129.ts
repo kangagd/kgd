@@ -4,6 +4,8 @@ import { gmailFetch } from './shared/gmailClient.js';
 
 console.log("[DEPLOY_SENTINEL] gmailSync_v20260129 v=2026-01-29");
 
+const VERSION = "2026-01-29";
+
 /**
  * Safe normalization - only apply after correct UTF-8 decoding
  * Does NOT attempt to fix encoding; only normalizes valid UTF-8

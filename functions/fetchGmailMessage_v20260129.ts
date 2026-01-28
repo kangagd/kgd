@@ -3,6 +3,8 @@ import { gmailFetch } from './shared/gmailClient.ts';
 
 console.log("[DEPLOY_SENTINEL] fetchGmailMessage_v20260129 v=2026-01-29");
 
+const VERSION = "2026-01-29";
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -78,10 +80,11 @@ Deno.serve(async (req) => {
     return Response.json({
         body_html: bodyHtml,
         body_text: bodyText,
-        attachments
+        attachments,
+        version: VERSION
     });
 
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ error: error.message, version: VERSION }, { status: 500 });
   }
 });

@@ -6,6 +6,8 @@ import { getNextLogisticsSequence, buildCounterKey } from './shared/atomicLogist
 
 console.log("[DEPLOY_SENTINEL] createLogisticsJobForPO_v20260129 v=2026-01-29");
 
+const VERSION = "2026-01-29";
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -314,7 +316,7 @@ Deno.serve(async (req) => {
              partsCreated: allParts.length,
              supplierLocationCreated: !!supplierLocation,
              linkingErrors: linkingErrors.length > 0 ? linkingErrors : undefined,
-             version: '2026-01-29'
+             version: VERSION
          });
 
      } catch (error) {
@@ -322,7 +324,7 @@ Deno.serve(async (req) => {
          return Response.json({ 
              success: false, 
              error: error.message,
-             version: '2026-01-29'
+             version: VERSION
          }, { status: 500 });
      }
-});
+     });

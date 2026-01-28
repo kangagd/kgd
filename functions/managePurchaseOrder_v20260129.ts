@@ -12,6 +12,8 @@ import {
 
 console.log("[DEPLOY_SENTINEL] managePurchaseOrder_v20260129 v=2026-01-29");
 
+const VERSION = "2026-01-29";
+
 // DEPLOYMENT CACHE BUSTER: 2026-01-28T12:00:00Z
 // Forces platform to pick up latest bytecode instead of serving stale cache
 
@@ -522,6 +524,7 @@ Deno.serve(async (req) => {
             return Response.json({ 
                 success: true, 
                 purchaseOrder: updatedPO,
+                version: VERSION,
                 ...(logisticsJob ? { logisticsJob } : {})
             });
         }
