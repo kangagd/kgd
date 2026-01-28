@@ -106,11 +106,9 @@ export async function linkPartsToPO(base44, purchaseOrderId, lineItems) {
                 }
             }
 
-            // Build purchase_order_ids array
-            const existingPoIds = part.purchase_order_ids || [];
-            if (part.purchase_order_id && !existingPoIds.includes(part.purchase_order_id)) {
-                existingPoIds.push(part.purchase_order_id);
-            }
+            // Build purchase_order_ids array (CANONICAL SOURCE)
+            // Only trust existing purchase_order_ids array - DO NOT auto-import singular purchase_order_id
+            const existingPoIds = Array.isArray(part.purchase_order_ids) ? [...part.purchase_order_ids] : [];
             
             // Add new PO if not already in array
             if (!existingPoIds.includes(purchaseOrderId)) {
