@@ -37,7 +37,6 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
-import LogisticsV2 from './pages/LogisticsV2';
 import __Layout from './Layout.jsx';
 
 
@@ -81,7 +80,6 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
-    "LogisticsV2": LogisticsV2,
 }
 
 export const pagesConfig = {
