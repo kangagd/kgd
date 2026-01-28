@@ -201,7 +201,7 @@ export default function Jobs() {
   const createJobMutation = useMutation({
     mutationFn: async (data) => {
       const response = await base44.functions.invoke('manageJob', { action: 'create', data });
-      
+
       // Sync address from project if job is linked to a project
       if (response.data?.project_id) {
         try {
@@ -212,13 +212,17 @@ export default function Jobs() {
           console.error('Failed to sync address from project:', err);
         }
       }
-      
+
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all });
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       refetch();
+      const jobId = response.data?.id;
+      if (jobId) {
+        navigate(createPageUrl("Jobs") + "?jobId=" + jobId);
+      }
       setShowForm(false);
       setEditingJob(null);
       setPreselectedCustomerId(null);
