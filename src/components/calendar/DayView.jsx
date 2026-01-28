@@ -45,12 +45,14 @@ const statusColors = {
 const getJobTypeColor = (jobTypeName, allJobTypes) => {
   if (!jobTypeName) return "bg-slate-500";
   const index = allJobTypes.indexOf(jobTypeName);
+  if (index === -1) return "bg-slate-500";
   return jobTypeColors[index % jobTypeColors.length];
 };
 
 const getJobTypeBgColor = (jobTypeName, allJobTypes) => {
   if (!jobTypeName) return "bg-slate-50";
   const index = allJobTypes.indexOf(jobTypeName);
+  if (index === -1) return "bg-slate-50";
   return jobTypeColorsBg[index % jobTypeColorsBg.length];
 };
 
