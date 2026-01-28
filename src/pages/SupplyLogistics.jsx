@@ -29,8 +29,8 @@ export default function SupplyLogistics() {
   const { data: purchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders'],
     queryFn: () => base44.entities.PurchaseOrder.filter({}),
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
     retry: (count, err) => err?.status !== 429 && count < 2,
   });
 
