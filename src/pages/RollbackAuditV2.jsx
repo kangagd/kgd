@@ -130,6 +130,21 @@ export default function RollbackAuditV2() {
   const [isRunning, setIsRunning] = useState(false);
   const queryClient = useQueryClient();
 
+  // Fetch DATA_INTEGRITY_MODE status
+  const { data: appSettings } = useQuery({
+    queryKey: ['app-settings', 'DATA_INTEGRITY_MODE'],
+    queryFn: async () => {
+      try {
+        const settings = await base44.asServiceRole.entities.AppSetting.filter({ key: 'DATA_INTEGRITY_MODE' });
+        return settings.length > 0 ? settings[0] : null;
+      } catch (e) {
+        console.error('Error fetching DATA_INTEGRITY_MODE:', e);
+        return null;
+      }
+    },
+    staleTime: 30000
+  });
+
   const handleRunAudit = async () => {
     setIsRunning(true);
     try {
@@ -147,11 +162,18 @@ export default function RollbackAuditV2() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Rollback Audit (V2)</h1>
-        <p className="text-gray-600 text-sm mt-1">
-          Comprehensive app integrity scan to detect regressions and deployment issues
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Rollback Audit (V2)</h1>
+          <p className="text-gray-600 text-sm mt-1">
+            Comprehensive app integrity scan to detect regressions and deployment issues
+          </p>
+        </div>
+        {appSettings && (
+          <Badge className={appSettings.value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+            Data Integrity Mode: {appSettings.value ? 'ON' : 'OFF'}
+          </Badge>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
