@@ -531,16 +531,18 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
             )}
           </div>
 
-          <div>
-            <Label className="text-xs font-medium">Notes (Optional)</Label>
-            <Input
-              value={notes}
-              onChange={(e) => onNotesChange(e.target.value)}
-              placeholder="e.g., Stock verified and counted"
-              disabled={isProcessing}
-              className="mt-1 h-8 text-sm"
-            />
-          </div>
+          {trackableItems.length > 0 && (
+            <div>
+              <Label className="text-xs font-medium">Notes (Optional)</Label>
+              <Input
+                value={notes}
+                onChange={(e) => onNotesChange(e.target.value)}
+                placeholder="e.g., Stock verified and counted"
+                disabled={isProcessing}
+                className="mt-1 h-8 text-sm"
+              />
+            </div>
+          )}
 
           <Button
             onClick={handleProcess}
