@@ -5,14 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Truck, Package } from 'lucide-react';
 import { format } from 'date-fns';
+import { fnData } from '@/components/utils/fnData';
 
 export default function POLogisticsJobsSection({ purchaseOrderId }) {
   // Fetch all logistics jobs linked to this PO
   const { data: linkedJobs = [], isLoading } = useQuery({
     queryKey: ['poLogisticsJobs', purchaseOrderId],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getPoLogisticsJobs', { purchaseOrderId });
-      const jobs = response?.jobs ?? response?.data?.jobs ?? [];
+      const response = await base44.functions.invoke('getPoLogisticsJobs', { 
+        purchase_order_id: purchaseOrderId 
+      });
+      const data = fnData(response);
+      const jobs = data.jobs ?? data.data ?? [];
       return jobs.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!purchaseOrderId

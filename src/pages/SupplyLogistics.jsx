@@ -18,6 +18,7 @@ import BackButton from "../components/common/BackButton";
 import { getPoDisplayReference, getPoDisplayTitle } from "@/components/domain/poDisplayHelpers";
 import { getPoEta, getPoSupplierName, safeParseDate } from "@/components/domain/schemaAdapters";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { fnData } from "@/components/utils/fnData";
 
 export default function SupplyLogistics() {
   const [activeTab, setActiveTab] = useState("board");
@@ -153,20 +154,23 @@ export default function SupplyLogistics() {
       
       const normalizedStatus = statusMap[newStatus] || newStatus;
       
-      const response = await base44.functions.invoke('updatePurchaseOrderStatus', {
-        po_id: poId,
+      const response = await base44.functions.invoke('managePurchaseOrder', {
+        action: 'updateStatus',
+        id: poId,
         status: normalizedStatus
       });
       
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to update status');
+      const data = fnData(response);
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to update status');
       }
-      return response.data;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
       queryClient.invalidateQueries({ queryKey: ['parts'] });
       queryClient.invalidateQueries({ queryKey: ['allJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['poLogisticsJobs'] });
       toast.success('PO status updated');
     },
     onError: (error) => {

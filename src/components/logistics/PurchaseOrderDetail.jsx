@@ -34,6 +34,7 @@ import {
 import ReceivePoItemsMixedModal from "./ReceivePoItemsMixedModal";
 import POLogisticsJobsSection from "./POLogisticsJobsSection";
 import { devLog } from "@/components/utils/devLog";
+import { fnData } from "@/components/utils/fnData";
 
 export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
   const navigate = useNavigate();
@@ -237,10 +238,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
       const response = await base44.functions.invoke('createLogisticsJobForPO', {
         purchase_order_id: poId
       });
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to create logistics job');
+      const data = fnData(response);
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create logistics job');
       }
-      return response.data;
+      return data;
     },
     onSuccess: async (data) => {
       // Invalidate all relevant queries
@@ -269,10 +271,11 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
         action: 'delete',
         id: poId
       });
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to delete PO');
+      const data = fnData(response);
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to delete PO');
       }
-      return response.data;
+      return data;
     },
     onSuccess: async () => {
       await invalidatePurchaseOrderBundle(queryClient, poId);
@@ -1045,18 +1048,20 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                   setFormData((prev) => ({ ...prev, status: value }));
 
                   try {
-                    const response = await base44.functions.invoke("updatePurchaseOrderStatus", {
-                      po_id: po.id,
+                    const response = await base44.functions.invoke("managePurchaseOrder", {
+                      action: 'updateStatus',
+                      id: po.id,
                       status: value,
                     });
 
-                    if (!response?.data?.success) {
+                    const data = fnData(response);
+                    if (!data.success) {
                       setFormData((prev) => ({ ...prev, status: po.status }));
-                      toast.error(response?.data?.error || "Failed to update status");
+                      toast.error(data.error || "Failed to update status");
                       return;
                     }
 
-                    const updatedPO = response.data.purchaseOrder;
+                    const updatedPO = data.purchaseOrder;
                     
                     // Apply returned PO to both cache and formData
                     applyReturnedPO(updatedPO);
@@ -1070,7 +1075,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
                     ]);
                     
                     // Show appropriate message
-                    if (response.data.logisticsJob) {
+                    if (data.logisticsJob) {
                       toast.success("Status updated and logistics job created");
                     } else {
                       toast.success("Status updated");

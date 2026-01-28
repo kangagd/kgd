@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
             is_logistics_job: true
         });
 
-        return Response.json({ success: true, data: jobs });
+        return Response.json({ success: true, jobs });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }

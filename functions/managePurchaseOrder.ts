@@ -14,8 +14,9 @@ async function syncPartsWithPurchaseOrderStatus(base44, purchaseOrder, vehicleId
         
         // Fetch Parts where this PO is the PRIMARY (authoritative) PO
         // This prevents overwrites when a part is linked to multiple POs
-        const parts = await base44.asServiceRole.entities.Part.list(null, 500);
-        const relevantParts = parts.filter(p => p.primary_purchase_order_id === purchaseOrder.id);
+        const relevantParts = await base44.asServiceRole.entities.Part.filter({ 
+            primary_purchase_order_id: purchaseOrder.id 
+        });
 
         if (relevantParts.length === 0) {
             console.log(`[syncParts] No parts with primary_purchase_order_id=${purchaseOrder.id}`);
