@@ -936,14 +936,17 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                       required
                     >
                       <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
-                        <SelectValue placeholder="Select warehouse or supplier" />
+                        <SelectValue placeholder={formData.logistics_purpose === 'po_pickup_from_supplier' ? "Select supplier" : "Select warehouse"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {allLocations.filter(loc => loc.type === 'warehouse').map((loc) => (
-                          <SelectItem key={loc.id} value={loc.id}>
-                            {loc.name}
-                          </SelectItem>
-                        ))}
+                        {(() => {
+                          const locType = formData.logistics_purpose === 'po_pickup_from_supplier' ? 'supplier' : 'warehouse';
+                          return allLocations.filter(loc => loc.type === locType).map((loc) => (
+                            <SelectItem key={loc.id} value={loc.id}>
+                              {loc.name}
+                            </SelectItem>
+                          ));
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>
