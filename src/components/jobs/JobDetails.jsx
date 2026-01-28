@@ -2522,32 +2522,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                      </CardContent>
                    </Card>
 
-                   {/* SECTION C: Stock Processing Outcome */}
-                   <Card className="border border-[#E5E7EB] shadow-sm rounded-lg mb-4">
-                     <CardHeader className="bg-white px-4 py-3 border-b border-[#E5E7EB]">
-                       <CardTitle className="text-[16px] font-semibold text-[#111827] leading-[1.2]">Stock Processing Status</CardTitle>
-                     </CardHeader>
-                     <CardContent className="p-4 space-y-3">
-                       {stock_transfer_status === 'completed' ? (
-                         <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                           <div className="flex items-center gap-2 text-green-700 mb-2">
-                             <CheckCircle className="w-5 h-5" />
-                             <span className="font-semibold">Stock Processed</span>
-                           </div>
-                           {job.linked_stock_movement_batch_id && (
-                             <p className="text-[12px] text-green-700">Batch ID: {job.linked_stock_movement_batch_id}</p>
-                           )}
-                         </div>
-                       ) : stock_transfer_status === 'skipped' ? (
-                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                           <p className="text-[14px] text-amber-800"><strong>Stock transfer skipped</strong> for this job.</p>
-                         </div>
-                       ) : (
-                         <p className="text-[14px] text-[#6B7280]">No inventory updates have been applied yet. Click <strong>Process Stock</strong> below to proceed.</p>
-                       )}
-
-                     </CardContent>
-                   </Card>
+                   {/* SECTION C: Inventory Transfer */}
+                   <LogisticsJobTransferSection 
+                     job={job} 
+                     sourceLocation={sourceLocation} 
+                     destinationLocation={destinationLocation} 
+                   />
 
 
 
