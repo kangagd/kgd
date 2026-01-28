@@ -998,7 +998,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                     <Select 
                       value={formData.destination_location_id || ""} 
                       onValueChange={(val) => setFormData({ ...formData, destination_location_id: val })}
-                      required
+                      required={!formData.project_id} // Only required if no project (no auto-detect)
                     >
                       <SelectTrigger className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20">
                         <SelectValue placeholder={formData.project_id ? "Auto-detected from project or select vehicle..." : "Select vehicle or customer site..."} />
@@ -1012,7 +1012,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                       </SelectContent>
                     </Select>
                     {formData.project_id && !formData.destination_location_id && (
-                      <p className="text-[12px] text-blue-600">If no vehicle selected, delivery will go to project location</p>
+                      <p className="text-[12px] text-blue-600">Will auto-deliver to linked project address unless you select a vehicle</p>
                     )}
                   </div>
                 </div>
