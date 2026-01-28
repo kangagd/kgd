@@ -1045,6 +1045,12 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
               <Select
                 value={formData.status}
                 onValueChange={async (value) => {
+                  // Frontend validation: block non-draft status if po_reference missing
+                  if (value !== 'draft' && (!formData.po_reference || formData.po_reference.trim() === '')) {
+                    toast.error("PO Reference is required before changing status.");
+                    return;
+                  }
+
                   setFormData((prev) => ({ ...prev, status: value }));
 
                   try {
