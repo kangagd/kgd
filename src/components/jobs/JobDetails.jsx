@@ -66,6 +66,7 @@ import ThirdPartyTradesInfo from "./ThirdPartyTradesInfo";
 import BackButton from "../common/BackButton";
 import SampleQuickActionsPanel from "./SampleQuickActionsPanel";
 import AttentionItemsPanel from "../attention/AttentionItemsPanel";
+import LogisticsJobTransferSection from "./LogisticsJobTransferSection";
 import JobBriefCard from "./JobBriefCard";
 import VisitScopeSection from "./VisitScopeSection";
 import VisitRequirementsPanel from "./VisitRequirementsPanel";
