@@ -98,7 +98,7 @@ export default function AttachmentCard({
           let urlToSave = resolvedUrl;
           if (!urlToSave) {
             try {
-              const result = await base44.functions.invoke('getGmailAttachment', {
+              const result = await base44.functions.invoke('getGmailAttachment_v20260129', {
                 gmail_message_id: effectiveGmailMessageId,
                 attachment_id: effectiveAttachmentId,
                 filename: attachment.filename,
