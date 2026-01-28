@@ -235,6 +235,7 @@ export default function Jobs() {
       setShowForm(false);
       setEditingJob(null);
       setSelectedJob(null);
+      setSearchParams({});
       notifySuccess('Job updated successfully');
     },
     onError: (error) => {
