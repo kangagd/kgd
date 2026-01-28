@@ -354,7 +354,7 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
 
   const getModeLabel = () => mode === 'po_receipt' ? 'Processing PO Receipt' : 'Transferring Stock';
   const getQtyLabel = () => mode === 'po_receipt' ? 'Qty Received' : 'Qty to Transfer';
-  const canProcess = sourceLocation && destinationLocation && selectedCount > 0 && !isProcessing;
+  const canProcess = sourceLocation && destinationLocation && selectedCount > 0 && !isProcessing && status !== 'completed';
   const hasItems = jobParts.length > 0;
 
   const handleProcess = async () => {
