@@ -479,18 +479,14 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
       ) : (
         <>
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium">Items to Process</Label>
-              <span className="text-xs text-blue-700">{getQtyLabel()}</span>
-            </div>
-            <div className="space-y-2 max-h-[250px] overflow-y-auto">
+            <div className="text-xs font-medium text-blue-900 mb-2">Enter quantities below:</div>
+            <div className="space-y-1">
               {validItems.map((part) => (
-                <div key={part.id} className="flex items-center gap-3 p-2 bg-white border border-gray-200 rounded-lg">
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">{part.item_name || 'Unnamed Part'}</div>
-                    <div className="text-xs text-gray-500">Required: {part.quantity_required || 1}</div>
+                <div key={part.id} className="flex items-center gap-2 py-1.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">{part.item_name || 'Unnamed Part'}</div>
                   </div>
-                  <div className="w-24">
+                  <div className="w-20">
                     <Input
                       type="number"
                       min="0"
@@ -499,17 +495,14 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
                       value={selectedItems[part.id] || ''}
                       onChange={(e) => onSelectedItemsChange({ ...selectedItems, [part.id]: parseFloat(e.target.value) || 0 })}
                       disabled={isProcessing}
-                      className="h-8 text-sm"
+                      className="h-7 text-xs"
                     />
                   </div>
-                  {selectedItems[part.id] > 0 && (
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
-                  )}
                 </div>
               ))}
             </div>
             {selectedCount > 0 && (
-              <div className="text-xs text-green-700 font-medium">{selectedCount} item(s) selected</div>
+              <div className="text-xs text-green-700 font-medium mt-2">{selectedCount} item(s) ready</div>
             )}
           </div>
 
