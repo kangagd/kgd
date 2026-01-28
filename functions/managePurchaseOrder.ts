@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { updateProjectActivity } from './updateProjectActivity.js';
 import { PO_STATUS, PART_STATUS, PART_LOCATION, PO_DELIVERY_METHOD } from './shared/constants.js';
 import { mapPoStatusToPartStatus, linkPartsToPO } from './shared/partHelpers.js';
 import { normaliseLegacyPoStatus, resolvePoRef, firstNonEmpty } from './shared/poHelpers.js';
@@ -272,7 +273,10 @@ Deno.serve(async (req) => {
                 name: po.name
             });
 
-
+            // Update project activity if PO is linked to a project
+            if (po.project_id) {
+                await updateProjectActivity(base44, po.project_id, 'PO Created');
+            }
 
             // Create line items with source type support
             for (const item of line_items) {
@@ -409,7 +413,10 @@ Deno.serve(async (req) => {
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
             await syncPartReferencesWithPO(base44, updatedPO);
 
-
+            // Update project activity if PO is linked to a project
+            if (updatedPO.project_id) {
+                await updateProjectActivity(base44, updatedPO.project_id, 'PO Updated');
+            }
 
             // Update line items if provided
             if (line_items && Array.isArray(line_items)) {
@@ -637,7 +644,14 @@ Deno.serve(async (req) => {
                 name: updatedPO.name
             });
 
-
+            // STEP 3: Update project activity if PO is linked to a project
+            if (updatedPO.project_id) {
+                const activityType = newStatus === PO_STATUS.IN_LOADING_BAY ? 'PO Delivered' :
+                                   newStatus === PO_STATUS.IN_STORAGE ? 'PO in Storage' :
+                                   newStatus === PO_STATUS.IN_VEHICLE ? 'PO in Vehicle' :
+                                   'PO Status Updated';
+                await updateProjectActivity(base44, updatedPO.project_id, activityType);
+            }
 
             // STEP 4: Sync linked Parts status/location and references
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO, vehicle_id);
