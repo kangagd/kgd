@@ -485,7 +485,7 @@ Deno.serve(async (req) => {
 
         // Action: updateStatus
         if (action === 'updateStatus') {
-            console.log('[managePurchaseOrderV2] action=updateStatus po=' + id + ' user=' + user.email);
+            console.log('[managePurchaseOrderV2] action=updateStatus po=' + id + ' user=' + user.email + ' status=' + status);
             
             if (!id || !status) {
                 return Response.json({ error: 'id and status are required' }, { status: 400 });
@@ -493,6 +493,7 @@ Deno.serve(async (req) => {
 
             // Normalize the status first before validation
             const normalizedStatus = normaliseLegacyPoStatus(status);
+            console.log('[managePurchaseOrderV2] Normalized status:', { input: status, normalized: normalizedStatus });
             
             // Valid statuses (hardcoded to bypass import cache issues)
             const validStatuses = [
@@ -507,6 +508,8 @@ Deno.serve(async (req) => {
                 "installed",
                 "cancelled"
             ];
+            
+            console.log('[managePurchaseOrderV2] Validation check:', { normalized: normalizedStatus, isValid: validStatuses.includes(normalizedStatus) });
             
             if (!validStatuses.includes(normalizedStatus)) {
                 return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
