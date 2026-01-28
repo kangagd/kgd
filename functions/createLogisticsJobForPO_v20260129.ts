@@ -34,16 +34,81 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
-        // GUARDRAIL: For supplier-based logistics, PO must have a supplier
-        if (
-            (po.delivery_method === PO_DELIVERY_METHOD.PICKUP || po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) &&
-            !po.supplier_id
-        ) {
-            return Response.json({ 
-                success: false, 
-                error: 'PO supplier is required for supplier pickup/delivery logistics jobs.' 
-            }, { status: 400 });
-        }
+        // IDEMPOTENCY GUARD: Check if a logistics job already exists for this PO
+         let existingJob = null;
+
+         // First check if PO has linked_logistics_job_id
+         if (po.linked_logistics_job_id) {
+             try {
+                 existingJob = await base44.asServiceRole.entities.Job.get(po.linked_logistics_job_id);
+                 if (existingJob) {
+                     console.log("[Logistics] idempotency reused via linked_logistics_job_id", { 
+                         poId: purchase_order_id, 
+                         jobId: existingJob.id,
+                         reused: true 
+                     });
+                     return Response.json({
+                         success: true,
+                         job: existingJob,
+                         purchaseOrder: po,
+                         reused: true,
+                         version: VERSION
+                     });
+                 }
+             } catch (err) {
+                 console.error('Error fetching linked job:', err);
+             }
+         }
+
+         // If no linked job, query for existing jobs by purchase_order_id
+         try {
+             const existingJobs = await base44.asServiceRole.entities.Job.filter({
+                 purchase_order_id: po.id
+             });
+
+             if (existingJobs.length > 0) {
+                 // Choose the most recent by created_date
+                 existingJob = existingJobs.reduce((latest, current) => {
+                     const latestTime = new Date(latest.created_date || 0).getTime();
+                     const currentTime = new Date(current.created_date || 0).getTime();
+                     return currentTime > latestTime ? current : latest;
+                 });
+
+                 console.log("[Logistics] idempotency reused via existing job query", { 
+                     poId: purchase_order_id, 
+                     jobId: existingJob.id,
+                     reused: true 
+                 });
+
+                 // Update PO link if not already set
+                 if (!po.linked_logistics_job_id) {
+                     await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
+                         linked_logistics_job_id: existingJob.id
+                     });
+                 }
+
+                 return Response.json({
+                     success: true,
+                     job: existingJob,
+                     purchaseOrder: po,
+                     reused: true,
+                     version: VERSION
+                 });
+             }
+         } catch (err) {
+             console.error('Error querying existing logistics jobs:', err);
+         }
+
+         // GUARDRAIL: For supplier-based logistics, PO must have a supplier
+         if (
+             (po.delivery_method === PO_DELIVERY_METHOD.PICKUP || po.delivery_method === PO_DELIVERY_METHOD.DELIVERY) &&
+             !po.supplier_id
+         ) {
+             return Response.json({ 
+                 success: false, 
+                 error: 'PO supplier is required for supplier pickup/delivery logistics jobs.' 
+             }, { status: 400 });
+         }
 
         // Determine logistics purpose and job type based on delivery method
         let logisticsPurpose, jobTypeName, originAddress, destinationAddress;
