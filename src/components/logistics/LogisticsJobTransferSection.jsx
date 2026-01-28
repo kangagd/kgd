@@ -341,6 +341,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
 function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationLocation, selectedItems, onSelectedItemsChange, notes, onNotesChange, isLegacy }) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingErrorDetails, setProcessingErrorDetails] = useState(null);
   const queryClient = useQueryClient();
 
   const selectedCount = Object.values(selectedItems).filter(qty => qty > 0).length;
@@ -353,41 +354,132 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
     return 'Complete Transfer';
   };
 
+  // Determine mode based on job context
+  const getMode = () => {
+    const isPoJob = !!job?.purchase_order_id;
+    const purpose = (job?.logistics_purpose || '').toLowerCase();
+    const isPoReceiveFlow = isPoJob && (
+      purpose.includes('po_') ||
+      purpose.includes('pickup') ||
+      purpose.includes('delivery') ||
+      purpose.includes('receive')
+    );
+    return isPoReceiveFlow ? 'po_receipt' : 'transfer';
+  };
+
+  const mode = getMode();
   const canProcess = sourceLocation && destinationLocation && selectedCount > 0 && !isProcessing;
 
   const handleProcess = async () => {
     try {
       setIsProcessing(true);
-      const itemsToTransfer = Object.entries(selectedItems)
-        .filter(([_, qty]) => qty > 0)
-        .map(([partId, qty]) => {
-          const part = jobParts.find(p => p.id === partId);
-          return {
-            price_list_item_id: part?.price_list_item_id || null,
-            qty: parseFloat(qty)
-          };
-        });
+      setProcessingErrorDetails(null);
 
-      const response = await base44.functions.invoke('processLogisticsJobStockActions', {
+      // Build payload based on mode
+      let payload = {
         job_id: job.id,
-        mode: 'transfer',
-        from_location_id: sourceLocation.id,
-        to_location_id: destinationLocation.id,
-        transfer_items: itemsToTransfer,
-        notes: notes
-      });
+        mode: mode,
+        notes: notes || undefined
+      };
 
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Failed to process stock');
+      if (mode === 'po_receipt') {
+        // PO receipt mode: validate destination location and build items list
+        const locationId = destinationLocation?.id;
+        if (!locationId) {
+          toast.error('Destination location required to receive items');
+          setIsProcessing(false);
+          return;
+        }
+
+        // Extract PO line IDs from parts
+        const itemsForReceipt = Object.entries(selectedItems)
+          .filter(([_, qty]) => qty > 0)
+          .map(([partId, qty]) => {
+            const part = jobParts.find(p => p.id === partId);
+            return {
+              purchase_order_line_id: part?.po_line_id || null,
+              qty: parseFloat(qty)
+            };
+          });
+
+        // Validate all items have po_line_id
+        const missingLineIds = itemsForReceipt.filter(i => !i.purchase_order_line_id);
+        if (missingLineIds.length > 0) {
+          toast.error('Some selected items are missing PO line links (po_line_id)');
+          setIsProcessing(false);
+          return;
+        }
+
+        if (itemsForReceipt.length === 0) {
+          toast.error('No valid items selected');
+          setIsProcessing(false);
+          return;
+        }
+
+        payload.location_id = locationId;
+        payload.items = itemsForReceipt;
+      } else {
+        // Transfer mode: validate both locations and build transfer_items
+        const fromId = sourceLocation?.id;
+        const toId = destinationLocation?.id;
+        if (!fromId || !toId) {
+          toast.error('From and To locations required for transfer');
+          setIsProcessing(false);
+          return;
+        }
+
+        const transferItems = Object.entries(selectedItems)
+          .filter(([_, qty]) => qty > 0)
+          .map(([partId, qty]) => {
+            const part = jobParts.find(p => p.id === partId);
+            return {
+              price_list_item_id: part?.price_list_item_id || null,
+              qty: parseFloat(qty)
+            };
+          });
+
+        // Validate all items have price_list_item_id
+        const missingSkus = transferItems.filter(i => !i.price_list_item_id);
+        if (missingSkus.length > 0) {
+          toast.error('Some selected items are missing SKU links (price_list_item_id)');
+          setIsProcessing(false);
+          return;
+        }
+
+        if (transferItems.length === 0) {
+          toast.error('No valid items selected');
+          setIsProcessing(false);
+          return;
+        }
+
+        payload.from_location_id = fromId;
+        payload.to_location_id = toId;
+        payload.transfer_items = transferItems;
       }
 
-      toast.success(`Stock processed: ${response.data.items_transferred} item(s)`);
+      // Invoke backend
+      const response = await base44.functions.invoke('processLogisticsJobStockActions', payload);
+
+      if (!response.data?.success) {
+        // Check if response has item-level failures
+        const failures = response.data?.details?.failures;
+        if (failures && Array.isArray(failures)) {
+          setProcessingErrorDetails(failures);
+          toast.error(`${failures.length} item(s) failed to process`);
+        } else {
+          throw new Error(response.data?.error || 'Failed to process stock');
+        }
+        return;
+      }
+
+      toast.success(`Stock processed: ${response.data.items_processed} item(s)`);
       queryClient.invalidateQueries({ queryKey: ['job', job.id] });
       queryClient.invalidateQueries({ queryKey: ['inventoryQuantities'] });
       
-      // Reset form
+      // Reset form only on success
       onSelectedItemsChange({});
       onNotesChange('');
+      setProcessingErrorDetails(null);
     } catch (error) {
       toast.error(error.message || 'Failed to process stock');
     } finally {
