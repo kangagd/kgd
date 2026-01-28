@@ -170,27 +170,47 @@ export default function EmailMessageView({ message, isFirst, isLast, linkedJobId
       html = html.replace(cidPattern, url);
     }
     
-    return html;
-  }, [displayMessage.body_html, inlineImageUrls]);
+    // CRITICAL: Sanitize HTML to remove scripts, event handlers, and unsafe content
+    const sanitized = sanitizeForDisplay(html);
+    
+    // Dev-only warning if sanitization was skipped
+    if (process.env.NODE_ENV === 'development' && !sanitized && html) {
+      console.warn('[EmailMessageView] HTML rendered without sanitization', { messageId: message.id });
+    }
+    
+    return sanitized;
+  }, [displayMessage.body_html, inlineImageUrls, message.id]);
 
   // Format email content - preserve original HTML when available
   const formattedEmailContent = useMemo(() => {
-    // If we have HTML content, use it directly (already sanitized)
+    // If we have HTML content, use it (already sanitized in processedBodyHtml)
     if (processedBodyHtml) {
       return { html: processedBodyHtml, hasSignature: false, hasQuotes: false };
     }
     
-    // For plain text, convert to formatted HTML
+    // For plain text, convert to formatted HTML and sanitize
     if (displayMessage.body_text) {
-      return processEmailForDisplay(displayMessage.body_text, {
+      const formatted = processEmailForDisplay(displayMessage.body_text, {
         isHtml: false,
         includeSignature: true,
         collapseQuotes: true
       });
+      
+      // Sanitize the formatted HTML
+      if (formatted?.html) {
+        formatted.html = sanitizeForDisplay(formatted.html);
+        
+        // Dev-only warning
+        if (process.env.NODE_ENV === 'development' && !formatted.html && displayMessage.body_text) {
+          console.warn('[EmailMessageView] Formatted text HTML not sanitized', { messageId: message.id });
+        }
+      }
+      
+      return formatted;
     }
     
     return null;
-  }, [processedBodyHtml, displayMessage.body_text]);
+  }, [processedBodyHtml, displayMessage.body_text, message.id]);
 
 
 
