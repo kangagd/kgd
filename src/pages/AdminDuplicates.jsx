@@ -224,8 +224,8 @@ export default function AdminDuplicates() {
                             <div className="text-xs text-slate-600 mt-2 space-y-1">
                               {group.items.map((item) => (
                                 <div key={item.id} className="flex items-center gap-2">
-                                  <span className="font-mono text-xs text-slate-500">{item.id.substring(0, 8)}</span>
-                                  <span>{item.name}</span>
+                                  <span className="font-mono text-xs text-slate-500">{item.id?.substring(0, 8) || 'N/A'}</span>
+                                  <span>{item.name || 'Unnamed'}</span>
                                 </div>
                               ))}
                             </div>
