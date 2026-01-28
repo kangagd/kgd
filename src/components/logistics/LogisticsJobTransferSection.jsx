@@ -31,7 +31,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
     enabled: editingLocations,
   });
 
-  // Fetch parts for this logistics job
+  // Fetch parts for this logistics job (always fetch, not just in modal)
   const { data: jobParts = [] } = useQuery({
     queryKey: ['jobParts', job.id, job.purchase_order_id, job.visit_scope],
     queryFn: async () => {
@@ -75,7 +75,6 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         p.linked_logistics_jobs.includes(job.id)
       );
     },
-    enabled: showTransferModal,
   });
 
   const status = job.stock_transfer_status || 'not_started';
