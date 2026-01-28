@@ -441,6 +441,7 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
               value={notes}
               onChange={(e) => onNotesChange(e.target.value)}
               placeholder="e.g., Stock verified and counted"
+              disabled={isProcessing}
               className="mt-1 h-8 text-sm"
             />
           </div>
