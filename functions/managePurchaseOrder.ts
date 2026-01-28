@@ -419,9 +419,16 @@ Deno.serve(async (req) => {
             await syncPartsWithPurchaseOrderStatus(base44, updatedPO);
             await syncPartReferencesWithPO(base44, updatedPO);
 
-            // Update project activity if PO is linked to a project
+            // Update project last_activity_at if linked
             if (updatedPO.project_id) {
-                await updateProjectActivity(base44, updatedPO.project_id, 'PO Updated');
+                try {
+                    await base44.asServiceRole.entities.Project.update(updatedPO.project_id, {
+                        last_activity_at: new Date().toISOString(),
+                        last_activity_type: 'PO Updated'
+                    });
+                } catch (err) {
+                    console.error('Error updating project activity:', err);
+                }
             }
 
             // Update line items if provided
