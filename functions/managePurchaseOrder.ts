@@ -490,17 +490,11 @@ Deno.serve(async (req) => {
 
         // Action: updateStatus
         if (action === 'updateStatus') {
-            console.log('[managePurchaseOrderV2] action=updateStatus po=' + id + ' user=' + user.email + ' status=' + status);
-            
             if (!id || !status) {
                 return Response.json({ error: 'id and status are required' }, { status: 400 });
             }
 
-            // Normalize the status first before validation
-            const normalizedStatus = normaliseLegacyPoStatus(status);
-            console.log('[managePurchaseOrderV2] Normalized status:', { input: status, normalized: normalizedStatus });
-            
-            // Valid statuses (hardcoded to bypass import cache issues)
+            // ✅ CANONICAL STATUS LIST - Single source of truth
             const validStatuses = [
                 "draft",
                 "sent",
@@ -513,9 +507,22 @@ Deno.serve(async (req) => {
                 "installed",
                 "cancelled"
             ];
-            
-            console.log('[managePurchaseOrderV2] Validation check:', { normalized: normalizedStatus, isValid: validStatuses.includes(normalizedStatus) });
-            
+
+            // 🔒 REGRESSION CHECK: Ensure this version is configured correctly
+            if (validStatuses.length < 6) {
+                return Response.json({
+                    error: 'Server misconfiguration: status ruleset incomplete',
+                    error_code: 'misconfigured_status_ruleset',
+                    allowed_count: validStatuses.length
+                }, { status: 500 });
+            }
+
+            console.log('[managePurchaseOrder] updateStatus version=2026-01-29 allowed=' + validStatuses.join(',') + ' po=' + id);
+
+            // Normalize the status first before validation
+            const normalizedStatus = normaliseLegacyPoStatus(status);
+            console.log('[managePurchaseOrder] Normalized status:', { input: status, normalized: normalizedStatus });
+
             if (!validStatuses.includes(normalizedStatus)) {
                 return Response.json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` }, { status: 400 });
             }
