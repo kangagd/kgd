@@ -283,7 +283,7 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         )}
 
         {/* Inline Stock Processing Section */}
-        {(canTransfer || isLegacy) && (
+        {(canTransfer || isLegacy || status === 'completed') && (
           <InlineStockProcessor
             job={job}
             jobParts={jobParts}
