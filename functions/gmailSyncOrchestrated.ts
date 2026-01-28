@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
       console.log('[gmailSyncOrchestrated] Phase 2: Sync full messages');
       const msgSyncStart = Date.now();
       
-      const msgResponse = await base44.functions.invoke('gmailSync', {});
+      const msgResponse = await base44.functions.invoke('gmailSync_v20260129', {});
       
       const msgResult = msgResponse.data || msgResponse;
       console.log('[gmailSyncOrchestrated] Phase 2 raw result:', msgResult);
