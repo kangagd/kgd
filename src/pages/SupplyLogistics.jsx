@@ -209,7 +209,7 @@ export default function SupplyLogistics() {
     const etaDate = safeParseDate(eta);
     
     return (
-      <Draggable draggableId={po.id} index={index}>
+      <Draggable draggableId={`po-${po.id}`} index={index}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
