@@ -1,6 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { getAccessToken } from './shared/gmailClient.js';
 
+console.log("[DEPLOY_SENTINEL] functions-import-fix v=2026-01-29 - checkGmailConnection");
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);

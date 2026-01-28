@@ -2,6 +2,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
 import { gmailFetch } from './shared/gmailClient.js';
 
+console.log("[DEPLOY_SENTINEL] functions-import-fix v=2026-01-29 - gmailSync");
+
 /**
  * Safe normalization - only apply after correct UTF-8 decoding
  * Does NOT attempt to fix encoding; only normalizes valid UTF-8

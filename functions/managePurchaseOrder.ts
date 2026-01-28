@@ -10,6 +10,8 @@ import {
   linkPartsToPO 
 } from './shared/index.js';
 
+console.log("[DEPLOY_SENTINEL] functions-import-fix v=2026-01-29 - managePurchaseOrder");
+
 // DEPLOYMENT CACHE BUSTER: 2026-01-28T12:00:00Z
 // Forces platform to pick up latest bytecode instead of serving stale cache
 

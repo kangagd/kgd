@@ -3,6 +3,8 @@ import { updateProjectActivity } from './updateProjectActivity.js';
 import { normalizeParams } from './shared/parameterNormalizer.js';
 import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.js';
 
+console.log("[DEPLOY_SENTINEL] functions-import-fix v=2026-01-29 - createXeroInvoice");
+
 async function createXeroInvoice(base44, invoicePayload) {
   const connection = await refreshAndGetXeroConnection(base44);
 
