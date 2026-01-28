@@ -526,17 +526,13 @@ Deno.serve(async (req) => {
             }
 
             // 🔒 OPTIMISTIC LOCK: Check write_version if provided
-            if (expected_write_version !== undefined) {
-                try {
-                    await assertWriteVersion(base44, 'PurchaseOrder', id, expected_write_version);
-                } catch (versionError) {
-                    return Response.json({
-                        success: false,
-                        error: versionError.message,
-                        error_code: 'stale_write',
-                        current_write_version: existing.write_version || 1
-                    }, { status: 409 }); // 409 Conflict
-                }
+            if (expected_write_version !== undefined && existing.write_version && existing.write_version !== expected_write_version) {
+                return Response.json({
+                    success: false,
+                    error: 'Stale write: PO was modified by another user',
+                    error_code: 'stale_write',
+                    current_write_version: existing.write_version
+                }, { status: 409 });
             }
 
             // 🔒 VALIDATION: Enforce po_reference before allowing non-draft status
