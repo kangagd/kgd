@@ -103,45 +103,30 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   const recordTransferMutation = useMutation({
     mutationFn: async () => {
-      // Validate required fields
-      if (!sourceLocation?.id) {
-        throw new Error('Source location is required');
-      }
-      if (!destinationLocation?.id) {
-        throw new Error('Destination location is required');
-      }
-
-      // Build transfer items with validation
-      const transferItems = Object.entries(selectedItems)
+      // Map selectedItems - send both price_list_item_id and part_id so backend can use either
+      const itemsToTransfer = Object.entries(selectedItems)
         .filter(([_, qty]) => qty > 0)
         .map(([partId, qty]) => {
           const part = jobParts.find(p => p.id === partId);
-          const quantity = Number(qty || 0);
-          
-          if (quantity <= 0) {
-            throw new Error('All item quantities must be greater than 0');
-          }
-          
           return { 
+            part_id: partId,
             price_list_item_id: part?.price_list_item_id || null,
-            qty: quantity
+            quantity: qty 
           };
         });
 
-      if (transferItems.length === 0) {
+      if (itemsToTransfer.length === 0) {
         throw new Error('Please select at least one item to transfer');
       }
 
-      // Unified payload format
-      const payload = {
+      const response = await base44.functions.invoke('processLogisticsJobStockActions', {
         job_id: job.id,
         mode: 'transfer',
-        from_location_id: sourceLocation.id,
-        to_location_id: destinationLocation.id,
-        transfer_items: transferItems
-      };
-
-      const response = await base44.functions.invoke('processLogisticsJobStockActions', payload);
+        source_location_id: sourceLocation?.id,
+        destination_location_id: destinationLocation?.id,
+        items: itemsToTransfer,
+        notes: notes
+      });
 
       if (!response.data?.success) {
         throw new Error(response.data?.error || 'Failed to record transfer');
