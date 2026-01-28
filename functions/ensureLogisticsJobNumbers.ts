@@ -1,38 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
-// Inline utility functions to avoid import issues
-const PURPOSE_CODES = {
-  po_delivery_to_warehouse: 'PO-DEL',
-  po_pickup_from_supplier: 'PO-PU',
-  part_pickup_for_install: 'PART-PU',
-  manual_client_dropoff: 'DROP',
-  sample_dropoff: 'SAMP-DO',
-  sample_pickup: 'SAMP-PU',
-};
-
-function getPurposeCode(logisticsPurpose) {
-  return PURPOSE_CODES[logisticsPurpose] || 'LOG';
-}
-
-function buildLogisticsJobNumber({ projectNumber, purposeCode, sequence = 1, fallbackShortId }) {
-  if (!projectNumber) {
-    return `LOG-${purposeCode}-${fallbackShortId}`;
-  }
-  
-  if (sequence === 1) {
-    return `${projectNumber}-${purposeCode}`;
-  }
-  
-  return `${projectNumber}-${purposeCode}-${sequence}`;
-}
-
-function isLogisticsJobNumber(jobNumber) {
-  if (!jobNumber) return false;
-  const str = String(jobNumber);
-  
-  const pattern = /^(\d+|LOG)-[A-Z]+-[A-Z]+(-[A-Za-z0-9]+)?$/;
-  return pattern.test(str);
-}
+import { 
+  getPurposeCode, 
+  buildLogisticsJobNumber, 
+  isLogisticsJobNumber 
+} from './shared/logisticsJobNumbering.js';
 
 Deno.serve(async (req) => {
   try {
@@ -43,12 +14,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
+    const { limit, dry_run } = await req.json().catch(() => ({}));
+
     // Load all logistics jobs
     const allJobs = await base44.asServiceRole.entities.Job.filter({ 
       is_logistics_job: true 
     });
 
-    console.log(`Found ${allJobs.length} logistics jobs to process`);
+    console.log(`Found ${allJobs.length} logistics jobs to process${dry_run ? ' (DRY RUN)' : ''}`);
 
     // Load all projects for project_number lookup
     const allProjects = await base44.asServiceRole.entities.Project.list();
@@ -67,7 +40,7 @@ Deno.serve(async (req) => {
       // Only index if already matches logistics pattern
       if (isLogisticsJobNumber(jobNum)) {
         // Extract project number and purpose code
-        const match = jobNum.match(/^(\d+)-([A-Z]+-[A-Z]+)(-\d+)?$/);
+        const match = jobNum.match(/^#(\d+)-([A-Z]+-[A-Z]+)(-\d+)?$/);
         if (match) {
           const [, projectNum, purpose] = match;
           const key = `${projectNum}:${purpose}`;
@@ -115,10 +88,10 @@ Deno.serve(async (req) => {
           if (existing.length > 0) {
             // Find next available sequence
             const sequences = existing.map(num => {
-              const base = `${projectNumber}-${purposeCode}`;
+              const base = `#${projectNumber}-${purposeCode}`;
               if (num === base) return 1;
               
-              const seqMatch = num.match(new RegExp(`^${base}-(\\d+)$`));
+              const seqMatch = num.match(new RegExp(`^${base.replace('#', '\\#')}-(\\d+)$`));
               return seqMatch ? parseInt(seqMatch[1], 10) : 1;
             });
             
@@ -147,13 +120,21 @@ Deno.serve(async (req) => {
           fallbackShortId
         });
 
-        // Update job
-        await base44.asServiceRole.entities.Job.update(job.id, {
-          job_number: newJobNumber
-        });
+        // Update job (unless dry run)
+        if (!dry_run) {
+          await base44.asServiceRole.entities.Job.update(job.id, {
+            job_number: newJobNumber
+          });
+        }
 
-        console.log(`Updated job ${job.id}: ${job.job_number || 'null'} -> ${newJobNumber}`);
+        console.log(`${dry_run ? '[DRY RUN] Would update' : 'Updated'} job ${job.id}: ${job.job_number || 'null'} -> ${newJobNumber}`);
         updated++;
+        
+        // Stop if limit reached
+        if (limit && updated >= limit) {
+          console.log(`Reached limit of ${limit} updates`);
+          break;
+        }
 
       } catch (error) {
         console.error(`Error processing job ${job.id}:`, error);
@@ -166,10 +147,14 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
+      dry_run: !!dry_run,
       total_logistics_jobs: allJobs.length,
       updated,
       skipped,
-      errors
+      errors,
+      message: dry_run 
+        ? `Would update ${updated} jobs (dry run)`
+        : `Updated ${updated} jobs successfully`
     });
 
   } catch (error) {
