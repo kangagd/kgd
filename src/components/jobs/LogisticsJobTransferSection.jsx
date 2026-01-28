@@ -297,6 +297,21 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
           </div>
         )}
 
+        {/* Inline Stock Processing Section */}
+        {(canTransfer || isLegacy) && (
+          <InlineStockProcessor
+            job={job}
+            jobParts={jobParts}
+            sourceLocation={sourceLocation}
+            destinationLocation={destinationLocation}
+            selectedItems={selectedItems}
+            onSelectedItemsChange={setSelectedItems}
+            notes={notes}
+            onNotesChange={setNotes}
+            isLegacy={isLegacy}
+          />
+        )}
+
         {/* Info */}
         <div className={`p-3 border rounded-lg text-sm ${
           isLegacy 
@@ -315,5 +330,240 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationLocation, selectedItems, onSelectedItemsChange, notes, onNotesChange, isLegacy }) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingErrorDetails, setProcessingErrorDetails] = useState(null);
+  const queryClient = useQueryClient();
+
+  const selectedCount = Object.values(selectedItems).filter(qty => qty > 0).length;
+
+  const getActionLabel = () => {
+    const purpose = job.logistics_purpose || '';
+    if (purpose.includes('pickup_from_supplier') || purpose.includes('po_pickup')) return 'Receive Items';
+    if (purpose.includes('delivery') || purpose.includes('po_delivery')) return 'Receive Items';
+    if (isLegacy) return 'Link Inventory Transfer';
+    return 'Record Transfer';
+  };
+
+  const getMode = () => {
+    const isPoJob = !!job?.purchase_order_id;
+    const purpose = (job?.logistics_purpose || '').toLowerCase();
+    const isPoReceiveFlow = isPoJob && (
+      purpose.includes('po_') ||
+      purpose.includes('pickup') ||
+      purpose.includes('delivery') ||
+      purpose.includes('receive')
+    );
+    return isPoReceiveFlow ? 'po_receipt' : 'transfer';
+  };
+
+  const mode = getMode();
+  const validItems = jobParts.filter(part => {
+    if (mode === 'po_receipt') return !!part.po_line_id;
+    return !!part.price_list_item_id;
+  });
+
+  const getModeLabel = () => mode === 'po_receipt' ? 'Processing PO Receipt' : 'Transferring Stock';
+  const getQtyLabel = () => mode === 'po_receipt' ? 'Qty Received' : 'Qty to Transfer';
+  const canProcess = sourceLocation && destinationLocation && selectedCount > 0 && !isProcessing;
+
+  const handleProcess = async () => {
+    try {
+      setIsProcessing(true);
+      setProcessingErrorDetails(null);
+
+      let payload = {
+        job_id: job.id,
+        mode: mode,
+        notes: notes || undefined
+      };
+
+      if (mode === 'po_receipt') {
+        const locationId = destinationLocation?.id;
+        if (!locationId) {
+          toast.error('Destination location required to receive items');
+          setIsProcessing(false);
+          return;
+        }
+
+        const itemsForReceipt = Object.entries(selectedItems)
+          .filter(([_, qty]) => qty > 0)
+          .map(([partId, qty]) => {
+            const part = jobParts.find(p => p.id === partId);
+            return {
+              purchase_order_line_id: part?.po_line_id || null,
+              qty: parseFloat(qty)
+            };
+          });
+
+        const missingLineIds = itemsForReceipt.filter(i => !i.purchase_order_line_id);
+        if (missingLineIds.length > 0) {
+          toast.error('Some selected items are missing PO line links (po_line_id)');
+          setIsProcessing(false);
+          return;
+        }
+
+        if (itemsForReceipt.length === 0) {
+          toast.error('No valid items selected');
+          setIsProcessing(false);
+          return;
+        }
+
+        payload.location_id = locationId;
+        payload.items = itemsForReceipt;
+      } else {
+        const fromId = sourceLocation?.id;
+        const toId = destinationLocation?.id;
+        if (!fromId || !toId) {
+          toast.error('From and To locations required for transfer');
+          setIsProcessing(false);
+          return;
+        }
+
+        const transferItems = Object.entries(selectedItems)
+          .filter(([_, qty]) => qty > 0)
+          .map(([partId, qty]) => {
+            const part = jobParts.find(p => p.id === partId);
+            return {
+              price_list_item_id: part?.price_list_item_id || null,
+              qty: parseFloat(qty)
+            };
+          });
+
+        const missingSkus = transferItems.filter(i => !i.price_list_item_id);
+        if (missingSkus.length > 0) {
+          toast.error('Some selected items are missing SKU links (price_list_item_id)');
+          setIsProcessing(false);
+          return;
+        }
+
+        if (transferItems.length === 0) {
+          toast.error('No valid items selected');
+          setIsProcessing(false);
+          return;
+        }
+
+        payload.from_location_id = fromId;
+        payload.to_location_id = toId;
+        payload.transfer_items = transferItems;
+      }
+
+      const response = await base44.functions.invoke('processLogisticsJobStockActions', payload);
+
+      if (!response.data?.success) {
+        const failures = response.data?.details?.failures;
+        if (failures && Array.isArray(failures)) {
+          setProcessingErrorDetails(failures);
+          toast.error(`${failures.length} item(s) failed to process`);
+        } else {
+          throw new Error(response.data?.error || 'Failed to process stock');
+        }
+        return;
+      }
+
+      toast.success(`Stock processed: ${response.data.items_processed} item(s)`);
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      queryClient.invalidateQueries({ queryKey: ['inventoryQuantities'] });
+      
+      onSelectedItemsChange({});
+      onNotesChange('');
+      setProcessingErrorDetails(null);
+    } catch (error) {
+      toast.error(error.message || 'Failed to process stock');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold text-blue-900">Stock Processing</div>
+        <div className="px-2.5 py-1 bg-blue-100 border border-blue-300 rounded text-xs font-medium text-blue-900">
+          {getModeLabel()}
+        </div>
+      </div>
+
+      {validItems.length === 0 ? (
+        <div className="text-sm text-blue-700">
+          No {mode === 'po_receipt' ? 'PO line items' : 'parts with SKU tracking'} found for this logistics job
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-medium">Items to Process</Label>
+              <span className="text-xs text-blue-700">{getQtyLabel()}</span>
+            </div>
+            <div className="space-y-2 max-h-[250px] overflow-y-auto">
+              {validItems.map((part) => (
+                <div key={part.id} className="flex items-center gap-3 p-2 bg-white border border-gray-200 rounded-lg">
+                  <div className="flex-1">
+                    <div className="text-sm font-medium text-gray-900">{part.item_name || 'Unnamed Part'}</div>
+                    <div className="text-xs text-gray-500">Required: {part.quantity_required || 1}</div>
+                  </div>
+                  <div className="w-24">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Qty"
+                      value={selectedItems[part.id] || ''}
+                      onChange={(e) => onSelectedItemsChange({ ...selectedItems, [part.id]: parseFloat(e.target.value) || 0 })}
+                      disabled={isProcessing}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  {selectedItems[part.id] > 0 && (
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  )}
+                </div>
+              ))}
+            </div>
+            {selectedCount > 0 && (
+              <div className="text-xs text-green-700 font-medium">{selectedCount} item(s) selected</div>
+            )}
+          </div>
+
+          <div>
+            <Label className="text-xs font-medium">Notes (Optional)</Label>
+            <Input
+              value={notes}
+              onChange={(e) => onNotesChange(e.target.value)}
+              placeholder="e.g., Stock verified and counted"
+              disabled={isProcessing}
+              className="mt-1 h-8 text-sm"
+            />
+          </div>
+
+          <Button
+            onClick={handleProcess}
+            disabled={!canProcess}
+            className="w-full bg-[#FAE008] text-[#111827] hover:bg-[#E5CF07]"
+          >
+            {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {getActionLabel()} {selectedCount > 0 ? `(${selectedCount})` : ''}
+          </Button>
+
+          {processingErrorDetails && processingErrorDetails.length > 0 && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm font-medium text-red-900 mb-2">Some items failed</p>
+              <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                {processingErrorDetails.map((failure, idx) => (
+                  <div key={idx} className="text-xs text-red-800 p-2 bg-white rounded border border-red-100">
+                    <span className="font-medium">{failure.price_list_item_id || failure.purchase_order_line_id}</span>
+                    {' • Qty: '}{failure.qty}
+                    {' • '}<span className="italic">{failure.error}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
