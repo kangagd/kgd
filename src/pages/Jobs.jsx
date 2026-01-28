@@ -277,13 +277,18 @@ export default function Jobs() {
       if (projectId) setPreselectedProjectId(projectId);
     }
 
+    if (action === 'edit' && jobIdFromUrl && directJob) {
+      setEditingJob(directJob);
+      setShowForm(true);
+    }
+
     if (status) {
       setStatusFilter(status);
     }
 
     if (dateFromParam) setDateFrom(dateFromParam);
     if (dateToParam) setDateTo(dateToParam);
-  }, [searchParams]);
+  }, [searchParams, jobIdFromUrl, directJob]);
 
   useEffect(() => {
     if (jobIdFromUrl && directJob) {
