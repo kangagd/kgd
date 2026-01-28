@@ -276,6 +276,7 @@ async function handlePoReceipt(base44, user, job, location_id, items, notes) {
 
 /**
  * Handle transfer mode: call moveInventory for each item
+ * ATOMIC: All items must succeed; if ANY fail, entire transfer fails
  */
 async function handleTransfer(base44, user, job, from_location_id, to_location_id, transfer_items, notes) {
   if (!from_location_id || !to_location_id) {
@@ -294,16 +295,31 @@ async function handleTransfer(base44, user, job, from_location_id, to_location_i
     };
   }
 
+  // Validate all items have required fields BEFORE attempting transfer
+  const invalidItems = transfer_items.filter(i => !i.price_list_item_id || !i.qty || i.qty <= 0);
+  if (invalidItems.length > 0) {
+    return {
+      success: false,
+      status: 400,
+      error: 'Some items missing price_list_item_id or have invalid quantity',
+      details: {
+        invalid_items: invalidItems.map(i => ({
+          price_list_item_id: i.price_list_item_id || 'MISSING',
+          qty: i.qty,
+          error: 'Invalid item data'
+        }))
+      }
+    };
+  }
+
   let itemsProcessed = 0;
   const movedItems = [];
+  const failures = [];
 
   // Move each item via canonical moveInventory
+  // Track failures but continue processing all items for detailed error reporting
   for (const item of transfer_items) {
     const { price_list_item_id, qty } = item;
-
-    if (!price_list_item_id || !qty || qty <= 0) {
-      continue;
-    }
 
     const payload = {
       priceListItemId: price_list_item_id,
@@ -325,21 +341,38 @@ async function handleTransfer(base44, user, job, from_location_id, to_location_i
           qty,
           message: response.data.message
         });
+      } else {
+        // moveInventory returned success: false, treat as failure
+        failures.push({
+          price_list_item_id,
+          qty,
+          error: response.data.error || 'Transfer failed'
+        });
       }
     } catch (error) {
-      console.warn(`Failed to move item ${price_list_item_id}:`, error.message);
-      // Continue processing other items
+      // moveInventory threw error, treat as failure
+      failures.push({
+        price_list_item_id,
+        qty,
+        error: error.message || 'Unknown error during transfer'
+      });
     }
   }
 
-  if (itemsProcessed === 0) {
+  // ATOMIC: If ANY item failed, return failure (do NOT mark job as completed)
+  if (failures.length > 0) {
     return {
       success: false,
       status: 400,
-      error: 'No items were successfully transferred'
+      error: `${failures.length} of ${transfer_items.length} items failed to transfer`,
+      details: {
+        successes: movedItems,
+        failures: failures
+      }
     };
   }
 
+  // All items succeeded
   return {
     success: true,
     items_processed: itemsProcessed,
