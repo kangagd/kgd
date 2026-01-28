@@ -86,18 +86,37 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
 
   const updateLocationsMutation = useMutation({
     mutationFn: async ({ sourceLocationId, destinationLocationId }) => {
+      const user = await base44.auth.me();
       await base44.entities.Job.update(job.id, {
         source_location_id: sourceLocationId,
-        destination_location_id: destinationLocationId
+        destination_location_id: destinationLocationId,
+        locations_manually_set: true,
+        locations_manually_set_at: new Date().toISOString(),
+        locations_manually_set_by_user_id: user?.id || undefined
       });
     },
     onSuccess: () => {
-      toast.success('Locations updated');
+      toast.success('Locations updated (manual override enabled)');
       queryClient.invalidateQueries({ queryKey: ['job', job.id] });
       setEditingLocations(false);
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to update locations');
+    }
+  });
+
+  const resetLocationsMutation = useMutation({
+    mutationFn: async () => {
+      await base44.entities.Job.update(job.id, {
+        locations_manually_set: false
+      });
+    },
+    onSuccess: () => {
+      toast.success('Manual override removed - inference re-enabled');
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to reset locations');
     }
   });
 
