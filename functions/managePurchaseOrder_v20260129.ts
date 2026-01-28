@@ -450,8 +450,8 @@ Deno.serve(async (req) => {
 
             if (shouldHaveLogisticsJob) {
                 try {
-                    // Invoke the createLogisticsJobForPO function FIRST (validate it succeeds)
-                    const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO", {
+                    // Invoke the createLogisticsJobForPO_v20260129 function FIRST (validate it succeeds)
+                    const jobResponse = await base44.asServiceRole.functions.invoke("createLogisticsJobForPO_v20260129", {
                         purchase_order_id: existing.id,
                         scheduled_date: existing.expected_date || new Date().toISOString().split("T")[0],
                     });
