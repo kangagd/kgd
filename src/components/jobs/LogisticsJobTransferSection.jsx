@@ -474,37 +474,60 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
         </div>
       </div>
 
-      {validItems.length === 0 ? (
+      {!hasItems ? (
         <div className="text-sm text-blue-700">
-          No {mode === 'po_receipt' ? 'PO line items' : 'parts with SKU tracking'} found for this logistics job
+          No items in scope for this logistics job
         </div>
       ) : (
         <>
-          <div className="space-y-2">
-            <div className="text-xs font-medium text-blue-900 mb-2">Enter quantities below:</div>
-            <div className="space-y-1">
-              {validItems.map((part) => (
-                <div key={part.id} className="flex items-center gap-2 py-1.5">
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 truncate">{part.item_name || 'Unnamed Part'}</div>
-                  </div>
-                  <div className="w-20">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="Qty"
-                      value={selectedItems[part.id] || ''}
-                      onChange={(e) => onSelectedItemsChange({ ...selectedItems, [part.id]: parseFloat(e.target.value) || 0 })}
-                      disabled={isProcessing}
-                      className="h-7 text-xs"
-                    />
-                  </div>
+          <div className="space-y-3">
+            {/* Trackable Items - with quantity inputs */}
+            {trackableItems.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-blue-900">Items to Track ({trackableItems.length})</div>
+                <div className="space-y-1">
+                  {trackableItems.map((part) => (
+                    <div key={part.id} className="flex items-center gap-2 py-1.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-gray-900 truncate">{part.item_name || 'Unnamed Part'}</div>
+                      </div>
+                      <div className="w-20">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Qty"
+                          value={selectedItems[part.id] || ''}
+                          onChange={(e) => onSelectedItemsChange({ ...selectedItems, [part.id]: parseFloat(e.target.value) || 0 })}
+                          disabled={isProcessing}
+                          className="h-7 text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Non-Trackable Items - display only */}
+            {nonTrackableItems.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-xs font-semibold text-gray-700">Other Items ({nonTrackableItems.length})</div>
+                <div className="space-y-1">
+                  {nonTrackableItems.map((part) => (
+                    <div key={part.id} className="flex items-center gap-2 py-1.5 px-2 bg-gray-50 rounded">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-gray-700 truncate">{part.item_name || 'Unnamed Part'}</div>
+                        <div className="text-xs text-gray-500">Required: {part.quantity_required || 1}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedCount > 0 && (
-              <div className="text-xs text-green-700 font-medium mt-2">{selectedCount} item(s) ready</div>
+              <div className="text-xs text-green-700 font-medium">{selectedCount} item(s) ready to process</div>
             )}
           </div>
 
