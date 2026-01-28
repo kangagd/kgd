@@ -982,7 +982,7 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
                           id="origin_address"
                           placeholder="Enter supplier name/address for one-off pickup..."
                           value={formData.origin_address || ""}
-                          onChange={(e) => setFormData({ ...formData, origin_address: e.target.value })}
+                          onChange={(e) => setFormData({ ...formData, origin_address: e.target.value, locations_manually_set: true })}
                           className="border-2 border-blue-300 focus:border-[#fae008] focus:ring-2 focus:ring-[#fae008]/20 text-sm"
                         />
                         {formData.origin_address && (
