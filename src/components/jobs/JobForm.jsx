@@ -186,6 +186,14 @@ export default function JobForm({ job, technicians, onSubmit, onCancel, isSubmit
     enabled: isLogisticsJob
   });
 
+  // Fetch PO data if linked (for auto-populating supplier)
+  const poIdFromUrl = urlParams.get('poId');
+  const { data: linkedPO = null } = useQuery({
+    queryKey: ['purchaseOrder', poIdFromUrl],
+    queryFn: () => poIdFromUrl ? base44.entities.PurchaseOrder.get(poIdFromUrl) : null,
+    enabled: !!poIdFromUrl
+  });
+
   const contracts = allContracts.filter(c => c.status === 'Active');
 
   // Filter job types based on logistics toggle (only when creating new job)
