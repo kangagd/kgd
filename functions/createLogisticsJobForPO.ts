@@ -1,7 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { PO_DELIVERY_METHOD, LOGISTICS_PURPOSE } from './shared/constants.ts';
 import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.ts';
-import { getPurposeCode, buildLogisticsJobNumber, getNextSequence } from './shared/logisticsJobNumbering.js';
+import { getPurposeCode, buildLogisticsJobNumber } from './shared/logisticsJobNumbering.js';
+import { getNextLogisticsSequence, buildCounterKey } from './shared/atomicLogisticsCounter.js';
 
 Deno.serve(async (req) => {
     try {
@@ -133,7 +134,7 @@ Deno.serve(async (req) => {
             destinationAddress = warehouseAddress;
         }
 
-        // Generate logistics job number
+        // Generate logistics job number using atomic counter
         let projectNumber = null;
         if (po.project_id) {
             const project = await base44.asServiceRole.entities.Project.get(po.project_id);
@@ -142,15 +143,13 @@ Deno.serve(async (req) => {
 
         const purposeCode = getPurposeCode(logisticsPurpose);
         
-        // Get sequence by checking existing logistics jobs
-        let sequence = 1;
-        if (projectNumber) {
-            const existingLogisticsJobs = await base44.asServiceRole.entities.Job.filter({
-                is_logistics_job: true,
-                project_id: po.project_id
-            });
-            sequence = getNextSequence(existingLogisticsJobs, projectNumber, purposeCode);
-        }
+        // Atomically get next sequence using LogisticsJobCounter
+        const counterKey = buildCounterKey({
+            project_id: po.project_id,
+            project_number: projectNumber,
+            purposeCode
+        });
+        const sequence = await getNextLogisticsSequence(base44, counterKey);
 
         const fallbackShortId = po.id.substring(0, 6);
         const jobNumber = buildLogisticsJobNumber({
