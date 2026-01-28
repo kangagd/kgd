@@ -276,14 +276,30 @@ export default function LogisticsJobTransferSection({ job, sourceLocation, desti
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setEditingLocations(false)}
-                className="w-full"
-              >
-                Cancel
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingLocations(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                {job.locations_manually_set && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      resetLocationsMutation.mutate();
+                      setEditingLocations(false);
+                    }}
+                    disabled={resetLocationsMutation.isPending}
+                    className="flex-1 text-amber-600 hover:bg-amber-50"
+                  >
+                    {resetLocationsMutation.isPending ? 'Resetting...' : 'Reset to Auto'}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
