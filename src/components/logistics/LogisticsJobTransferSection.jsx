@@ -512,16 +512,19 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
 
       {validItems.length === 0 ? (
         <div className="text-sm text-blue-700">
-          No parts found for this logistics job
+          No {mode === 'po_receipt' ? 'PO line items' : 'parts with SKU tracking'} found for this logistics job
           <br />
-          <span className="text-xs text-blue-600">visit_scope items: {job.visit_scope?.length || 0}</span>
+          <span className="text-xs text-blue-600">Total parts: {jobParts.length} | Valid for {getModeLabel()}: {validItems.length}</span>
         </div>
       ) : (
         <>
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Items to Process</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-medium">Items to Process</Label>
+              <span className="text-xs text-blue-700">{getQtyLabel()}</span>
+            </div>
             <div className="space-y-2 max-h-[250px] overflow-y-auto">
-              {jobParts.map((part) => (
+              {validItems.map((part) => (
                 <div key={part.id} className="flex items-center gap-3 p-2 bg-white border border-gray-200 rounded-lg">
                   <div className="flex-1">
                     <div className="text-sm font-medium text-gray-900">{part.item_name || 'Unnamed Part'}</div>
