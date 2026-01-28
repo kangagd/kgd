@@ -1,6 +1,9 @@
-import { createClientFromRequest } from './shared/sdk.js';
-import { updateProjectActivity } from './updateProjectActivity.js';
-import { LOGISTICS_PURPOSE } from './shared/constants.js';
+import { createClientFromRequest } from './shared/sdk.ts';
+import { updateProjectActivity } from './updateProjectActivity.ts';
+import { LOGISTICS_PURPOSE } from './shared/constants.ts';
+
+// DEPLOY SENTINEL: managePart v=2026-01-29
+console.log('[DEPLOY_SENTINEL] managePart v=2026-01-29 - Import fix for .ts files');
 
 Deno.serve(async (req) => {
     try {
