@@ -58,11 +58,11 @@ export default function GlobalSearchDropdown() {
         setResults(response.data || { jobs: [], projects: [], customers: [], organisations: [], priceListItems: [] });
       })
       .catch((err) => {
-        const msg = (err?.message || err?.toString?.() || "").replace?.(/[^a-zA-Z0-9\s]/g, "") || "";
+        const rawMsg = err?.message || err?.toString?.() || "";
+        const msg = typeof rawMsg === 'string' ? rawMsg.replace(/[^a-zA-Z0-9\s]/g, "") : "";
         if (
           err?.name === "AbortError" ||
-          msg.includes("Canceled") ||
-          (typeof msg === 'string' && msg.includes("Canceled"))
+          msg.includes("Canceled")
         ) {
           return;
         }
