@@ -178,13 +178,14 @@ export default function Layout({ children, currentPageName }) {
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        
+
         // Check if user needs onboarding
-        if (currentUser && !currentUser.data?.onboarding_completed) {
+        if (currentUser && currentUser.data && !currentUser.data.onboarding_completed) {
           setShowOnboarding(true);
         }
       } catch (error) {
         console.error("Error loading user:", error);
+        setUser(null);
       }
     };
     loadUser();
