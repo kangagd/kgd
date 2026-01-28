@@ -183,7 +183,7 @@ export default function SupplyLogistics() {
     if (!result.destination) return;
     
     const { draggableId, destination } = result;
-    const poId = draggableId;
+    const poId = draggableId.replace('po-', '');
     const newStage = destination.droppableId;
     
     // Map kanban stages to PO statuses
