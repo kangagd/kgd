@@ -223,8 +223,8 @@ export default function AdminDuplicates() {
                             <p className="font-medium text-sm text-slate-900 italic">"{group.normalizedName}"</p>
                             <div className="text-xs text-slate-600 mt-2 space-y-1">
                               {group.items.map((item) => (
-                                <div key={item.id} className="flex items-center gap-2">
-                                  <span className="font-mono text-xs text-slate-500">{item.id?.substring(0, 8) || 'N/A'}</span>
+                                <div key={item.id || Math.random()} className="flex items-center gap-2">
+                                  <span className="font-mono text-xs text-slate-500">{item.id ? item.id.substring(0, 8) : 'N/A'}</span>
                                   <span>{item.name || 'Unnamed'}</span>
                                 </div>
                               ))}
