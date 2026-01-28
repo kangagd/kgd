@@ -420,6 +420,7 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
                       placeholder="Qty"
                       value={selectedItems[part.id] || ''}
                       onChange={(e) => onSelectedItemsChange({ ...selectedItems, [part.id]: parseFloat(e.target.value) || 0 })}
+                      disabled={isProcessing}
                       className="h-8 text-sm"
                     />
                   </div>
