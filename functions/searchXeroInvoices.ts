@@ -1,5 +1,7 @@
-import { createClientFromRequest } from './shared/sdk.js';
-import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.js';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { refreshAndGetXeroConnection, getXeroHeaders } from './shared/xeroHelpers.ts';
+
+console.log("[DEPLOY_SENTINEL] searchXeroInvoices_v20260129 v=2026-01-29");
 
 Deno.serve(async (req) => {
   try {
