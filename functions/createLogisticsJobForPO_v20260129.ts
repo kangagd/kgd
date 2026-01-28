@@ -1,8 +1,8 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PO_DELIVERY_METHOD, LOGISTICS_PURPOSE } from './shared/constants.ts';
 import { getOrCreateSupplierInventoryLocation } from './shared/supplierLocationHelper.ts';
-import { getPurposeCode, buildLogisticsJobNumber } from './shared/logisticsJobNumbering.ts';
-import { getNextLogisticsSequence, buildCounterKey } from './shared/atomicLogisticsCounter.ts';
+import { getPurposeCode, buildLogisticsJobNumber } from './shared/logisticsJobNumbering.js';
+import { getNextLogisticsSequence, buildCounterKey } from './shared/atomicLogisticsCounter.js';
 
 console.log("[DEPLOY_SENTINEL] createLogisticsJobForPO_v20260129 v=2026-01-29");
 
