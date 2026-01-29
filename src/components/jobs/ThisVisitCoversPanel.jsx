@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,24 +15,7 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [customItemType, setCustomItemType] = useState(null); // 'part', 'trade', 'requirement'
 
-  // Step 1: Local draft state decoupled from query data
-  const [draft, setDraft] = useState(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const lastServerHashRef = useRef("");
-
-  // Initialize draft from job.visit_scope only once or when not dirty
-  useEffect(() => {
-    const serverData = job.visit_scope || { parts: [], trades: [], requirements: [] };
-    const serverHash = JSON.stringify(serverData);
-    const changed = serverHash !== lastServerHashRef.current;
-
-    if (changed && !isDirty) {
-      setDraft(serverData);
-      lastServerHashRef.current = serverHash;
-    }
-  }, [job.visit_scope, isDirty]);
-
-  const visitScope = draft || job.visit_scope || { parts: [], trades: [], requirements: [] };
+  const visitScope = job.visit_scope || { parts: [], trades: [], requirements: [] };
   const hasScopeItems = (visitScope.parts?.length > 0) || 
                         (visitScope.trades?.length > 0) || 
                         (visitScope.requirements?.length > 0);
@@ -46,20 +29,8 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
       });
       return response.data;
     },
-    onSuccess: (result) => {
-      // Patch cache instead of invalidate
-      queryClient.setQueryData(['job', job.id], (oldJob) => {
-        if (!oldJob) return oldJob;
-        return {
-          ...oldJob,
-          visit_scope: result.visit_scope || oldJob.visit_scope,
-        };
-      });
-      
-      // Reset draft state after successful save
-      setDraft(result.visit_scope || job.visit_scope);
-      setIsDirty(false);
-      lastServerHashRef.current = JSON.stringify(result.visit_scope);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
       toast.success('Visit scope updated');
     },
     onError: (error) => {
@@ -67,86 +38,23 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
     }
   });
 
-  // Step 2: Debounced autosave
-  const autosaveTimerRef = useRef(null);
-  const debouncedSave = (updatedDraft) => {
-    // Cancel pending autosave
-    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
-    
-    // Schedule new autosave
-    autosaveTimerRef.current = setTimeout(() => {
-      // Build minimal patch from draft vs server
-      const serverData = job.visit_scope || { parts: [], trades: [], requirements: [] };
-      const patch = {};
-
-      // Detect removals
-      const serverKeys = new Set([
-        ...(serverData.parts || []).map(p => p.key),
-        ...(serverData.trades || []).map(t => t.key),
-        ...(serverData.requirements || []).map(r => r.key),
-      ]);
-      const draftKeys = new Set([
-        ...(updatedDraft.parts || []).map(p => p.key),
-        ...(updatedDraft.trades || []).map(t => t.key),
-        ...(updatedDraft.requirements || []).map(r => r.key),
-      ]);
-      const removed = [...serverKeys].filter(k => !draftKeys.has(k));
-      if (removed.length > 0) patch.remove_keys = removed;
-
-      // Detect additions
-      const allDraftItems = [
-        ...(updatedDraft.parts || []),
-        ...(updatedDraft.trades || []),
-        ...(updatedDraft.requirements || []),
-      ];
-      const added = allDraftItems.filter(item => !serverKeys.has(item.key));
-      if (added.length > 0) patch.add = added;
-
-      // Only mutate if there are actual changes
-      if (Object.keys(patch).length > 0) {
-        updateScopeMutation.mutate(patch);
-      } else {
-        setIsDirty(false);
-      }
-    }, 800); // 800ms debounce
-  };
-
   const handleRemoveItem = (key) => {
-    const updated = {
-      ...draft,
-      parts: draft.parts.filter(p => p.key !== key),
-      trades: draft.trades.filter(t => t.key !== key),
-      requirements: draft.requirements.filter(r => r.key !== key),
-    };
-    setDraft(updated);
-    setIsDirty(true);
-    debouncedSave(updated);
+    updateScopeMutation.mutate({
+      remove_keys: [key]
+    });
   };
 
   const handleAddFromProject = (items) => {
-    const updated = {
-      parts: [...(draft.parts || []), ...items.filter(i => i.type === 'part')],
-      trades: [...(draft.trades || []), ...items.filter(i => i.type === 'trade')],
-      requirements: [...(draft.requirements || []), ...items.filter(i => i.type === 'requirement')],
-    };
-    setDraft(updated);
-    setIsDirty(true);
-    debouncedSave(updated);
+    updateScopeMutation.mutate({
+      add: items
+    });
     setShowAddFromProject(false);
   };
 
   const handleAddCustomItem = (item) => {
-    const itemType = item.type || 'part';
-    const updated = {
-      ...draft,
-      [itemType === 'part' ? 'parts' : itemType === 'trade' ? 'trades' : 'requirements']: [
-        ...(draft[itemType === 'part' ? 'parts' : itemType === 'trade' ? 'trades' : 'requirements'] || []),
-        item,
-      ],
-    };
-    setDraft(updated);
-    setIsDirty(true);
-    debouncedSave(updated);
+    updateScopeMutation.mutate({
+      add: item
+    });
     setShowAddCustom(false);
     setCustomItemType(null);
   };
@@ -171,13 +79,6 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
       </Badge>
     );
   };
-
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
-    };
-  }, []);
 
   return (
     <>
