@@ -1381,7 +1381,7 @@ Link: ${threadLink}
         </div>
 
         {/* Middle pane: Thread Detail */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-[#F9FAFB] border-r border-[#E5E7EB]">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-[#F9FAFB] border-r border-[#E5E7EB]">
           {selectedThread ? (
             <>
               {/* Composing presence banner */}
