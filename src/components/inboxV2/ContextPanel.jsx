@@ -565,6 +565,24 @@ export default function InboxV2ContextPanel({
           </div>
         </div>
       )}
+
+      {/* Activity Timeline */}
+      {audits.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-[#6B7280]">Activity</div>
+          <div className="space-y-1 max-h-[200px] overflow-y-auto">
+            {audits.map((audit) => (
+              <div key={audit.id} className="px-2 py-1.5 rounded bg-[#F9FAFB] text-xs border border-[#E5E7EB]">
+                <div className="text-[#111827] font-medium">{audit.actor_name}</div>
+                <div className="text-[#6B7280] mt-0.5">{audit.message}</div>
+                <div className="text-[#9CA3AF] text-[10px] mt-1">
+                  {new Date(audit.created_date).toLocaleDateString()} {new Date(audit.created_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
