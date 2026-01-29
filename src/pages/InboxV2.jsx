@@ -1491,28 +1491,35 @@ Link: ${threadLink}
 
               <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
                 {/* Detail Tab Selector */}
-                <div className="flex gap-2 px-4 py-2 border-b border-[#E5E7EB] bg-white">
-                  <button
-                    onClick={() => setDetailTab("messages")}
-                    className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                      detailTab === "messages"
-                        ? "bg-[#FAE008] text-[#111827]"
-                        : "text-[#6B7280] hover:text-[#111827]"
-                    }`}
-                  >
-                    Messages
-                  </button>
-                  <button
-                    onClick={() => setDetailTab("notes")}
-                    className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
-                      detailTab === "notes"
-                        ? "bg-[#FAE008] text-[#111827]"
-                        : "text-[#6B7280] hover:text-[#111827]"
-                    }`}
-                  >
-                    Team Notes ({threadNotes.length})
-                  </button>
-                </div>
+                <div className="flex gap-2 px-4 py-2 border-b border-[#E5E7EB] bg-white items-center">
+                    <button
+                      onClick={() => setDetailTab("messages")}
+                      className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        detailTab === "messages"
+                          ? "bg-[#FAE008] text-[#111827]"
+                          : "text-[#6B7280] hover:text-[#111827]"
+                      }`}
+                    >
+                      Messages
+                    </button>
+                    <button
+                      onClick={() => setDetailTab("notes")}
+                      className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        detailTab === "notes"
+                          ? "bg-[#FAE008] text-[#111827]"
+                          : "text-[#6B7280] hover:text-[#111827]"
+                      }`}
+                    >
+                      Team Notes ({threadNotes.length})
+                    </button>
+                    <button
+                      onClick={() => setContextOpen(true)}
+                      className="xl:hidden ml-auto px-3 py-1.5 rounded text-sm font-medium text-[#6B7280] hover:bg-[#F3F4F6] transition-colors"
+                      title="Open context panel"
+                    >
+                      Context
+                    </button>
+                  </div>
 
                 <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
                   {detailTab === "messages" ? (
