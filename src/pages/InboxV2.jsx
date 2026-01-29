@@ -1164,17 +1164,17 @@ Link: ${threadLink}
           <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2 items-center">
             <button
               onClick={() => {
-                setActiveView("inbox");
+                setActiveView("threads");
                 if (selectionMode) {
                   setSelectionMode(false);
                   setSelectedThreadIds(new Set());
                 }
               }}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                activeView === "inbox" ? "bg-[#FAE008] text-[#111827]" : "text-[#6B7280] hover:bg-[#F3F4F6]"
+                activeView === "threads" ? "bg-[#FAE008] text-[#111827]" : "text-[#6B7280] hover:bg-[#F3F4F6]"
               }`}
             >
-              Inbox
+              Threads
             </button>
             <button
               onClick={() => {
