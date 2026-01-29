@@ -2,10 +2,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { persistAttachmentsToEntity } from './shared/emailAttachmentPersistence.ts';
 import { normalizeUtf8, hasEncodingCorruption } from './shared/utf8Normalizer.ts';
 
+// Helper to wrap base64 data to 76 chars per line (RFC-friendly)
+function wrapBase64(base64Data, lineLength = 76) {
+  const chunks = [];
+  for (let i = 0; i < base64Data.length; i += lineLength) {
+    chunks.push(base64Data.substring(i, i + lineLength));
+  }
+  return chunks.join('\r\n');
+}
+
 // Helper to build RFC 2822 MIME message with attachments
 function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inReplyTo, references, threadId, attachments }) {
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const alternativeBoundary = `----=_Alt_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const relatedBoundary = `----=_Rel_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   const lines = [];
 
   // Ensure arrays
@@ -13,6 +23,10 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
   const ccArray = Array.isArray(cc) ? cc : (cc ? [cc] : []);
   const bccArray = Array.isArray(bcc) ? bcc : (bcc ? [bcc] : []);
   const attachmentArray = Array.isArray(attachments) ? attachments : [];
+  
+  // Separate inline (CID) vs regular attachments
+  const inlineAttachments = attachmentArray.filter(att => att.is_inline === true || att.contentId);
+  const regularAttachments = attachmentArray.filter(att => !att.is_inline && !att.contentId);
 
   // Headers
   lines.push(`From: ${from}`);
@@ -27,15 +41,70 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
   
   lines.push('MIME-Version: 1.0');
   
-  // If we have attachments, use multipart/mixed
-  if (attachmentArray.length > 0) {
+  // Determine structure based on attachment types
+  const hasInline = inlineAttachments.length > 0;
+  const hasRegular = regularAttachments.length > 0;
+  
+  if (hasRegular || hasInline) {
+    // Use multipart/mixed as top container
     lines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
     lines.push('');
     
-    // Body part (multipart/alternative if both text and HTML, otherwise just text or HTML)
+    // Body part (with inline images if present)
     lines.push(`--${boundary}`);
     
-    if (htmlBody) {
+    if (hasInline) {
+      // Use multipart/related to group HTML + inline images
+      lines.push(`Content-Type: multipart/related; boundary="${relatedBoundary}"`);
+      lines.push('');
+      
+      // Alternative part (text + HTML)
+      lines.push(`--${relatedBoundary}`);
+      lines.push(`Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`);
+      lines.push('');
+      
+      // Plain text
+      lines.push(`--${alternativeBoundary}`);
+      lines.push('Content-Type: text/plain; charset=UTF-8');
+      lines.push('Content-Transfer-Encoding: 7bit');
+      lines.push('');
+      lines.push(textBody || htmlBody.replace(/<[^>]*>/g, ''));
+      lines.push('');
+      
+      // HTML (references cid:contentId)
+      lines.push(`--${alternativeBoundary}`);
+      lines.push('Content-Type: text/html; charset=UTF-8');
+      lines.push('Content-Transfer-Encoding: 7bit');
+      lines.push('');
+      lines.push(htmlBody);
+      lines.push('');
+      lines.push(`--${alternativeBoundary}--`);
+      
+      // Inline images (CID attachments)
+      for (const att of inlineAttachments) {
+        if (!att.data || !att.filename) continue;
+        
+        lines.push(`--${relatedBoundary}`);
+        lines.push(`Content-Type: ${att.mimeType || 'application/octet-stream'}`);
+        lines.push('Content-Transfer-Encoding: base64');
+        lines.push(`Content-Disposition: inline; filename="${att.filename}"`);
+        if (att.contentId) {
+          lines.push(`Content-ID: <${att.contentId}>`);
+        }
+        lines.push('');
+        
+        // Clean and wrap base64
+        let base64Data = att.data;
+        if (base64Data.includes(',')) {
+          base64Data = base64Data.split(',')[1];
+        }
+        lines.push(wrapBase64(base64Data));
+        lines.push('');
+      }
+      
+      lines.push(`--${relatedBoundary}--`);
+    } else if (htmlBody) {
+      // No inline images, just text + HTML
       lines.push(`Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`);
       lines.push('');
       
@@ -56,6 +125,7 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
       lines.push('');
       lines.push(`--${alternativeBoundary}--`);
     } else {
+      // Text only
       lines.push('Content-Type: text/plain; charset=UTF-8');
       lines.push('Content-Transfer-Encoding: 7bit');
       lines.push('');
@@ -63,8 +133,8 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
       lines.push('');
     }
     
-    // Attachments
-    for (const att of attachmentArray) {
+    // Regular attachments (not inline)
+    for (const att of regularAttachments) {
       if (!att.data || !att.filename) continue;
       
       lines.push(`--${boundary}`);
@@ -73,12 +143,12 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
       lines.push(`Content-Disposition: attachment; filename="${att.filename}"`);
       lines.push('');
       
-      // Ensure data is clean base64 (no prefix)
+      // Clean and wrap base64
       let base64Data = att.data;
       if (base64Data.includes(',')) {
         base64Data = base64Data.split(',')[1];
       }
-      lines.push(base64Data);
+      lines.push(wrapBase64(base64Data));
       lines.push('');
     }
     
@@ -271,7 +341,7 @@ Deno.serve(async (req) => {
         }, { status: 400 });
       }
 
-      // Validate each attachment has required fields
+      // Validate each attachment has required fields (allow extra fields for inline attachments)
       for (const att of attachments) {
         if (!att.filename || !att.mimeType || !att.data) {
           return Response.json({
@@ -280,6 +350,7 @@ Deno.serve(async (req) => {
             message: 'Each attachment must have filename, mimeType, and data'
           }, { status: 400 });
         }
+        // Note: is_inline and contentId are optional extra fields for CID attachments
       }
     }
 
