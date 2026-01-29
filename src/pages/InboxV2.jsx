@@ -660,6 +660,14 @@ export default function InboxV2() {
     return () => clearTimeout(timeout);
   }, [selectedThread?.id, user?.email]);
 
+  // Cleanup composing status when thread is closed or component unmounts
+  useEffect(() => {
+    return () => {
+      // Clear composing status on unmount
+      setComposingUsers({});
+    };
+  }, []);
+
   // Composer sent
   const handleComposerSent = async () => {
     await refetchThreads();
