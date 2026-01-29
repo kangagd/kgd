@@ -106,6 +106,32 @@ const inferThreadDirection = (thread, orgEmails = []) => {
 
 export default function InboxV2() {
   const [user, setUser] = useState(null);
+  const queryClient = useQueryClient();
+  const mountedRef = useRef(true);
+  const syncInFlightRef = useRef(false);
+  const [selectedThreadId, setSelectedThreadId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilters, setActiveFilters] = useState({});
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
+  const [showHistorySearch, setShowHistorySearch] = useState(false);
+  const [activeView, setActiveView] = useState("inbox");
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerDraftId, setComposerDraftId] = useState(null);
+  const [composerThreadId, setComposerThreadId] = useState(null);
+  const [composerMode, setComposerMode] = useState("new");
+  const [composerLastMessage, setComposerLastMessage] = useState(null);
+  const [triageFilter, setTriageFilter] = useState("all");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedThreadIds, setSelectedThreadIds] = useState(new Set());
+  const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
+  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
+  const [selectedMessageForProject, setSelectedMessageForProject] = useState(null);
 
   // Load current user
   useEffect(() => {
@@ -131,38 +157,6 @@ export default function InboxV2() {
       </div>
     );
   }
-
-  const queryClient = useQueryClient();
-  const mountedRef = useRef(true);
-  const syncInFlightRef = useRef(false);
-  const [selectedThreadId, setSelectedThreadId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilters, setActiveFilters] = useState({});
-  const [cursor, setCursor] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  // NOTE: `showComposer`/`composerMessage` removed (GUARDRAIL: use composerOpen/composerMode instead - controls both visibility and mode)
-  // Composer state consolidated into: composerOpen, composerMode, composerThreadId, composerDraftId, composerLastMessage
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
-  const [showHistorySearch, setShowHistorySearch] = useState(false);
-  const [activeView, setActiveView] = useState("inbox"); // inbox | drafts
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [composerDraftId, setComposerDraftId] = useState(null);
-  const [composerThreadId, setComposerThreadId] = useState(null);
-  const [composerMode, setComposerMode] = useState("new");
-  const [composerLastMessage, setComposerLastMessage] = useState(null);
-  const [triageFilter, setTriageFilter] = useState("all");
-
-  // Bulk selection
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedThreadIds, setSelectedThreadIds] = useState(new Set());
-  const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
-  const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
-  const [selectedMessageForProject, setSelectedMessageForProject] = useState(null);
 
   // Cleanup on unmount to avoid setState warnings and reset sync lock
   useEffect(() => {
