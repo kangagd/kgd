@@ -142,6 +142,23 @@ export default function InboxV2ContextPanel({
     }
   }, [showSearch]);
 
+  // Search results (filtered recent projects) - before early return
+  const searchResults = useMemo(() => {
+    if (!projectSearch.trim()) {
+      return recentProjects.slice(0, 20);
+    }
+
+    const query = projectSearch.toLowerCase();
+    return recentProjects.filter(
+      (p) =>
+        p.title?.toLowerCase().includes(query) ||
+        p.customer_name?.toLowerCase().includes(query) ||
+        String(p.project_number || '').includes(query) ||
+        p.address_suburb?.toLowerCase().includes(query) ||
+        p.address_full?.toLowerCase().includes(query)
+    );
+  }, [projectSearch, recentProjects]);
+
   if (!thread) {
     return (
       <div className="flex-1 flex items-center justify-center text-center p-4">
@@ -158,23 +175,6 @@ export default function InboxV2ContextPanel({
   const linkedTitle = thread.project_title || thread.contract_name || '';
   const isClosed = thread.userStatus === 'closed';
   const canonicalStatus = isClosed ? 'done' : thread.next_action_status || 'needs_action';
-
-  // Search results (filtered recent projects)
-  const searchResults = useMemo(() => {
-    if (!projectSearch.trim()) {
-      return recentProjects.slice(0, 20);
-    }
-
-    const query = projectSearch.toLowerCase();
-    return recentProjects.filter(
-      (p) =>
-        p.title?.toLowerCase().includes(query) ||
-        p.customer_name?.toLowerCase().includes(query) ||
-        String(p.project_number || '').includes(query) ||
-        p.address_suburb?.toLowerCase().includes(query) ||
-        p.address_full?.toLowerCase().includes(query)
-    );
-  }, [projectSearch, recentProjects]);
 
   // Link mutation
   const linkMutation = useMutation({
