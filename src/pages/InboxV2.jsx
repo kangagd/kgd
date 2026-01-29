@@ -146,18 +146,6 @@ export default function InboxV2() {
     loadUser();
   }, []);
 
-  // Allowlist gate
-  if (!isInboxV2Allowed(user)) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <Mail className="w-12 h-12 text-[#D1D5DB] mx-auto mb-3" />
-          <p className="text-[14px] text-[#6B7280]">Access denied</p>
-        </div>
-      </div>
-    );
-  }
-
   // Cleanup on unmount to avoid setState warnings and reset sync lock
   useEffect(() => {
     return () => {
