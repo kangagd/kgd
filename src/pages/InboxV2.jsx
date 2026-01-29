@@ -674,18 +674,36 @@ export default function InboxV2() {
     }
   };
 
-  // Track thread view (debounced - only update once per 10 seconds)
+  // Track thread view + audit opened
   useEffect(() => {
     if (!selectedThread || !user) return;
 
     const timeout = setTimeout(() => {
+      // Update viewer last seen
       base44.functions.invoke('updateEmailThreadViewerLastSeen', {
         thread_id: selectedThread.id,
       }).catch(() => {});
+
+      // Log "opened by" audit (de-duped: once per 30 min per thread per user)
+      const mapKey = selectedThread.id;
+      const now = Date.now();
+      const lastAudit = threadOpenAuditMapRef.current[mapKey];
+
+      if (!lastAudit || now - lastAudit > 30 * 60 * 1000) {
+        threadOpenAuditMapRef.current[mapKey] = now;
+
+        base44.entities.EmailAudit?.create?.({
+          thread_id: selectedThread.id,
+          type: 'thread_opened',
+          message: `Opened by ${user.display_name || user.full_name || user.email}`,
+          actor_user_id: user.id,
+          actor_name: user.display_name || user.full_name || user.email,
+        }).catch(() => {});
+      }
     }, 10000);
 
     return () => clearTimeout(timeout);
-  }, [selectedThread?.id, user?.email]);
+  }, [selectedThread?.id, user?.email, user?.id, user?.display_name, user?.full_name]);
 
   // Cleanup composing status when thread is closed or component unmounts
   useEffect(() => {
