@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,24 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
   const [showAddCustom, setShowAddCustom] = useState(false);
   const [customItemType, setCustomItemType] = useState(null); // 'part', 'trade', 'requirement'
 
-  const visitScope = job.visit_scope || { parts: [], trades: [], requirements: [] };
+  // Step 1: Local draft state decoupled from query data
+  const [draft, setDraft] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const lastServerHashRef = useRef("");
+
+  // Initialize draft from job.visit_scope only once or when not dirty
+  useEffect(() => {
+    const serverData = job.visit_scope || { parts: [], trades: [], requirements: [] };
+    const serverHash = JSON.stringify(serverData);
+    const changed = serverHash !== lastServerHashRef.current;
+
+    if (changed && !isDirty) {
+      setDraft(serverData);
+      lastServerHashRef.current = serverHash;
+    }
+  }, [job.visit_scope, isDirty]);
+
+  const visitScope = draft || job.visit_scope || { parts: [], trades: [], requirements: [] };
   const hasScopeItems = (visitScope.parts?.length > 0) || 
                         (visitScope.trades?.length > 0) || 
                         (visitScope.requirements?.length > 0);
