@@ -1620,6 +1620,7 @@ Link: ${threadLink}
           <InboxV2ContextPanel
             thread={selectedThread}
             teamUsers={teamUsers}
+            currentUser={user}
             onThreadUpdate={() => refetchThreads()}
             onOpenLinkModal={() => setShowLinkModal(true)}
             onOpenCreateProjectModal={() => setShowCreateProjectModal(true)}
