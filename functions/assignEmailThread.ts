@@ -20,6 +20,9 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.EmailThread.update(thread_id, {
         assigned_to: null,
         assigned_to_name: null,
+        assigned_at: null,
+        assigned_by: user.email,
+        assigned_by_name: user.display_name || user.full_name,
         last_worked_by: user.email,
         last_worked_by_name: user.display_name || user.full_name,
         last_worked_at: new Date().toISOString()
@@ -28,7 +31,8 @@ Deno.serve(async (req) => {
       return Response.json({ 
         success: true,
         assigned_to: null,
-        assigned_to_name: null
+        assigned_to_name: null,
+        assigned_at: null
       });
     }
     
@@ -85,8 +89,10 @@ Deno.serve(async (req) => {
     
     return Response.json({ 
       success: true,
+      thread_id,
       assigned_to: assigned_to_email,
-      assigned_to_name: assignedUserData.display_name || assignedUserData.full_name
+      assigned_to_name: assignedUserData.display_name || assignedUserData.full_name,
+      assigned_at: new Date().toISOString()
     });
   } catch (error) {
     console.error('Error assigning thread:', error);
