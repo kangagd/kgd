@@ -34,76 +34,70 @@ Deno.serve(async (req) => {
             }, { status: 404 });
         }
 
-        // Determine logistics purpose for this PO (needed for reuse check)
-        let logisticsPurpose;
-        if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
-            logisticsPurpose = LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER;
-        } else {
-            logisticsPurpose = LOGISTICS_PURPOSE.PO_DELIVERY_TO_WAREHOUSE;
-        }
-
         // IDEMPOTENCY GUARD: Check if a logistics job already exists for this PO
-        let existingJob = null;
+         let existingJob = null;
 
-        // First check if PO has linked_logistics_job_id
-        if (po.linked_logistics_job_id) {
-            try {
-                existingJob = await base44.asServiceRole.entities.Job.get(po.linked_logistics_job_id);
-                if (existingJob) {
-                    console.log("[Logistics] reused via linked_logistics_job_id", { 
-                        poId: purchase_order_id, 
-                        jobId: existingJob.id,
-                        reused: true 
-                    });
-                    return Response.json({
-                        success: true,
-                        reused: true,
-                        job: existingJob
-                    });
-                }
-            } catch (err) {
-                console.error('Error fetching linked job:', err);
-            }
-        }
+         // First check if PO has linked_logistics_job_id
+         if (po.linked_logistics_job_id) {
+             try {
+                 existingJob = await base44.asServiceRole.entities.Job.get(po.linked_logistics_job_id);
+                 if (existingJob) {
+                     console.log("[Logistics] idempotency reused via linked_logistics_job_id", { 
+                         poId: purchase_order_id, 
+                         jobId: existingJob.id,
+                         reused: true 
+                     });
+                     return Response.json({
+                         success: true,
+                         job: existingJob,
+                         purchaseOrder: po,
+                         reused: true,
+                         version: VERSION
+                     });
+                 }
+             } catch (err) {
+                 console.error('Error fetching linked job:', err);
+             }
+         }
 
-        // If no linked job, query for existing jobs by purchase_order_id AND matching purpose
-        try {
-            const existingJobs = await base44.asServiceRole.entities.Job.filter({
-                purchase_order_id: po.id,
-                logistics_purpose: logisticsPurpose
-            });
+         // If no linked job, query for existing jobs by purchase_order_id
+         try {
+             const existingJobs = await base44.asServiceRole.entities.Job.filter({
+                 purchase_order_id: po.id
+             });
 
-            if (existingJobs.length > 0) {
-                // Choose the most recent by created_date
-                existingJob = existingJobs.reduce((latest, current) => {
-                    const latestTime = new Date(latest.created_date || 0).getTime();
-                    const currentTime = new Date(current.created_date || 0).getTime();
-                    return currentTime > latestTime ? current : latest;
-                });
+             if (existingJobs.length > 0) {
+                 // Choose the most recent by created_date
+                 existingJob = existingJobs.reduce((latest, current) => {
+                     const latestTime = new Date(latest.created_date || 0).getTime();
+                     const currentTime = new Date(current.created_date || 0).getTime();
+                     return currentTime > latestTime ? current : latest;
+                 });
 
-                console.log("[Logistics] reused via query (PO + purpose match)", { 
-                    poId: purchase_order_id, 
-                    jobId: existingJob.id,
-                    purpose: logisticsPurpose,
-                    reused: true 
-                });
+                 console.log("[Logistics] idempotency reused via existing job query", { 
+                     poId: purchase_order_id, 
+                     jobId: existingJob.id,
+                     reused: true 
+                 });
 
-                // Update PO link if not already set
-                if (!po.linked_logistics_job_id) {
-                    await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
-                        linked_logistics_job_id: existingJob.id
-                    });
-                }
+                 // Update PO link if not already set
+                 if (!po.linked_logistics_job_id) {
+                     await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
+                         linked_logistics_job_id: existingJob.id
+                     });
+                 }
 
-                return Response.json({
-                    success: true,
-                    reused: true,
-                    job: existingJob
-                });
-            }
-        } catch (err) {
-            console.error('Error querying existing logistics jobs:', err);
-        }
+                 return Response.json({
+                     success: true,
+                     job: existingJob,
+                     purchaseOrder: po,
+                     reused: true,
+                     version: VERSION
+                 });
+             }
+         } catch (err) {
+             console.error('Error querying existing logistics jobs:', err);
+         }
 
          // GUARDRAIL: For supplier-based logistics, PO must have a supplier
          if (
@@ -116,13 +110,15 @@ Deno.serve(async (req) => {
              }, { status: 400 });
          }
 
-        // Determine job type based on delivery method (purpose already set above for idempotency)
-        let jobTypeName, originAddress, destinationAddress;
+        // Determine logistics purpose and job type based on delivery method
+        let logisticsPurpose, jobTypeName, originAddress, destinationAddress;
         
         if (po.delivery_method === PO_DELIVERY_METHOD.PICKUP) {
+            logisticsPurpose = LOGISTICS_PURPOSE.PO_PICKUP_FROM_SUPPLIER;
             jobTypeName = "Ready for Pick Up - Supplier";
         } else {
             // Default to DELIVERY
+            logisticsPurpose = LOGISTICS_PURPOSE.PO_DELIVERY_TO_WAREHOUSE;
             jobTypeName = "Delivery in Loading Bay";
         }
             
@@ -355,19 +351,18 @@ Deno.serve(async (req) => {
              jobData.project_id = po.project_id;
          }
 
-         console.log("[Logistics] creating new job (no existing found)", { poId: purchase_order_id, purpose: logisticsPurpose });
+         console.log("[Logistics] creating new job (no existing found)", { poId: purchase_order_id });
 
          const job = await base44.asServiceRole.entities.Job.create(jobData);
 
          // Update PO with linked job reference
-         await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
+         const updatedPO = await base44.asServiceRole.entities.PurchaseOrder.update(po.id, {
              linked_logistics_job_id: job.id
          });
 
-         console.log("[Logistics] new job created", { 
+         console.log("[Logistics] idempotency new job created", { 
              poId: purchase_order_id, 
              jobId: job.id,
-             purpose: logisticsPurpose,
              reused: false 
          });
 
@@ -389,8 +384,12 @@ Deno.serve(async (req) => {
 
          return Response.json({
              success: true,
-             reused: false,
-             job: job
+             job: job,
+             purchaseOrder: updatedPO,
+             partsCreated: allParts.length,
+             supplierLocationCreated: !!supplierLocation,
+             linkingErrors: linkingErrors.length > 0 ? linkingErrors : undefined,
+             version: VERSION
          });
 
      } catch (error) {
