@@ -740,17 +740,15 @@ export default function InboxV2() {
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Testing Header */}
-      {isInboxV2Allowed(user) && (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center gap-4">
-          <Link
-            to="/Inbox"
-            className="text-sm font-medium text-blue-700 hover:text-blue-900 underline"
-          >
-            Go to current Inbox
-          </Link>
-          <span className="text-sm font-medium text-blue-900">You are in Inbox V2</span>
-        </div>
-      )}
+      <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 flex items-center gap-4">
+        <Link
+          to="/Inbox"
+          className="text-sm font-medium text-blue-700 hover:text-blue-900 underline"
+        >
+          Go to current Inbox
+        </Link>
+        <span className="text-sm font-medium text-blue-900">You are in Inbox V2</span>
+      </div>
 
       {/* Inbox V2 Banner */}
       <div className="bg-purple-50 border-b border-purple-200 px-4 py-2">
