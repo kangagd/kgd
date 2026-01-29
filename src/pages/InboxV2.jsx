@@ -208,7 +208,7 @@ export default function InboxV2() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastThreadFetchTime, setLastThreadFetchTime] = useState(0);
   const [showHistorySearch, setShowHistorySearch] = useState(false);
-  const [activeView, setActiveView] = useState("inbox");
+  const [activeView, setActiveView] = useState("threads");
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerDraftId, setComposerDraftId] = useState(null);
   const [composerThreadId, setComposerThreadId] = useState(null);
@@ -224,6 +224,7 @@ export default function InboxV2() {
   const [detailTab, setDetailTab] = useState("messages"); // messages | notes
   const [noteInput, setNoteInput] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [updatingThreadId, setUpdatingThreadId] = useState(null);
 
   // Load current user
   useEffect(() => {
