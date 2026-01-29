@@ -170,8 +170,10 @@ async function gmailFetch(endpoint, method = 'GET', body = null, queryParams = n
 }
 
 // ============================================================================
-// Body Coalescing & Sync Status Helpers
+// Body Quality & Monotonic Upsert Helpers
 // ============================================================================
+
+const DEBUG_SYNC = false;
 
 /**
  * Check if a string is non-empty (not null, not "", not whitespace-only)
@@ -182,7 +184,6 @@ function isNonEmptyString(s) {
 
 /**
  * Check if HTML is empty after stripping tags
- * Considers "empty" if: null/undefined, whitespace, or tags-only content
  */
 function isEmptyHtml(html) {
   if (!html) return true;
@@ -199,29 +200,32 @@ function hasBodyTruth(bodyHtml, bodyText) {
 }
 
 /**
- * Coalesce incoming and existing bodies, never downgrading
- * Rule: prefer non-empty incoming; fall back to existing; never overwrite non-empty with empty
+ * Compute body quality based on extraction result
+ * Quality rank: empty=0, partial=1, complete=2
  */
-function coalesceBody(existing, incoming) {
-  const incomingHtmlGood = isNonEmptyString(incoming.body_html) && !isEmptyHtml(incoming.body_html);
-  const existingHtmlGood = isNonEmptyString(existing?.body_html) && !isEmptyHtml(existing.body_html);
-  const incomingTextGood = isNonEmptyString(incoming.body_text);
-  const existingTextGood = isNonEmptyString(existing?.body_text);
+function computeBodyQuality(bodyHtml, bodyText, extractionError) {
+  const hasHtml = isNonEmptyString(bodyHtml) && !isEmptyHtml(bodyHtml);
+  const hasText = isNonEmptyString(bodyText);
 
-  return {
-    body_html: incomingHtmlGood ? incoming.body_html : (existingHtmlGood ? existing.body_html : ''),
-    body_text: incomingTextGood ? incoming.body_text : (existingTextGood ? existing.body_text : '')
-  };
+  if (extractionError) {
+    // Parse error: mark as partial (best effort)
+    return 'partial';
+  }
+
+  if (!hasHtml && !hasText) {
+    return 'empty';
+  }
+
+  // Has at least one body part without error
+  return 'complete';
 }
 
 /**
- * Compute sync_status based on parse result and body availability
+ * Quality rank for monotonic comparison
  */
-function computeSyncStatus(incomingResult, parseError) {
-  if (parseError) return 'failed';
-  
-  const hasBody = hasBodyTruth(incomingResult?.body_html, incomingResult?.body_text);
-  return hasBody ? 'ok' : 'partial';
+function getQualityRank(quality) {
+  const ranks = { 'empty': 0, 'partial': 1, 'complete': 2 };
+  return ranks[quality] || 0;
 }
 
 // ============================================================================
