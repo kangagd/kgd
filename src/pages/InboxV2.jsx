@@ -33,9 +33,50 @@ import { isInboxV2Allowed } from "@/components/utils/allowlist";
    Direction helpers
 --------------------------- */
 const normalizeEmail = (e) => (e || "").toLowerCase().trim();
-const safeTs = (iso) => {
-  const t = iso ? new Date(iso).getTime() : 0;
-  return Number.isFinite(t) ? t : 0;
+const safeTs = (v) => {
+  if (!v) return null;
+  if (v instanceof Date) return v.getTime();
+  if (typeof v === 'number') return v;
+  if (typeof v === 'string') {
+    const t = new Date(v).getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+  return null;
+};
+
+const inferThreadDirectionLocal = (thread, orgEmails = []) => {
+  const orgEmailsSet = new Set(orgEmails.map(normalizeEmail).filter(Boolean));
+  const senderEmail = normalizeEmail(
+    thread.last_message_from_email || 
+    thread.last_from_email || 
+    thread.last_sender_email || 
+    thread.last_message_from || 
+    thread.from_address || 
+    ''
+  );
+  if (senderEmail && orgEmailsSet.has(senderEmail)) return 'sent';
+  if (!senderEmail) return 'unknown';
+  return 'received';
+};
+
+const deriveTriageState = (thread, orgEmails = []) => {
+  const hasLink = thread.project_id || thread.contract_id;
+  if (!hasLink) return 'needs_link';
+  
+  const direction = inferThreadDirectionLocal(thread, orgEmails);
+  const lastMsg = safeTs(thread.last_message_date || thread.lastMessageAt || thread.updated_date);
+  const lastInternal = safeTs(thread.lastInternalMessageAt || thread.last_internal_message_at);
+  const lastExternal = safeTs(thread.lastExternalMessageAt || thread.last_external_message_at);
+  
+  if (direction === 'received' && lastMsg) {
+    if (!lastInternal || lastMsg > lastInternal) return 'needs_reply';
+  }
+  
+  if (direction === 'sent' && lastMsg) {
+    if (!lastExternal || (lastInternal && lastInternal >= lastExternal)) return 'waiting';
+  }
+  
+  return 'reference';
 };
 
 /**
