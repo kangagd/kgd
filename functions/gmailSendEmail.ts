@@ -132,35 +132,6 @@ function buildMimeMessage({ from, to, cc, bcc, subject, textBody, htmlBody, inRe
       lines.push(textBody);
       lines.push('');
     }
-    } else if (htmlBody) {
-      // No inline images, just text + HTML
-      lines.push(`Content-Type: multipart/alternative; boundary="${alternativeBoundary}"`);
-      lines.push('');
-      
-      // Plain text
-      lines.push(`--${alternativeBoundary}`);
-      lines.push('Content-Type: text/plain; charset=UTF-8');
-      lines.push('Content-Transfer-Encoding: 7bit');
-      lines.push('');
-      lines.push(textBody || htmlBody.replace(/<[^>]*>/g, ''));
-      lines.push('');
-      
-      // HTML
-      lines.push(`--${alternativeBoundary}`);
-      lines.push('Content-Type: text/html; charset=UTF-8');
-      lines.push('Content-Transfer-Encoding: 7bit');
-      lines.push('');
-      lines.push(htmlBody);
-      lines.push('');
-      lines.push(`--${alternativeBoundary}--`);
-    } else {
-      // Text only
-      lines.push('Content-Type: text/plain; charset=UTF-8');
-      lines.push('Content-Transfer-Encoding: 7bit');
-      lines.push('');
-      lines.push(textBody);
-      lines.push('');
-    }
     
     // Regular attachments (not inline)
     for (const att of regularAttachments) {
