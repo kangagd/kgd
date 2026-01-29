@@ -309,12 +309,18 @@ export default function EmailMessageItem({
         attemptedInlineFetchRef.current.add(contentId);
 
         try {
-          await base44.functions.invoke('gmailGetInlineAttachmentUrl', {
+          const result = await base44.functions.invoke('gmailGetInlineAttachmentUrl', {
             gmail_message_id,
             attachment_id,
           });
-          // Success: invalidate to refresh attachments with file_url
-          await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
+          // Check for backend failure (safe 200 response with success: false)
+          if (result.data?.success === false) {
+            console.warn(`Failed to load inline image ${contentId}:`, result.data?.error);
+            setInlineImageErrors((prev) => new Set(prev).add(contentId));
+          } else {
+            // Success: invalidate to refresh attachments with file_url
+            await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
+          }
         } catch (err) {
           console.error(`Failed to load inline image ${contentId}:`, err);
           // Mark as error so retry banner shows
@@ -343,7 +349,7 @@ export default function EmailMessageItem({
     );
 
     try {
-      await Promise.all(
+      const results = await Promise.all(
         pendingAttachments.map((att) =>
           base44.functions.invoke('gmailGetInlineAttachmentUrl', {
             gmail_message_id: att.gmail_message_id || message.gmail_message_id,
@@ -351,10 +357,18 @@ export default function EmailMessageItem({
           })
         )
       );
-      // Refetch to get updated attachments
-      await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
-      setInlineImageErrors(new Set()); // Clear errors on success
-      toast.success('Images loaded');
+      
+      // Check if any failed (success: false)
+      const failures = results.filter(r => r.data?.success === false);
+      if (failures.length > 0) {
+        const firstError = failures[0].data?.error || 'Failed to load some images';
+        toast.error(firstError);
+      } else {
+        // Refetch to get updated attachments
+        await queryClient.invalidateQueries({ queryKey: inboxKeys.messages(threadId || message.thread_id) });
+        setInlineImageErrors(new Set()); // Clear errors on success
+        toast.success('Images loaded');
+      }
     } catch (err) {
       let errorMsg = 'Failed to load images';
       const responseData = err?.response?.data;
