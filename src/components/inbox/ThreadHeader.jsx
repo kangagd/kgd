@@ -33,7 +33,8 @@ export default function ThreadHeader({
   onReply = null,
   onReplyAll = null,
   onForward = null,
-  onAttach = null
+  onAttach = null,
+  compactMode = false
 }) {
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const [isClosingLoading, setIsClosingLoading] = useState(false);
