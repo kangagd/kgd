@@ -402,11 +402,6 @@ export default function ThreadHeader({
             )}
           </div>
         </div>
-      )}
-      {compactMode && (
-        <div className="space-y-3">
-        </div>
-      )}
 
         {/* Metadata */}
         <div className="flex items-center gap-4 text-[11px] text-[#6B7280] pt-2 border-t border-[#F3F4F6]">
