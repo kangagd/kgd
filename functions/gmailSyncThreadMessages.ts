@@ -551,6 +551,11 @@ Deno.serve(async (req) => {
         const incomingResult = extractBodyFromPayload(gmailMsg.payload);
         const incomingAttachments = extractAttachmentsFromPayload(gmailMsg.payload, gmailMsg.id);
 
+        // Detect CIDs in incoming HTML (if present)
+        const detectedCids = extractCidsFromHtml(incomingResult.body_html);
+        const incomingCidMap = buildCidMapFromAttachments(incomingAttachments);
+        const incomingCidState = determineCidState(detectedCids, incomingCidMap);
+
         // Compute quality of incoming extraction (no error = extraction succeeded)
         const incomingQuality = computeBodyQuality(incomingResult.body_html, incomingResult.body_text, false);
         const incomingQualityRank = getQualityRank(incomingQuality);
