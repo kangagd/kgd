@@ -818,7 +818,12 @@ export default function InboxV2() {
 
       {/* Inbox V2 Banner */}
       <div className="bg-purple-50 border-b border-purple-200 px-4 py-2">
-        <p className="text-sm font-medium text-purple-900">Inbox V2 (Private Preview) — not live</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-purple-900">Inbox V2 (Private Preview) — not live</p>
+          <p className="text-xs text-purple-800">
+            Unprocessed (Needs link): {triageCounts.needs_link} | Needs reply: {triageCounts.needs_reply} | Waiting: {triageCounts.waiting}
+          </p>
+        </div>
       </div>
 
       <div className="flex-1 flex gap-0 min-h-0 overflow-hidden">
