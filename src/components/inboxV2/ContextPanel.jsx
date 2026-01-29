@@ -104,6 +104,20 @@ export default function InboxV2ContextPanel({
     enabled: !!thread,
   });
 
+  // Fetch audit entries for this thread
+  const { data: audits = [] } = useQuery({
+    queryKey: ['threadAudits', thread?.id],
+    queryFn: async () => {
+      if (!thread?.id) return [];
+      return base44.entities.EmailAudit?.filter?.(
+        { thread_id: thread.id },
+        '-created_date'
+      ) || [];
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    enabled: !!thread?.id,
+  });
+
   // Get participants
   const participants = useMemo(() => getThreadParticipants(thread), [thread]);
 
