@@ -257,6 +257,28 @@ Deno.serve(async (req) => {
               updateData.to_location_inferred = true;
               jobUpdated = true;
             }
+          } else if (job.project_id) {
+            // Vehicle not assigned - try project address + client-site location
+            const project = await base44.asServiceRole.entities.Project.get(job.project_id);
+            if (project?.address_full) {
+              updateData.destination_address = project.address_full;
+              jobUpdated = true;
+            }
+            
+            // Try to find a client-site location
+            const clientSiteLocs = await base44.asServiceRole.entities.InventoryLocation.filter({
+              type: 'client_site',
+              is_active: true
+            });
+            if (clientSiteLocs.length > 0) {
+              toLocationId = clientSiteLocs[0].id;
+              updateData.destination_location_id = toLocationId;
+              updateData.to_location_inferred = true;
+              jobUpdated = true;
+            } else {
+              // No client-site location exists - mark needs manual
+              jobNeedsManual = true;
+            }
           }
         }
 
