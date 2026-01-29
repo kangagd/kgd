@@ -574,6 +574,8 @@ Deno.serve(async (req) => {
         let finalBodyHtml = incomingResult.body_html;
         let finalBodyText = incomingResult.body_text;
         let finalQuality = incomingQuality;
+        let finalCidState = incomingCidState;
+        let finalCidMap = incomingCidMap;
 
         if (existing) {
           const existingQualityRank = getQualityRank(existing.body_quality || 'empty');
@@ -585,6 +587,9 @@ Deno.serve(async (req) => {
             finalBodyText = existing.body_text;
             finalQuality = existing.body_quality;
             action = 'kept_existing';
+            // Preserve existing CID state unless incoming is better
+            finalCidState = existing.cid_state || 'unresolved';
+            finalCidMap = existing.cid_map || {};
           } else {
             // Upgrade to incoming body (higher quality)
             finalQuality = incomingQuality;
