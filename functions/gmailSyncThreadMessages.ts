@@ -597,7 +597,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Build message data with monotonic body content
+        // Build message data with monotonic body content + CID state
         const messageData = {
           thread_id: threadId,
           gmail_message_id: gmailMsg.id,
@@ -617,7 +617,15 @@ Deno.serve(async (req) => {
           has_body: hasBodyTruth(finalBodyHtml, finalBodyText),
           sync_status: finalQuality === 'complete' ? 'ok' : (finalQuality === 'partial' ? 'partial' : 'failed'),
           parse_error: finalQuality === 'complete' ? null : 'body_missing_or_empty',
-          last_synced_at: now
+          last_synced_at: now,
+          cid_state: finalCidState,
+          cid_map: Object.keys(finalCidMap).length > 0 ? finalCidMap : null,
+          sync_debug: {
+            last_sync_attempt_at: now,
+            last_body_quality: finalQuality,
+            last_cid_state: finalCidState,
+            last_error_code: finalQuality === 'complete' ? null : 'BODY_INCOMPLETE'
+          }
         };
 
         // Atomic write: create or update
