@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { LinkIcon, Sparkles, Check, RotateCcw, X, Zap } from 'lucide-react';
+import { LinkIcon, Sparkles, Check, RotateCcw, X, Zap, ChevronDown } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { createPageUrl } from '@/utils';
 
 // Minimum confidence threshold for category suggestions
