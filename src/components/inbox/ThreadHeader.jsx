@@ -445,6 +445,7 @@ export default function ThreadHeader({
         )}
         </div>
       </div>
+      )}
 
       {/* Modals */}
       <LinkThreadModal
