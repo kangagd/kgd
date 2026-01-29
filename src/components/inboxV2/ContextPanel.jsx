@@ -84,6 +84,7 @@ export default function InboxV2ContextPanel({
   onThreadUpdate,
   onOpenLinkModal,
   onOpenCreateProjectModal,
+  currentUser,
 }) {
   const queryClient = useQueryClient();
   const [projectSearch, setProjectSearch] = useState('');
