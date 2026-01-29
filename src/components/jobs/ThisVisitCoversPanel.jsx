@@ -172,6 +172,13 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
     );
   };
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, []);
+
   return (
     <>
       <Card className="border border-[#E5E7EB] shadow-sm rounded-lg">
