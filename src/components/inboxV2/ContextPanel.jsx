@@ -701,7 +701,7 @@ export default function InboxV2ContextPanel({
                 >
                   Unassigned
                 </button>
-                {teamUsers.map((user) => (
+                {teamUsers.filter(u => u.role === 'admin').map((user) => (
                   <button
                     key={user.email}
                     onClick={() => assignmentMutation.mutate(user.email)}
