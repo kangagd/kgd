@@ -347,7 +347,7 @@ function normalizeContentId(contentId) {
 /**
  * Extract attachment metadata from a MIME part
  */
-function extractAttachmentFromPart(part) {
+function extractAttachmentFromPart(part, gmailMessageId) {
   if (!part || !part.filename) return null;
   
   // Determine if inline (has Content-ID or Content-Disposition: inline)
@@ -371,6 +371,7 @@ function extractAttachmentFromPart(part) {
     mime_type: part.mimeType || 'application/octet-stream',
     size: part.body?.size || 0,
     attachment_id: part.body?.attachmentId || null,
+    gmail_message_id: gmailMessageId,
     content_id: contentId,
     content_id_normalized: contentId, // For cid: matching in UI
     is_inline: isInline
@@ -380,7 +381,7 @@ function extractAttachmentFromPart(part) {
 /**
  * Recursively extract attachments from MIME parts
  */
-function extractAttachmentsFromMimeParts(parts, depth = 0) {
+function extractAttachmentsFromMimeParts(parts, gmailMessageId, depth = 0) {
   const attachments = [];
   
   if (!parts || !Array.isArray(parts) || depth > 10) {
@@ -392,7 +393,7 @@ function extractAttachmentsFromMimeParts(parts, depth = 0) {
     
     // Check if this part is an attachment
     if (part.filename && part.body?.attachmentId) {
-      const attachment = extractAttachmentFromPart(part);
+      const attachment = extractAttachmentFromPart(part, gmailMessageId);
       if (attachment) {
         attachments.push(attachment);
       }
@@ -400,7 +401,7 @@ function extractAttachmentsFromMimeParts(parts, depth = 0) {
     
     // Recurse into nested parts
     if (part.parts) {
-      const nestedAttachments = extractAttachmentsFromMimeParts(part.parts, depth + 1);
+      const nestedAttachments = extractAttachmentsFromMimeParts(part.parts, gmailMessageId, depth + 1);
       attachments.push(...nestedAttachments);
     }
   }
@@ -411,14 +412,14 @@ function extractAttachmentsFromMimeParts(parts, depth = 0) {
 /**
  * Extract all attachments from message payload
  */
-function extractAttachmentsFromPayload(payload) {
+function extractAttachmentsFromPayload(payload, gmailMessageId) {
   if (!payload) return [];
   
   const attachments = [];
   
   // Check top-level parts
   if (payload.parts) {
-    attachments.push(...extractAttachmentsFromMimeParts(payload.parts));
+    attachments.push(...extractAttachmentsFromMimeParts(payload.parts, gmailMessageId));
   }
   
   return attachments;
@@ -524,7 +525,7 @@ Deno.serve(async (req) => {
         let incomingResult = extractBodyFromPayload(gmailMsg.payload);
         
         // Extract attachments (added 2026-01-29)
-        const incomingAttachments = extractAttachmentsFromPayload(gmailMsg.payload);
+        const incomingAttachments = extractAttachmentsFromPayload(gmailMsg.payload, gmailMsg.id);
 
         // Check if message already exists
         const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
