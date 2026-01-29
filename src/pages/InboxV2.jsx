@@ -1676,12 +1676,12 @@ Link: ${threadLink}
                           threadNotes.map((note) => (
                             <div key={note.id} className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs font-medium text-[#4B5563]">{note.author_name || note.author_email}</span>
+                                <span className="text-xs font-medium text-[#4B5563]">{note.created_by_name || note.created_by}</span>
                                 <span className="text-xs text-[#9CA3AF]">
                                   {new Date(note.created_date).toLocaleDateString()} {new Date(note.created_date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                 </span>
                               </div>
-                              <p className="text-sm text-[#111827] whitespace-pre-wrap">{note.body}</p>
+                              <p className="text-sm text-[#111827] whitespace-pre-wrap">{note.note}</p>
                             </div>
                           ))
                         )}
