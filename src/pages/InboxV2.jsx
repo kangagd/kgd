@@ -433,24 +433,39 @@ export default function InboxV2() {
     ...QUERY_CONFIG.reference,
   });
 
+  // Derive triage state for all threads
+  const derivedThreads = useMemo(() => {
+    return (threads || [])
+      .filter((t) => !t.is_deleted)
+      .map((t) => ({
+        ...t,
+        _triage: deriveTriageState(t, orgEmails),
+        _direction: inferThreadDirectionLocal(t, orgEmails),
+      }));
+  }, [threads, orgEmails]);
+
+  // Count triage states
+  const triageCounts = useMemo(() => {
+    const counts = {
+      all: derivedThreads.length,
+      needs_reply: 0,
+      needs_link: 0,
+      waiting: 0,
+      reference: 0,
+    };
+    derivedThreads.forEach((t) => {
+      if (t._triage === 'needs_reply') counts.needs_reply++;
+      else if (t._triage === 'needs_link') counts.needs_link++;
+      else if (t._triage === 'waiting') counts.waiting++;
+      else if (t._triage === 'reference') counts.reference++;
+    });
+    return counts;
+  }, [derivedThreads]);
+
   // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
     console.log('[FILTER DEBUG] START threads.length=', threads?.length);
-    let result = (threads || [])
-      .filter((t) => !t.is_deleted);
-    
-    console.log('[FILTER DEBUG] After is_deleted filter:', result.length);
-    
-    result = result.map((t) => ({
-      ...t,
-      inferredDirection: inferThreadDirection(t, orgEmails),
-    }));
-
-    devLog('[InboxV2] After inferredDirection map:', result.length);
-
-    if (result.length > 0 && result.length <= 5) {
-      devLog('[InboxV2] Sample threads before filter:', result.map(t => ({ id: t.id, userStatus: t.userStatus, isUnread: t.isUnread })));
-    }
+    let result = derivedThreads;
 
     // Text search
     if (searchTerm) {
@@ -476,9 +491,9 @@ export default function InboxV2() {
     } else if (activeFilters["assigned-to-me"]) {
       result = result.filter((t) => t.assigned_to === user.email);
     } else if (activeFilters["sent"]) {
-      result = result.filter((t) => t.inferredDirection === "sent");
+      result = result.filter((t) => t._direction === "sent");
     } else if (activeFilters["received"]) {
-      result = result.filter((t) => t.inferredDirection === "received");
+      result = result.filter((t) => t._direction === "received");
     } else if (activeFilters["pinned"]) {
       result = result.filter((t) => t.pinnedAt);
     } else if (activeFilters["linked"]) {
@@ -487,8 +502,17 @@ export default function InboxV2() {
       result = result.filter((t) => !t.project_id && !t.contract_id);
     }
 
-    // Sorting: pinned > unread > by date
+    // Apply triage filter
+    if (triageFilter !== 'all') {
+      result = result.filter((t) => t._triage === triageFilter);
+    }
+
+    // Sorting: triage priority > pinned > unread > by date
+    const triagePriority = { needs_reply: 0, needs_link: 1, waiting: 2, reference: 3 };
     result.sort((a, b) => {
+      const aPriority = triagePriority[a._triage] ?? 4;
+      const bPriority = triagePriority[b._triage] ?? 4;
+      if (aPriority !== bPriority) return aPriority - bPriority;
       const aPinned = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
       const bPinned = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
       if (aPinned !== bPinned) return bPinned - aPinned;
@@ -500,7 +524,7 @@ export default function InboxV2() {
 
     console.log('[FILTER DEBUG] FINAL result.length=', result.length);
     return result;
-  }, [threads, searchTerm, activeFilters, user?.email, orgEmails]);
+  }, [derivedThreads, searchTerm, activeFilters, user?.email, triageFilter]);
 
   const selectedThread = useMemo(() => {
     return selectedThreadId ? threads.find((t) => t.id === selectedThreadId) : null;
