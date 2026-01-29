@@ -43,12 +43,13 @@ Deno.serve(async (req) => {
 
     // PandaDoc sends events in this format
     const events = Array.isArray(body) ? body : [body];
+    let allIgnored = true;
 
     for (const event of events) {
       const documentId = event.data?.id || event.document?.id;
       const eventType = event.event || event.name;
       
-      // IDEMPOTENCY: Build event key
+      // IDEMPOTENCY: Build event key (use event ID if present, else doc_id + status + timestamp)
       const eventKey = event.event?.id || event.eventId || event.id || 
         `${documentId}_${eventType}_${event.data?.status || event.document?.status}_${timestamp}`;
       
@@ -59,9 +60,12 @@ Deno.serve(async (req) => {
       });
       
       if (existingEvent.length > 0) {
-        console.log('[PandaDocWebhook] event', { event_key: eventKey, ignored: true });
+        console.log('[PandaDocWebhook] duplicate event ignored', { event_key: eventKey, ignored: true });
         continue; // Skip already processed event
       }
+      
+      // Mark that we're processing at least one event
+      allIgnored = false;
       
       // Record this event to prevent reprocessing
       await base44.asServiceRole.entities.WebhookEvent.create({
@@ -71,7 +75,7 @@ Deno.serve(async (req) => {
         payload_summary: `${eventType} - ${documentId}`
       });
       
-      console.log('[PandaDocWebhook] event', { event_key: eventKey, ignored: false });
+      console.log('[PandaDocWebhook] processing event', { event_key: eventKey, processed: true });
 
       if (!documentId) {
         console.log('No document ID in webhook event');
@@ -204,7 +208,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ success: true, ignored: false });
+    return Response.json({ success: true, ignored: allIgnored });
 
   } catch (error) {
     console.error('handlePandaDocWebhook error:', error);
