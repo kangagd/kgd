@@ -260,39 +260,43 @@ export default function ThreadHeader({
             Attach
           </Button>
 
-          {/* Link Action */}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleLinkButtonClick}
-            onDoubleClick={handleLinkButtonDoubleClick}
-            disabled={isViewer}
-            className={`h-7 px-2 text-[12px] flex items-center gap-1 ${
-              isLinked
-                ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
-                : 'text-[#6B7280] hover:bg-[#F3F4F6]'
-            }`}
-            title={isViewer 
-              ? 'Viewer cannot link' 
-              : isLinked 
-                ? `${linkedType === 'project' ? 'Project' : 'Contract'} - double-click to unlink`
-                : 'Link to Project or Contract'}
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            {isLinked ? `${linkedType === 'project' ? 'Project' : 'Contract'}` : 'Link'}
-          </Button>
+          {/* Link Action - hidden in compact mode */}
+          {!compactMode && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleLinkButtonClick}
+              onDoubleClick={handleLinkButtonDoubleClick}
+              disabled={isViewer}
+              className={`h-7 px-2 text-[12px] flex items-center gap-1 ${
+                isLinked
+                  ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
+                  : 'text-[#6B7280] hover:bg-[#F3F4F6]'
+              }`}
+              title={isViewer 
+                ? 'Viewer cannot link' 
+                : isLinked 
+                  ? `${linkedType === 'project' ? 'Project' : 'Contract'} - double-click to unlink`
+                  : 'Link to Project or Contract'}
+            >
+              <LinkIcon className="w-3.5 h-3.5" />
+              {isLinked ? `${linkedType === 'project' ? 'Project' : 'Contract'}` : 'Link'}
+            </Button>
+          )}
 
-          {/* Create Project (disabled if already linked) */}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setShowCreateProjectModal(true)}
-            disabled={isViewer || !!thread.project_id}
-            className="h-7 px-2 text-[12px] flex items-center gap-1 text-[#6B7280] hover:bg-[#F3F4F6]"
-            title={thread.project_id ? 'Already linked to project' : 'Create project from this email'}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-          </Button>
+          {/* Create Project (disabled if already linked) - hidden in compact mode */}
+          {!compactMode && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowCreateProjectModal(true)}
+              disabled={isViewer || !!thread.project_id}
+              className="h-7 px-2 text-[12px] flex items-center gap-1 text-[#6B7280] hover:bg-[#F3F4F6]"
+              title={thread.project_id ? 'Already linked to project' : 'Create project from this email'}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+            </Button>
+          )}
 
           {/* Internal Notes */}
           <Button
