@@ -17,6 +17,7 @@ const MIN_CATEGORY_CONFIDENCE = 45;
 const CATEGORIES = [
   { value: "uncategorised", label: "Uncategorised" },
   { value: "supplier_quote", label: "Supplier Quote" },
+  { value: "customer_quote", label: "Customer Quote" },
   { value: "supplier_invoice", label: "Supplier Invoice" },
   { value: "payment", label: "Payment / Receipt" },
   { value: "booking", label: "Booking / Scheduling" },
@@ -35,9 +36,17 @@ const matchesAny = (text, patterns) => {
 
 function suggestCategoryInContext(thread) {
   // Extract text with fallbacks
-  const subject = thread?.subject || thread?.thread_subject || thread?.last_subject || thread?.last_message_subject || "";
+  const subject = (thread?.subject || thread?.thread_subject || thread?.last_subject || thread?.last_message_subject || "").trim();
   const snippet = thread?.last_message_snippet || thread?.snippet || thread?.preview || thread?.body_preview || thread?.last_snippet || "";
   const combined = `${subject}\n${snippet}`;
+
+  // Subject prefix overrides (highest priority)
+  if (/^\s*quote\s*request\b/i.test(subject) || /^\s*rfq\b/i.test(subject) || /^\s*request\s*for\s*quote\b/i.test(subject)) {
+    return { value: "supplier_quote", reason: "subject prefix: quote request", confidence: 100 };
+  }
+  if (/^\s*quote\s*for\b/i.test(subject) || /^\s*quotation\s*for\b/i.test(subject) || /^\s*proposal\s*for\b/i.test(subject)) {
+    return { value: "customer_quote", reason: "subject prefix: quote for", confidence: 100 };
+  }
 
   const scores = [];
   const patterns = {
@@ -45,7 +54,10 @@ function suggestCategoryInContext(thread) {
       /\btax invoice\b/i, /\binvoice\b/i, /\bstatement\b/i, /\bamount due\b/i, /\bpayable\b/i, /\bremit(tance)?\b/i, /\bpro[- ]?forma\b/i,
     ],
     supplier_quote: [
-      /\bquote\b/i, /\bquotation\b/i, /\bpricing\b/i, /\bestimate\b/i, /\bprice\b/i,
+      /\bquote\b/i, /\bquotation\b/i, /\bpricing\b/i, /\bestimate\b/i, /\bprice\b/i, /\bsupplier\b/i,
+    ],
+    customer_quote: [
+      /\baccept\b/i, /\bapprove\b/i, /\bproceed\b/i, /\bdeposit\b/i, /\bconfirm\b/i, /\bagreed\b/i,
     ],
     payment: [
       /\bpayment received\b/i, /\bpaid\b/i, /\bpaid in full\b/i, /\breceipt\b/i, /\bdeposit\b/i, /\bremittance\b/i, /\btransfer\b/i,
@@ -71,6 +83,7 @@ function suggestCategoryInContext(thread) {
   // Medium signals from combined text
   if (matchesAny(combined, patterns.order_confirmation)) scores.push({ value: 'order_confirmation', score: 65, reason: 'content mentions dispatch/tracking' });
   if (matchesAny(combined, patterns.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 60, reason: 'content mentions invoice/payment terms' });
+  if (matchesAny(combined, patterns.customer_quote)) scores.push({ value: 'customer_quote', score: 58, reason: 'content mentions acceptance/approval' });
   if (matchesAny(combined, patterns.booking)) scores.push({ value: 'booking', score: 55, reason: 'content mentions booking/scheduling' });
   if (matchesAny(combined, patterns.payment)) scores.push({ value: 'payment', score: 52, reason: 'content mentions payment/receipt' });
   if (matchesAny(combined, patterns.supplier_quote)) scores.push({ value: 'supplier_quote', score: 50, reason: 'content mentions quote/pricing' });
