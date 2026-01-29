@@ -1385,6 +1385,7 @@ Link: ${threadLink}
                 }
               }}
               userEmail={user?.email}
+              allowedChips={["sent", "received", "pinned", "linked", "unlinked"]}
             />
           )}
 
