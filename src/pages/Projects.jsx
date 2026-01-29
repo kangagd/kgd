@@ -164,8 +164,8 @@ export default function Projects() {
   const { data: projectTags = [] } = useQuery({
     queryKey: ['projectTags'],
     queryFn: () => base44.entities.ProjectTagDefinition.list(),
-    staleTime: 5 * 60 * 1000,
-    ...QUERY_CONFIG.reference,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Build indexes for O(1) lookups instead of per-row scans

@@ -329,14 +329,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: allProjectJobs = [] } = useQuery({
     queryKey: ['projectJobs', job.project_id],
     queryFn: () => base44.entities.Job.filter({ project_id: job.project_id, deleted_at: { $exists: false } }),
-    enabled: !!job.project_id
+    enabled: !!job.project_id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Fetch all JobSummary records for the project
   const { data: allProjectJobSummaries = [] } = useQuery({
     queryKey: ['projectJobSummaries', job.project_id],
     queryFn: () => base44.entities.JobSummary.filter({ project_id: job.project_id }, '-check_out_time'),
-    enabled: !!job.project_id
+    enabled: !!job.project_id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
   });
 
   const projectJobs = allProjectJobs.filter((j) => j.id !== job.id);
@@ -387,6 +391,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ["handover-reports", job.id],
     queryFn: () => base44.entities.HandoverReport.filter({ job_id: job.id }),
     enabled: !!job?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   const { data: customer } = useQuery({
@@ -413,14 +419,18 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const { data: contract } = useQuery({
     queryKey: ['contract', job.contract_id],
     queryFn: () => base44.entities.Contract.get(job.contract_id),
-    enabled: !!job.contract_id
+    enabled: !!job.contract_id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Fetch linked Project for Parts & Requirements section
   const { data: linkedProject, isLoading: isProjectLoading, error: projectError } = useQuery({
     queryKey: ['jobProject', job.id, job.project_id],
     queryFn: () => base44.entities.Project.get(job.project_id),
-    enabled: !!job?.project_id
+    enabled: !!job?.project_id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Fetch Project Parts
@@ -560,6 +570,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     queryKey: ["supplier", purchaseOrder?.supplier_id],
     queryFn: () => base44.entities.Supplier.get(purchaseOrder.supplier_id),
     enabled: !!purchaseOrder?.supplier_id && isLogisticsJob,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Fetch source and destination locations for logistics transfer
