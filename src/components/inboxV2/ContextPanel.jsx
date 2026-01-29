@@ -404,17 +404,14 @@ export default function InboxV2ContextPanel({
   });
 
   // Compute category suggestion
-  const rawCategory = thread?.category || null;
-  const categoryFromThread = rawCategory === "uncategorised" ? null : rawCategory;
-  const shouldShowSuggestion = !categoryFromThread && !dismissedCategorySuggestion[thread?.id];
-  const categorySuggestion = shouldShowSuggestion ? suggestCategoryInContext(thread) : null;
+  const savedRaw = thread?.category || null;
+  const savedCategory = savedRaw === "uncategorised" ? null : savedRaw;
   
-  // Only show suggestion if it's meaningful (not uncategorised and above confidence threshold)
-  const meaningfulSuggestion = 
-    categorySuggestion &&
-    categorySuggestion.value &&
-    categorySuggestion.value !== "uncategorised" &&
-    (categorySuggestion.confidence ?? 0) >= MIN_CATEGORY_CONFIDENCE;
+  const suggestion = suggestCategoryInContext(thread);
+  const suggestedCategory = suggestion?.value && suggestion.value !== "uncategorised" ? suggestion.value : null;
+  
+  // Determine displayed dropdown value (UI-only)
+  const displayCategory = savedCategory || suggestedCategory || "uncategorised";
 
   // Fetch notes for this thread
   const { data: notes = [] } = useQuery({
@@ -496,8 +493,11 @@ export default function InboxV2ContextPanel({
         <div className="space-y-2">
           <div className="text-xs font-medium text-[#6B7280]">Category</div>
           <Select
-            value={categoryFromThread || 'uncategorised'}
-            onValueChange={(val) => categoryMutation.mutate(val)}
+            value={displayCategory}
+            onValueChange={(val) => {
+              const categoryValue = val === "uncategorised" ? null : val;
+              categoryMutation.mutate(categoryValue || 'uncategorised');
+            }}
             disabled={categoryMutation.isPending}
           >
             <SelectTrigger className="h-7 text-xs">
@@ -512,30 +512,10 @@ export default function InboxV2ContextPanel({
             </SelectContent>
           </Select>
 
-          {/* Suggestion chip - only show if meaningful */}
-          {meaningfulSuggestion && (
-            <div className="mt-2 p-2 bg-white rounded border border-[#E5E7EB] space-y-2">
-              <div className="text-xs text-[#4B5563]">
-                <div className="font-medium">Suggested: {CATEGORIES.find(c => c.value === categorySuggestion.value)?.label}</div>
-                <div className="text-[#9CA3AF] text-[11px] mt-0.5">{categorySuggestion.reason}</div>
-              </div>
-              <div className="flex gap-1.5">
-                <Button
-                  onClick={handleApplyCategorySuggestion}
-                  disabled={categoryMutation.isPending}
-                  className="flex-1 h-6 text-xs bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
-                  variant="outline"
-                >
-                  Apply
-                </Button>
-                <Button
-                  onClick={handleDismissCategorySuggestion}
-                  className="flex-1 h-6 text-xs bg-gray-50 text-gray-700 border border-[#E5E7EB] hover:bg-gray-100"
-                  variant="outline"
-                >
-                  Dismiss
-                </Button>
-              </div>
+          {/* Subtle helper text - only show if suggestion exists and not saved */}
+          {!savedCategory && suggestedCategory && (
+            <div className="text-xs text-[#9CA3AF]">
+              Suggested from subject · {suggestion.reason}
             </div>
           )}
         </div>
