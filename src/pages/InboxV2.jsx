@@ -600,24 +600,24 @@ export default function InboxV2() {
 
     // Sorting per view
     if (workflowView === "unassigned" || workflowView === "my-actions") {
-      // Newest external activity first (fallback to last_message_date desc)
+      // Newest last_message_date first
       result.sort((a, b) => {
-        const ta = safeTs(a.lastExternalMessageAt || a.last_message_date);
-        const tb = safeTs(b.lastExternalMessageAt || b.last_message_date);
+        const ta = safeTs(a.last_message_date);
+        const tb = safeTs(b.last_message_date);
         return tb - ta;
       });
     } else if (workflowView === "waiting") {
       // Oldest last_message_date first (stalled items surface)
       result.sort((a, b) => {
-        const ta = safeTs(a.last_message_date || a.updated_at);
-        const tb = safeTs(b.last_message_date || b.updated_at);
+        const ta = safeTs(a.last_message_date);
+        const tb = safeTs(b.last_message_date);
         return ta - tb;
       });
     } else {
       // FYI / Done: newest first
       result.sort((a, b) => {
-        const ta = safeTs(a.last_message_date || a.updated_at);
-        const tb = safeTs(b.last_message_date || b.updated_at);
+        const ta = safeTs(a.last_message_date);
+        const tb = safeTs(b.last_message_date);
         return tb - ta;
       });
     }
