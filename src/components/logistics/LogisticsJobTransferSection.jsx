@@ -374,11 +374,8 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
 
   const mode = getMode();
 
-  // Filter items based on mode
-  const validItems = jobParts.filter(part => {
-    if (mode === 'po_receipt') return !!part.po_line_id;
-    return !!part.price_list_item_id;
-  });
+  // Show all parts (validation happens at submission)
+  const validItems = jobParts;
 
   const getModeLabel = () => mode === 'po_receipt' ? 'Processing PO Receipt' : 'Transferring Stock';
   const getQtyLabel = () => mode === 'po_receipt' ? 'Qty Received' : 'Qty to Transfer';
