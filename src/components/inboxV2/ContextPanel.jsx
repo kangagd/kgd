@@ -257,8 +257,20 @@ export default function InboxV2ContextPanel({
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, shouldClose) => {
       queryClient.invalidateQueries({ queryKey: ['threads'] });
+
+      // Audit: done/reopen
+      if (currentUser) {
+        base44.entities.EmailAudit?.create?.({
+          thread_id: thread.id,
+          type: 'status_changed',
+          message: shouldClose ? 'Marked done' : 'Reopened',
+          actor_user_id: currentUser.id,
+          actor_name: currentUser.display_name || currentUser.full_name || currentUser.email,
+        }).catch(() => {});
+      }
+
       onThreadUpdate?.();
       toast.success(isClosed ? 'Reopened' : 'Marked as Done');
     },
