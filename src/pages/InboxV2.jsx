@@ -755,6 +755,72 @@ export default function InboxV2() {
     }
   };
 
+  // Add team note
+  const handleAddNote = async () => {
+    if (!selectedThread || !noteInput.trim() || !user) return;
+    
+    setIsAddingNote(true);
+    try {
+      await base44.entities.EmailThreadNote.create({
+        thread_id: selectedThread.id,
+        body: noteInput.trim(),
+        author_email: user.email,
+        author_name: user.display_name || user.full_name || user.email,
+      });
+      
+      setNoteInput("");
+      await refetchNotes();
+      toast.success("Note added");
+    } catch (error) {
+      devLog("Failed to add note:", error);
+      toast.error("Failed to add note");
+    } finally {
+      setIsAddingNote(false);
+    }
+  };
+
+  // Convert thread to task
+  const handleConvertToTask = async () => {
+    if (!selectedThread || !user) return;
+    
+    try {
+      const participants = [
+        selectedThread.from_address,
+        ...(selectedThread.to_addresses || []),
+      ]
+        .filter(Boolean)
+        .join(", ");
+      
+      const snippet = selectedThread.last_message_snippet || selectedThread.snippet || "";
+      const threadLink = `${window.location.origin}${createPageUrl("Inbox")}?threadId=${selectedThread.id}`;
+      
+      const taskDescription = `
+Thread: ${selectedThread.subject}
+
+Participants: ${participants}
+
+Last message: ${snippet.substring(0, 200)}${snippet.length > 200 ? "..." : ""}
+
+Link: ${threadLink}
+      `.trim();
+      
+      const task = await base44.entities.Task.create({
+        title: `[Email] ${selectedThread.subject}`,
+        description: taskDescription,
+        project_id: selectedThread.project_id || undefined,
+        status: "todo",
+        priority: "medium",
+        created_by: user.email,
+      });
+      
+      toast.success("Task created");
+      // Optionally navigate to task (if you have a tasks page)
+    } catch (error) {
+      devLog("Failed to convert to task:", error);
+      toast.error("Failed to create task");
+    }
+  };
+
   // Bulk actions
   const toggleSelectionMode = () => {
     setSelectionMode(!selectionMode);
