@@ -39,6 +39,86 @@ const safeTs = (iso) => {
   return Number.isFinite(t) ? t : 0;
 };
 
+const matchesAny = (text, patterns) => {
+  const s = String(text || "");
+  return patterns.some((r) => r.test(s));
+};
+
+const getThreadText = (thread) => {
+  const subject = thread?.subject || "";
+  const snippet = thread?.snippet || thread?.preview || thread?.body_preview || "";
+  const combined = `${subject}\n${snippet}`;
+  return { subject, snippet, combined };
+};
+
+const IMPORTANT_FYI_SUBJECT_PATTERNS = [
+  /order confirmation/i,
+  /\bpurchase order\b/i,
+  /\bpo\b/i,
+  /invoice/i,
+  /tax invoice/i,
+  /receipt/i,
+  /payment (received|successful|confirmation)/i,
+  /dispatch(ed)?/i,
+  /shipping/i,
+  /tracking/i,
+  /delivery (update|scheduled|eta)/i,
+  /\beta\b/i,
+  /\bbackorder(ed)?\b/i,
+  /\bready for pickup\b/i,
+  /\bready for collection\b/i,
+];
+
+const LOW_VALUE_FYI_SNIPPET_PATTERNS = [
+  /\ball paid\b/i,
+  /\bpaid in full\b/i,
+  /\bpayment done\b/i,
+  /\bpayment sent\b/i,
+  /\bthanks\b/i,
+  /\bthank you\b/i,
+  /\bcheers\b/i,
+  /\bno worries\b/i,
+  /\ball good\b/i,
+  /\bokay\b/i,
+  /\bok\b/i,
+  /\bperfect\b/i,
+  /\bgreat\b/i,
+  /\blooks good\b/i,
+  /\bconfirmed\b/i,
+  /\bapproved\b/i,
+];
+
+const ACTIONABLE_PATTERNS = [
+  /\?/,
+  /\bcan you\b/i,
+  /\bcould you\b/i,
+  /\bplease\b/i,
+  /\burgent\b/i,
+  /\basap\b/i,
+  /\bcall me\b/i,
+  /\bwhen\b/i,
+  /\bhow\b/i,
+  /\bquote\b/i,
+  /\bprice\b/i,
+  /\bcost\b/i,
+  /\bschedule\b/i,
+  /\bbooking\b/i,
+  /\binstall\b/i,
+  /\brepair\b/i,
+  /\bissue\b/i,
+  /\bproblem\b/i,
+  /\bnot working\b/i,
+  /\bbroken\b/i,
+  /\bleak\b/i,
+  /\brefund\b/i,
+  /\bwarranty\b/i,
+  /\bcomplaint\b/i,
+  /\bchange\b/i,
+  /\bupdate\b/i,
+  /\bcancel\b/i,
+  /\breschedule\b/i,
+];
+
 const inferThreadDirection = (thread, orgEmails = []) => {
   const lastMsgTs = safeTs(thread?.last_message_date);
   const lastInternalTs = safeTs(thread?.lastInternalMessageAt);
@@ -57,19 +137,52 @@ const inferThreadDirection = (thread, orgEmails = []) => {
   return thread?.lastMessageDirection || "unknown";
 };
 
+const classifyReceivedIntent = (thread) => {
+  const { subject, snippet, combined } = getThreadText(thread);
+
+  if (matchesAny(combined, ACTIONABLE_PATTERNS)) {
+    return { bucket: "needs_reply", reason: "actionable-pattern" };
+  }
+
+  if (
+    matchesAny(subject, IMPORTANT_FYI_SUBJECT_PATTERNS) ||
+    matchesAny(combined, IMPORTANT_FYI_SUBJECT_PATTERNS)
+  ) {
+    return { bucket: "important_fyi", reason: "important-fyi" };
+  }
+
+  const shortSnippet = String(snippet || "").trim();
+  const isShort = shortSnippet.length > 0 && shortSnippet.length <= 60;
+
+  if (isShort && matchesAny(shortSnippet, LOW_VALUE_FYI_SNIPPET_PATTERNS)) {
+    return { bucket: "reference", reason: "low-value-fyi" };
+  }
+
+  return { bucket: "needs_reply", reason: "received-default" };
+};
+
 const deriveTriageState = (thread, orgEmails = []) => {
-  // Closed takes precedence
-  if (thread.userStatus === "closed") return "closed";
+  if (thread?.userStatus === "closed") {
+    return { triage: "closed", reason: "closed", dir: "unknown" };
+  }
 
-  // Check if linked to project or contract
-  const linked = !!thread.project_id || !!thread.contract_id;
-  if (!linked) return "needs_link";
+  const linked = !!thread?.project_id || !!thread?.contract_id;
+  if (!linked) {
+    return { triage: "needs_link", reason: "unlinked", dir: "unknown" };
+  }
 
-  // Use direction to determine actionability
   const dir = inferThreadDirection(thread, orgEmails);
-  if (dir === "received") return "needs_reply";
-  if (dir === "sent") return "waiting";
-  return "reference";
+
+  if (dir === "received") {
+    const intent = classifyReceivedIntent(thread);
+    return { triage: intent.bucket, reason: intent.reason, dir };
+  }
+
+  if (dir === "sent") {
+    return { triage: "waiting", reason: "sent-last", dir };
+  }
+
+  return { triage: "reference", reason: "unknown-direction", dir };
 };
 
 export default function InboxV2() {
