@@ -30,62 +30,15 @@ import UnifiedEmailComposer from "@/components/inbox/UnifiedEmailComposer";
 import { isInboxV2Allowed } from "@/components/utils/allowlist";
 
 /* -------------------------
-   Direction helpers
+   Direction helpers (match Inbox.jsx)
 --------------------------- */
 const normalizeEmail = (e) => (e || "").toLowerCase().trim();
-const safeTs = (v) => {
-  if (!v) return null;
-  if (v instanceof Date) return v.getTime();
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string') {
-    const t = new Date(v).getTime();
-    return Number.isFinite(t) ? t : null;
-  }
-  return null;
+
+const safeTs = (iso) => {
+  const t = iso ? new Date(iso).getTime() : 0;
+  return Number.isFinite(t) ? t : 0;
 };
 
-const inferThreadDirectionLocal = (thread, orgEmails = []) => {
-  const orgEmailsSet = new Set(orgEmails.map(normalizeEmail).filter(Boolean));
-  const senderEmail = normalizeEmail(
-    thread.last_message_from_email || 
-    thread.last_from_email || 
-    thread.last_sender_email || 
-    thread.last_message_from || 
-    thread.from_address || 
-    ''
-  );
-  if (senderEmail && orgEmailsSet.has(senderEmail)) return 'sent';
-  if (!senderEmail) return 'unknown';
-  return 'received';
-};
-
-const deriveTriageState = (thread, orgEmails = []) => {
-  const hasLink = thread.project_id || thread.contract_id;
-  if (!hasLink) return 'needs_link';
-  
-  const direction = inferThreadDirectionLocal(thread, orgEmails);
-  const lastMsg = safeTs(thread.last_message_date || thread.lastMessageAt || thread.updated_date);
-  const lastInternal = safeTs(thread.lastInternalMessageAt || thread.last_internal_message_at);
-  const lastExternal = safeTs(thread.lastExternalMessageAt || thread.last_external_message_at);
-  
-  if (direction === 'received' && lastMsg) {
-    if (!lastInternal || lastMsg > lastInternal) return 'needs_reply';
-  }
-  
-  if (direction === 'sent' && lastMsg) {
-    if (!lastExternal || (lastInternal && lastInternal >= lastExternal)) return 'waiting';
-  }
-  
-  return 'reference';
-};
-
-/**
- * Best-effort UI direction:
- * 1) If lastInternalMessageAt matches last_message_date => sent
- * 2) If lastExternalMessageAt matches last_message_date => received
- * 3) Else fallback to email matching (from_address / to_addresses) vs org emails
- * 4) Else use stored lastMessageDirection
- */
 const inferThreadDirection = (thread, orgEmails = []) => {
   const lastMsgTs = safeTs(thread?.last_message_date);
   const lastInternalTs = safeTs(thread?.lastInternalMessageAt);
@@ -102,6 +55,21 @@ const inferThreadDirection = (thread, orgEmails = []) => {
   if (toList.some((e) => mine.has(e))) return "received";
 
   return thread?.lastMessageDirection || "unknown";
+};
+
+const deriveTriageState = (thread, orgEmails = []) => {
+  // Closed takes precedence
+  if (thread.userStatus === "closed") return "closed";
+
+  // Check if linked to project or contract
+  const linked = !!thread.project_id || !!thread.contract_id;
+  if (!linked) return "needs_link";
+
+  // Use direction to determine actionability
+  const dir = inferThreadDirection(thread, orgEmails);
+  if (dir === "received") return "needs_reply";
+  if (dir === "sent") return "waiting";
+  return "reference";
 };
 
 export default function InboxV2() {
