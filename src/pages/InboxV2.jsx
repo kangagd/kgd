@@ -390,7 +390,7 @@ export default function InboxV2() {
       .map((t) => ({
         ...t,
         _triage: deriveTriageState(t, orgEmails),
-        _direction: inferThreadDirectionLocal(t, orgEmails),
+        _direction: inferThreadDirection(t, orgEmails),
       }));
   }, [threads, orgEmails]);
 
