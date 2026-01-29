@@ -1137,7 +1137,7 @@ Link: ${threadLink}
         {/* Left pane */}
         <div className="w-[340px] flex-shrink-0 flex flex-col border-r border-[#E5E7EB] overflow-hidden">
           {/* Bulk toolbar */}
-          {selectionMode && selectedThreadIds.size > 0 && (
+          {selectionMode && selectedThreadIds.size > 0 && activeView === "threads" && (
             <div className="px-3 py-2 bg-blue-50 border-b border-blue-200 flex items-center justify-between gap-2">
               <span className="text-sm font-medium text-blue-700">{selectedThreadIds.size} selected</span>
               <div className="flex items-center gap-1">
