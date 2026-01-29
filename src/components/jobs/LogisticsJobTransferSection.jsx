@@ -350,7 +350,8 @@ function InlineStockProcessor({ job, jobParts = [], sourceLocation, destinationL
     if (mode === 'po_receipt') return !!part.po_line_id;
     return !!part.price_list_item_id;
   });
-  const nonTrackableItems = jobParts.filter(part => !trackableItems.includes(part));
+  // CRITICAL FIX: Use ID comparison, not object reference (prevents duplicate display)
+  const nonTrackableItems = jobParts.filter(part => !trackableItems.some(t => t.id === part.id));
 
   const getModeLabel = () => mode === 'po_receipt' ? 'Processing PO Receipt' : 'Transferring Stock';
   const getQtyLabel = () => mode === 'po_receipt' ? 'Qty Received' : 'Qty to Transfer';
