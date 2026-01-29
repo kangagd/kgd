@@ -142,7 +142,7 @@ export default function InboxV2ContextPanel({
     }
   }, [showSearch]);
 
-  // Search results (filtered recent projects) - before early return
+  // Search results (filtered recent projects)
   const searchResults = useMemo(() => {
     if (!projectSearch.trim()) {
       return recentProjects.slice(0, 20);
@@ -159,22 +159,12 @@ export default function InboxV2ContextPanel({
     );
   }, [projectSearch, recentProjects]);
 
-  if (!thread) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-center p-4">
-        <div>
-          <LinkIcon className="w-8 h-8 text-[#D1D5DB] mx-auto mb-2" />
-          <p className="text-[13px] text-[#6B7280]">Select a thread to triage</p>
-        </div>
-      </div>
-    );
-  }
-
-  const isLinked = thread.project_id || thread.contract_id;
-  const linkedType = thread.project_id ? 'project' : thread.contract_id ? 'contract' : null;
-  const linkedTitle = thread.project_title || thread.contract_name || '';
-  const isClosed = thread.userStatus === 'closed';
-  const canonicalStatus = isClosed ? 'done' : thread.next_action_status || 'needs_action';
+  // Derived values
+  const isLinked = thread?.project_id || thread?.contract_id;
+  const linkedType = thread?.project_id ? 'project' : thread?.contract_id ? 'contract' : null;
+  const linkedTitle = thread?.project_title || thread?.contract_name || '';
+  const isClosed = thread?.userStatus === 'closed';
+  const canonicalStatus = isClosed ? 'done' : thread?.next_action_status || 'needs_action';
 
   // Link mutation
   const linkMutation = useMutation({
