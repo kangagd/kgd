@@ -897,30 +897,6 @@ export default function InboxV2() {
     }
   };
 
-  // Add team note
-  const handleAddNote = async () => {
-    if (!selectedThread || !noteInput.trim() || !user) return;
-    
-    setIsAddingNote(true);
-    try {
-      await base44.entities.EmailThreadNote.create({
-        thread_id: selectedThread.id,
-        note: noteInput.trim(),
-        created_by: user.email,
-        created_by_name: user.display_name || user.full_name || user.email,
-      });
-      
-      setNoteInput("");
-      await refetchNotes();
-      toast.success("Note added");
-    } catch (error) {
-      devLog("Failed to add note:", error);
-      toast.error("Failed to add note");
-    } finally {
-      setIsAddingNote(false);
-    }
-  };
-
   // Convert thread to task
   const handleConvertToTask = async () => {
     if (!selectedThread || !user) return;
