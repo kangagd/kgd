@@ -252,29 +252,130 @@ export default function InboxV2ContextPanel({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={onOpenLinkModal}
+                onClick={() => setShowSearch(!showSearch)}
                 className="h-6 px-2 text-xs text-blue-700 hover:bg-blue-100"
               >
                 Change
               </Button>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <>
+              {!showSearch ? (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setShowSearch(true)}
+                    className="flex-1 h-7 text-xs bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
+                    variant="outline"
+                  >
+                    <LinkIcon className="w-3 h-3 mr-1" />
+                    Link Project
+                  </Button>
+                  <Button
+                    onClick={onOpenCreateProjectModal}
+                    className="flex-1 h-7 text-xs bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
+                    variant="outline"
+                  >
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Create
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          )}
+
+          {/* Search UI */}
+          {showSearch && (
+            <div className="space-y-2 pt-1 border-t border-blue-200">
+              <div className="relative">
+                <Input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search projects… (name, #, address)"
+                  value={projectSearch}
+                  onChange={(e) => {
+                    clearTimeout(debounceTimer.current);
+                    setProjectSearch(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                      setShowSearch(false);
+                      setProjectSearch('');
+                    } else if (e.key === 'Enter' && searchResults.length > 0) {
+                      linkMutation.mutate(searchResults[0].id);
+                    }
+                  }}
+                  className="h-7 text-xs"
+                />
+                {projectSearch && (
+                  <button
+                    onClick={() => setProjectSearch('')}
+                    className="absolute right-2 top-1.5 text-[#9CA3AF] hover:text-[#111827]"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* Suggestions (when no search) */}
+              {!projectSearch.trim() && suggestedProjects.length > 0 && (
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-[#6B7280]">Suggested</div>
+                  {suggestedProjects.map((proj) => (
+                    <button
+                      key={proj.id}
+                      onClick={() => linkMutation.mutate(proj.id)}
+                      disabled={linkMutation.isPending}
+                      className="w-full text-left px-2 py-1.5 rounded bg-[#F9FAFB] hover:bg-blue-50 border border-[#E5E7EB] hover:border-blue-300 transition-colors text-xs disabled:opacity-50"
+                    >
+                      <div className="font-medium text-[#111827]">{proj.title}</div>
+                      <div className="text-[#6B7280] mt-0.5 flex items-center justify-between">
+                        <span>
+                          {proj.project_number && `#${proj.project_number}`}
+                          {proj.address_suburb && ` · ${proj.address_suburb}`}
+                        </span>
+                        <span className="flex items-center gap-1 text-[#9CA3AF] text-[10px]">
+                          <Zap className="w-2.5 h-2.5" />
+                          {proj._reason}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Search results */}
+              {projectSearch.trim() && (
+                <div className="space-y-1 max-h-[160px] overflow-y-auto">
+                  {searchResults.length === 0 ? (
+                    <div className="text-xs text-[#9CA3AF] text-center py-2">No projects found</div>
+                  ) : (
+                    searchResults.map((proj) => (
+                      <button
+                        key={proj.id}
+                        onClick={() => linkMutation.mutate(proj.id)}
+                        disabled={linkMutation.isPending}
+                        className="w-full text-left px-2 py-1.5 rounded bg-[#F9FAFB] hover:bg-blue-50 border border-[#E5E7EB] hover:border-blue-300 transition-colors text-xs disabled:opacity-50"
+                      >
+                        <div className="font-medium text-[#111827]">{proj.title}</div>
+                        <div className="text-[#6B7280] mt-0.5">
+                          {proj.project_number && `#${proj.project_number}`}
+                          {proj.address_suburb && ` · ${proj.address_suburb}`}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
               <Button
-                onClick={onOpenLinkModal}
-                className="flex-1 h-7 text-xs bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
-                variant="outline"
+                onClick={() => {
+                  setShowSearch(false);
+                  setProjectSearch('');
+                }}
+                variant="ghost"
+                className="w-full h-6 text-xs text-[#6B7280]"
               >
-                <LinkIcon className="w-3 h-3 mr-1" />
-                Link Project
-              </Button>
-              <Button
-                onClick={onOpenCreateProjectModal}
-                className="flex-1 h-7 text-xs bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200"
-                variant="outline"
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                Create
+                Cancel
               </Button>
             </div>
           )}
