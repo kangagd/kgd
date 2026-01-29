@@ -31,6 +31,8 @@ import TechnicianAvatar, { TechnicianAvatarGroup } from "../common/TechnicianAva
 import { PO_STATUS, LOGISTICS_LOCATION, getPoStatusLabel, normaliseLegacyPoStatus } from "../domain/logisticsConfig";
 import { getNormalizedPartStatus, PART_STATUS } from "../domain/partConfig";
 import { getLoadingBayLocationId } from "../utils/inventoryLocationLookup";
+import { BackendFn } from "@/components/config/backendFunctions";
+import { warnIfBackendVersionMismatch } from "@/components/utils/backendVersionGuard";
 
 import JobChat from "./JobChat";
 import JobMapView from "./JobMapView";
@@ -975,11 +977,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const processPaymentMutation = useMutation({
     mutationFn: async (paymentData) => {
-      const response = await base44.functions.invoke('processXeroPayment', {
+      const response = await base44.functions.invoke(BackendFn.processXeroPayment, {
         invoice_id: xeroInvoice.id,
         payment_amount: paymentData.payment_amount,
         payment_method_id: paymentData.payment_method_id
       });
+      
+      warnIfBackendVersionMismatch(response.data, "Xero Payment");
+      
       return response.data;
     },
     onSuccess: () => {
