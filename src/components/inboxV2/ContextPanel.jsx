@@ -380,9 +380,57 @@ export default function InboxV2ContextPanel({
   });
 
   // Compute category suggestion
-  const categoryFromThread = thread?.category || null;
+  const rawCategory = thread?.category || null;
+  const categoryFromThread = rawCategory === "uncategorised" ? null : rawCategory;
   const shouldShowSuggestion = !categoryFromThread && !dismissedCategorySuggestion[thread?.id];
   const categorySuggestion = shouldShowSuggestion ? suggestCategoryInContext(thread) : null;
+
+  // Fetch notes for this thread
+  const { data: notes = [] } = useQuery({
+    queryKey: ["threadNotes", thread?.id],
+    queryFn: async () => {
+      if (!thread?.id) return [];
+      return base44.entities.EmailThreadNote.filter({ thread_id: thread.id }, "-created_date");
+    },
+    enabled: !!thread?.id,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
+  // Create note mutation
+  const createNoteMutation = useMutation({
+    mutationFn: async (body) => {
+      const trimmed = String(body || "").trim();
+      if (!trimmed) throw new Error("empty");
+      return base44.entities.EmailThreadNote.create({
+        thread_id: thread.id,
+        note: trimmed,
+        created_by: currentUser?.email || "Unknown",
+        created_by_name: currentUser?.display_name || currentUser?.full_name || currentUser?.email || "Unknown",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["threadNotes", thread.id] });
+      // Audit
+      if (currentUser && base44.entities.EmailAudit?.create) {
+        base44.entities.EmailAudit.create({
+          thread_id: thread.id,
+          type: "note_added",
+          message: "Note added",
+          actor_user_id: currentUser.id,
+          actor_name: currentUser.display_name || currentUser.full_name || currentUser.email,
+        }).catch(() => {});
+      }
+      toast.success("Note added");
+    },
+    onError: () => toast.error("Failed to add note"),
+  });
+
+  const [noteInput, setNoteInput] = useState("");
+  const handleAddNote = () => {
+    createNoteMutation.mutate(noteInput);
+    setNoteInput("");
+  };
 
   const handleApplyCategorySuggestion = () => {
     if (categorySuggestion?.value) {
@@ -712,6 +760,50 @@ export default function InboxV2ContextPanel({
           </div>
         </div>
       )}
+
+      {/* Team Notes */}
+      <div className="space-y-2">
+        <div className="text-xs font-medium text-[#6B7280]">Team Notes (Internal)</div>
+        <div className="rounded-lg border border-[#E5E7EB] bg-white space-y-2 p-3">
+          {/* Notes list */}
+          {notes.length > 0 && (
+            <div className="space-y-2 max-h-[150px] overflow-y-auto">
+              {notes.map((note) => (
+                <div key={note.id} className="px-2 py-1.5 rounded bg-[#F9FAFB] border border-[#E5E7EB] text-xs">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-[#4B5563]">{note.created_by_name || note.created_by}</span>
+                    <span className="text-[#9CA3AF] text-[10px]">
+                      {new Date(note.created_date).toLocaleDateString()} {new Date(note.created_date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                  <p className="text-[#111827] whitespace-pre-wrap">{note.note}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Add note */}
+          <div className="space-y-1.5 pt-2 border-t border-[#E5E7EB]">
+            <textarea
+              value={noteInput}
+              onChange={(e) => setNoteInput(e.target.value)}
+              onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                  handleAddNote();
+                }
+              }}
+              placeholder="Add internal note… (Ctrl+Enter)"
+              className="w-full h-16 p-2 border border-[#E5E7EB] rounded text-xs resize-none focus:outline-none focus:border-[#111827]"
+            />
+            <Button
+              onClick={handleAddNote}
+              disabled={!noteInput.trim() || createNoteMutation.isPending}
+              className="w-full h-6 text-xs bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+            >
+              {createNoteMutation.isPending ? "Adding..." : "Add Note"}
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Activity Timeline */}
       {audits.length > 0 && (
