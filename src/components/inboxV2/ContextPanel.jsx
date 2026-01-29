@@ -206,8 +206,25 @@ export default function InboxV2ContextPanel({
         assigned_to_user_email: userEmail || null,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, userEmail) => {
       queryClient.invalidateQueries({ queryKey: ['threads'] });
+
+      // Audit: owner change
+      if (currentUser) {
+        const assignee = teamUsers.find((u) => u.email === userEmail);
+        const message = userEmail
+          ? `Assigned to ${assignee?.display_name || userEmail}`
+          : 'Unassigned';
+        
+        base44.entities.EmailAudit?.create?.({
+          thread_id: thread.id,
+          type: 'owner_changed',
+          message,
+          actor_user_id: currentUser.id,
+          actor_name: currentUser.display_name || currentUser.full_name || currentUser.email,
+        }).catch(() => {});
+      }
+
       onThreadUpdate?.();
       toast.success(thread.assigned_to ? 'Owner changed' : 'Owner assigned');
     },
