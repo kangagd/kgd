@@ -433,11 +433,12 @@ export default function InboxV2() {
       devLog('[InboxV2] After search filter:', result.length);
     }
 
-    // If NO filters are active, return all threads
+    // If NO filters are active, return all non-closed threads
     const hasActiveFilters = Object.values(activeFilters).some(v => v === true);
     devLog('[InboxV2] hasActiveFilters:', hasActiveFilters, 'result.length before filter:', result.length);
     if (!hasActiveFilters) {
-      // No filters: return all non-deleted threads (already filtered above)
+      // No filters: exclude closed threads by default
+      result = result.filter((t) => t.userStatus !== "closed");
     } else if (activeFilters["closed"]) {
       result = result.filter((t) => t.userStatus === "closed");
     } else if (activeFilters["assigned-to-me"]) {
@@ -459,16 +460,12 @@ export default function InboxV2() {
       result = result.filter((t) => t._triage === triageFilter);
     }
 
-    // Sorting: triage priority > pinned > unread > by date
-    const triagePriority = { needs_reply: 0, needs_link: 1, waiting: 2, reference: 3 };
+    // Sorting: triage priority (needs_reply > needs_link > waiting > reference > closed) > last_message_date desc
+    const triagePriority = { needs_reply: 0, needs_link: 1, waiting: 2, reference: 3, closed: 4 };
     result.sort((a, b) => {
-      const aPriority = triagePriority[a._triage] ?? 4;
-      const bPriority = triagePriority[b._triage] ?? 4;
+      const aPriority = triagePriority[a._triage] ?? 5;
+      const bPriority = triagePriority[b._triage] ?? 5;
       if (aPriority !== bPriority) return aPriority - bPriority;
-      const aPinned = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
-      const bPinned = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
-      if (aPinned !== bPinned) return bPinned - aPinned;
-      if (a.isUnread !== b.isUnread) return a.isUnread ? -1 : 1;
       const aTime = a.last_message_date ? new Date(a.last_message_date).getTime() : 0;
       const bTime = b.last_message_date ? new Date(b.last_message_date).getTime() : 0;
       return bTime - aTime;
