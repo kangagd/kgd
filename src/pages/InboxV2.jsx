@@ -1442,7 +1442,7 @@ Link: ${threadLink}
               <ThreadHeader
                 thread={selectedThread}
                 users={teamUsers}
-                onStatusChange={handleStatusChange}
+                onStatusChange={handleWorkflowStatusChange}
                 onAssignChange={handleAssignChange}
                 currentUser={user}
                 onThreadUpdate={() => refetchThreads()}
