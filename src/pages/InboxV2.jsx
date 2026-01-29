@@ -1409,7 +1409,7 @@ Link: ${threadLink}
                     <>
                       <select
                         value={selectedThread?.next_action_status || 'needs_action'}
-                        onChange={(e) => handleStatusChange(e.target.value)}
+                        onChange={(e) => handleWorkflowStatusChange(e.target.value)}
                         disabled={updatingThreadId === selectedThread?.id}
                         className="text-xs px-2 py-1 rounded border border-[#E5E7EB] hover:border-[#D1D5DB]"
                       >
