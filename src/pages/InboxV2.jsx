@@ -535,7 +535,6 @@ export default function InboxV2() {
 
   // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
-    console.log('[FILTER DEBUG] START threads.length=', threads?.length);
     let result = derivedThreads;
 
     // Text search
@@ -549,48 +548,47 @@ export default function InboxV2() {
           t.to_addresses?.some((addr) => addr?.toLowerCase().includes(search)) ||
           t.last_message_snippet?.toLowerCase().includes(search)
       );
-      devLog('[InboxV2] After search filter:', result.length);
     }
 
-    // If NO filters are active, return all non-closed threads
-    const hasActiveFilters = Object.values(activeFilters).some(v => v === true);
-    devLog('[InboxV2] hasActiveFilters:', hasActiveFilters, 'result.length before filter:', result.length);
-    if (!hasActiveFilters) {
-      // No filters: exclude closed threads by default
-      result = result.filter((t) => t.userStatus !== "closed");
-    } else if (activeFilters["closed"]) {
-      result = result.filter((t) => t.userStatus === "closed");
-    } else if (activeFilters["assigned-to-me"]) {
-      result = result.filter((t) => t.assigned_to === user.email);
-    } else if (activeFilters["sent"]) {
-      result = result.filter((t) => t._direction === "sent");
-    } else if (activeFilters["received"]) {
-      result = result.filter((t) => t._direction === "received");
-    } else if (activeFilters["pinned"]) {
-      result = result.filter((t) => t.pinnedAt);
-    } else if (activeFilters["linked"]) {
-      result = result.filter((t) => t.project_id || t.contract_id);
-    } else if (activeFilters["unlinked"]) {
-      result = result.filter((t) => !t.project_id && !t.contract_id);
-    }
-
-    // Apply triage filter
-    if (triageFilter !== 'all') {
+    // Apply triage filter: "all" excludes closed by default
+    if (triageFilter === "all") {
+      result = result.filter((t) => t._triage !== "closed");
+    } else if (triageFilter === "closed") {
+      result = result.filter((t) => t._triage === "closed");
+    } else if (triageFilter !== "all") {
       result = result.filter((t) => t._triage === triageFilter);
     }
 
-    // Sorting: triage priority (needs_reply > needs_link > waiting > reference > closed) > last_message_date desc
-    const triagePriority = { needs_reply: 0, needs_link: 1, waiting: 2, reference: 3, closed: 4 };
+    // Apply legacy filters if present
+    const hasActiveFilters = Object.values(activeFilters).some(v => v === true);
+    if (hasActiveFilters) {
+      if (activeFilters["assigned-to-me"]) {
+        result = result.filter((t) => t.assigned_to === user.email);
+      } else if (activeFilters["sent"]) {
+        result = result.filter((t) => t._dir === "sent");
+      } else if (activeFilters["received"]) {
+        result = result.filter((t) => t._dir === "received");
+      } else if (activeFilters["pinned"]) {
+        result = result.filter((t) => t.pinnedAt);
+      } else if (activeFilters["linked"]) {
+        result = result.filter((t) => t.project_id || t.contract_id);
+      } else if (activeFilters["unlinked"]) {
+        result = result.filter((t) => !t.project_id && !t.contract_id);
+      }
+    }
+
+    // Sorting: triage priority > last_message_date desc
+    const PRIORITY = { needs_reply: 1, needs_link: 2, important_fyi: 3, waiting: 4, reference: 5, closed: 6 };
     result.sort((a, b) => {
-      const aPriority = triagePriority[a._triage] ?? 5;
-      const bPriority = triagePriority[b._triage] ?? 5;
-      if (aPriority !== bPriority) return aPriority - bPriority;
-      const aTime = a.last_message_date ? new Date(a.last_message_date).getTime() : 0;
-      const bTime = b.last_message_date ? new Date(b.last_message_date).getTime() : 0;
-      return bTime - aTime;
+      const pa = PRIORITY[a._triage] ?? 99;
+      const pb = PRIORITY[b._triage] ?? 99;
+      if (pa !== pb) return pa - pb;
+
+      const ta = safeTs(a.last_message_date || a.updated_at);
+      const tb = safeTs(b.last_message_date || b.updated_at);
+      return tb - ta;
     });
 
-    console.log('[FILTER DEBUG] FINAL result.length=', result.length);
     return result;
   }, [derivedThreads, searchTerm, activeFilters, user?.email, triageFilter]);
 
