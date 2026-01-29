@@ -322,39 +322,39 @@ export default function ThreadHeader({
       {/* Row 2: Status Controls + Metadata */}
       <div className="space-y-3">
         {/* Controls */}
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Close/Reopen Button */}
-          {currentUser && (
-            <Button
-              onClick={handleCloseToggle}
-              disabled={isClosingLoading}
-              className={`h-7 px-2 text-[12px] flex items-center gap-1 ${
-                isClosed 
-                  ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200' 
-                  : 'bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200'
-              }`}
-              variant="outline"
-            >
-              <X className="w-3 h-3" />
-              {isClosed ? 'Reopen' : 'Mark closed'}
-            </Button>
-          )}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Next Action Status Dropdown (workflow) */}
+            {currentUser && !isClosed && (
+              <Select value={canonicalStatus} onValueChange={handleNextActionStatusChange} disabled={loading}>
+                <SelectTrigger className="w-[140px] h-7 text-[12px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {nextActionOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-          {/* Status Dropdown (only if not closed) */}
-          {!isClosed && (
-            <Select value={thread.status || 'Open'} onValueChange={onStatusChange} disabled={loading}>
-              <SelectTrigger className="w-[160px] h-7">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map(status => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+            {/* Mark Done / Reopen */}
+            {currentUser && (
+              <Button
+                onClick={isClosed ? handleReopen : handleMarkDone}
+                disabled={isClosingLoading}
+                className={`h-7 px-3 text-[12px] flex items-center gap-1 ${
+                  isClosed 
+                    ? 'bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200' 
+                    : 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100'
+                }`}
+                variant="outline"
+              >
+                <Check className="w-3 h-3" />
+                {isClosed ? 'Reopen' : 'Done'}
+              </Button>
+            )}
 
           {/* Owner Assignment */}
           <div className="flex items-center gap-2">
