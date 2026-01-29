@@ -198,7 +198,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     initialData: initialJob,
     staleTime: Infinity, // Never auto-refetch - only when explicitly invalidated
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: notesDirty ? false : false, // Don't refetch while editing
     refetchOnMount: false,
     refetchInterval: false, // Disable auto-refetch interval
   });
