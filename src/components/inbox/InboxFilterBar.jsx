@@ -15,9 +15,10 @@ export default function InboxFilterBar({
   onSearchChange, 
   activeFilters, 
   onFilterChange,
-  userEmail
+  userEmail,
+  allowedChips = null
 }) {
-  const filters = [
+  const allFilters = [
     { id: 'assigned-to-me', label: 'Assigned to Me', value: { assignedToMe: true } },
     { id: 'sent', label: 'Sent', value: { direction: 'sent' } },
     { id: 'received', label: 'Received', value: { direction: 'received' } },
@@ -26,6 +27,11 @@ export default function InboxFilterBar({
     { id: 'unlinked', label: 'Unlinked', value: { linked: false } },
     { id: 'closed', label: 'Closed', value: { status: 'closed' } }
   ];
+
+  // If allowedChips provided, filter to only those; otherwise use all
+  const filters = allowedChips 
+    ? allFilters.filter(f => allowedChips.includes(f.id))
+    : allFilters;
 
   const handleToggleFilter = (filterId, filterValue) => {
     // Toggle: if clicking an active filter, deactivate it; otherwise activate it
