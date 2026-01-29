@@ -547,7 +547,7 @@ export default function InboxV2() {
     return counts;
   }, [derivedThreads, user?.email]);
 
-  // Apply filters and search with proper sorting
+  // Apply workflow view filter + text search with proper sorting
   const filteredThreads = useMemo(() => {
     let result = derivedThreads;
 
@@ -564,47 +564,45 @@ export default function InboxV2() {
       );
     }
 
-    // Apply triage filter: "all" excludes closed by default
-    if (triageFilter === "all") {
-      result = result.filter((t) => t._triage !== "closed");
-    } else if (triageFilter === "closed") {
-      result = result.filter((t) => t._triage === "closed");
-    } else if (triageFilter !== "all") {
-      result = result.filter((t) => t._triage === triageFilter);
+    // Apply workflow view filter
+    if (workflowView === "unassigned") {
+      result = result.filter((t) => t._status === "needs_action" && !t.assigned_to);
+    } else if (workflowView === "my-actions") {
+      result = result.filter((t) => t._status === "needs_action" && t.assigned_to === user?.email);
+    } else if (workflowView === "waiting") {
+      result = result.filter((t) => t._status === "waiting");
+    } else if (workflowView === "fyi") {
+      result = result.filter((t) => t._status === "fyi");
+    } else if (workflowView === "done") {
+      result = result.filter((t) => t._status === "done");
     }
 
-    // Apply legacy filters if present
-    const hasActiveFilters = Object.values(activeFilters).some(v => v === true);
-    if (hasActiveFilters) {
-      if (activeFilters["assigned-to-me"]) {
-        result = result.filter((t) => t.assigned_to === user.email);
-      } else if (activeFilters["sent"]) {
-        result = result.filter((t) => t._dir === "sent");
-      } else if (activeFilters["received"]) {
-        result = result.filter((t) => t._dir === "received");
-      } else if (activeFilters["pinned"]) {
-        result = result.filter((t) => t.pinnedAt);
-      } else if (activeFilters["linked"]) {
-        result = result.filter((t) => t.project_id || t.contract_id);
-      } else if (activeFilters["unlinked"]) {
-        result = result.filter((t) => !t.project_id && !t.contract_id);
-      }
+    // Sorting per view
+    if (workflowView === "unassigned" || workflowView === "my-actions") {
+      // Newest external activity first (fallback to last_message_date desc)
+      result.sort((a, b) => {
+        const ta = safeTs(a.lastExternalMessageAt || a.last_message_date);
+        const tb = safeTs(b.lastExternalMessageAt || b.last_message_date);
+        return tb - ta;
+      });
+    } else if (workflowView === "waiting") {
+      // Oldest last_message_date first (stalled items surface)
+      result.sort((a, b) => {
+        const ta = safeTs(a.last_message_date || a.updated_at);
+        const tb = safeTs(b.last_message_date || b.updated_at);
+        return ta - tb;
+      });
+    } else {
+      // FYI / Done: newest first
+      result.sort((a, b) => {
+        const ta = safeTs(a.last_message_date || a.updated_at);
+        const tb = safeTs(b.last_message_date || b.updated_at);
+        return tb - ta;
+      });
     }
-
-    // Sorting: triage priority > last_message_date desc
-    const PRIORITY = { needs_reply: 1, needs_link: 2, important_fyi: 3, waiting: 4, reference: 5, closed: 6 };
-    result.sort((a, b) => {
-      const pa = PRIORITY[a._triage] ?? 99;
-      const pb = PRIORITY[b._triage] ?? 99;
-      if (pa !== pb) return pa - pb;
-
-      const ta = safeTs(a.last_message_date || a.updated_at);
-      const tb = safeTs(b.last_message_date || b.updated_at);
-      return tb - ta;
-    });
 
     return result;
-  }, [derivedThreads, searchTerm, activeFilters, user?.email, triageFilter]);
+  }, [derivedThreads, searchTerm, user?.email, workflowView]);
 
   const selectedThread = useMemo(() => {
     return selectedThreadId ? threads.find((t) => t.id === selectedThreadId) : null;
