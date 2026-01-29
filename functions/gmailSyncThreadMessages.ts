@@ -427,6 +427,27 @@ function extractAttachmentsFromPayload(payload, gmailMessageId) {
   return attachments;
 }
 
+function sanitizeSubject(subject) {
+  if (!subject) return '';
+  let text = String(subject);
+  
+  // Fix common UTF-8 mojibake in subjects
+  const fixes = [
+    ['â€"', '—'], ['â€"', '–'], ['â€™', "'"], ['â€˜', "'"],
+    ['â€\u009d', '"'], ['â€\u009c', '"'], ['â€¦', '…'],
+    ['Â ', ' '], ['&nbsp;', ' '], ['Â', '']
+  ];
+  
+  for (const [bad, good] of fixes) {
+    text = text.split(bad).join(good);
+  }
+  
+  // Remove invisible characters
+  text = text.replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g, '');
+  
+  return text.trim();
+}
+
 function deriveSnippet(bodyText, maxLength = 140) {
   if (!bodyText) return '';
   let snippet = bodyText.trim();
@@ -493,7 +514,7 @@ Deno.serve(async (req) => {
       }
 
       const newThread = await base44.asServiceRole.entities.EmailThread.create({
-        subject: lastHeaders['subject'] || '(no subject)',
+        subject: sanitizeSubject(lastHeaders['subject']) || '(no subject)',
         gmail_thread_id: gmail_thread_id,
         from_address: lastHeaders['from'] || '',
         to_addresses: lastHeaders['to'] ? lastHeaders['to'].split(',').map(e => e.trim()) : [],
@@ -601,7 +622,7 @@ Deno.serve(async (req) => {
           from_name: headers['from'] || '',
           to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
           cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
-          subject: headers['subject'] || '',
+          subject: sanitizeSubject(headers['subject']) || '',
           body_html: mergedBody.body_html,
           body_text: mergedBody.body_text,
           sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
