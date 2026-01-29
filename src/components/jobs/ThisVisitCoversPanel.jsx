@@ -67,23 +67,86 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
     }
   });
 
+  // Step 2: Debounced autosave
+  const autosaveTimerRef = useRef(null);
+  const debouncedSave = (updatedDraft) => {
+    // Cancel pending autosave
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    
+    // Schedule new autosave
+    autosaveTimerRef.current = setTimeout(() => {
+      // Build minimal patch from draft vs server
+      const serverData = job.visit_scope || { parts: [], trades: [], requirements: [] };
+      const patch = {};
+
+      // Detect removals
+      const serverKeys = new Set([
+        ...(serverData.parts || []).map(p => p.key),
+        ...(serverData.trades || []).map(t => t.key),
+        ...(serverData.requirements || []).map(r => r.key),
+      ]);
+      const draftKeys = new Set([
+        ...(updatedDraft.parts || []).map(p => p.key),
+        ...(updatedDraft.trades || []).map(t => t.key),
+        ...(updatedDraft.requirements || []).map(r => r.key),
+      ]);
+      const removed = [...serverKeys].filter(k => !draftKeys.has(k));
+      if (removed.length > 0) patch.remove_keys = removed;
+
+      // Detect additions
+      const allDraftItems = [
+        ...(updatedDraft.parts || []),
+        ...(updatedDraft.trades || []),
+        ...(updatedDraft.requirements || []),
+      ];
+      const added = allDraftItems.filter(item => !serverKeys.has(item.key));
+      if (added.length > 0) patch.add = added;
+
+      // Only mutate if there are actual changes
+      if (Object.keys(patch).length > 0) {
+        updateScopeMutation.mutate(patch);
+      } else {
+        setIsDirty(false);
+      }
+    }, 800); // 800ms debounce
+  };
+
   const handleRemoveItem = (key) => {
-    updateScopeMutation.mutate({
-      remove_keys: [key]
-    });
+    const updated = {
+      ...draft,
+      parts: draft.parts.filter(p => p.key !== key),
+      trades: draft.trades.filter(t => t.key !== key),
+      requirements: draft.requirements.filter(r => r.key !== key),
+    };
+    setDraft(updated);
+    setIsDirty(true);
+    debouncedSave(updated);
   };
 
   const handleAddFromProject = (items) => {
-    updateScopeMutation.mutate({
-      add: items
-    });
+    const updated = {
+      parts: [...(draft.parts || []), ...items.filter(i => i.type === 'part')],
+      trades: [...(draft.trades || []), ...items.filter(i => i.type === 'trade')],
+      requirements: [...(draft.requirements || []), ...items.filter(i => i.type === 'requirement')],
+    };
+    setDraft(updated);
+    setIsDirty(true);
+    debouncedSave(updated);
     setShowAddFromProject(false);
   };
 
   const handleAddCustomItem = (item) => {
-    updateScopeMutation.mutate({
-      add: item
-    });
+    const itemType = item.type || 'part';
+    const updated = {
+      ...draft,
+      [itemType === 'part' ? 'parts' : itemType === 'trade' ? 'trades' : 'requirements']: [
+        ...(draft[itemType === 'part' ? 'parts' : itemType === 'trade' ? 'trades' : 'requirements'] || []),
+        item,
+      ],
+    };
+    setDraft(updated);
+    setIsDirty(true);
+    debouncedSave(updated);
     setShowAddCustom(false);
     setCustomItemType(null);
   };
