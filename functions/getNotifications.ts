@@ -18,25 +18,23 @@ Deno.serve(async (req) => {
 
     const { limit = 50, only_unread = false } = await req.json().catch(() => ({}));
 
-    // Build filter query
-    const filterQuery = { user_email: user.email };
-    if (only_unread) {
-      filterQuery.is_read = false;
-    }
-
     // Fetch user's notifications - catch DB failures
     let notifications = [];
     try {
-      notifications = await base44.entities.Notification.filter(
+      // Use service role to bypass RLS restrictions
+      const filterQuery = { user_id: user.id };
+      if (only_unread) {
+        filterQuery.is_read = false;
+      }
+      
+      const rows = await base44.asServiceRole.entities.Notification.filter(
         filterQuery,
         '-created_date',
         limit
       );
       
       // Defensive: ensure we got an array
-      if (!Array.isArray(notifications)) {
-        notifications = [];
-      }
+      notifications = Array.isArray(rows) ? rows : [];
     } catch (dbError) {
       console.error("[getNotifications] DB query failed", { 
         user: user?.email, 
