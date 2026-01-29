@@ -383,7 +383,7 @@ export default function InboxV2ContextPanel({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['threads'] });
+        queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
       onThreadUpdate?.();
       toast.success('Category updated');
     },
