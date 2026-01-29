@@ -777,10 +777,18 @@ export default function InboxV2() {
     onError: (error) => toast.error(error.message || "Failed to link thread to contract"),
   });
 
-  if (!user) {
+  // Allowlist gate + loading check
+  if (!isInboxV2Allowed(user) || !user) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
-        <Loader className="w-5 h-5 animate-spin text-[#FAE008]" />
+        {!user ? (
+          <Loader className="w-5 h-5 animate-spin text-[#FAE008]" />
+        ) : (
+          <div className="text-center">
+            <Mail className="w-12 h-12 text-[#D1D5DB] mx-auto mb-3" />
+            <p className="text-[14px] text-[#6B7280]">Access denied</p>
+          </div>
+        )}
       </div>
     );
   }
