@@ -1218,7 +1218,7 @@ Link: ${threadLink}
           </div>
 
           {/* Selection mode actions */}
-          {selectionMode && activeView === "inbox" && (
+          {selectionMode && activeView === "threads" && (
             <div className="px-3 py-2 border-b border-[#E5E7EB] flex items-center justify-between gap-2">
               <Button size="sm" variant="ghost" onClick={selectAllThreads} className="text-xs">
                 Select All
