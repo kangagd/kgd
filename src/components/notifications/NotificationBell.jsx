@@ -209,18 +209,28 @@ export default function NotificationBell({ isMobile = false }) {
     queryFn: async () => {
       try {
         const response = await base44.functions.invoke('getNotifications', { limit: 50 });
-        return response.data || { notifications: [], unread_count: 0 };
+        const payload = response.data || {};
+        
+        // Treat backend failures as empty state
+        if (payload.success === false || !payload.notifications) {
+          return { notifications: [], unreadCount: 0 };
+        }
+        
+        return {
+          notifications: Array.isArray(payload.notifications) ? payload.notifications : [],
+          unreadCount: payload.unreadCount || 0
+        };
       } catch (error) {
-        // Silently fail to prevent toast spam
+        // Silently fail to prevent toast spam and layout breakage
         console.error('Error fetching notifications:', error);
-        return { notifications: [], unread_count: 0 };
+        return { notifications: [], unreadCount: 0 };
       }
     },
-    staleTime: 30000, // 30 seconds
+    staleTime: 60000, // 60 seconds
     refetchInterval: 60000, // Poll every 60 seconds for new notifications
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: true,
-    retry: false, // Don't retry on errors to prevent cascading failures
+    retry: 1, // Single retry on failure
   });
 
   const markReadMutation = useMutation({
@@ -288,7 +298,7 @@ export default function NotificationBell({ isMobile = false }) {
   const handleClose = () => setOpen(false);
 
   const notifications = data?.notifications || [];
-  const unreadCount = data?.unread_count || 0;
+  const unreadCount = data?.unreadCount || data?.unread_count || 0;
 
   const bellButton = (
     <button
