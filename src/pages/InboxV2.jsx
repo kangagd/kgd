@@ -155,6 +155,7 @@ export default function InboxV2() {
   const [composerThreadId, setComposerThreadId] = useState(null);
   const [composerMode, setComposerMode] = useState("new");
   const [composerLastMessage, setComposerLastMessage] = useState(null);
+  const [triageFilter, setTriageFilter] = useState("all");
 
   // Bulk selection
   const [selectionMode, setSelectionMode] = useState(false);
