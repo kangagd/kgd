@@ -122,6 +122,119 @@ const ACTIONABLE_PATTERNS = [
   /\breschedule\b/i,
 ];
 
+/* Category definitions & patterns */
+const CATEGORIES = [
+  { value: "uncategorised", label: "Uncategorised" },
+  { value: "supplier_quote", label: "Supplier Quote" },
+  { value: "supplier_invoice", label: "Supplier Invoice" },
+  { value: "payment", label: "Payment / Receipt" },
+  { value: "booking", label: "Booking / Scheduling" },
+  { value: "client_query", label: "Client Query" },
+  { value: "order_confirmation", label: "Order / Confirmation" },
+];
+
+const CATEGORY_PATTERNS = {
+  supplier_invoice: [
+    /\btax invoice\b/i,
+    /\binvoice\b/i,
+    /\bstatement\b/i,
+    /\bamount due\b/i,
+    /\bpayable\b/i,
+    /\bremit(tance)?\b/i,
+    /\bpro[- ]?forma\b/i,
+  ],
+  supplier_quote: [
+    /\bquote\b/i,
+    /\bquotation\b/i,
+    /\bpricing\b/i,
+    /\bestimate\b/i,
+    /\bprice\b/i,
+  ],
+  payment: [
+    /\bpayment received\b/i,
+    /\bpaid\b/i,
+    /\bpaid in full\b/i,
+    /\breceipt\b/i,
+    /\bdeposit\b/i,
+    /\bremittance\b/i,
+    /\btransfer\b/i,
+  ],
+  booking: [
+    /\bbooking\b/i,
+    /\bschedule\b/i,
+    /\bappointment\b/i,
+    /\bsite visit\b/i,
+    /\binstall\b/i,
+    /\breschedule\b/i,
+    /\bconfirm (a )?time\b/i,
+    /\bwhat time\b/i,
+    /\bdate\b/i,
+    /\bavailability\b/i,
+  ],
+  order_confirmation: [
+    /\border confirmation\b/i,
+    /\bpurchase order\b/i,
+    /\bpo\b/i,
+    /\border (has been )?(placed|confirmed)\b/i,
+    /\bdispatch(ed)?\b/i,
+    /\btracking\b/i,
+    /\bready for pickup\b/i,
+    /\bcollection\b/i,
+    /\bdelivery\b/i,
+    /\beta\b/i,
+    /\bback[- ]?order(ed)?\b/i,
+  ],
+  client_query: [
+    /\?/,
+    /\bcan you\b/i,
+    /\bcould you\b/i,
+    /\bplease\b/i,
+    /\bhow\b/i,
+    /\bwhen\b/i,
+    /\bwhy\b/i,
+    /\bissue\b/i,
+    /\bproblem\b/i,
+    /\bnot working\b/i,
+    /\bbroken\b/i,
+    /\bwarranty\b/i,
+    /\bchange\b/i,
+    /\bupdate\b/i,
+    /\bcancel\b/i,
+  ],
+};
+
+function suggestCategory(thread) {
+  const text = thread?.subject || "";
+  const snippet = thread?.snippet || thread?.preview || thread?.body_preview || "";
+  const combined = `${text}\n${snippet}`;
+
+  const scores = [];
+
+  function addScore(value, score, reason) {
+    scores.push({ value, score, reason });
+  }
+
+  // Strong signals from subject
+  if (matchesAny(text, CATEGORY_PATTERNS.order_confirmation)) addScore("order_confirmation", 90, "subject looks like order/confirmation");
+  if (matchesAny(text, CATEGORY_PATTERNS.supplier_invoice)) addScore("supplier_invoice", 85, "subject looks like invoice");
+  if (matchesAny(text, CATEGORY_PATTERNS.supplier_quote)) addScore("supplier_quote", 75, "subject looks like quote");
+
+  // Medium signals from combined text
+  if (matchesAny(combined, CATEGORY_PATTERNS.order_confirmation)) addScore("order_confirmation", 60, "content mentions dispatch/ETA/tracking");
+  if (matchesAny(combined, CATEGORY_PATTERNS.supplier_invoice)) addScore("supplier_invoice", 55, "content mentions invoice/payment terms");
+  if (matchesAny(combined, CATEGORY_PATTERNS.payment)) addScore("payment", 50, "content mentions payment/receipt");
+  if (matchesAny(combined, CATEGORY_PATTERNS.booking)) addScore("booking", 45, "content mentions booking/scheduling");
+  if (matchesAny(combined, CATEGORY_PATTERNS.client_query)) addScore("client_query", 40, "question/request detected");
+
+  scores.sort((a, b) => b.score - a.score);
+  const best = scores[0];
+
+  if (!best) return { value: "uncategorised", reason: "no strong match", confidence: 0 };
+  if (best.score < 45) return { value: "uncategorised", reason: "low confidence", confidence: best.score };
+
+  return { value: best.value, reason: best.reason, confidence: best.score };
+}
+
 const inferThreadDirection = (thread, orgEmails = []) => {
   const lastMsgTs = safeTs(thread?.last_message_date);
   const lastInternalTs = safeTs(thread?.lastInternalMessageAt);
