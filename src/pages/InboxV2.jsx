@@ -214,7 +214,7 @@ export default function InboxV2() {
   const [composerThreadId, setComposerThreadId] = useState(null);
   const [composerMode, setComposerMode] = useState("new");
   const [composerLastMessage, setComposerLastMessage] = useState(null);
-  const [triageFilter, setTriageFilter] = useState("all");
+  const [workflowView, setWorkflowView] = useState("unassigned"); // unassigned / my-actions / waiting / fyi / done
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedThreadIds, setSelectedThreadIds] = useState(new Set());
   const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
