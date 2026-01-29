@@ -1,12 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { LinkIcon, Sparkles, Check, RotateCcw, ChevronDown } from 'lucide-react';
+import { LinkIcon, Sparkles, Check, RotateCcw, X, Zap } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createPageUrl } from '@/utils';
+
+// Helper: normalize email
+const normalizeEmail = (e) => (e || '').toLowerCase().trim();
+
+// Extract thread participants for matching
+const getThreadParticipants = (thread) => {
+  const set = new Set();
+  if (thread?.from_address) set.add(normalizeEmail(thread.from_address));
+  if (thread?.to_addresses) {
+    (thread.to_addresses || []).forEach((addr) => {
+      if (addr) set.add(normalizeEmail(addr));
+    });
+  }
+  return Array.from(set);
+};
+
+// Score a project for thread relevance
+const scoreProjectForThread = (project, thread, participants) => {
+  let score = 0;
+
+  // Customer email match
+  if (project.customer_email && participants.includes(normalizeEmail(project.customer_email))) {
+    score += 50;
+  }
+
+  // Project number in subject
+  if (project.project_number && thread.subject) {
+    const numStr = String(project.project_number);
+    if (thread.subject.includes(numStr)) score += 25;
+  }
+
+  // Customer name in subject/snippet
+  if (project.customer_name) {
+    const combined = `${thread.subject || ''} ${thread.last_message_snippet || ''}`.toLowerCase();
+    if (combined.includes(project.customer_name.toLowerCase())) score += 20;
+  }
+
+  // Recent activity
+  if (project.updated_date) {
+    const now = Date.now();
+    const updated = new Date(project.updated_date).getTime();
+    const daysAgo = (now - updated) / (1000 * 60 * 60 * 24);
+    if (daysAgo <= 14) score += 10;
+  }
+
+  // Active status (simple check)
+  if (project.status && ['Scheduled', 'Parts Ordered', 'Quote Sent', 'Initial Site Visit'].includes(project.status)) {
+    score += 5;
+  }
+
+  return score;
+};
+
+// Get reason label for suggestion
+const getScoreReason = (project, thread, participants) => {
+  if (project.customer_email && participants.includes(normalizeEmail(project.customer_email))) {
+    return 'Matched email';
+  }
+  if (project.project_number && thread.subject?.includes(String(project.project_number))) {
+    return `Project #${project.project_number}`;
+  }
+  if (project.customer_name && `${thread.subject || ''} ${thread.last_message_snippet || ''}`.toLowerCase().includes(project.customer_name.toLowerCase())) {
+    return `Customer: ${project.customer_name}`;
+  }
+  if (project.updated_date && (Date.now() - new Date(project.updated_date).getTime()) / (1000 * 60 * 60 * 24) <= 14) {
+    return 'Recently updated';
+  }
+  return 'Suggested';
+};
 
 export default function InboxV2ContextPanel({
   thread,
