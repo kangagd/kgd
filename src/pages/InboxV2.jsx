@@ -258,7 +258,10 @@ export default function InboxV2() {
     if (threadId && threadId !== selectedThreadId) {
       setSelectedThreadId(threadId);
     }
-  }, []);
+    }, []);
+
+    // Per-session thread open deduplication (30 min window)
+    const threadOpenAuditMapRef = useRef({});
 
   const { data: initialThreads = [], isLoading: threadsLoading, refetch: refetchThreads } = useQuery({
     queryKey: inboxKeys.threads(),
