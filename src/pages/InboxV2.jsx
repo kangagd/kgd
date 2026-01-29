@@ -764,16 +764,33 @@ export default function InboxV2() {
       const assignedUser = userEmail ? teamUsers.find((u) => u.email === userEmail) : null;
       
       // Use backend function for assignment (handles audit trail)
-      await base44.functions.invoke("assignEmailThread", {
+      const response = await base44.functions.invoke("assignEmailThread", {
         thread_id: selectedThread.id,
         assigned_to_user_email: userEmail || null,
       });
       
-      // Invalidate threads to refresh workflow state
+      // Patch cache immediately (don't wait for refetch)
+      const result = response.data;
+      if (result?.success) {
+        queryClient.setQueryData(inboxKeys.threads(), (oldThreads) => {
+          return (oldThreads || []).map((t) =>
+            t.id === selectedThread.id
+              ? {
+                  ...t,
+                  assigned_to: result.assigned_to,
+                  assigned_to_name: result.assigned_to_name,
+                  assigned_at: result.assigned_at,
+                }
+              : t
+          );
+        });
+      }
+      
+      // Refetch for safety sync
       await refetchThreads();
       
       if (userEmail) {
-        toast.success(`Assigned to ${assignedUser?.full_name || userEmail}`);
+        toast.success(`Assigned to ${assignedUser?.display_name || assignedUser?.full_name || userEmail}`);
       } else {
         toast.success("Unassigned");
       }
