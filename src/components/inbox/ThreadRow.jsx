@@ -184,11 +184,12 @@ export default function ThreadRow({
 
   return (
     <div
-      className={`w-full px-4 py-3 border-b border-[#E5E7EB] transition-all ${
+      className={`w-full px-4 py-3 border-b border-[#E5E7EB] transition-all cursor-pointer ${
         isSelected
           ? "bg-[#FAE008]/10 border-l-2 border-l-[#FAE008]"
           : "hover:bg-[#F9FAFB]"
       } ${isSelectedForBulk ? "bg-blue-50 border-l-2 border-l-blue-500" : ""}`}
+      onClick={onClick}
     >
       <div className="flex items-start gap-3">
         {/* Bulk Selection Checkbox */}
@@ -202,7 +203,7 @@ export default function ThreadRow({
           </div>
         )}
 
-        <button onClick={onClick} className="flex-1 text-left min-w-0">
+        <div className="flex-1 text-left min-w-0">
           <div className="space-y-2">
             {/* Subject + Chips row */}
             <div className="flex items-start justify-between gap-2">
