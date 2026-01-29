@@ -1025,18 +1025,25 @@ export default function InboxV2() {
               <>
                 <div className="flex-1 overflow-y-auto">
                   {filteredThreads.map((thread) => (
-                    <ThreadRow
-                      key={thread.id}
-                      thread={thread}
-                      isSelected={selectedThreadId === thread.id}
-                      onClick={() => !selectionMode && setSelectedThreadId(thread.id)}
-                      currentUser={user}
-                      onThreadUpdate={() => refetchThreads()}
-                      selectionMode={selectionMode}
-                      isSelectedForBulk={selectedThreadIds.has(thread.id)}
-                      onBulkSelect={handleBulkSelect}
-                    />
-                  ))}
+                     <div key={thread.id} className="border-b border-[#E5E7EB] last:border-b-0">
+                       <ThreadRow
+                         thread={thread}
+                         isSelected={selectedThreadId === thread.id}
+                         onClick={() => !selectionMode && setSelectedThreadId(thread.id)}
+                         currentUser={user}
+                         onThreadUpdate={() => refetchThreads()}
+                         selectionMode={selectionMode}
+                         isSelectedForBulk={selectedThreadIds.has(thread.id)}
+                         onBulkSelect={handleBulkSelect}
+                       />
+                       {/* Triage status hint */}
+                       <div className="px-3 py-1 bg-[#F9FAFB] flex items-center gap-2 text-xs text-[#6B7280]">
+                         <span className="font-medium text-[#4B5563]">{thread._triage === 'needs_reply' ? 'Needs reply' : thread._triage === 'needs_link' ? 'Needs link' : thread._triage === 'waiting' ? 'Waiting' : 'Reference'}</span>
+                         <span>·</span>
+                         <span>{thread._direction === 'sent' ? 'Sent' : thread._direction === 'received' ? 'Received' : 'Unknown'}</span>
+                       </div>
+                     </div>
+                   ))}
                 </div>
                 {hasMore && (
                   <div className="p-3 border-t border-[#E5E7EB]">
