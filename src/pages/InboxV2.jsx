@@ -1366,6 +1366,7 @@ export default function InboxV2() {
         open={composerOpen}
         onOpenChange={(open) => {
           if (!open) {
+            handleComposerClose(composerThreadId);
             setComposerLastMessage(null);
             setComposerDraftId(null);
             setComposerMode("new");
@@ -1378,10 +1379,12 @@ export default function InboxV2() {
         message={composerLastMessage}
         existingDraft={composerDraftId ? { id: composerDraftId } : null}
         onClose={() => {
+          handleComposerClose(composerThreadId);
           setComposerOpen(false);
           refetchDrafts();
         }}
         onSent={() => {
+          handleComposerSent();
           queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
           queryClient.invalidateQueries({ queryKey: inboxKeys.drafts() });
           refetchThreads();
