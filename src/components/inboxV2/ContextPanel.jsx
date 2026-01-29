@@ -680,7 +680,7 @@ export default function InboxV2ContextPanel({
           <div className="text-xs font-medium text-[#6B7280]">Owner</div>
           <Select
             value={thread.assigned_to || ''}
-            onValueChange={(email) => assignmentMutation.mutate(email || null)}
+            onValueChange={(email) => assignmentMutation.mutate(email === '' ? null : email)}
             disabled={assignmentMutation.isPending}
           >
             <SelectTrigger className="h-7 text-xs">
