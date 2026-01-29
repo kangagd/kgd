@@ -331,6 +331,99 @@ function extractBodyFromPayload(payload) {
   return result;
 }
 
+// ============================================================================
+// Attachment Extraction (added 2026-01-29)
+// ============================================================================
+
+/**
+ * Normalize Content-ID: strip angle brackets and whitespace
+ * Example: "<abc123@mail.gmail.com>" -> "abc123@mail.gmail.com"
+ */
+function normalizeContentId(contentId) {
+  if (!contentId) return null;
+  return contentId.replace(/^<|>$/g, '').trim();
+}
+
+/**
+ * Extract attachment metadata from a MIME part
+ */
+function extractAttachmentFromPart(part) {
+  if (!part || !part.filename) return null;
+  
+  // Determine if inline (has Content-ID or Content-Disposition: inline)
+  const headers = part.headers || [];
+  let contentId = null;
+  let isInline = false;
+  
+  for (const header of headers) {
+    const name = header.name?.toLowerCase();
+    if (name === 'content-id') {
+      contentId = normalizeContentId(header.value);
+      isInline = true;
+    }
+    if (name === 'content-disposition' && header.value?.toLowerCase().includes('inline')) {
+      isInline = true;
+    }
+  }
+  
+  return {
+    filename: part.filename,
+    mime_type: part.mimeType || 'application/octet-stream',
+    size: part.body?.size || 0,
+    attachment_id: part.body?.attachmentId || null,
+    content_id: contentId,
+    content_id_normalized: contentId, // For cid: matching in UI
+    is_inline: isInline
+  };
+}
+
+/**
+ * Recursively extract attachments from MIME parts
+ */
+function extractAttachmentsFromMimeParts(parts, depth = 0) {
+  const attachments = [];
+  
+  if (!parts || !Array.isArray(parts) || depth > 10) {
+    return attachments;
+  }
+  
+  for (const part of parts) {
+    if (!part) continue;
+    
+    // Check if this part is an attachment
+    if (part.filename && part.body?.attachmentId) {
+      const attachment = extractAttachmentFromPart(part);
+      if (attachment) {
+        attachments.push(attachment);
+      }
+    }
+    
+    // Recurse into nested parts
+    if (part.parts) {
+      const nestedAttachments = extractAttachmentsFromMimeParts(part.parts, depth + 1);
+      attachments.push(...nestedAttachments);
+    }
+  }
+  
+  return attachments;
+}
+
+/**
+ * Extract all attachments from message payload
+ */
+function extractAttachmentsFromPayload(payload) {
+  if (!payload) return [];
+  
+  const attachments = [];
+  
+  // Check top-level parts
+  if (payload.parts) {
+    attachments.push(...extractAttachmentsFromMimeParts(payload.parts));
+  }
+  
+  return attachments;
+}
+
 function deriveSnippet(bodyText, maxLength = 140) {
   if (!bodyText) return '';
   let snippet = bodyText.trim();
@@ -429,6 +522,9 @@ Deno.serve(async (req) => {
 
         // Extract body with robust MIME parsing
         let incomingResult = extractBodyFromPayload(gmailMsg.payload);
+        
+        // Extract attachments (added 2026-01-29)
+        const incomingAttachments = extractAttachmentsFromPayload(gmailMsg.payload);
 
         // Check if message already exists
         const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
@@ -486,6 +582,13 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Merge attachments: preserve existing if incoming is empty (guardrail against regression)
+        let finalAttachments = incomingAttachments;
+        if (existing?.attachments?.length > 0 && incomingAttachments.length === 0) {
+          console.log(`[gmailSyncThreadMessages] preserved_attachments: ${gmailMsg.id} (incoming empty, kept ${existing.attachments.length} existing)`);
+          finalAttachments = existing.attachments;
+        }
+
         const messageData = {
           thread_id: threadId,
           gmail_message_id: gmailMsg.id,
@@ -499,6 +602,7 @@ Deno.serve(async (req) => {
           body_text: mergedBody.body_text,
           sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
           is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
+          attachments: finalAttachments,
           has_body: finalHasBodyForRecord,
           sync_status: syncStatus,
           parse_error: syncStatus === 'ok' ? null : parseError,
