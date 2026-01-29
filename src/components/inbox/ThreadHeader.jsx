@@ -72,6 +72,46 @@ export default function ThreadHeader({
     }
   };
 
+  const handleNextActionStatusChange = async (status) => {
+    try {
+      await base44.entities.EmailThread.update(thread.id, {
+        next_action_status: status
+      });
+      onThreadUpdate?.();
+      toast.success(`Status changed to ${nextActionOptions.find(o => o.value === status)?.label}`);
+    } catch (error) {
+      devLog('Failed to update status:', error);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleMarkDone = async () => {
+    try {
+      await base44.entities.EmailThread.update(thread.id, {
+        userStatus: 'closed'
+      });
+      onThreadUpdate?.();
+      toast.success('Marked as Done');
+    } catch (error) {
+      devLog('Failed to mark done:', error);
+      toast.error('Failed to mark as done');
+    }
+  };
+
+  const handleReopen = async () => {
+    try {
+      await base44.entities.EmailThread.update(thread.id, {
+        userStatus: null,
+        next_action_status: 'needs_action'
+      });
+      onThreadUpdate?.();
+      toast.success('Reopened');
+    } catch (error) {
+      devLog('Failed to reopen:', error);
+      toast.error('Failed to reopen');
+    }
+  };
+
   const getInitials = (name) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?';
   };
