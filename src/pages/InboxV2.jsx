@@ -1751,6 +1751,96 @@ Link: ${threadLink}
         }}
       />
 
+      {/* Context drawer for small screens */}
+      {contextOpen && selectedThread && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-40 xl:hidden"
+            onClick={() => setContextOpen(false)}
+          />
+          <div className="fixed right-0 top-0 bottom-0 w-full max-w-[360px] bg-white border-l border-[#E5E7EB] z-50 overflow-y-auto xl:hidden flex flex-col">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB] flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[#111827]">
+                {selectedThread.project_id || selectedThread.contract_id ? 'Linked To' : 'Link Thread'}
+              </h3>
+              <button
+                onClick={() => setContextOpen(false)}
+                className="p-1 hover:bg-[#E5E7EB] rounded transition-colors"
+              >
+                <XIcon className="w-4 h-4 text-[#111827]" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 flex flex-col p-4 space-y-3 overflow-y-auto">
+              {selectedThread.project_id ? (
+                <>
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-[#6B7280]">PROJECT</div>
+                    <div className="rounded-lg border border-[#E5E7EB] p-3 bg-[#F9FAFB] space-y-2">
+                      <div className="text-sm font-semibold text-[#111827]">{selectedThread.project_title || 'Project'}</div>
+                      {selectedThread.project_number && (
+                        <div className="text-xs text-[#6B7280]">#{selectedThread.project_number}</div>
+                      )}
+                      {selectedThread.customer_name && (
+                        <div className="text-xs text-[#4B5563]">{selectedThread.customer_name}</div>
+                      )}
+                      <Button
+                        onClick={() => window.location.href = createPageUrl("Projects") + `?projectId=${selectedThread.project_id}`}
+                        className="w-full mt-3 h-7 text-xs bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                      >
+                        Open Project
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : selectedThread.contract_id ? (
+                <>
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-[#6B7280]">CONTRACT</div>
+                    <div className="rounded-lg border border-[#E5E7EB] p-3 bg-[#F9FAFB] space-y-2">
+                      <div className="text-sm font-semibold text-[#111827]">{selectedThread.contract_name || 'Contract'}</div>
+                      {selectedThread.contract_status && (
+                        <div className="text-xs text-[#6B7280]">{selectedThread.contract_status}</div>
+                      )}
+                      <Button
+                        onClick={() => window.location.href = createPageUrl("Contracts") + `?contractId=${selectedThread.contract_id}`}
+                        className="w-full mt-3 h-7 text-xs bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                      >
+                        Open Contract
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-[#6B7280] mb-3">Link this thread to a project or contract for easy reference.</p>
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => setShowLinkModal(true)}
+                      className="w-full h-8 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200"
+                      variant="outline"
+                    >
+                      <LinkIcon className="w-3.5 h-3.5 mr-1.5" />
+                      Link to Project/Contract
+                    </Button>
+                    <Button
+                      onClick={() => setShowCreateProjectModal(true)}
+                      className="w-full h-8 text-xs bg-green-50 hover:bg-green-100 text-green-700 border border-green-200"
+                      variant="outline"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Create Project
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
       {/* Warning for unsync'd threads */}
       {selectedThread && selectedThreadId && !selectedThread?.message_count && selectedThread?.gmail_thread_id && (
         <div className="fixed bottom-4 right-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs max-w-xs">
