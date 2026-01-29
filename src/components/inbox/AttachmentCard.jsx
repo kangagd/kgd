@@ -104,12 +104,10 @@ export default function AttachmentCard({
                 filename: attachment.filename,
                 mime_type: attachment.mime_type
               });
-              if (result.data?.success === false || !result.data?.url) {
-                console.warn('Auto-save: Could not fetch attachment:', attachment.filename, result.data?.error);
-                return;
+              if (result.data?.url) {
+                urlToSave = result.data.url;
+                setResolvedUrl(urlToSave);
               }
-              urlToSave = result.data.url;
-              setResolvedUrl(urlToSave);
             } catch (fetchError) {
               console.warn('Auto-save: Could not fetch attachment:', attachment.filename);
               return;
@@ -179,10 +177,6 @@ export default function AttachmentCard({
           filename: attachment.filename,
           mime_type: attachment.mime_type
         });
-        if (result.data?.success === false) {
-          toast.error(result.data?.error || 'Failed to fetch attachment');
-          return;
-        }
         if (result.data?.url) {
           urlToSave = result.data.url;
           setResolvedUrl(urlToSave);
@@ -318,9 +312,7 @@ export default function AttachmentCard({
                     filename: attachment.filename,
                     mime_type: attachment.mime_type
                   });
-                  if (result.data?.success === false) {
-                    toast.error(result.data?.error || 'Failed to download attachment');
-                  } else if (result.data?.url) {
+                  if (result.data?.url) {
                     setResolvedUrl(result.data.url);
                     window.open(result.data.url, '_blank');
                   } else {

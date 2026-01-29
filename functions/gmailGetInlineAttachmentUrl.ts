@@ -190,26 +190,26 @@ Deno.serve(async (req) => {
     if (gmailRes.status === 404) {
       return Response.json(
         { success: false, error: 'Attachment not found in Gmail', status: 404, phase },
-        { status: 200 }
+        { status: 404 }
       );
     }
     if (gmailRes.status === 429) {
       return Response.json(
         { success: false, error: 'Gmail rate limited', status: 429, phase },
-        { status: 200 }
+        { status: 503 }
       );
     }
     if (gmailRes.status === 503) {
       return Response.json(
         { success: false, error: 'Gmail service unavailable', status: 503, phase },
-        { status: 200 }
+        { status: 503 }
       );
     }
     if (!gmailRes.ok) {
       const txt = await gmailRes.text().catch(() => '');
       return Response.json(
         { success: false, error: `Gmail API error ${gmailRes.status}: ${txt}`, status: gmailRes.status, phase },
-        { status: 200 }
+        { status: 502 }
       );
     }
 
@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
     if (!attachmentData?.data) {
       return Response.json(
         { success: false, error: 'No attachment data in Gmail response', phase: 'gmail_parse' },
-        { status: 200 }
+        { status: 502 }
       );
     }
 
@@ -242,7 +242,7 @@ Deno.serve(async (req) => {
     const uploadRes = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
     if (!uploadRes?.file_url) {
-      return Response.json({ success: false, error: 'Failed to upload attachment', phase }, { status: 200 });
+      return Response.json({ success: false, error: 'Failed to upload attachment', phase }, { status: 500 });
     }
 
     const fileUrl = uploadRes.file_url;
@@ -269,6 +269,6 @@ Deno.serve(async (req) => {
     return Response.json({ success: true, file_url: fileUrl, phase }, { status: 200 });
   } catch (error) {
     console.error('[gmailGetInlineAttachmentUrl] Error in phase', phase, ':', error);
-    return Response.json({ success: false, error: safeErr(error), phase }, { status: 200 });
+    return Response.json({ success: false, error: safeErr(error), phase }, { status: 500 });
   }
 });
