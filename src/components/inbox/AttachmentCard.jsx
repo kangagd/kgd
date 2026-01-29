@@ -66,8 +66,10 @@ export default function AttachmentCard({
   const autoSaveAttempted = useRef(false);
   const queryClient = useQueryClient();
   
-  // Use gmail_message_id from attachment or from prop
-  // Prioritize attachment's own gmail_message_id, then fall back to prop
+  // CRITICAL GUARDRAIL: gmail_message_id is REQUIRED for download functionality
+  // Source of truth: attachment.gmail_message_id (set by gmailSyncThreadMessages.ts)
+  // Fallback: gmailMessageId prop (for backward compatibility)
+  // DO NOT remove attachment.gmail_message_id - it enables getGmailAttachment to fetch from Gmail API
   const effectiveGmailMessageId = attachment.gmail_message_id || gmailMessageId;
   const effectiveAttachmentId = attachment.attachment_id;
   

@@ -371,6 +371,8 @@ function extractAttachmentFromPart(part, gmailMessageId) {
     mime_type: part.mimeType || 'application/octet-stream',
     size: part.body?.size || 0,
     attachment_id: part.body?.attachmentId || null,
+    // CRITICAL: gmail_message_id is REQUIRED for AttachmentCard download functionality
+    // DO NOT remove this field - it enables getGmailAttachment to fetch attachment data
     gmail_message_id: gmailMessageId,
     content_id: contentId,
     content_id_normalized: contentId, // For cid: matching in UI
@@ -524,7 +526,8 @@ Deno.serve(async (req) => {
         // Extract body with robust MIME parsing
         let incomingResult = extractBodyFromPayload(gmailMsg.payload);
         
-        // Extract attachments (added 2026-01-29)
+        // CRITICAL: Extract attachments with gmail_message_id for download functionality
+        // Each attachment MUST include gmail_message_id to enable getGmailAttachment API calls
         const incomingAttachments = extractAttachmentsFromPayload(gmailMsg.payload, gmailMsg.id);
 
         // Check if message already exists
