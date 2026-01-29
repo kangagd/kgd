@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { LinkIcon, Sparkles, Check, RotateCcw, X, Zap, ChevronDown } from 'lucide-react';
+import { LinkIcon, Sparkles, Check, RotateCcw, X, Zap } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { createPageUrl } from '@/utils';
 
 // Minimum confidence threshold for category suggestions
@@ -679,45 +678,23 @@ export default function InboxV2ContextPanel({
         {/* Owner Section */}
         <div className="space-y-2">
           <div className="text-xs font-medium text-[#6B7280]">Owner</div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="w-full h-7 px-3 rounded-lg border border-[#E5E7EB] bg-white text-xs hover:bg-[#F3F4F6] transition-colors flex items-center justify-between disabled:opacity-50" disabled={assignmentMutation.isPending}>
-                <span className={thread.assigned_to ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
-                  {thread.assigned_to_name || thread.assigned_to || 'Unassigned'}
-                </span>
-                <ChevronDown className="w-3 h-3 text-[#6B7280]" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-56 p-2">
-              <div className="space-y-1">
-                <button
-                  onClick={() => assignmentMutation.mutate(null)}
-                  disabled={assignmentMutation.isPending}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${
-                    !thread.assigned_to
-                      ? 'bg-[#FAE008] text-[#111827] font-medium'
-                      : 'hover:bg-[#F3F4F6] text-[#111827]'
-                  }`}
-                >
-                  Unassigned
-                </button>
-                {teamUsers.map((user) => (
-                  <button
-                    key={user.email}
-                    onClick={() => assignmentMutation.mutate(user.email)}
-                    disabled={assignmentMutation.isPending}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors ${
-                      thread.assigned_to === user.email
-                        ? 'bg-[#FAE008] text-[#111827] font-medium'
-                        : 'hover:bg-[#F3F4F6] text-[#111827]'
-                    }`}
-                  >
-                    {user.display_name}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Select
+            value={thread.assigned_to || ''}
+            onValueChange={(email) => assignmentMutation.mutate(email === '' ? null : email)}
+            disabled={assignmentMutation.isPending}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Unassigned" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>Unassigned</SelectItem>
+              {teamUsers.map((user) => (
+                <SelectItem key={user.email} value={user.email}>
+                  {user.display_name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Next Action Section */}
