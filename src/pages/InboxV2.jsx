@@ -670,10 +670,71 @@ export default function InboxV2() {
 
   // Composer sent
   const handleComposerSent = async () => {
+    // Clear composing status for current thread
+    if (composerThreadId) {
+      setComposingUsers((prev) => {
+        const next = { ...prev };
+        delete next[composerThreadId];
+        return next;
+      });
+    }
+    
     await refetchThreads();
     await refetchDrafts();
     if (selectedThread) {
       queryClient.invalidateQueries({ queryKey: inboxKeys.thread(selectedThread.id) });
+    }
+  };
+
+  // Track composing state
+  const handleComposerOpen = (threadId) => {
+    if (threadId && user) {
+      setComposingUsers((prev) => ({
+        ...prev,
+        [threadId]: {
+          userId: user.id,
+          userName: user.display_name || user.full_name || user.email,
+          timestamp: Date.now(),
+        },
+      }));
+    }
+  };
+
+  const handleComposerClose = (threadId) => {
+    if (threadId) {
+      setComposingUsers((prev) => {
+        const next = { ...prev };
+        delete next[threadId];
+        return next;
+      });
+    }
+  };
+
+  const handleTakeoverReply = async (threadId) => {
+    if (!threadId || !user) return;
+    
+    try {
+      // Mark current user as composing (takeover)
+      setComposingUsers((prev) => ({
+        ...prev,
+        [threadId]: {
+          userId: user.id,
+          userName: user.display_name || user.full_name || user.email,
+          timestamp: Date.now(),
+        },
+      }));
+      
+      // Open composer in reply mode
+      setComposerMode("reply");
+      setComposerThreadId(threadId);
+      setComposerLastMessage(null);
+      setComposerDraftId(null);
+      setComposerOpen(true);
+      
+      toast.success("You're now composing the reply");
+    } catch (error) {
+      devLog("Failed to takeover reply:", error);
+      toast.error("Failed to takeover reply");
     }
   };
 
