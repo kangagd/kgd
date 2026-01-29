@@ -909,9 +909,9 @@ export default function InboxV2() {
     try {
       await base44.entities.EmailThreadNote.create({
         thread_id: selectedThread.id,
-        body: noteInput.trim(),
-        author_email: user.email,
-        author_name: user.display_name || user.full_name || user.email,
+        note: noteInput.trim(),
+        created_by: user.email,
+        created_by_name: user.display_name || user.full_name || user.email,
       });
       
       setNoteInput("");
