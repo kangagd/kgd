@@ -11,6 +11,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { normalizeCid, isCidReference } from './shared/cidHelpers.js';
 
 const GMAIL_SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
