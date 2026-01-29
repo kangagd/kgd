@@ -137,6 +137,30 @@ export default function InboxV2ContextPanel({
   const isClosed = thread.userStatus === 'closed';
   const canonicalStatus = isClosed ? 'done' : thread.next_action_status || 'needs_action';
 
+  // Link mutation
+  const linkMutation = useMutation({
+    mutationFn: async (projectId) => {
+      const response = await base44.functions.invoke('linkEmailThreadToProject', {
+        threadId: thread.id,
+        projectId,
+      });
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Failed to link');
+      }
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
+      const projName = data.project_name || 'Project';
+      toast.success(`Linked to ${projName}`);
+      onThreadUpdate?.();
+      setShowSearch(false);
+      setProjectSearch('');
+      setSelectedProjectId(null);
+    },
+    onError: (err) => toast.error(err.message || 'Failed to link thread'),
+  });
+
   // Assignment mutation
   const assignmentMutation = useMutation({
     mutationFn: async (userEmail) => {
