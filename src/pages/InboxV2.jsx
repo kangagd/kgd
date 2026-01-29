@@ -624,14 +624,24 @@ export default function InboxV2() {
   const handleAssignChange = async (userEmail) => {
     if (!selectedThread) return;
     try {
-      const assignedUser = teamUsers.find((u) => u.email === userEmail);
-      await base44.entities.EmailThread.update(selectedThread.id, {
-        assigned_to: userEmail || null,
-        assigned_to_name: assignedUser?.full_name || null,
+      const assignedUser = userEmail ? teamUsers.find((u) => u.email === userEmail) : null;
+      
+      // Use backend function for assignment (handles audit trail)
+      await base44.functions.invoke("assignEmailThread", {
+        thread_id: selectedThread.id,
+        assigned_to_user_email: userEmail || null,
       });
+      
+      // Invalidate threads to refresh workflow state
       await refetchThreads();
-      toast.success(userEmail ? `Assigned to ${assignedUser?.full_name}` : "Unassigned");
-    } catch {
+      
+      if (userEmail) {
+        toast.success(`Assigned to ${assignedUser?.full_name || userEmail}`);
+      } else {
+        toast.success("Unassigned");
+      }
+    } catch (error) {
+      devLog("Failed to assign thread:", error);
       toast.error("Failed to assign thread");
     }
   };
