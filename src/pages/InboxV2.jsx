@@ -817,10 +817,65 @@ Link: ${threadLink}
       });
       
       toast.success("Task created");
-      // Optionally navigate to task (if you have a tasks page)
     } catch (error) {
       devLog("Failed to convert to task:", error);
       toast.error("Failed to create task");
+    }
+  };
+
+  // Workflow status updates
+  const handleStatusChange = async (newStatus) => {
+    if (!selectedThread) return;
+    
+    setUpdatingThreadId(selectedThread.id);
+    try {
+      await base44.entities.EmailThread.update(selectedThread.id, {
+        next_action_status: newStatus,
+      });
+      await refetchThreads();
+      toast.success(`Status changed to ${newStatus === 'needs_action' ? 'Needs Action' : newStatus === 'waiting' ? 'Waiting' : 'FYI'}`);
+    } catch (error) {
+      devLog("Failed to update status:", error);
+      toast.error("Failed to update status");
+    } finally {
+      setUpdatingThreadId(null);
+    }
+  };
+
+  const handleMarkDone = async () => {
+    if (!selectedThread) return;
+    
+    setUpdatingThreadId(selectedThread.id);
+    try {
+      await base44.entities.EmailThread.update(selectedThread.id, {
+        userStatus: "closed",
+      });
+      await refetchThreads();
+      toast.success("Marked as Done");
+    } catch (error) {
+      devLog("Failed to mark done:", error);
+      toast.error("Failed to mark as done");
+    } finally {
+      setUpdatingThreadId(null);
+    }
+  };
+
+  const handleReopen = async () => {
+    if (!selectedThread) return;
+    
+    setUpdatingThreadId(selectedThread.id);
+    try {
+      await base44.entities.EmailThread.update(selectedThread.id, {
+        userStatus: null,
+        next_action_status: "needs_action",
+      });
+      await refetchThreads();
+      toast.success("Reopened");
+    } catch (error) {
+      devLog("Failed to reopen:", error);
+      toast.error("Failed to reopen");
+    } finally {
+      setUpdatingThreadId(null);
     }
   };
 
