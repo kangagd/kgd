@@ -221,8 +221,25 @@ export default function InboxV2ContextPanel({
         next_action_status: status,
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, status) => {
       queryClient.invalidateQueries({ queryKey: ['threads'] });
+
+      // Audit: status change
+      if (currentUser) {
+        const labels = {
+          needs_action: 'Needs Action',
+          waiting: 'Waiting',
+          fyi: 'FYI',
+        };
+        base44.entities.EmailAudit?.create?.({
+          thread_id: thread.id,
+          type: 'status_changed',
+          message: `Status changed to ${labels[status] || status}`,
+          actor_user_id: currentUser.id,
+          actor_name: currentUser.display_name || currentUser.full_name || currentUser.email,
+        }).catch(() => {});
+      }
+
       onThreadUpdate?.();
     },
     onError: () => toast.error('Failed to update status'),
