@@ -178,6 +178,18 @@ export default function InboxV2ContextPanel({
       queryClient.invalidateQueries({ queryKey: ['threads'] });
       const projName = data.project_name || 'Project';
       toast.success(`Linked to ${projName}`);
+
+      // Audit: link
+      if (currentUser) {
+        base44.entities.EmailAudit?.create?.({
+          thread_id: thread.id,
+          type: 'linked',
+          message: `Linked to Project ${projName}`,
+          actor_user_id: currentUser.id,
+          actor_name: currentUser.display_name || currentUser.full_name || currentUser.email,
+        }).catch(() => {});
+      }
+
       onThreadUpdate?.();
       setShowSearch(false);
       setProjectSearch('');
