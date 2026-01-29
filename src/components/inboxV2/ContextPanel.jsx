@@ -135,6 +135,13 @@ export default function InboxV2ContextPanel({
     return scored.filter((p) => p._score >= 25).slice(0, 5);
   }, [recentProjects, thread, participants]);
 
+  // Auto-focus search input when panel opens for unlinked thread
+  useEffect(() => {
+    if (showSearch && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [showSearch]);
+
   if (!thread) {
     return (
       <div className="flex-1 flex items-center justify-center text-center p-4">
@@ -145,13 +152,6 @@ export default function InboxV2ContextPanel({
       </div>
     );
   }
-
-  // Auto-focus search input when panel opens for unlinked thread
-  useEffect(() => {
-    if (showSearch && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 100);
-    }
-  }, [showSearch]);
 
   const isLinked = thread.project_id || thread.contract_id;
   const linkedType = thread.project_id ? 'project' : thread.contract_id ? 'contract' : null;
