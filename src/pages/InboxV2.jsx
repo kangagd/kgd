@@ -544,11 +544,11 @@ export default function InboxV2() {
   // Count workflow status
   const workflowCounts = useMemo(() => {
     const counts = {
-      unassigned: 0, // needs_action + no owner
-      my_actions: 0, // needs_action + owner is current user
-      waiting: 0,    // waiting
-      fyi: 0,        // fyi
-      done: 0,       // done
+      unassigned: 0,
+      my_actions: 0,
+      waiting: 0,
+      fyi: 0,
+      done: 0,
     };
     derivedThreads.forEach((t) => {
       if (t._status === "done") {
@@ -558,10 +558,10 @@ export default function InboxV2() {
       } else if (t._status === "fyi") {
         counts.fyi++;
       } else if (t._status === "needs_action") {
-        if (!t.assigned_to || t.assigned_to === user?.email) {
-          counts.my_actions++;
-        } else {
+        if (!t.assigned_to) {
           counts.unassigned++;
+        } else if (t.assigned_to === user?.email) {
+          counts.my_actions++;
         }
       }
     });
