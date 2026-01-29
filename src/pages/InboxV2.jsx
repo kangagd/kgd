@@ -1236,6 +1236,26 @@ export default function InboxV2() {
         <div className="flex-1 flex flex-col overflow-hidden bg-[#F9FAFB]">
           {selectedThread ? (
             <>
+              {/* Composing presence banner */}
+              {composingUsers[selectedThread.id] && composingUsers[selectedThread.id].userId !== user?.id && (
+                <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-amber-900">
+                      {composingUsers[selectedThread.id].userName} is replying…
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleTakeoverReply(selectedThread.id)}
+                    className="h-7 text-xs border-amber-200 hover:bg-amber-100"
+                  >
+                    Take over reply
+                  </Button>
+                </div>
+              )}
+
               <ThreadHeader
                 thread={selectedThread}
                 users={teamUsers}
@@ -1245,6 +1265,7 @@ export default function InboxV2() {
                 onThreadUpdate={() => refetchThreads()}
                 hasMessages={selectedThread?.message_count > 0}
                 onReply={() => {
+                  handleComposerOpen(selectedThread.id);
                   setComposerMode('reply');
                   setComposerThreadId(selectedThread.id);
                   setComposerLastMessage(null);
@@ -1252,6 +1273,7 @@ export default function InboxV2() {
                   setComposerOpen(true);
                 }}
                 onReplyAll={() => {
+                  handleComposerOpen(selectedThread.id);
                   setComposerMode('reply_all');
                   setComposerThreadId(selectedThread.id);
                   setComposerLastMessage(null);
@@ -1259,6 +1281,7 @@ export default function InboxV2() {
                   setComposerOpen(true);
                 }}
                 onForward={() => {
+                  handleComposerOpen(selectedThread.id);
                   setComposerMode('forward');
                   setComposerThreadId(selectedThread.id);
                   setComposerLastMessage(null);
@@ -1266,6 +1289,7 @@ export default function InboxV2() {
                   setComposerOpen(true);
                 }}
                 onAttach={() => {
+                  handleComposerOpen(selectedThread.id);
                   setComposerMode(selectedThread?.message_count > 0 ? 'reply' : 'new');
                   setComposerThreadId(selectedThread?.message_count > 0 ? selectedThread.id : null);
                   setComposerLastMessage(null);
