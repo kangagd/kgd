@@ -1,3 +1,4 @@
+
 /**
  * Write Guards - Optimistic Locking Helpers
  * 
@@ -55,3 +56,5 @@ export function incrementWriteVersion(entity, writeSource = 'ui') {
         write_source: writeSource
     };
 }
+
+export * from "./writeGuards.ts";
