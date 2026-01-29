@@ -9,6 +9,9 @@ import { LinkIcon, Sparkles, Check, RotateCcw, X, Zap } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createPageUrl } from '@/utils';
 
+// Minimum confidence threshold for category suggestions
+const MIN_CATEGORY_CONFIDENCE = 45;
+
 // Category definitions
 const CATEGORIES = [
   { value: "uncategorised", label: "Uncategorised" },
@@ -384,6 +387,13 @@ export default function InboxV2ContextPanel({
   const categoryFromThread = rawCategory === "uncategorised" ? null : rawCategory;
   const shouldShowSuggestion = !categoryFromThread && !dismissedCategorySuggestion[thread?.id];
   const categorySuggestion = shouldShowSuggestion ? suggestCategoryInContext(thread) : null;
+  
+  // Only show suggestion if it's meaningful (not uncategorised and above confidence threshold)
+  const meaningfulSuggestion = 
+    categorySuggestion &&
+    categorySuggestion.value &&
+    categorySuggestion.value !== "uncategorised" &&
+    (categorySuggestion.confidence ?? 0) >= MIN_CATEGORY_CONFIDENCE;
 
   // Fetch notes for this thread
   const { data: notes = [] } = useQuery({
@@ -481,8 +491,8 @@ export default function InboxV2ContextPanel({
             </SelectContent>
           </Select>
 
-          {/* Suggestion chip */}
-          {categorySuggestion && (
+          {/* Suggestion chip - only show if meaningful */}
+          {meaningfulSuggestion && (
             <div className="mt-2 p-2 bg-white rounded border border-[#E5E7EB] space-y-2">
               <div className="text-xs text-[#4B5563]">
                 <div className="font-medium">Suggested: {CATEGORIES.find(c => c.value === categorySuggestion.value)?.label}</div>
