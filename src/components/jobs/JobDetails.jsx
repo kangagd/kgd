@@ -262,6 +262,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
   const [user, setUser] = useState(null);
   
+  // DRAFT STATE: Decouple form from query data
+  const [notesDraft, setNotesDraft] = useState(null);
+  const [notesDirty, setNotesDirty] = useState(false);
+  const notesServerRef = useRef("");
+  
   // VISIT MODEL FEATURE FLAG: Source execution data from Visit or Job
   const executionSource = visitsEnabled && activeVisit ? activeVisit : job;
   
