@@ -221,6 +221,9 @@ export default function InboxV2() {
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [selectedMessageForProject, setSelectedMessageForProject] = useState(null);
   const [composingUsers, setComposingUsers] = useState({}); // { threadId: { userId, userName, timestamp } }
+  const [detailTab, setDetailTab] = useState("messages"); // messages | notes
+  const [noteInput, setNoteInput] = useState("");
+  const [isAddingNote, setIsAddingNote] = useState(false);
 
   // Load current user
   useEffect(() => {
