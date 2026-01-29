@@ -161,6 +161,13 @@ const classifyReceivedIntent = (thread) => {
   return { bucket: "needs_reply", reason: "received-default" };
 };
 
+// Canonical status derivation from explicit workflow fields
+const deriveCanonicalStatus = (thread) => {
+  if (thread?.userStatus === "closed") return "done";
+  return thread?.next_action_status || "needs_action";
+};
+
+// Legacy: for display/debug only
 const deriveTriageState = (thread, orgEmails = []) => {
   if (thread?.userStatus === "closed") {
     return { triage: "closed", reason: "closed", dir: "unknown" };
