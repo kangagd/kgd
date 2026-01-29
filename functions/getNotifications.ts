@@ -5,8 +5,15 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Defensive: no user → 401 with safe payload
+    if (!user || !user.email) {
+      return Response.json({ 
+        success: false, 
+        notifications: [], 
+        unreadCount: 0,
+        error: 'Unauthorized',
+        error_code: 'no_user'
+      }, { status: 401 });
     }
 
     const { limit = 50, only_unread = false } = await req.json().catch(() => ({}));
@@ -17,23 +24,54 @@ Deno.serve(async (req) => {
       filterQuery.is_read = false;
     }
 
-    // Fetch user's notifications
-    const notifications = await base44.entities.Notification.filter(
-      filterQuery,
-      '-created_date',
-      limit
-    );
+    // Fetch user's notifications - catch DB failures
+    let notifications = [];
+    try {
+      notifications = await base44.entities.Notification.filter(
+        filterQuery,
+        '-created_date',
+        limit
+      );
+      
+      // Defensive: ensure we got an array
+      if (!Array.isArray(notifications)) {
+        notifications = [];
+      }
+    } catch (dbError) {
+      console.error("[getNotifications] DB query failed", { 
+        user: user?.email, 
+        error: String(dbError?.message || dbError) 
+      });
+      
+      // Return 200 with safe empty state - do not fail the request
+      return Response.json({
+        success: false,
+        notifications: [],
+        unreadCount: 0,
+        error: 'notifications_unavailable',
+        error_code: 'notifications_fetch_failed'
+      }, { status: 200 });
+    }
 
     // Count unread
-    const unread_count = notifications.filter(n => !n.is_read).length;
+    const unreadCount = notifications.filter(n => !n.is_read).length;
 
     return Response.json({
+      success: true,
       notifications,
-      unread_count
+      unreadCount
     });
 
   } catch (error) {
-    console.error('getNotifications error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error("[getNotifications] Unexpected error", { error: String(error?.message || error) });
+    
+    // Never 500 - always return safe payload
+    return Response.json({ 
+      success: false,
+      notifications: [], 
+      unreadCount: 0,
+      error: 'notifications_unavailable',
+      error_code: 'unexpected_error'
+    }, { status: 200 });
   }
 });
