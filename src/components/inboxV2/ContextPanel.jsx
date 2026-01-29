@@ -23,6 +23,11 @@ const CATEGORIES = [
 // Helper functions
 const normalizeEmail = (e) => (e || '').toLowerCase().trim();
 
+const matchesAny = (text, patterns) => {
+  const s = String(text || "");
+  return patterns.some((r) => r.test(s));
+};
+
 function suggestCategoryInContext(thread) {
   const text = thread?.subject || "";
   const snippet = thread?.snippet || thread?.preview || thread?.body_preview || "";
