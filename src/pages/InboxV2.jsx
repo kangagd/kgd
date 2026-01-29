@@ -1229,26 +1229,26 @@ Link: ${threadLink}
             </div>
           )}
 
-          {/* Workflow view chips */}
-          {activeView === "inbox" && !selectionMode && (
-            <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2 flex-wrap">
+          {/* Workflow view tabs */}
+          {activeView === "threads" && !selectionMode && (
+            <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-1 flex-wrap">
               {[
                 { key: 'unassigned', label: 'Unassigned' },
                 { key: 'my-actions', label: 'My Actions' },
                 { key: 'waiting', label: 'Waiting' },
                 { key: 'fyi', label: 'FYI' },
                 { key: 'done', label: 'Done' },
-              ].map((chip) => (
+              ].map((tab) => (
                 <button
-                  key={chip.key}
-                  onClick={() => setWorkflowView(chip.key)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                    workflowView === chip.key
+                  key={tab.key}
+                  onClick={() => setWorkflowView(tab.key)}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                    workflowView === tab.key
                       ? 'bg-[#FAE008] text-[#111827]'
-                      : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'
+                      : 'bg-white text-[#6B7280] hover:bg-[#F3F4F6]'
                   }`}
                 >
-                  {chip.label} ({workflowCounts[chip.key]})
+                  {tab.label} ({workflowCounts[tab.key] || 0})
                 </button>
               ))}
             </div>
