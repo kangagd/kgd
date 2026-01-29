@@ -298,6 +298,17 @@ export default function InboxV2ContextPanel({
     onError: () => toast.error('Failed to update'),
   });
 
+  if (!thread) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-center p-4">
+        <div>
+          <LinkIcon className="w-8 h-8 text-[#D1D5DB] mx-auto mb-2" />
+          <p className="text-[13px] text-[#6B7280]">Select a thread to triage</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto space-y-3 p-4">
       {/* Triage Card */}
