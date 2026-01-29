@@ -538,8 +538,6 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
 
     for (const gmailMsg of threadDetail.messages) {
-      let parseError = null;
-
       try {
         const headers = {};
         if (gmailMsg.payload?.headers) {
@@ -549,75 +547,46 @@ Deno.serve(async (req) => {
         }
 
         // Extract body with robust MIME parsing
-        let incomingResult = extractBodyFromPayload(gmailMsg.payload);
-        
-        // CRITICAL: Extract attachments with gmail_message_id for download functionality
-        // Each attachment MUST include gmail_message_id to enable getGmailAttachment API calls
+        const incomingResult = extractBodyFromPayload(gmailMsg.payload);
         const incomingAttachments = extractAttachmentsFromPayload(gmailMsg.payload, gmailMsg.id);
 
-        // Check if message already exists
+        // Compute quality of incoming extraction (no error = extraction succeeded)
+        const incomingQuality = computeBodyQuality(incomingResult.body_html, incomingResult.body_text, false);
+        const incomingQualityRank = getQualityRank(incomingQuality);
+
+        // Attempt atomic upsert: try create first (assumes unique gmail_message_id)
+        let existing = null;
+        let action = 'created';
+
+        // Try to fetch existing (will be used for monotonic rule or conflict handling)
         const existingMessages = await base44.asServiceRole.entities.EmailMessage.filter({
           gmail_message_id: gmailMsg.id
         });
+        existing = existingMessages[0] || null;
 
-        const existing = existingMessages[0] || null;
+        // Determine final body and quality using monotonic rule
+        let finalBodyHtml = incomingResult.body_html;
+        let finalBodyText = incomingResult.body_text;
+        let finalQuality = incomingQuality;
 
-        // Coalesce bodies: never overwrite non-empty with empty
-        const mergedBody = coalesceBody(existing, incomingResult);
-        const finalHasBody = hasBodyTruth(mergedBody.body_html, mergedBody.body_text);
+        if (existing) {
+          const existingQualityRank = getQualityRank(existing.body_quality || 'empty');
 
-        // Compute sync_status
-        // Rule: if incoming parse succeeded (no error), use computeSyncStatus
-        // Rule: if existing had body and incoming is empty, mark as "partial" (preserve existing)
-        // Rule: never downgrade from existing status
-        let syncStatus = 'ok';
-        if (!incomingResult.body_html && !incomingResult.body_text) {
-          if (existing?.body_html || existing?.body_text) {
-            // Incoming is empty but existing has body: preserve as partial
-            syncStatus = 'partial';
-            parseError = 'body_missing_in_latest_fetch; preserving_previous_body';
+          // Monotonic rule: never downgrade body quality
+          if (existingQualityRank >= incomingQualityRank) {
+            // Keep existing body (higher or equal quality)
+            finalBodyHtml = existing.body_html;
+            finalBodyText = existing.body_text;
+            finalQuality = existing.body_quality;
+            action = 'kept_existing';
           } else {
-            // Never had body
-            syncStatus = 'failed';
-            parseError = 'body_missing_no_previous_body';
-          }
-        } else {
-          syncStatus = finalHasBody ? 'ok' : 'partial';
-        }
-
-        // Never downgrade sync_status
-        if (existing?.sync_status === 'ok' && syncStatus !== 'ok') {
-          syncStatus = existing.sync_status;
-        }
-
-        // Never set has_body to false if it was true
-        const finalHasBodyForRecord = existing?.has_body === true ? true : finalHasBody;
-
-        // Prevent regression: log if we would have overwritten
-        if (existing && mergedBody.body_html !== incomingResult.body_html) {
-          if (incomingResult.body_html === '' && existing.body_html) {
-            console.log(
-              `[gmailSyncThreadMessages] prevented_regression: ${gmailMsg.id} ` +
-              `(preserved existing body_html, incoming was empty)`
-            );
-          }
-        }
-        if (existing && mergedBody.body_text !== incomingResult.body_text) {
-          if (incomingResult.body_text === '' && existing.body_text) {
-            console.log(
-              `[gmailSyncThreadMessages] prevented_regression: ${gmailMsg.id} ` +
-              `(preserved existing body_text, incoming was empty)`
-            );
+            // Upgrade to incoming body (higher quality)
+            finalQuality = incomingQuality;
+            action = 'upgraded';
           }
         }
 
-        // Merge attachments: preserve existing if incoming is empty (guardrail against regression)
-        let finalAttachments = incomingAttachments;
-        if (existing?.attachments?.length > 0 && incomingAttachments.length === 0) {
-          console.log(`[gmailSyncThreadMessages] preserved_attachments: ${gmailMsg.id} (incoming empty, kept ${existing.attachments.length} existing)`);
-          finalAttachments = existing.attachments;
-        }
-
+        // Build message data with monotonic body content
         const messageData = {
           thread_id: threadId,
           gmail_message_id: gmailMsg.id,
@@ -627,35 +596,35 @@ Deno.serve(async (req) => {
           to_addresses: headers['to'] ? headers['to'].split(',').map(e => e.trim()) : [],
           cc_addresses: headers['cc'] ? headers['cc'].split(',').map(e => e.trim()) : [],
           subject: sanitizeSubject(headers['subject']) || '',
-          body_html: mergedBody.body_html,
-          body_text: mergedBody.body_text,
+          body_html: finalBodyHtml,
+          body_text: finalBodyText,
+          body_quality: finalQuality,
+          body_extracted_at: finalQuality !== 'empty' ? now : existing?.body_extracted_at || null,
           sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
           is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
-          attachments: finalAttachments,
-          has_body: finalHasBodyForRecord,
-          sync_status: syncStatus,
-          parse_error: syncStatus === 'ok' ? null : parseError,
+          attachments: incomingAttachments.length > 0 ? incomingAttachments : (existing?.attachments || []),
+          has_body: hasBodyTruth(finalBodyHtml, finalBodyText),
+          sync_status: finalQuality === 'complete' ? 'ok' : (finalQuality === 'partial' ? 'partial' : 'failed'),
+          parse_error: finalQuality === 'complete' ? null : 'body_missing_or_empty',
           last_synced_at: now
         };
 
+        // Atomic write: create or update
         if (existing) {
           await base44.asServiceRole.entities.EmailMessage.update(existing.id, messageData);
         } else {
           await base44.asServiceRole.entities.EmailMessage.create(messageData);
         }
 
-        // Track counts
-        if (syncStatus === 'ok') okCount++;
-        else if (syncStatus === 'partial') partialCount++;
-        else failedCount++;
-
-        if (syncStatus !== 'ok') {
-          failures.push({ 
-            gmail_message_id: gmailMsg.id, 
-            status: syncStatus,
-            reason: parseError 
-          });
+        // Debug log
+        if (DEBUG_SYNC) {
+          console.log(`[gmailSyncThreadMessages] ${gmailMsg.id}: ${action} (${existing?.body_quality || 'none'} -> ${finalQuality})`);
         }
+
+        // Track counts based on final quality
+        if (finalQuality === 'complete') okCount++;
+        else if (finalQuality === 'partial') partialCount++;
+        else failedCount++;
 
         syncedCount++;
       } catch (err) {
