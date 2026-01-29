@@ -1076,51 +1076,7 @@ export default function InboxV2() {
                 <div className="flex-1 overflow-y-auto p-4">
                   <EmailDetailView
                     thread={selectedThread}
-                    userPermissions={{
-                      can_reply: true,
-                      can_change_status: true,
-                      can_link_to_project: true,
-                      can_create_project_from_email: true,
-                      can_create_job_from_email: true,
-                    }}
-                    onClose={() => setSelectedThreadId(null)}
-                    onCreateProject={(msg) => {
-                      setSelectedMessageForProject(msg);
-                      setShowCreateProjectModal(true);
-                    }}
-                    onLinkProject={() => setShowLinkModal(true)}
-                    onUnlinkProject={async () => {
-                                       try {
-                                         // DEFENSIVE: Clear both project and contract links on unlink
-                                         await base44.entities.EmailThread.update(selectedThread.id, { 
-                                           project_id: null,
-                                           project_number: null,
-                                           project_title: null,
-                                           linked_to_project_at: null,
-                                           linked_to_project_by: null,
-                                           // Defensive clear of contract fields
-                                           contract_id: null,
-                                           contract_name: null,
-                                           contract_status: null,
-                                           contract_type: null
-                                         });
-                                         await refetchThreads();
-                                         toast.success("Thread unlinked from project");
-                                       } catch {
-                                         toast.error("Failed to unlink thread");
-                                       }
-                                     }}
-                                     onDelete={async (threadId) => {
-                      try {
-                        await base44.entities.EmailThread.update(threadId, { is_deleted: true });
-                        await refetchThreads();
-                        setSelectedThreadId(null);
-                        toast.success("Thread deleted");
-                      } catch {
-                        toast.error("Failed to delete thread");
-                      }
-                    }}
-                    onThreadUpdate={() => queryClient.invalidateQueries({ queryKey: inboxKeys.threads() })}
+                    onThreadUpdate={() => refetchThreads()}
                   />
 
 
