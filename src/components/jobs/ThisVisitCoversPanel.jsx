@@ -46,8 +46,20 @@ export default function ThisVisitCoversPanel({ job, projectParts = [], projectTr
       });
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+    onSuccess: (result) => {
+      // Patch cache instead of invalidate
+      queryClient.setQueryData(['job', job.id], (oldJob) => {
+        if (!oldJob) return oldJob;
+        return {
+          ...oldJob,
+          visit_scope: result.visit_scope || oldJob.visit_scope,
+        };
+      });
+      
+      // Reset draft state after successful save
+      setDraft(result.visit_scope || job.visit_scope);
+      setIsDirty(false);
+      lastServerHashRef.current = JSON.stringify(result.visit_scope);
       toast.success('Visit scope updated');
     },
     onError: (error) => {
