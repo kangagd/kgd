@@ -220,6 +220,7 @@ export default function InboxV2() {
   const [showBulkLinkModal, setShowBulkLinkModal] = useState(false);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [selectedMessageForProject, setSelectedMessageForProject] = useState(null);
+  const [composingUsers, setComposingUsers] = useState({}); // { threadId: { userId, userName, timestamp } }
 
   // Load current user
   useEffect(() => {
