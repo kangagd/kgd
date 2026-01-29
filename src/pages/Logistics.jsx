@@ -35,6 +35,7 @@ import { DELIVERY_METHOD as PO_DELIVERY_METHOD } from "@/components/domain/suppl
 import { PART_LOCATION } from "@/components/domain/partConfig";
 import { getPoDisplayReference } from "@/components/domain/poDisplayHelpers";
 import { getMainWarehouseLocationId, getVehicleLocationIdForVehicle } from "@/components/utils/inventoryLocationLookup";
+import { BackendFn } from "@/components/config/backendFunctions";
 
 
 
@@ -328,7 +329,7 @@ export default function Logistics() {
     if (newStatus === po.status) return;
 
     try {
-      const response = await base44.functions.invoke("managePurchaseOrder", {
+      const response = await base44.functions.invoke(BackendFn.managePurchaseOrderStatus, {
         action: "updateStatus",
         id: po.id,
         status: newStatus,
@@ -460,7 +461,7 @@ export default function Logistics() {
 
   const handleCreateLogisticsJobForPO = async (po) => {
     try {
-      const response = await base44.functions.invoke("createLogisticsJobForPO", {
+      const response = await base44.functions.invoke(BackendFn.createLogisticsJobForPO, {
         purchase_order_id: po.id,
       });
 
@@ -634,7 +635,7 @@ export default function Logistics() {
               onClick={async () => {
                 try {
                   const response = await base44.functions.invoke(
-                    "managePurchaseOrder",
+                    BackendFn.managePurchaseOrderStatus,
                     {
                       action: "create",
                       supplier_id: suppliers[0]?.id || "temp",
@@ -1177,7 +1178,7 @@ export default function Logistics() {
                                   onClick={async (e) => {
                                     e.stopPropagation();
                                     try {
-                                      const response = await base44.functions.invoke("createLogisticsJobForPO", {
+                                      const response = await base44.functions.invoke(BackendFn.createLogisticsJobForPO, {
                                         purchase_order_id: part.purchase_order_id,
                                       });
                                       if (!response.data?.success) {
