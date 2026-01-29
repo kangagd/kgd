@@ -284,6 +284,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [validationError, setValidationError] = useState("");
 
 
+  // Initialize notes draft from server (only if not dirty)
+  useEffect(() => {
+    if (notesDirty) return;
+    const serverHash = JSON.stringify(job.notes || "");
+    const changed = serverHash !== notesServerRef.current;
+    if (changed) {
+      setNotesDraft(job.notes || "");
+      notesServerRef.current = serverHash;
+    }
+  }, [job.notes, notesDirty]);
+
   // Sync state when data source changes
   useEffect(() => {
     const source = visitsEnabled && activeVisit ? activeVisit : job;
