@@ -1158,11 +1158,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         updateJobMutation.mutate({ field: fieldName, value: newValue });
   };
 
-  const handleNotesBlur = () => {
-    if (notes !== job.notes) {
-      logChange('notes', job.notes, notes);
-      updateJobMutation.mutate({ field: 'notes', value: notes });
-    }
+  // Debounced autosave for notes
+  useEffect(() => {
+    if (!notesDirty || notesDraft === null) return;
+    
+    const timer = setTimeout(() => {
+      if (notesDraft !== job.notes) {
+        logChange('notes', job.notes, notesDraft);
+        updateJobMutation.mutate({ field: 'notes', value: notesDraft });
+      }
+    }, 1000); // 1 second debounce
+    
+    return () => clearTimeout(timer);
+  }, [notesDraft, notesDirty]);
+
+  const handleNotesChange = (val) => {
+    setNotesDraft(val);
+    setNotesDirty(true);
+  };
+
+  const handleNotesSaved = (updatedJob) => {
+    // After successful save, reset dirty flag and update server hash
+    setNotesDraft(updatedJob.notes || "");
+    setNotesDirty(false);
+    notesServerRef.current = JSON.stringify(updatedJob.notes || "");
   };
 
   const handleOverviewBlur = () => {
