@@ -44,9 +44,17 @@ export default function ThreadHeader({
   const [linkClickTimer, setLinkClickTimer] = useState(null);
 
   const statusOptions = ['Open', 'Waiting on Customer', 'Internal', 'Closed'];
+  const nextActionOptions = [
+    { value: 'needs_action', label: 'Needs Action' },
+    { value: 'waiting', label: 'Waiting' },
+    { value: 'fyi', label: 'FYI' },
+  ];
 
   const displayState = computeInferredStateWithAutoClear(thread);
   const isClosed = thread.userStatus === 'closed';
+  
+  // Canonical status from explicit workflow fields
+  const canonicalStatus = isClosed ? 'done' : thread.next_action_status || 'needs_action';
 
   const handleCloseToggle = async () => {
     if (!currentUser) return;
