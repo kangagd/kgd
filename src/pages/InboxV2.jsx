@@ -1382,16 +1382,90 @@ Link: ${threadLink}
               />
 
               <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4">
-                  <EmailDetailView
-                    thread={selectedThread}
-                    onThreadUpdate={() => refetchThreads()}
-                  />
-
-
+                {/* Detail Tab Selector */}
+                <div className="flex gap-2 px-4 py-2 border-b border-[#E5E7EB] bg-white">
+                  <button
+                    onClick={() => setDetailTab("messages")}
+                    className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                      detailTab === "messages"
+                        ? "bg-[#FAE008] text-[#111827]"
+                        : "text-[#6B7280] hover:text-[#111827]"
+                    }`}
+                  >
+                    Messages
+                  </button>
+                  <button
+                    onClick={() => setDetailTab("notes")}
+                    className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                      detailTab === "notes"
+                        ? "bg-[#FAE008] text-[#111827]"
+                        : "text-[#6B7280] hover:text-[#111827]"
+                    }`}
+                  >
+                    Team Notes ({threadNotes.length})
+                  </button>
                 </div>
 
+                <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
+                  {detailTab === "messages" ? (
+                    <div className="flex-1 overflow-y-auto p-4">
+                      <EmailDetailView
+                        thread={selectedThread}
+                        onThreadUpdate={() => refetchThreads()}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex-1 overflow-y-auto flex flex-col">
+                      {/* Team Notes Panel */}
+                      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                        {threadNotes.length === 0 ? (
+                          <div className="text-center text-[#6B7280] py-8">
+                            <p className="text-sm">No notes yet</p>
+                          </div>
+                        ) : (
+                          threadNotes.map((note) => (
+                            <div key={note.id} className="bg-[#F9FAFB] rounded-lg p-3 border border-[#E5E7EB]">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-medium text-[#4B5563]">{note.author_name || note.author_email}</span>
+                                <span className="text-xs text-[#9CA3AF]">
+                                  {new Date(note.created_date).toLocaleDateString()} {new Date(note.created_date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                              </div>
+                              <p className="text-sm text-[#111827] whitespace-pre-wrap">{note.body}</p>
+                            </div>
+                          ))
+                        )}
+                      </div>
 
+                      {/* Note Input */}
+                      <div className="p-4 border-t border-[#E5E7EB] bg-white space-y-2">
+                        <textarea
+                          value={noteInput}
+                          onChange={(e) => setNoteInput(e.target.value)}
+                          placeholder="Add a team note..."
+                          className="w-full h-20 p-2 border border-[#E5E7EB] rounded-lg text-sm resize-none focus:outline-none focus:border-[#111827]"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleAddNote}
+                            disabled={!noteInput.trim() || isAddingNote}
+                            className="flex-1 bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827] text-sm"
+                          >
+                            {isAddingNote ? "Adding..." : "Add Note"}
+                          </Button>
+                          <Button
+                            onClick={handleConvertToTask}
+                            variant="outline"
+                            className="text-sm"
+                            title="Create a task from this thread"
+                          >
+                            Convert to Task
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           ) : (
