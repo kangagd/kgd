@@ -1319,7 +1319,7 @@ Link: ${threadLink}
               Compose
             </button>
 
-            {activeView === "inbox" && (
+            {activeView === "threads" && (
               <button
                 onClick={toggleSelectionMode}
                 className={`p-1.5 rounded-lg text-sm font-medium transition-colors ${
