@@ -9,8 +9,62 @@ import { LinkIcon, Sparkles, Check, RotateCcw, X, Zap } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createPageUrl } from '@/utils';
 
-// Helper: normalize email
+// Category definitions
+const CATEGORIES = [
+  { value: "uncategorised", label: "Uncategorised" },
+  { value: "supplier_quote", label: "Supplier Quote" },
+  { value: "supplier_invoice", label: "Supplier Invoice" },
+  { value: "payment", label: "Payment / Receipt" },
+  { value: "booking", label: "Booking / Scheduling" },
+  { value: "client_query", label: "Client Query" },
+  { value: "order_confirmation", label: "Order / Confirmation" },
+];
+
+// Helper functions
 const normalizeEmail = (e) => (e || '').toLowerCase().trim();
+
+function suggestCategoryInContext(thread) {
+  const text = thread?.subject || "";
+  const snippet = thread?.snippet || thread?.preview || thread?.body_preview || "";
+  const combined = `${text}\n${snippet}`;
+
+  const scores = [];
+  const patterns = {
+    supplier_invoice: [
+      /\btax invoice\b/i, /\binvoice\b/i, /\bstatement\b/i, /\bamount due\b/i, /\bpayable\b/i, /\bremit(tance)?\b/i, /\bpro[- ]?forma\b/i,
+    ],
+    supplier_quote: [
+      /\bquote\b/i, /\bquotation\b/i, /\bpricing\b/i, /\bestimate\b/i, /\bprice\b/i,
+    ],
+    payment: [
+      /\bpayment received\b/i, /\bpaid\b/i, /\bpaid in full\b/i, /\breceipt\b/i, /\bdeposit\b/i, /\bremittance\b/i, /\btransfer\b/i,
+    ],
+    booking: [
+      /\bbooking\b/i, /\bschedule\b/i, /\bappointment\b/i, /\bsite visit\b/i, /\binstall\b/i, /\breschedule\b/i, /\bconfirm (a )?time\b/i, /\bwhat time\b/i, /\bdate\b/i, /\bavailability\b/i,
+    ],
+    order_confirmation: [
+      /\border confirmation\b/i, /\bpurchase order\b/i, /\bpo\b/i, /\border (has been )?(placed|confirmed)\b/i, /\bdispatch(ed)?\b/i, /\btracking\b/i, /\bready for pickup\b/i, /\bcollection\b/i, /\bdelivery\b/i, /\beta\b/i, /\bback[- ]?order(ed)?\b/i,
+    ],
+    client_query: [
+      /\?/, /\bcan you\b/i, /\bcould you\b/i, /\bplease\b/i, /\bhow\b/i, /\bwhen\b/i, /\bwhy\b/i, /\bissue\b/i, /\bproblem\b/i, /\bnot working\b/i, /\bbroken\b/i, /\bwarranty\b/i, /\bchange\b/i, /\bupdate\b/i, /\bcancel\b/i,
+    ],
+  };
+
+  // Check patterns
+  if (matchesAny(text, patterns.order_confirmation)) scores.push({ value: 'order_confirmation', score: 90, reason: 'subject matches order/confirmation' });
+  if (matchesAny(text, patterns.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 85, reason: 'subject matches invoice' });
+  if (matchesAny(text, patterns.supplier_quote)) scores.push({ value: 'supplier_quote', score: 75, reason: 'subject matches quote' });
+  if (matchesAny(combined, patterns.order_confirmation)) scores.push({ value: 'order_confirmation', score: 60, reason: 'content mentions dispatch/tracking' });
+  if (matchesAny(combined, patterns.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 55, reason: 'content mentions payment terms' });
+  if (matchesAny(combined, patterns.payment)) scores.push({ value: 'payment', score: 50, reason: 'content mentions payment/receipt' });
+  if (matchesAny(combined, patterns.booking)) scores.push({ value: 'booking', score: 45, reason: 'content mentions booking/scheduling' });
+  if (matchesAny(combined, patterns.client_query)) scores.push({ value: 'client_query', score: 40, reason: 'question/request detected' });
+
+  scores.sort((a, b) => b.score - a.score);
+  const best = scores[0];
+  if (!best || best.score < 45) return { value: 'uncategorised', reason: 'low confidence', confidence: 0 };
+  return { value: best.value, reason: best.reason, confidence: best.score };
+}
 
 // Extract thread participants for matching
 const getThreadParticipants = (thread) => {
@@ -90,6 +144,13 @@ export default function InboxV2ContextPanel({
   const [projectSearch, setProjectSearch] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [dismissedCategorySuggestion, setDismissedCategorySuggestion] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('kgd_inboxv2_cat_dismissed') || '{}');
+    } catch {
+      return {};
+    }
+  });
   const searchInputRef = useRef(null);
   const debounceTimer = useRef(null);
 
@@ -298,6 +359,38 @@ export default function InboxV2ContextPanel({
     onError: () => toast.error('Failed to update'),
   });
 
+  // Category mutation
+  const categoryMutation = useMutation({
+    mutationFn: async (categoryValue) => {
+      await base44.entities.EmailThread.update(thread.id, {
+        category: categoryValue === 'uncategorised' ? null : categoryValue,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
+      onThreadUpdate?.();
+      toast.success('Category updated');
+    },
+    onError: () => toast.error('Failed to update category'),
+  });
+
+  // Compute category suggestion
+  const categoryFromThread = thread?.category || null;
+  const shouldShowSuggestion = !categoryFromThread && !dismissedCategorySuggestion[thread?.id];
+  const categorySuggestion = shouldShowSuggestion ? suggestCategoryInContext(thread) : null;
+
+  const handleApplyCategorySuggestion = () => {
+    if (categorySuggestion?.value) {
+      categoryMutation.mutate(categorySuggestion.value);
+    }
+  };
+
+  const handleDismissCategorySuggestion = () => {
+    const updated = { ...dismissedCategorySuggestion, [thread.id]: true };
+    setDismissedCategorySuggestion(updated);
+    localStorage.setItem('kgd_inboxv2_cat_dismissed', JSON.stringify(updated));
+  };
+
   if (!thread) {
     return (
       <div className="flex-1 flex items-center justify-center text-center p-4">
@@ -314,6 +407,54 @@ export default function InboxV2ContextPanel({
       {/* Triage Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-3">
         <div className="text-sm font-semibold text-blue-900">Quick Triage</div>
+
+        {/* Category Section */}
+        <div className="space-y-2">
+          <div className="text-xs font-medium text-[#6B7280]">Category</div>
+          <Select
+            value={categoryFromThread || 'uncategorised'}
+            onValueChange={(val) => categoryMutation.mutate(val)}
+            disabled={categoryMutation.isPending}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Suggestion chip */}
+          {categorySuggestion && categorySuggestion.value !== 'uncategorised' && (
+            <div className="mt-2 p-2 bg-white rounded border border-[#E5E7EB] space-y-2">
+              <div className="text-xs text-[#4B5563]">
+                <div className="font-medium">Suggested: {CATEGORIES.find(c => c.value === categorySuggestion.value)?.label}</div>
+                <div className="text-[#9CA3AF] text-[11px] mt-0.5">{categorySuggestion.reason}</div>
+              </div>
+              <div className="flex gap-1.5">
+                <Button
+                  onClick={handleApplyCategorySuggestion}
+                  disabled={categoryMutation.isPending}
+                  className="flex-1 h-6 text-xs bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                  variant="outline"
+                >
+                  Apply
+                </Button>
+                <Button
+                  onClick={handleDismissCategorySuggestion}
+                  className="flex-1 h-6 text-xs bg-gray-50 text-gray-700 border border-[#E5E7EB] hover:bg-gray-100"
+                  variant="outline"
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Link Section */}
         <div className="space-y-2">
