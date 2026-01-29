@@ -59,3 +59,5 @@ export function getNextSequence(existingJobs, projectNumber, purposeCode) {
   
   return sequences.length > 0 ? Math.max(...sequences) + 1 : 1;
 }
+
+export * from "./logisticsJobNumbering.ts";
