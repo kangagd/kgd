@@ -922,6 +922,31 @@ export default function InboxV2() {
             </div>
           )}
 
+          {/* Triage filter chips */}
+          {activeView === "inbox" && !selectionMode && (
+            <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-2 flex-wrap">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'needs_reply', label: 'Needs reply' },
+                { key: 'needs_link', label: 'Needs link' },
+                { key: 'waiting', label: 'Waiting' },
+                { key: 'reference', label: 'Reference' },
+              ].map((chip) => (
+                <button
+                  key={chip.key}
+                  onClick={() => setTriageFilter(chip.key)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    triageFilter === chip.key
+                      ? 'bg-[#FAE008] text-[#111827]'
+                      : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]'
+                  }`}
+                >
+                  {chip.label} ({triageCounts[chip.key]})
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Filter bar */}
           {activeView === "inbox" && !selectionMode && (
             <InboxFilterBar
