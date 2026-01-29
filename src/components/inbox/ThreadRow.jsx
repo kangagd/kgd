@@ -51,6 +51,17 @@ export default function ThreadRow({
   const isPinned = isThreadPinned(thread);
   const isClosed = thread?.userStatus === "closed";
   const linkChip = getThreadLinkChip(thread);
+  
+  // Category label mapping
+  const categoryLabels = {
+    supplier_quote: "Supplier Quote",
+    supplier_invoice: "Supplier Invoice",
+    payment: "Payment",
+    booking: "Booking",
+    client_query: "Query",
+    order_confirmation: "Order / Confirmation",
+  };
+  const categoryLabel = thread?.category && thread.category !== "uncategorised" ? categoryLabels[thread.category] : null;
 
 
 
@@ -230,6 +241,16 @@ export default function ThreadRow({
                     className={`text-[11px] border ${statusChip.color}`}
                   >
                     {statusChip.label}
+                  </Badge>
+                )}
+
+                {/* Category Badge */}
+                {categoryLabel && (
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] border border-[#D1D5DB] bg-[#F9FAFB] text-[#6B7280]"
+                  >
+                    {categoryLabel}
                   </Badge>
                 )}
 
