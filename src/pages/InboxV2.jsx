@@ -503,42 +503,49 @@ export default function InboxV2() {
     ...QUERY_CONFIG.reference,
   });
 
-  // Derive triage state for all threads
+  // Derive workflow state for all threads: explicit workflow fields + legacy triage for debug
   const derivedThreads = useMemo(() => {
     return (threads || [])
       .filter((t) => !t.is_deleted)
       .map((t) => {
         const d = deriveTriageState(t, orgEmails);
+        const status = deriveCanonicalStatus(t);
         return {
           ...t,
-          _triage: d.triage,
-          _triageReason: d.reason,
-          _dir: d.dir,
+          _status: status, // canonical: needs_action / waiting / fyi / done
+          _triage: d.triage, // legacy debug
+          _triageReason: d.reason, // legacy debug
+          _dir: d.dir, // legacy debug
         };
       });
   }, [threads, orgEmails]);
 
-  // Count triage states
-  const triageCounts = useMemo(() => {
+  // Count workflow status
+  const workflowCounts = useMemo(() => {
     const counts = {
-      all: derivedThreads.filter((t) => t._triage !== "closed").length,
-      needs_reply: 0,
-      needs_link: 0,
-      important_fyi: 0,
-      waiting: 0,
-      reference: 0,
-      closed: 0,
+      unassigned: 0, // needs_action + no owner
+      my_actions: 0, // needs_action + owner is current user
+      waiting: 0,    // waiting
+      fyi: 0,        // fyi
+      done: 0,       // done
     };
     derivedThreads.forEach((t) => {
-      if (t._triage === 'needs_reply') counts.needs_reply++;
-      else if (t._triage === 'needs_link') counts.needs_link++;
-      else if (t._triage === 'important_fyi') counts.important_fyi++;
-      else if (t._triage === 'waiting') counts.waiting++;
-      else if (t._triage === 'reference') counts.reference++;
-      else if (t._triage === 'closed') counts.closed++;
+      if (t._status === "done") {
+        counts.done++;
+      } else if (t._status === "waiting") {
+        counts.waiting++;
+      } else if (t._status === "fyi") {
+        counts.fyi++;
+      } else if (t._status === "needs_action") {
+        if (!t.assigned_to || t.assigned_to === user?.email) {
+          counts.my_actions++;
+        } else {
+          counts.unassigned++;
+        }
+      }
     });
     return counts;
-  }, [derivedThreads]);
+  }, [derivedThreads, user?.email]);
 
   // Apply filters and search with proper sorting
   const filteredThreads = useMemo(() => {
