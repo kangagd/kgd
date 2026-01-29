@@ -500,11 +500,15 @@ export default function InboxV2() {
   const derivedThreads = useMemo(() => {
     return (threads || [])
       .filter((t) => !t.is_deleted)
-      .map((t) => ({
-        ...t,
-        _triage: deriveTriageState(t, orgEmails),
-        _direction: inferThreadDirection(t, orgEmails),
-      }));
+      .map((t) => {
+        const d = deriveTriageState(t, orgEmails);
+        return {
+          ...t,
+          _triage: d.triage,
+          _triageReason: d.reason,
+          _dir: d.dir,
+        };
+      });
   }, [threads, orgEmails]);
 
   // Count triage states
