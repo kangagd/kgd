@@ -288,7 +288,7 @@ export default function InboxV2ContextPanel({
       });
     },
     onSuccess: (_, userEmail) => {
-      queryClient.invalidateQueries({ queryKey: ['threads'] });
+        queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
 
       // Audit: owner change
       if (currentUser) {
