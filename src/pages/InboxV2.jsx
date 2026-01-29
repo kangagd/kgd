@@ -1374,59 +1374,7 @@ Link: ${threadLink}
                   }}
                 />
               </div>
-            ) : threadsLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <Loader className="w-5 h-5 animate-spin text-[#FAE008]" />
-              </div>
-            ) : filteredThreads.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-center p-4">
-                <div>
-                  <Mail className="w-8 h-8 text-[#D1D5DB] mx-auto mb-2" />
-                  <p className="text-[13px] text-[#6B7280]">No threads</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto">
-                  {filteredThreads.map((thread) => (
-                     <div key={thread.id} className="border-b border-[#E5E7EB] last:border-b-0">
-                       <ThreadRow
-                         thread={thread}
-                         isSelected={selectedThreadId === thread.id}
-                         onClick={() => !selectionMode && setSelectedThreadId(thread.id)}
-                         currentUser={user}
-                         onThreadUpdate={() => refetchThreads()}
-                         selectionMode={selectionMode}
-                         isSelectedForBulk={selectedThreadIds.has(thread.id)}
-                         onBulkSelect={handleBulkSelect}
-                       />
-                       {/* Workflow status hint */}
-                       <div className="px-3 py-1 bg-[#F9FAFB] flex items-center gap-2 text-xs text-[#6B7280]">
-                         <span className="font-medium text-[#4B5563]">{thread._status === 'needs_action' ? 'Needs Action' : thread._status === 'waiting' ? 'Waiting' : thread._status === 'fyi' ? 'FYI' : 'Done'}</span>
-                         <span>·</span>
-                         <span>{thread.assigned_to ? `Owner: ${thread.assigned_to_name || thread.assigned_to}` : 'Unassigned'}</span>
-                       </div>
-                     </div>
-                   ))}
-                </div>
-                {hasMore && (
-                  <div className="p-3 border-t border-[#E5E7EB]">
-                    <Button
-                      onClick={handleLoadMore}
-                      disabled={isLoadingMore}
-                      variant="outline"
-                      className="w-full text-xs"
-                    >
-                      {isLoadingMore ? (
-                        <><Loader className="w-3 h-3 mr-2 animate-spin" />Loading...</>
-                      ) : (
-                        "Load More Emails"
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
+            ) : null}
           </div>
         </div>
 
