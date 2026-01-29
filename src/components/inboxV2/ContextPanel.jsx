@@ -27,14 +27,16 @@ const CATEGORIES = [
 const normalizeEmail = (e) => (e || '').toLowerCase().trim();
 
 const matchesAny = (text, patterns) => {
+  if (!patterns || !Array.isArray(patterns) || patterns.length === 0) return false;
   const s = String(text || "");
-  return patterns.some((r) => r.test(s));
+  return patterns.some((r) => r && r.test && r.test(s));
 };
 
 function suggestCategoryInContext(thread) {
-  const text = thread?.subject || "";
-  const snippet = thread?.snippet || thread?.preview || thread?.body_preview || "";
-  const combined = `${text}\n${snippet}`;
+  // Extract text with fallbacks
+  const subject = thread?.subject || thread?.thread_subject || thread?.last_subject || thread?.last_message_subject || "";
+  const snippet = thread?.last_message_snippet || thread?.snippet || thread?.preview || thread?.body_preview || thread?.last_snippet || "";
+  const combined = `${subject}\n${snippet}`;
 
   const scores = [];
   const patterns = {
@@ -58,15 +60,20 @@ function suggestCategoryInContext(thread) {
     ],
   };
 
-  // Check patterns
-  if (matchesAny(text, patterns.order_confirmation)) scores.push({ value: 'order_confirmation', score: 90, reason: 'subject matches order/confirmation' });
-  if (matchesAny(text, patterns.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 85, reason: 'subject matches invoice' });
-  if (matchesAny(text, patterns.supplier_quote)) scores.push({ value: 'supplier_quote', score: 75, reason: 'subject matches quote' });
-  if (matchesAny(combined, patterns.order_confirmation)) scores.push({ value: 'order_confirmation', score: 60, reason: 'content mentions dispatch/tracking' });
-  if (matchesAny(combined, patterns.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 55, reason: 'content mentions payment terms' });
-  if (matchesAny(combined, patterns.payment)) scores.push({ value: 'payment', score: 50, reason: 'content mentions payment/receipt' });
-  if (matchesAny(combined, patterns.booking)) scores.push({ value: 'booking', score: 45, reason: 'content mentions booking/scheduling' });
-  if (matchesAny(combined, patterns.client_query)) scores.push({ value: 'client_query', score: 40, reason: 'question/request detected' });
+  // Strong signals from subject (high confidence)
+  if (matchesAny(subject, patterns.order_confirmation)) scores.push({ value: 'order_confirmation', score: 95, reason: 'subject matches order/confirmation' });
+  if (matchesAny(subject, patterns.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 90, reason: 'subject matches invoice' });
+  if (matchesAny(subject, patterns.supplier_quote)) scores.push({ value: 'supplier_quote', score: 85, reason: 'subject matches quote' });
+  if (matchesAny(subject, patterns.booking)) scores.push({ value: 'booking', score: 80, reason: 'subject mentions booking/scheduling' });
+  if (matchesAny(subject, patterns.payment)) scores.push({ value: 'payment', score: 75, reason: 'subject mentions payment' });
+  
+  // Medium signals from combined text
+  if (matchesAny(combined, patterns.order_confirmation)) scores.push({ value: 'order_confirmation', score: 65, reason: 'content mentions dispatch/tracking' });
+  if (matchesAny(combined, patterns.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 60, reason: 'content mentions invoice/payment terms' });
+  if (matchesAny(combined, patterns.booking)) scores.push({ value: 'booking', score: 55, reason: 'content mentions booking/scheduling' });
+  if (matchesAny(combined, patterns.payment)) scores.push({ value: 'payment', score: 52, reason: 'content mentions payment/receipt' });
+  if (matchesAny(combined, patterns.supplier_quote)) scores.push({ value: 'supplier_quote', score: 50, reason: 'content mentions quote/pricing' });
+  if (matchesAny(combined, patterns.client_query)) scores.push({ value: 'client_query', score: 45, reason: 'question/request detected' });
 
   scores.sort((a, b) => b.score - a.score);
   const best = scores[0];
