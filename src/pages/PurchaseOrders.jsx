@@ -17,6 +17,7 @@ import BackButton from "../components/common/BackButton";
 import { format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import PurchaseOrderDetail from "../components/logistics/PurchaseOrderDetail";
+import { BackendFn } from "@/components/config/backendFunctions";
 
 export default function PurchaseOrders() {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ export default function PurchaseOrders() {
   const handleCreatePO = async () => {
     try {
       // Create a draft PO with minimal data
-      const response = await base44.functions.invoke('managePurchaseOrder', {
+      const response = await base44.functions.invoke(BackendFn.managePurchaseOrderStatus, {
         action: 'create',
         supplier_id: suppliers[0]?.id || 'temp', // Use first supplier or temp
         line_items: [{ name: 'New Item', qty: 1, price: 0 }]
@@ -107,7 +108,7 @@ export default function PurchaseOrders() {
 
   const handleStatusChange = async (po, newStatus) => {
     try {
-      const response = await base44.functions.invoke('managePurchaseOrder', {
+      const response = await base44.functions.invoke(BackendFn.managePurchaseOrderStatus, {
         action: 'updateStatus',
         id: po.id,
         status: newStatus
