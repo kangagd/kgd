@@ -1402,6 +1402,43 @@ Link: ${threadLink}
                 </div>
               )}
 
+              <div className="bg-white border-b border-[#E5E7EB] p-3 space-y-2">
+                {/* Workflow status controls */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {selectedThread?.userStatus !== 'closed' && (
+                    <>
+                      <select
+                        value={selectedThread?.next_action_status || 'needs_action'}
+                        onChange={(e) => handleStatusChange(e.target.value)}
+                        disabled={updatingThreadId === selectedThread?.id}
+                        className="text-xs px-2 py-1 rounded border border-[#E5E7EB] hover:border-[#D1D5DB]"
+                      >
+                        <option value="needs_action">Needs Action</option>
+                        <option value="waiting">Waiting</option>
+                        <option value="fyi">FYI</option>
+                      </select>
+                      <Button
+                        onClick={handleMarkDone}
+                        disabled={updatingThreadId === selectedThread?.id}
+                        className="h-7 px-2 text-xs bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                        variant="outline"
+                      >
+                        Mark Done
+                      </Button>
+                    </>
+                  )}
+                  {selectedThread?.userStatus === 'closed' && (
+                    <Button
+                      onClick={handleReopen}
+                      disabled={updatingThreadId === selectedThread?.id}
+                      className="h-7 px-2 text-xs bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200"
+                      variant="outline"
+                    >
+                      Reopen
+                    </Button>
+                  )}
+                </div>
+              </div>
               <ThreadHeader
                 thread={selectedThread}
                 users={teamUsers}
