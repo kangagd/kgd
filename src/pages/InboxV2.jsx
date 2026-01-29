@@ -29,6 +29,7 @@ import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal"
 import DraftsList from "@/components/inbox/DraftsList";
 import UnifiedEmailComposer from "@/components/inbox/UnifiedEmailComposer";
 import { isInboxV2Allowed } from "@/components/utils/allowlist";
+import { createPageUrl } from "@/utils";
 
 /* -------------------------
    Direction helpers (match Inbox.jsx)
