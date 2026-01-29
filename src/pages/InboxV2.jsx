@@ -824,7 +824,7 @@ Link: ${threadLink}
   };
 
   // Workflow status updates
-  const handleStatusChange = async (newStatus) => {
+  const handleWorkflowStatusChange = async (newStatus) => {
     if (!selectedThread) return;
     
     setUpdatingThreadId(selectedThread.id);
