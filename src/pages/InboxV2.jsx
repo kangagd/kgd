@@ -905,9 +905,9 @@ export default function InboxV2() {
       {/* Inbox V2 Banner */}
       <div className="bg-purple-50 border-b border-purple-200 px-4 py-2">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-purple-900">Inbox V2 (Private Preview) — not live</p>
+          <p className="text-sm font-medium text-purple-900">Inbox V2 (Workflow Queue)</p>
           <p className="text-xs text-purple-800">
-            Unprocessed (Needs link): {triageCounts.needs_link} | Needs reply: {triageCounts.needs_reply} | Waiting: {triageCounts.waiting}
+            Unassigned: {workflowCounts.unassigned} | My Actions: {workflowCounts.my_actions} | Waiting: {workflowCounts.waiting} | FYI: {workflowCounts.fyi} | Done: {workflowCounts.done}
           </p>
         </div>
       </div>
