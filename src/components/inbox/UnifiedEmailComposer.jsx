@@ -858,9 +858,45 @@ export default function UnifiedEmailComposer({
         size: att.size
       }));
 
+      // PART A: Convert pasted inline data-url images to CID attachments
+      let processedAttachments = [...cleanAttachments];
+      let processedBodyHtml = body;
+      
+      // Scan for data:image URLs in body
+      const dataImageRegex = /<img[^>]+src="data:image\/([^;]+);base64,([^"]+)"[^>]*>/gi;
+      const inlineImages = [];
+      let match;
+      let index = 0;
+      
+      while ((match = dataImageRegex.exec(body)) !== null) {
+        const [fullMatch, imageType, base64Data] = match;
+        const contentId = `kgd-inline-${Date.now()}-${Math.random().toString(16).slice(2)}@kangaroogd`;
+        const ext = imageType === 'jpeg' ? 'jpg' : imageType;
+        
+        inlineImages.push({
+          originalSrc: `data:image/${imageType};base64,${base64Data}`,
+          contentId,
+          attachment: {
+            filename: `inline-image-${index + 1}.${ext}`,
+            mimeType: `image/${imageType}`,
+            data: base64Data,
+            size: Math.ceil(base64Data.length * 0.75), // Approximate bytes from base64
+            is_inline: true,
+            contentId
+          }
+        });
+        index++;
+      }
+      
+      // Replace data URLs with cid: references
+      inlineImages.forEach(img => {
+        processedBodyHtml = processedBodyHtml.replace(img.originalSrc, `cid:${img.contentId}`);
+        processedAttachments.push(img.attachment);
+      });
+
       // Render merge fields at send time
       let renderedSubject = subject;
-      let renderedBodyHtml = body;
+      let renderedBodyHtml = processedBodyHtml;
       let unresolvedTokens = [];
 
       try {
@@ -915,7 +951,7 @@ export default function UnifiedEmailComposer({
       }
 
       // Compute content hash for idempotency
-      const contentHash = computeContentHash(toChips, ccChips, bccChips, renderedSubject, renderedBodyHtml, cleanAttachments);
+      const contentHash = computeContentHash(toChips, ccChips, bccChips, renderedSubject, renderedBodyHtml, processedAttachments);
 
       const payload = {
         to: toChips,
@@ -923,7 +959,7 @@ export default function UnifiedEmailComposer({
         bcc: bccChips.length > 0 ? bccChips : undefined,
         subject: renderedSubject,
         body_html: renderedBodyHtml,
-        attachments: cleanAttachments.length > 0 ? cleanAttachments : undefined,
+        attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
         thread_id: thread?.id || null,
         gmail_thread_id: thread?.gmail_thread_id || undefined,
 
