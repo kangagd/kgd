@@ -227,6 +227,7 @@ export default function InboxV2() {
   const [noteInput, setNoteInput] = useState("");
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [updatingThreadId, setUpdatingThreadId] = useState(null);
+  const [contextOpen, setContextOpen] = useState(false);
 
   // Load current user
   useEffect(() => {
