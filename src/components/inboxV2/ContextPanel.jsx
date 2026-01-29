@@ -482,7 +482,7 @@ export default function InboxV2ContextPanel({
           </Select>
 
           {/* Suggestion chip */}
-          {categorySuggestion && categorySuggestion.value !== 'uncategorised' && (
+          {categorySuggestion && (
             <div className="mt-2 p-2 bg-white rounded border border-[#E5E7EB] space-y-2">
               <div className="text-xs text-[#4B5563]">
                 <div className="font-medium">Suggested: {CATEGORIES.find(c => c.value === categorySuggestion.value)?.label}</div>
