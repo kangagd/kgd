@@ -522,22 +522,24 @@ export default function InboxV2() {
     ...QUERY_CONFIG.reference,
   });
 
-  // Derive workflow state for all threads: explicit workflow fields + legacy triage for debug
+  // Canonical status: workflow field with fallback
+  const deriveCanonicalStatus = (thread) => {
+    if (thread?.userStatus === "closed") return "done";
+    return thread?.next_action_status || "needs_action";
+  };
+
+  // Derive workflow state for all threads
   const derivedThreads = useMemo(() => {
     return (threads || [])
       .filter((t) => !t.is_deleted)
       .map((t) => {
-        const d = deriveTriageState(t, orgEmails);
         const status = deriveCanonicalStatus(t);
         return {
           ...t,
           _status: status, // canonical: needs_action / waiting / fyi / done
-          _triage: d.triage, // legacy debug
-          _triageReason: d.reason, // legacy debug
-          _dir: d.dir, // legacy debug
         };
       });
-  }, [threads, orgEmails]);
+  }, [threads]);
 
   // Count workflow status
   const workflowCounts = useMemo(() => {
