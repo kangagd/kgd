@@ -507,6 +507,20 @@ export default function InboxV2() {
     ...QUERY_CONFIG.reference,
   });
 
+  // Fetch thread notes
+  const { data: threadNotes = [], refetch: refetchNotes } = useQuery({
+    queryKey: ["threadNotes", selectedThreadId],
+    queryFn: async () => {
+      if (!selectedThreadId) return [];
+      return base44.entities.EmailThreadNote.filter(
+        { thread_id: selectedThreadId },
+        "-created_date"
+      );
+    },
+    enabled: !!selectedThreadId,
+    ...QUERY_CONFIG.reference,
+  });
+
   // Derive workflow state for all threads: explicit workflow fields + legacy triage for debug
   const derivedThreads = useMemo(() => {
     return (threads || [])
