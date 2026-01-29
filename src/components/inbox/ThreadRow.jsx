@@ -392,7 +392,7 @@ export default function ThreadRow({
               <div className="text-[11px] text-[#9CA3AF]">{lastMessageDateLabel}</div>
             )}
           </div>
-        </button>
+        </div>
       </div>
     </div>
   );
