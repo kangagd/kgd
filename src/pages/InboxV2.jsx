@@ -1581,7 +1581,7 @@ Link: ${threadLink}
         </div>
 
         {/* Right pane: Context (Link or Project) */}
-        <div className="w-[380px] flex-shrink-0 flex flex-col border-l border-[#E5E7EB] overflow-hidden bg-white">
+        <div className="w-[320px] flex-shrink-0 flex flex-col border-l border-[#E5E7EB] overflow-hidden bg-white">
           {selectedThread ? (
             <div className="flex-1 flex flex-col overflow-y-auto">
               {/* Header */}
