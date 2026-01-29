@@ -1255,7 +1255,7 @@ Link: ${threadLink}
           )}
 
           {/* Filter bar */}
-          {activeView === "inbox" && !selectionMode && (
+          {activeView === "threads" && !selectionMode && (
             <InboxFilterBar
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
