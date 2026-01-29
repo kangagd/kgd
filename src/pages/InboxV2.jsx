@@ -1003,6 +1003,7 @@ export default function InboxV2() {
                 { key: 'all', label: 'All' },
                 { key: 'needs_reply', label: 'Needs reply' },
                 { key: 'needs_link', label: 'Needs link' },
+                { key: 'important_fyi', label: 'Important FYI' },
                 { key: 'waiting', label: 'Waiting' },
                 { key: 'reference', label: 'Reference' },
                 { key: 'closed', label: 'Closed' },
