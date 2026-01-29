@@ -1122,17 +1122,11 @@ export default function InboxV2() {
                          isSelectedForBulk={selectedThreadIds.has(thread.id)}
                          onBulkSelect={handleBulkSelect}
                        />
-                       {/* Triage status hint */}
+                       {/* Workflow status hint */}
                        <div className="px-3 py-1 bg-[#F9FAFB] flex items-center gap-2 text-xs text-[#6B7280]">
-                         <span className="font-medium text-[#4B5563]">{thread._triage === 'needs_reply' ? 'Needs reply' : thread._triage === 'needs_link' ? 'Needs link' : thread._triage === 'waiting' ? 'Waiting' : thread._triage === 'closed' ? 'Closed' : 'Reference'}</span>
+                         <span className="font-medium text-[#4B5563]">{thread._status === 'needs_action' ? 'Needs Action' : thread._status === 'waiting' ? 'Waiting' : thread._status === 'fyi' ? 'FYI' : 'Done'}</span>
                          <span>·</span>
-                         <span>{thread._direction === 'sent' ? 'Sent' : thread._direction === 'received' ? 'Received' : 'Unknown'}</span>
-                         {/* Debug info for admin@kangaroogd.com.au */}
-                         {user?.email === 'admin@kangaroogd.com.au' && (
-                           <span className="ml-auto text-[10px] font-mono text-[#9CA3AF]">
-                             dir={thread._direction} last={thread.last_message_date?.slice(0, 10)} int={thread.lastInternalMessageAt?.slice(0, 10)} ext={thread.lastExternalMessageAt?.slice(0, 10)}
-                           </span>
-                         )}
+                         <span>{thread.assigned_to ? `Owner: ${thread.assigned_to_name || thread.assigned_to}` : 'Unassigned'}</span>
                        </div>
                      </div>
                    ))}
