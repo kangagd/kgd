@@ -844,9 +844,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       }
       
       const res = await base44.functions.invoke('manageJob', { action: 'update', id: job.id, data: { [field]: value } });
-      return res.data.job;
+      return { field, ...res.data.job };
     },
-    onSuccess: (updatedJob) => {
+    onSuccess: (result) => {
+      const updatedJob = result;
+      // Reset dirty flag for notes after successful save
+      if (result.field === 'notes') {
+        handleNotesSaved(updatedJob);
+      }
       // Optimistically update job cache
       queryClient.setQueryData(['job', job.id], (oldData) => ({
         ...oldData,
