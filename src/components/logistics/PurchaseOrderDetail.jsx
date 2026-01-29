@@ -268,7 +268,7 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
     const deletePOMutation = useMutation({
     mutationFn: async () => {
-      const response = await base44.functions.invoke('managePurchaseOrder', {
+      const response = await base44.functions.invoke(BackendFn.managePurchaseOrderStatus, {
         action: 'delete',
         id: poId
       });
