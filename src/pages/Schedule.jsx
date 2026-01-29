@@ -119,6 +119,8 @@ export default function Schedule() {
       // Sort manually since backend function might not sort
       return jobs.sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''));
     },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Expand jobs with scheduled_visits into separate entries for the schedule
@@ -166,25 +168,29 @@ export default function Schedule() {
       const response = await base44.functions.invoke('getTechnicians');
       return response.data?.technicians || [];
     },
-    ...QUERY_CONFIG.reference,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 
   const { data: jobTypes = [] } = useQuery({
     queryKey: ['jobTypes'],
     queryFn: () => base44.entities.JobType.list(),
-    ...QUERY_CONFIG.reference,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 
   const { data: leaves = [] } = useQuery({
     queryKey: ['technicianLeaves'],
     queryFn: () => base44.entities.TechnicianLeave.list('-start_time'),
-    ...QUERY_CONFIG.reference,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 
   const { data: closedDays = [] } = useQuery({
     queryKey: ['businessClosedDays'],
     queryFn: () => base44.entities.BusinessClosedDay.list('-start_time'),
-    ...QUERY_CONFIG.reference,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Fetch bookings (non-cancelled only)
@@ -194,11 +200,12 @@ export default function Schedule() {
       const bookings = await base44.entities.CalendarBooking.list('-start_at');
       return bookings.filter(b => b.status !== 'cancelled');
     },
-    ...QUERY_CONFIG.reference,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 
   // Create a map of job type id to color
-  const jobTypeColorMap = React.useMemo(() => {
+  const jobTypeColorMap = useMemo(() => {
     const map = {};
     jobTypes.forEach(jt => {
       map[jt.id] = jt.color || '#6B7280';
@@ -206,7 +213,7 @@ export default function Schedule() {
     return map;
   }, [jobTypes]);
 
-  const techniciansLookup = React.useMemo(() => {
+  const techniciansLookup = useMemo(() => {
     const map = {};
     technicians.forEach(t => {
       if (t.email) map[t.email.toLowerCase()] = t;
@@ -247,7 +254,7 @@ export default function Schedule() {
     });
   }, [expandedJobs, viewScope, user, selectedTechnicianEmail]);
 
-  const todaysJobs = React.useMemo(() => {
+  const todaysJobs = useMemo(() => {
     const today = getNowInAEST();
     return scopedJobs.filter(job => {
        if (!job?.scheduled_date) return false;
