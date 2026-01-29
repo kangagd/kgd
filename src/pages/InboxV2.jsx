@@ -1577,6 +1577,93 @@ Link: ${threadLink}
             </div>
           )}
         </div>
+
+        {/* Right pane: Context (Link or Project) */}
+        <div className="w-[380px] flex-shrink-0 flex flex-col border-l border-[#E5E7EB] overflow-hidden bg-white">
+          {selectedThread ? (
+            <div className="flex-1 flex flex-col overflow-y-auto">
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#F9FAFB]">
+                <h3 className="text-sm font-semibold text-[#111827]">
+                  {selectedThread.project_id || selectedThread.contract_id ? 'Linked To' : 'Link Thread'}
+                </h3>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 flex flex-col p-4 space-y-3">
+                {selectedThread.project_id ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-[#6B7280]">PROJECT</div>
+                      <div className="rounded-lg border border-[#E5E7EB] p-3 bg-[#F9FAFB] space-y-2">
+                        <div className="text-sm font-semibold text-[#111827]">{selectedThread.project_title || 'Project'}</div>
+                        {selectedThread.project_number && (
+                          <div className="text-xs text-[#6B7280]">#{selectedThread.project_number}</div>
+                        )}
+                        {selectedThread.customer_name && (
+                          <div className="text-xs text-[#4B5563]">{selectedThread.customer_name}</div>
+                        )}
+                        <Button
+                          onClick={() => window.location.href = createPageUrl("Projects") + `?projectId=${selectedThread.project_id}`}
+                          className="w-full mt-3 h-7 text-xs bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                        >
+                          Open Project
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : selectedThread.contract_id ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="text-xs font-medium text-[#6B7280]">CONTRACT</div>
+                      <div className="rounded-lg border border-[#E5E7EB] p-3 bg-[#F9FAFB] space-y-2">
+                        <div className="text-sm font-semibold text-[#111827]">{selectedThread.contract_name || 'Contract'}</div>
+                        {selectedThread.contract_status && (
+                          <div className="text-xs text-[#6B7280]">{selectedThread.contract_status}</div>
+                        )}
+                        <Button
+                          onClick={() => window.location.href = createPageUrl("Contracts") + `?contractId=${selectedThread.contract_id}`}
+                          className="w-full mt-3 h-7 text-xs bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]"
+                        >
+                          Open Contract
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-[#6B7280] mb-3">Link this thread to a project or contract for easy reference.</p>
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => setShowLinkModal(true)}
+                        className="w-full h-8 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200"
+                        variant="outline"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5 mr-1.5" />
+                        Link to Project/Contract
+                      </Button>
+                      <Button
+                        onClick={() => setShowCreateProjectModal(true)}
+                        className="w-full h-8 text-xs bg-green-50 hover:bg-green-100 text-green-700 border border-green-200"
+                        variant="outline"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        Create Project
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-center p-4">
+              <div>
+                <LinkIcon className="w-8 h-8 text-[#D1D5DB] mx-auto mb-2" />
+                <p className="text-[13px] text-[#6B7280]">Select a thread to see context</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Create project from email modal */}
