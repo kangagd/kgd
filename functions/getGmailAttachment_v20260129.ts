@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     );
     
     if (!attData?.data) {
-      return Response.json({ error: 'No attachment data returned' }, { status: 500 });
+      return Response.json({ success: false, error: 'No attachment data returned' }, { status: 200 });
     }
 
     // Decode Base64URL with proper padding handling
@@ -38,10 +38,11 @@ Deno.serve(async (req) => {
     const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
     if (!uploadResult?.file_url) {
-      return Response.json({ error: 'Failed to upload attachment' }, { status: 500 });
+      return Response.json({ success: false, error: 'Failed to upload attachment' }, { status: 200 });
     }
 
     return Response.json({ 
+      success: true,
       url: uploadResult.file_url,
       filename: filename,
       mime_type: mime_type,
@@ -50,6 +51,6 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Get attachment error:', error);
-    return Response.json({ error: error.message, version: '2026-01-29' }, { status: 500 });
+    return Response.json({ success: false, error: error.message, version: '2026-01-29' }, { status: 200 });
   }
 });
