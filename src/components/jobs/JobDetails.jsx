@@ -3108,6 +3108,14 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   {!visitsEnabled && (
                     <>
                       <RichTextField
+                        label="Notes"
+                        value={notesDraft !== null ? notesDraft : ""}
+                        onChange={handleNotesChange}
+                        placeholder="Job notes..."
+                        helperText="Auto-saves after 1 second of inactivity"
+                      />
+
+                      <RichTextField
                         label="Work Performed (Overview) *"
                         value={overview}
                         onChange={setOverview}
