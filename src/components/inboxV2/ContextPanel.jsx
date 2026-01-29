@@ -86,7 +86,39 @@ export default function InboxV2ContextPanel({
   onOpenCreateProjectModal,
 }) {
   const queryClient = useQueryClient();
-  const [linkingInProgress, setLinkingInProgress] = useState(false);
+  const [projectSearch, setProjectSearch] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const searchInputRef = useRef(null);
+  const debounceTimer = useRef(null);
+
+  // Fetch recent projects
+  const { data: recentProjects = [] } = useQuery({
+    queryKey: ['inboxV2RecentProjects'],
+    queryFn: async () => {
+      const projects = await base44.entities.Project.list('-updated_date', 200);
+      return projects || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!thread,
+  });
+
+  // Get participants
+  const participants = useMemo(() => getThreadParticipants(thread), [thread]);
+
+  // Score and filter projects
+  const suggestedProjects = useMemo(() => {
+    if (!recentProjects.length) return [];
+    
+    const scored = recentProjects.map((p) => ({
+      ...p,
+      _score: scoreProjectForThread(p, thread, participants),
+      _reason: getScoreReason(p, thread, participants),
+    }));
+
+    // Filter by score >= 25, take top 5
+    return scored.filter((p) => p._score >= 25).slice(0, 5);
+  }, [recentProjects, thread, participants]);
 
   if (!thread) {
     return (
