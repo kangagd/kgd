@@ -888,6 +888,7 @@ export default function InboxV2() {
                 { key: 'needs_link', label: 'Needs link' },
                 { key: 'waiting', label: 'Waiting' },
                 { key: 'reference', label: 'Reference' },
+                { key: 'closed', label: 'Closed' },
               ].map((chip) => (
                 <button
                   key={chip.key}
