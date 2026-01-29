@@ -1526,6 +1526,7 @@ Link: ${threadLink}
                 currentUser={user}
                 onThreadUpdate={() => refetchThreads()}
                 hasMessages={selectedThread?.message_count > 0}
+                compactMode={true}
                 onReply={() => {
                   handleComposerOpen(selectedThread.id);
                   setComposerMode('reply');
