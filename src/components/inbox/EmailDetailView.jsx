@@ -143,8 +143,16 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
   }, [visibleMessages]);
 
   /* ---------- render ---------- */
-  return (
-    <div className="flex flex-col h-full bg-[#F8F9FA]">
+  if (!thread) {
+    return (
+      <div className="flex items-center justify-center h-full bg-[#F8F9FA]">
+        <p className="text-[#6B7280]">No thread selected</p>
+      </div>
+    );
+  }
+
+   return (
+     <div className="flex flex-col h-full bg-[#F8F9FA]">
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
           {/* SYNC STATUS BANNER */}
