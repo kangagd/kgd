@@ -165,8 +165,8 @@ export default function InboxV2ContextPanel({
   const linkMutation = useMutation({
     mutationFn: async (projectId) => {
       const response = await base44.functions.invoke('linkEmailThreadToProject', {
-        threadId: thread.id,
-        projectId,
+        email_thread_id: thread.id,
+        project_id: projectId,
       });
       if (!response.data?.success) {
         throw new Error(response.data?.error || 'Failed to link');
