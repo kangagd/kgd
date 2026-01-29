@@ -691,6 +691,11 @@ export default function InboxV2() {
     };
   }, []);
 
+  // Auto-close context drawer when selected thread changes on small screens
+  useEffect(() => {
+    setContextOpen(false);
+  }, [selectedThreadId]);
+
   // Composer sent
   const handleComposerSent = async () => {
     // Clear composing status for current thread
