@@ -402,12 +402,14 @@ export default function InboxV2() {
       needs_link: 0,
       waiting: 0,
       reference: 0,
+      closed: 0,
     };
     derivedThreads.forEach((t) => {
       if (t._triage === 'needs_reply') counts.needs_reply++;
       else if (t._triage === 'needs_link') counts.needs_link++;
       else if (t._triage === 'waiting') counts.waiting++;
       else if (t._triage === 'reference') counts.reference++;
+      else if (t._triage === 'closed') counts.closed++;
     });
     return counts;
   }, [derivedThreads]);
