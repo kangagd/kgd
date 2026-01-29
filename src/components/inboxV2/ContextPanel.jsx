@@ -295,13 +295,28 @@ export default function InboxV2ContextPanel({
   // Assignment mutation
   const assignmentMutation = useMutation({
     mutationFn: async (userEmail) => {
-      await base44.functions.invoke('assignEmailThread', {
+      const response = await base44.functions.invoke('assignEmailThread', {
         thread_id: thread.id,
         assigned_to_user_email: userEmail || null,
       });
+      return response.data;
     },
-    onSuccess: (_, userEmail) => {
-        queryClient.invalidateQueries({ queryKey: inboxKeys.threads() });
+    onSuccess: (result, userEmail) => {
+      // Patch cache immediately
+      if (result?.success) {
+        queryClient.setQueryData(inboxKeys.threads(), (oldThreads) => {
+          return (oldThreads || []).map((t) =>
+            t.id === thread.id
+              ? {
+                  ...t,
+                  assigned_to: result.assigned_to,
+                  assigned_to_name: result.assigned_to_name,
+                  assigned_at: result.assigned_at,
+                }
+              : t
+          );
+        });
+      }
 
       // Audit: owner change
       if (currentUser) {
@@ -320,7 +335,7 @@ export default function InboxV2ContextPanel({
       }
 
       onThreadUpdate?.();
-      toast.success(thread.assigned_to ? 'Owner changed' : 'Owner assigned');
+      toast.success(result?.assigned_to ? 'Owner changed' : 'Owner assigned');
     },
     onError: () => toast.error('Failed to assign thread'),
   });
