@@ -134,49 +134,87 @@ async function getCurrentHistoryId() {
 }
 
 /**
- * Fetch message IDs that changed since startHistoryId
- * Returns: { messageIds: Set, newHistoryId: string, pageCount: number }
+ * Helper to check if labelIds array contains any of the wanted labels
  */
-async function fetchHistoryDelta(startHistoryId, maxPages = 10) {
+function hasAnyLabel(labelIds, wanted) {
+  return Array.isArray(labelIds) && wanted.some(l => labelIds.includes(l));
+}
+
+/**
+ * Safe max for historyId strings (treat as BigInt)
+ */
+function maxHistoryId(a, b) {
+  try {
+    return BigInt(a) > BigInt(b) ? a : b;
+  } catch {
+    return a || b;
+  }
+}
+
+/**
+ * Fetch message IDs for a specific label since startHistoryId
+ */
+async function fetchHistoryDeltaForLabel(startHistoryId, labelId, maxPages = 10) {
   const messageIds = new Set();
+  const deletedIds = new Set();
   let pageCount = 0;
   let pageToken = null;
-  let historyId = startHistoryId;
+  let newHistoryId = startHistoryId;
+
+  const breakdown = {
+    from_messagesAdded: 0,
+    from_labelsAdded: 0,
+    from_labelsRemoved: 0,
+    from_messagesDeleted: 0
+  };
 
   for (let page = 0; page < maxPages; page++) {
     const params = {
       startHistoryId: startHistoryId,
+      labelId: labelId,
       maxResults: 100
     };
     if (pageToken) params.pageToken = pageToken;
 
     const result = await gmailFetch('/gmail/v1/users/me/history', 'GET', params);
     
+    // Update cursor from response historyId (NOT historyItem.id)
+    if (result.historyId) {
+      newHistoryId = result.historyId;
+    }
+    
     if (!result.history) break;
 
     for (const historyItem of result.history) {
-      historyId = historyItem.id;
-
       // Collect from messagesAdded
       if (historyItem.messagesAdded) {
         for (const msg of historyItem.messagesAdded) {
           messageIds.add(msg.message.id);
+          breakdown.from_messagesAdded++;
         }
       }
 
-      // Collect from labelsAdded/labelsRemoved (for messages moving in/out of INBOX/SENT)
+      // Collect from labelsAdded
       if (historyItem.labelsAdded) {
         for (const item of historyItem.labelsAdded) {
-          if (['INBOX', 'SENT'].includes(item.labelIds?.[0])) {
-            messageIds.add(item.message.id);
-          }
+          messageIds.add(item.message.id);
+          breakdown.from_labelsAdded++;
         }
       }
+
+      // Collect from labelsRemoved
       if (historyItem.labelsRemoved) {
         for (const item of historyItem.labelsRemoved) {
-          if (['INBOX', 'SENT'].includes(item.labelIds?.[0])) {
-            messageIds.add(item.message.id);
-          }
+          messageIds.add(item.message.id);
+          breakdown.from_labelsRemoved++;
+        }
+      }
+
+      // Track deletions
+      if (historyItem.messagesDeleted) {
+        for (const msg of historyItem.messagesDeleted) {
+          deletedIds.add(msg.message.id);
+          breakdown.from_messagesDeleted++;
         }
       }
     }
@@ -186,7 +224,48 @@ async function fetchHistoryDelta(startHistoryId, maxPages = 10) {
     pageToken = result.nextPageToken;
   }
 
-  return { messageIds, newHistoryId: historyId, pageCount };
+  return { messageIds, deletedIds, newHistoryId, pageCount, breakdown };
+}
+
+/**
+ * Fetch combined history for INBOX + SENT labels
+ */
+async function fetchHistoryDelta(startHistoryId, maxPages = 10) {
+  const WATCH_LABELS = ['INBOX', 'SENT'];
+  const messageIds = new Set();
+  const deletedIds = new Set();
+  const debugBreakdown = {};
+
+  let combinedNewHistoryId = startHistoryId;
+  let totalPages = 0;
+
+  for (const label of WATCH_LABELS) {
+    try {
+      const labelResult = await fetchHistoryDeltaForLabel(startHistoryId, label, maxPages);
+      
+      // Union message IDs
+      labelResult.messageIds.forEach(id => messageIds.add(id));
+      labelResult.deletedIds.forEach(id => deletedIds.add(id));
+      
+      // Track newest historyId
+      combinedNewHistoryId = maxHistoryId(combinedNewHistoryId, labelResult.newHistoryId);
+      
+      totalPages += labelResult.pageCount;
+      debugBreakdown[label.toLowerCase()] = labelResult.breakdown;
+    } catch (err) {
+      // If one label fails but the other succeeds, continue
+      console.error(`[gmailSyncDelta] History for ${label} failed:`, err.message);
+      debugBreakdown[label.toLowerCase()] = { error: err.message };
+    }
+  }
+
+  return { 
+    messageIds, 
+    deletedIds,
+    newHistoryId: combinedNewHistoryId, 
+    pageCount: totalPages,
+    debugBreakdown 
+  };
 }
 
 /**
