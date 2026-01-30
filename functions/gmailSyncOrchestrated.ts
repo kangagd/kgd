@@ -62,11 +62,19 @@ async function acquireLock(base44, scopeKey, runId) {
   return { acquired: true, syncState };
 }
 
-async function releaseLock(base44, syncStateId) {
-  await base44.asServiceRole.entities.EmailSyncState.update(syncStateId, {
-    lock_until: null,
-    lock_owner: null
-  });
+async function releaseLock(base44, syncStateId, runId) {
+  try {
+    const currentState = await base44.asServiceRole.entities.EmailSyncState.get(syncStateId);
+    if (currentState.lock_owner === runId) {
+      await base44.asServiceRole.entities.EmailSyncState.update(syncStateId, {
+        lock_until: null,
+        lock_owner: null,
+        locked_at: null
+      });
+    }
+  } catch (err) {
+    console.warn(`[releaseLock] Warning:`, err.message);
+  }
 }
 
 // ============================================================================
