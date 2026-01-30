@@ -495,33 +495,19 @@ export default function InboxV2() {
     try {
       if (mountedRef.current) setIsSyncing(true);
       
-      // 45s timeout watchdog
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Sync timeout (45s)')), 45000)
-      );
-      
-      const syncPromise = base44.functions.invoke("gmailSyncOrchestrated", {});
-      
-      const result = await Promise.race([syncPromise, timeoutPromise]);
+      const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
 
       // Handle sync lock (already in progress on backend)
-      if (result?.data?.skipped && result?.data?.reason === 'locked') {
-        const lockedUntil = result.data.locked_until ? new Date(result.data.locked_until).toLocaleTimeString() : 'unknown';
-        devLog(`[InboxV2] Sync locked until ${lockedUntil}`);
-        if (mountedRef.current) {
-          toast.info(`Sync already running (locked until ${lockedUntil})`, { duration: 3000 });
-          setIsSyncing(false);
-          syncInFlightRef.current = false;
-        }
+      if (result?.skipped && result?.reason === 'locked') {
+        devLog(`[InboxV2] Sync already running, locked until ${result.locked_until}`);
+        if (mountedRef.current) toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
         return;
       }
 
-      const resultData = result?.data || result;
-
-      if (resultData?.summary || resultData?.counts) {
+      if (result?.summary) {
         devLog(
-          `[InboxV2] Sync complete: mode=${resultData.mode}, counts=${JSON.stringify(resultData.counts)}`
-        );
+                   `[InboxV2] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
+                 );
       }
 
       if (mountedRef.current) {
@@ -529,29 +515,13 @@ export default function InboxV2() {
         setLastSyncTime(new Date());
       }
 
-      if (resultData?.errors?.length) devLog("Sync completed with errors:", resultData.errors);
+      if (result?.errors?.length) devLog("Sync completed with errors:", result.errors);
     } catch (error) {
       devLog("Sync failed:", error);
-      if (mountedRef.current) toast.error(error.message === 'Sync timeout (45s)' ? "Sync timed out" : "Failed to sync emails");
+      if (mountedRef.current) toast.error("Failed to sync emails");
     } finally {
       if (mountedRef.current) setIsSyncing(false);
       syncInFlightRef.current = false;
-    }
-  };
-
-  const handleForceUnlock = async () => {
-    try {
-      const result = await base44.functions.invoke("clearEmailSyncLock", { scope_key: "gmail" });
-      if (result?.data?.cleared) {
-        toast.success("Sync lock cleared");
-        // Immediately try to sync
-        setTimeout(() => syncGmailInbox(), 500);
-      } else {
-        toast.info("No lock to clear");
-      }
-    } catch (error) {
-      devLog("Force unlock failed:", error);
-      toast.error("Failed to clear lock");
     }
   };
 
@@ -582,9 +552,6 @@ export default function InboxV2() {
     };
   }, [user, lastThreadFetchTime]);
 
-  // Module-level flag to skip getTeamUsers if it's missing
-  const TEAM_USERS_FN_MISSING_REF = useRef(false);
-
   const { data: teamUsers = [] } = useQuery({
     queryKey: ["teamUsers"],
     queryFn: async () => {
@@ -605,32 +572,29 @@ export default function InboxV2() {
         return [{ email: user.email, display_name: user.display_name || user.full_name || user.email }];
       };
 
-      // Skip getTeamUsers if we know it's missing (404)
-      if (!TEAM_USERS_FN_MISSING_REF.current) {
-        try {
-          const r1 = await base44.functions.invoke("getTeamUsers", {});
-          const u1 = normalize(r1?.users ?? r1?.data?.users ?? []);
-          if (u1.length > 0) return u1;
-        } catch (e1) {
-          // Check if deployment doesn't exist (404)
-          if (e1.message?.includes('404') || e1.message?.includes('deployment not exist')) {
-            console.warn('[InboxV2] getTeamUsers not found, using getAllUsers fallback');
-            TEAM_USERS_FN_MISSING_REF.current = true;
-          }
-        }
-      }
-
-      // Fallback to getAllUsers
       try {
+        // 1) Preferred
+        const r1 = await base44.functions.invoke("getTeamUsers", {});
+        const u1 = normalize(r1?.users ?? r1?.data?.users ?? []);
+        if (u1.length > 0) return u1;
+
+        // 2) Fallback
         const r2 = await base44.functions.invoke("getAllUsers", {});
         const u2 = normalize(r2?.users ?? r2?.data?.users ?? []);
         if (u2.length > 0) return u2;
-      } catch (e2) {
-        devLog('[InboxV2] getAllUsers failed:', e2);
-      }
 
-      // Last resort
-      return fallbackSelf();
+        // 3) Last resort
+        return fallbackSelf();
+      } catch (e1) {
+        try {
+          const r2 = await base44.functions.invoke("getAllUsers", {});
+          const u2 = normalize(r2?.users ?? r2?.data?.users ?? []);
+          if (u2.length > 0) return u2;
+          return fallbackSelf();
+        } catch (e2) {
+          return fallbackSelf();
+        }
+      }
     },
     enabled: !!user,
     ...QUERY_CONFIG.reference,
@@ -1471,21 +1435,6 @@ Link: ${threadLink}
               <History className="w-3 h-3" />
               Search Gmail History
             </button>
-            {user?.email === 'admin@kangaroogd.com.au' && (
-              <button
-                onClick={handleForceUnlock}
-                disabled={isSyncing}
-                className={`w-full px-3 py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
-                  isSyncing 
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                    : 'bg-red-50 hover:bg-red-100 text-red-700'
-                }`}
-                title="Force clear sync lock (admin only)"
-              >
-                <XIcon className="w-3 h-3" />
-                Force Unlock
-              </button>
-            )}
           </div>
 
           {/* List */}

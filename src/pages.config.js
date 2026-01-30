@@ -59,7 +59,6 @@ import EmailTemplates from './pages/EmailTemplates';
 import Fleet from './pages/Fleet';
 import Home from './pages/Home';
 import Inbox from './pages/Inbox';
-import InboxV2 from './pages/InboxV2';
 import InventoryDebugger from './pages/InventoryDebugger';
 import Jobs from './pages/Jobs';
 import Leads from './pages/Leads';
@@ -87,6 +86,7 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
+import InboxV2 from './pages/InboxV2';
 import __Layout from './Layout.jsx';
 
 
@@ -103,7 +103,6 @@ export const PAGES = {
     "Fleet": Fleet,
     "Home": Home,
     "Inbox": Inbox,
-    "InboxV2": InboxV2,
     "InventoryDebugger": InventoryDebugger,
     "Jobs": Jobs,
     "Leads": Leads,
@@ -131,6 +130,7 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
+    "InboxV2": InboxV2,
 }
 
 export const pagesConfig = {
