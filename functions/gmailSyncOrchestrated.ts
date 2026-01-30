@@ -208,9 +208,12 @@ Deno.serve(async (req) => {
         consecutive_failures: updatedFailures
       }, { status: 500 });
     } finally {
-      // Always release lock
+      // Always release lock (only if we own it)
       try {
-        await releaseLock(base44, syncState.id);
+        const currentState = await base44.asServiceRole.entities.EmailSyncState.get(syncState.id);
+        if (currentState.lock_owner === runId) {
+          await releaseLock(base44, syncState.id);
+        }
       } catch (err) {
         console.warn(`[gmailSyncOrchestrated] Lock release warning:`, err.message);
       }
