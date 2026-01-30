@@ -357,6 +357,16 @@ Deno.serve(async (req) => {
         counts.history_pages = pageCount;
         counts.message_ids_changed = messageIds.size;
         
+        // Process messages
+        if (messageIds.size > 0) {
+          const processCounts = await processMessageIds({ 
+            messageIds: Array.from(messageIds), 
+            base44, 
+            runId 
+          });
+          Object.assign(counts, processCounts);
+        }
+        
         // Update state
         syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
           last_history_id: newHistoryId,
@@ -365,10 +375,10 @@ Deno.serve(async (req) => {
           consecutive_failures: 0
         });
 
-        if (DEBUG) console.log(`[gmailSyncDelta] Delta: ${pageCount} pages, ${messageIds.size} messages changed`);
+        if (DEBUG) console.log(`[gmailSyncDelta] Delta: ${pageCount} pages, ${messageIds.size} messages changed, ${counts.messages_fetched} fetched`);
 
         return Response.json({
-          success: true,
+          success: messageIds.size === 0 || counts.messages_fetched > 0,
           run_id: runId,
           mode,
           counts,
