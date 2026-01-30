@@ -244,20 +244,33 @@ async function processMessageIds({ messageIds, base44, runId }) {
     }
   }
 
-  // Process each thread
+  // Process each thread with rate limiting
+  let processedCount = 0;
   for (const [threadId, msgIds] of threadMap.entries()) {
     try {
       const response = await base44.functions.invoke('gmailSyncThreadMessages', { 
         gmail_thread_id: threadId 
       });
-      
+
       const result = response.data || {};
       counts.messages_created += result.okCount || 0;
       counts.messages_upgraded += result.partialCount || 0;
       counts.messages_failed += result.failedCount || 0;
+
+      processedCount++;
+
+      // Rate limiting: wait 100ms every 10 threads to avoid 429s
+      if (processedCount % 10 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     } catch (err) {
       console.error(`[gmailSyncDelta] Failed to sync thread ${threadId}:`, err.message);
       counts.messages_failed += msgIds.length;
+
+      // If we hit rate limit, wait longer before continuing
+      if (err.message?.includes('429')) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
   }
 
