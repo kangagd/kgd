@@ -1423,18 +1423,6 @@ Link: ${threadLink}
               </span>
             </div>
             <button
-              onClick={syncGmailInbox}
-              disabled={isSyncing}
-              className={`w-full px-3 py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
-                isSyncing 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-[#FAE008] hover:bg-[#E5CF07] text-[#111827]'
-              }`}
-            >
-              <Mail className="w-3 h-3" />
-              {isSyncing ? 'Syncing...' : 'Sync Now'}
-            </button>
-            <button
               onClick={() => setShowHistorySearch(true)}
               disabled={isSyncing}
               className={`w-full px-3 py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
