@@ -495,19 +495,33 @@ export default function InboxV2() {
     try {
       if (mountedRef.current) setIsSyncing(true);
       
-      const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
+      // 45s timeout watchdog
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Sync timeout (45s)')), 45000)
+      );
+      
+      const syncPromise = base44.functions.invoke("gmailSyncOrchestrated", {});
+      
+      const result = await Promise.race([syncPromise, timeoutPromise]);
 
       // Handle sync lock (already in progress on backend)
-      if (result?.skipped && result?.reason === 'locked') {
-        devLog(`[InboxV2] Sync already running, locked until ${result.locked_until}`);
-        if (mountedRef.current) toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
+      if (result?.data?.skipped && result?.data?.reason === 'locked') {
+        const lockedUntil = result.data.locked_until ? new Date(result.data.locked_until).toLocaleTimeString() : 'unknown';
+        devLog(`[InboxV2] Sync locked until ${lockedUntil}`);
+        if (mountedRef.current) {
+          toast.info(`Sync already running (locked until ${lockedUntil})`, { duration: 3000 });
+          setIsSyncing(false);
+          syncInFlightRef.current = false;
+        }
         return;
       }
 
-      if (result?.summary) {
+      const resultData = result?.data || result;
+
+      if (resultData?.summary || resultData?.counts) {
         devLog(
-                   `[InboxV2] Sync complete: ${result.summary.threads_synced} threads, ${result.summary.messages_synced} messages`
-                 );
+          `[InboxV2] Sync complete: mode=${resultData.mode}, counts=${JSON.stringify(resultData.counts)}`
+        );
       }
 
       if (mountedRef.current) {
@@ -515,13 +529,29 @@ export default function InboxV2() {
         setLastSyncTime(new Date());
       }
 
-      if (result?.errors?.length) devLog("Sync completed with errors:", result.errors);
+      if (resultData?.errors?.length) devLog("Sync completed with errors:", resultData.errors);
     } catch (error) {
       devLog("Sync failed:", error);
-      if (mountedRef.current) toast.error("Failed to sync emails");
+      if (mountedRef.current) toast.error(error.message === 'Sync timeout (45s)' ? "Sync timed out" : "Failed to sync emails");
     } finally {
       if (mountedRef.current) setIsSyncing(false);
       syncInFlightRef.current = false;
+    }
+  };
+
+  const handleForceUnlock = async () => {
+    try {
+      const result = await base44.functions.invoke("clearEmailSyncLock", { scope_key: "gmail" });
+      if (result?.data?.cleared) {
+        toast.success("Sync lock cleared");
+        // Immediately try to sync
+        setTimeout(() => syncGmailInbox(), 500);
+      } else {
+        toast.info("No lock to clear");
+      }
+    } catch (error) {
+      devLog("Force unlock failed:", error);
+      toast.error("Failed to clear lock");
     }
   };
 
