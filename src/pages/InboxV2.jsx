@@ -582,6 +582,9 @@ export default function InboxV2() {
     };
   }, [user, lastThreadFetchTime]);
 
+  // Module-level flag to skip getTeamUsers if it's missing
+  const TEAM_USERS_FN_MISSING_REF = useRef(false);
+
   const { data: teamUsers = [] } = useQuery({
     queryKey: ["teamUsers"],
     queryFn: async () => {
@@ -602,29 +605,32 @@ export default function InboxV2() {
         return [{ email: user.email, display_name: user.display_name || user.full_name || user.email }];
       };
 
-      try {
-        // 1) Preferred
-        const r1 = await base44.functions.invoke("getTeamUsers", {});
-        const u1 = normalize(r1?.users ?? r1?.data?.users ?? []);
-        if (u1.length > 0) return u1;
+      // Skip getTeamUsers if we know it's missing (404)
+      if (!TEAM_USERS_FN_MISSING_REF.current) {
+        try {
+          const r1 = await base44.functions.invoke("getTeamUsers", {});
+          const u1 = normalize(r1?.users ?? r1?.data?.users ?? []);
+          if (u1.length > 0) return u1;
+        } catch (e1) {
+          // Check if deployment doesn't exist (404)
+          if (e1.message?.includes('404') || e1.message?.includes('deployment not exist')) {
+            console.warn('[InboxV2] getTeamUsers not found, using getAllUsers fallback');
+            TEAM_USERS_FN_MISSING_REF.current = true;
+          }
+        }
+      }
 
-        // 2) Fallback
+      // Fallback to getAllUsers
+      try {
         const r2 = await base44.functions.invoke("getAllUsers", {});
         const u2 = normalize(r2?.users ?? r2?.data?.users ?? []);
         if (u2.length > 0) return u2;
-
-        // 3) Last resort
-        return fallbackSelf();
-      } catch (e1) {
-        try {
-          const r2 = await base44.functions.invoke("getAllUsers", {});
-          const u2 = normalize(r2?.users ?? r2?.data?.users ?? []);
-          if (u2.length > 0) return u2;
-          return fallbackSelf();
-        } catch (e2) {
-          return fallbackSelf();
-        }
+      } catch (e2) {
+        devLog('[InboxV2] getAllUsers failed:', e2);
       }
+
+      // Last resort
+      return fallbackSelf();
     },
     enabled: !!user,
     ...QUERY_CONFIG.reference,
