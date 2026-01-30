@@ -38,8 +38,9 @@ async function acquireLock(base44, scopeKey, runId) {
   const now = Date.now();
   const lockUntil = syncState.lock_until ? new Date(syncState.lock_until).getTime() : 0;
 
+  // LOCK SELF-HEAL: If lock_until is in past, treat as unlocked
   if (lockUntil > now) {
-    // Lock held
+    // Lock held by another process
     return { acquired: false, reason: 'locked', locked_until: syncState.lock_until, syncState };
   }
 
