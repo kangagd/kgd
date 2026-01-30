@@ -346,6 +346,24 @@ Deno.serve(async (req) => {
       messages_failed: 0
     };
 
+    // If no history ID exists, bootstrap with current history ID and enter backfill mode
+    if (!syncState.last_history_id && syncState.backfill_mode === 'off') {
+      if (DEBUG) console.log('[gmailSyncDelta] No history ID - bootstrapping and entering backfill mode');
+      
+      // Get current history ID to establish baseline
+      const currentHistoryId = await getCurrentHistoryId();
+      
+      // Update state to start backfill from today going backwards
+      syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
+        last_history_id: currentHistoryId,
+        backfill_mode: 'catchup',
+        backfill_cursor: new Date().toISOString(),
+        backfill_window_days: 7
+      });
+      
+      mode = 'backfill';
+    }
+
     // Attempt delta if history ID exists
     if (syncState.last_history_id && syncState.backfill_mode === 'off') {
       try {
