@@ -36,15 +36,33 @@ async function acquireLock(base44, scopeKey, runId) {
   }
 
   const now = Date.now();
-  const lockUntil = syncState.lock_until ? new Date(syncState.lock_until).getTime() : 0;
-
-  // LOCK SELF-HEAL: If lock_until is in past, treat as unlocked
-  if (lockUntil > now) {
-    // Lock held by another process
-    return { acquired: false, reason: 'locked', locked_until: syncState.lock_until, syncState };
+  
+  // LOCK SELF-HEAL: Check if lock is stale
+  if (syncState.lock_until) {
+    const lockUntilMs = new Date(syncState.lock_until).getTime();
+    
+    // Invalid date or NaN
+    if (!Number.isFinite(lockUntilMs)) {
+      console.log(`[acquireLock] Invalid lock_until, clearing stale lock`);
+      // Clear stale lock and proceed
+      syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
+        lock_until: null,
+        lock_owner: null
+      });
+    } else if (lockUntilMs > now) {
+      // Lock is still valid
+      return { acquired: false, reason: 'locked', locked_until: syncState.lock_until, syncState };
+    } else {
+      // Lock expired, clear it
+      console.log(`[acquireLock] Lock expired (${syncState.lock_until}), clearing stale lock`);
+      syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
+        lock_until: null,
+        lock_owner: null
+      });
+    }
   }
 
-  // Try to acquire lock
+  // Acquire lock
   syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
     lock_until: new Date(now + LOCK_TTL_MS).toISOString(),
     lock_owner: runId
