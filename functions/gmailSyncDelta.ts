@@ -11,6 +11,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 const DEBUG = false;
 
+const WATCH_LABELS = ["INBOX", "SENT"];
+
 // ============================================================================
 // Gmail Fetch Helpers (reuse from gmailSyncThreadMessages)
 // ============================================================================
