@@ -348,7 +348,7 @@ Deno.serve(async (req) => {
 
     // If no history ID exists, bootstrap with current history ID and enter backfill mode
     if (!syncState.last_history_id && syncState.backfill_mode === 'off') {
-      if (DEBUG) console.log('[gmailSyncDelta] No history ID - bootstrapping and entering backfill mode');
+      console.log('[gmailSyncDelta] No history ID - bootstrapping and entering backfill mode');
       
       // Get current history ID to establish baseline
       const currentHistoryId = await getCurrentHistoryId();
@@ -367,6 +367,7 @@ Deno.serve(async (req) => {
     // Attempt delta if history ID exists
     if (syncState.last_history_id && syncState.backfill_mode === 'off') {
       try {
+        console.log(`[gmailSyncDelta] Delta mode - startHistoryId: ${syncState.last_history_id}`);
         const { messageIds, newHistoryId, pageCount } = await fetchHistoryDelta(
           syncState.last_history_id,
           maxHistoryPages
@@ -374,6 +375,8 @@ Deno.serve(async (req) => {
 
         counts.history_pages = pageCount;
         counts.message_ids_changed = messageIds.size;
+        
+        console.log(`[gmailSyncDelta] Delta found ${messageIds.size} changed messages`);
         
         // Process messages
         if (messageIds.size > 0) {
@@ -383,6 +386,20 @@ Deno.serve(async (req) => {
             runId 
           });
           Object.assign(counts, processCounts);
+          
+          console.log(`[gmailSyncDelta] Processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created`);
+        }
+        
+        // INVARIANT: If we found changed messages but didn't fetch any, something is broken
+        if (messageIds.size > 0 && counts.messages_fetched === 0) {
+          console.error('[gmailSyncDelta] INVARIANT VIOLATION: messageIds collected but not processed');
+          return Response.json({
+            success: false,
+            run_id: runId,
+            reason: 'delta-collected-but-not-processed',
+            message_ids_changed: messageIds.size,
+            counts
+          }, { status: 500 });
         }
         
         // Update state
@@ -393,10 +410,10 @@ Deno.serve(async (req) => {
           consecutive_failures: 0
         });
 
-        if (DEBUG) console.log(`[gmailSyncDelta] Delta: ${pageCount} pages, ${messageIds.size} messages changed, ${counts.messages_fetched} fetched`);
+        console.log(`[gmailSyncDelta] Delta complete: ${counts.messages_fetched} messages fetched`);
 
         return Response.json({
-          success: messageIds.size === 0 || counts.messages_fetched > 0,
+          success: true,
           run_id: runId,
           mode,
           counts,
@@ -406,7 +423,7 @@ Deno.serve(async (req) => {
         if (err.message.includes('404') || err.message.includes('Invalid')) {
           // History expired; enter backfill mode
           mode = 'backfill';
-          if (DEBUG) console.log(`[gmailSyncDelta] History expired, entering backfill`);
+          console.log(`[gmailSyncDelta] History expired, entering backfill`);
         } else {
           throw err;
         }
