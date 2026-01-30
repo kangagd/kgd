@@ -190,17 +190,78 @@ async function fetchHistoryDelta(startHistoryId, maxPages = 10) {
 }
 
 /**
- * Fetch full message details for a list of message IDs
- * Calls gmailSyncThreadMessages for each batch
+ * Process Gmail message IDs - fetches and syncs to EmailMessage
+ * Returns: { messages_fetched, messages_created, messages_upgraded, messages_skipped_existing, messages_failed, deleted_count }
  */
-async function fetchMessagesForSync(messageIds, base44, runId) {
-  const results = { created: 0, upgraded: 0, failed: 0 };
-  
-  // Invoke gmailSyncThreadMessages for each unique thread
-  // (simplified: for now, we'll just return counts; in production, integrate with existing message sync)
-  
-  // Placeholder: these counts would come from actual message processing
-  return results;
+async function processMessageIds({ messageIds, base44, runId }) {
+  const counts = {
+    messages_fetched: 0,
+    messages_created: 0,
+    messages_upgraded: 0,
+    messages_skipped_existing: 0,
+    messages_failed: 0,
+    deleted_count: 0
+  };
+
+  // Deduplicate and cap
+  const uniqueIds = [...new Set(messageIds)];
+  const MAX_MESSAGES_PER_RUN = 500;
+  const idsToProcess = uniqueIds.slice(0, MAX_MESSAGES_PER_RUN);
+
+  if (DEBUG && uniqueIds.length > MAX_MESSAGES_PER_RUN) {
+    console.log(`[gmailSyncDelta] Capped ${uniqueIds.length} messages to ${MAX_MESSAGES_PER_RUN}`);
+  }
+
+  // Group messages by thread to invoke gmailSyncThreadMessages
+  const threadMap = new Map();
+
+  for (const msgId of idsToProcess) {
+    try {
+      // Fetch message to get thread ID
+      const gmailMsg = await gmailFetch(`/gmail/v1/users/me/messages/${msgId}`, 'GET', { format: 'minimal' });
+      
+      if (!threadMap.has(gmailMsg.threadId)) {
+        threadMap.set(gmailMsg.threadId, []);
+      }
+      threadMap.get(gmailMsg.threadId).push(msgId);
+      counts.messages_fetched++;
+    } catch (err) {
+      if (err.message.includes('404')) {
+        // Message deleted
+        try {
+          const existing = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id: msgId });
+          if (existing.length > 0) {
+            await base44.asServiceRole.entities.EmailMessage.update(existing[0].id, { is_deleted: true });
+            counts.deleted_count++;
+          }
+        } catch (delErr) {
+          console.error(`[gmailSyncDelta] Failed to mark deleted: ${msgId}`, delErr.message);
+        }
+      } else {
+        counts.messages_failed++;
+        console.error(`[gmailSyncDelta] Failed to fetch message ${msgId}:`, err.message);
+      }
+    }
+  }
+
+  // Process each thread
+  for (const [threadId, msgIds] of threadMap.entries()) {
+    try {
+      const response = await base44.functions.invoke('gmailSyncThreadMessages', { 
+        gmail_thread_id: threadId 
+      });
+      
+      const result = response.data || {};
+      counts.messages_created += result.okCount || 0;
+      counts.messages_upgraded += result.partialCount || 0;
+      counts.messages_failed += result.failedCount || 0;
+    } catch (err) {
+      console.error(`[gmailSyncDelta] Failed to sync thread ${threadId}:`, err.message);
+      counts.messages_failed += msgIds.length;
+    }
+  }
+
+  return counts;
 }
 
 // ============================================================================
