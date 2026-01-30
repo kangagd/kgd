@@ -269,10 +269,29 @@ async function fetchHistoryDelta(startHistoryId, maxPages = 10) {
 }
 
 /**
+ * Mark deleted messages in database
+ */
+async function markDeleted(base44, deletedIds) {
+  let count = 0;
+  for (const msgId of deletedIds) {
+    try {
+      const existing = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id: msgId });
+      if (existing.length > 0) {
+        await base44.asServiceRole.entities.EmailMessage.update(existing[0].id, { is_deleted: true });
+        count++;
+      }
+    } catch (err) {
+      // Ignore - record may not exist
+    }
+  }
+  return count;
+}
+
+/**
  * Process Gmail message IDs - fetches and syncs to EmailMessage
  * Returns: { messages_fetched, messages_created, messages_upgraded, messages_skipped_existing, messages_failed, deleted_count }
  */
-async function processMessageIds({ messageIds, base44, runId }) {
+async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 500 }) {
   const counts = {
     messages_fetched: 0,
     messages_created: 0,
@@ -284,11 +303,11 @@ async function processMessageIds({ messageIds, base44, runId }) {
 
   // Deduplicate and cap
   const uniqueIds = [...new Set(messageIds)];
-  const MAX_MESSAGES_PER_RUN = 500;
-  const idsToProcess = uniqueIds.slice(0, MAX_MESSAGES_PER_RUN);
+  const cap = Math.min(maxMessagesFetched || 500, 500);
+  const idsToProcess = uniqueIds.slice(0, cap);
 
-  if (DEBUG && uniqueIds.length > MAX_MESSAGES_PER_RUN) {
-    console.log(`[gmailSyncDelta] Capped ${uniqueIds.length} messages to ${MAX_MESSAGES_PER_RUN}`);
+  if (DEBUG && uniqueIds.length > cap) {
+    console.log(`[gmailSyncDelta] Capped ${uniqueIds.length} messages to ${cap}`);
   }
 
   // Group messages by thread to invoke gmailSyncThreadMessages
