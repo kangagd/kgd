@@ -19,7 +19,9 @@ Deno.serve(async (req) => {
     }
 
     // Use service role to bypass EmailThread entity RLS
-    const threads = await base44.asServiceRole.entities.EmailThread.list('-last_message_date');
+    // Fetch with explicit limit (default is 50, increase to show more threads)
+    const limit = 200; // Increased from default 50
+    const threads = await base44.asServiceRole.entities.EmailThread.list('-last_message_date', limit);
 
     return Response.json({ threads });
   } catch (error) {
