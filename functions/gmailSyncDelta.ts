@@ -595,7 +595,8 @@ Deno.serve(async (req) => {
         const processCounts = await processMessageIds({ 
           messageIds: Array.from(messageIds), 
           base44, 
-          runId 
+          runId,
+          maxMessagesFetched
         });
         Object.assign(counts, processCounts);
         
