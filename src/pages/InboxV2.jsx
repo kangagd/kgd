@@ -379,7 +379,7 @@ export default function InboxV2() {
       setLastThreadFetchTime(Date.now());
       devLog('[InboxV2] Fetch threads via backend function');
       try {
-        const response = await base44.functions.invoke("getMyEmailThreads", { limit: 100 });
+        const response = await base44.functions.invoke("getMyEmailThreads", {});
         const fetchedThreads = response.data?.threads || [];
 
         const result = fetchedThreads
