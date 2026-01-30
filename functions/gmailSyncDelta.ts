@@ -332,7 +332,7 @@ async function filterMissingEmailMessageIds({ base44, messageIds, maxMissing = 1
  * Process Gmail message IDs - fetches and syncs to EmailMessage
  * Returns: { messages_fetched, messages_created, messages_upgraded, messages_skipped_existing, messages_failed, deleted_count }
  */
-async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 500 }) {
+async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 50 }) {
   const counts = {
     messages_fetched: 0,
     messages_created: 0,
@@ -342,9 +342,9 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
     deleted_count: 0
   };
 
-  // Deduplicate and cap
+  // Deduplicate and cap (reduced to avoid DB rate limits)
   const uniqueIds = [...new Set(messageIds)];
-  const cap = Math.min(maxMessagesFetched || 500, 500);
+  const cap = Math.min(maxMessagesFetched || 50, 50);
   const idsToProcess = uniqueIds.slice(0, cap);
 
   if (DEBUG && uniqueIds.length > cap) {
@@ -398,17 +398,17 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
 
       processedCount++;
 
-      // Rate limiting: wait 100ms every 10 threads to avoid 429s
-      if (processedCount % 10 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+      // Rate limiting: aggressive delays to respect Base44 DB quota
+      if (processedCount % 5 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     } catch (err) {
       console.error(`[gmailSyncDelta] Failed to sync thread ${threadId}:`, err.message);
       counts.messages_failed += msgIds.length;
 
       // If we hit rate limit, wait longer before continuing
-      if (err.message?.includes('429')) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      if (err.message?.includes('429') || err.message?.includes('Rate limit')) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }
     }
   }
@@ -470,7 +470,7 @@ Deno.serve(async (req) => {
 
     const runId = crypto.randomUUID();
     const maxHistoryPages = max_history_pages || 10;
-    const maxMessagesFetched = max_messages_fetched || 500;
+    const maxMessagesFetched = max_messages_fetched || 50;
 
     if (!scope_key) {
       return Response.json({ error: 'Missing scope_key' }, { status: 400 });
