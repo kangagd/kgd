@@ -289,9 +289,7 @@ async function fetchBackfillMessages(cursorDate, windowDays, base44, runId) {
   const afterDate = startDate.toISOString().split('T')[0].replace(/-/g, '/');
   const beforeDate = endDate.toISOString().split('T')[0].replace(/-/g, '/');
 
-  // Fetch ALL messages in date range, not just INBOX/SENT
-  // This includes automated emails, notifications, etc that might not have standard labels
-  const q = `after:${afterDate} before:${beforeDate}`;
+  const q = `after:${afterDate} before:${beforeDate} (label:INBOX OR label:SENT)`;
 
   const messages = [];
   let pageToken = null;
