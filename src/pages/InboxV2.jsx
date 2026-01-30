@@ -492,15 +492,36 @@ export default function InboxV2() {
 
     // Set sync in progress
     syncInFlightRef.current = true;
+    const SYNC_TIMEOUT_MS = 45000;
+    let timeoutId;
+
     try {
       if (mountedRef.current) setIsSyncing(true);
       
-      const result = await base44.functions.invoke("gmailSyncOrchestrated", {});
+      // Hard timeout watchdog
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error('Sync timeout'));
+        }, SYNC_TIMEOUT_MS);
+      });
+
+      const syncPromise = base44.functions.invoke("gmailSyncOrchestrated", {});
+      const result = await Promise.race([syncPromise, timeoutPromise]);
+
+      clearTimeout(timeoutId);
 
       // Handle sync lock (already in progress on backend)
       if (result?.skipped && result?.reason === 'locked') {
         devLog(`[InboxV2] Sync already running, locked until ${result.locked_until}`);
-        if (mountedRef.current) toast.info("Sync already running. Please wait and try again.", { duration: 3000 });
+        if (mountedRef.current) {
+          setIsSyncing(false);
+          syncInFlightRef.current = false;
+          toast.info("Sync already running. Will retry shortly.", { duration: 3000 });
+          // Retry after 30 seconds
+          setTimeout(() => {
+            if (mountedRef.current) syncGmailInbox();
+          }, 30000);
+        }
         return;
       }
 
@@ -517,8 +538,15 @@ export default function InboxV2() {
 
       if (result?.errors?.length) devLog("Sync completed with errors:", result.errors);
     } catch (error) {
+      clearTimeout(timeoutId);
       devLog("Sync failed:", error);
-      if (mountedRef.current) toast.error("Failed to sync emails");
+      if (mountedRef.current) {
+        if (error.message === 'Sync timeout') {
+          toast.error("Email sync timed out. Try again.");
+        } else {
+          toast.error("Failed to sync emails");
+        }
+      }
     } finally {
       if (mountedRef.current) setIsSyncing(false);
       syncInFlightRef.current = false;
