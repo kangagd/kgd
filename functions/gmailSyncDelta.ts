@@ -406,6 +406,16 @@ Deno.serve(async (req) => {
 
       counts.message_ids_changed = messageIds.size;
       
+      // Process messages
+      if (messageIds.size > 0) {
+        const processCounts = await processMessageIds({ 
+          messageIds: Array.from(messageIds), 
+          base44, 
+          runId 
+        });
+        Object.assign(counts, processCounts);
+      }
+      
       const nextCursor = new Date(cursorDate);
       nextCursor.setDate(nextCursor.getDate() - windowDays);
 
@@ -428,10 +438,10 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (DEBUG) console.log(`[gmailSyncDelta] Backfill: ${pageCount} pages, ${messageIds.size} messages, mode -> ${nextBackfillMode}`);
+      if (DEBUG) console.log(`[gmailSyncDelta] Backfill: ${pageCount} pages, ${messageIds.size} messages, ${counts.messages_fetched} fetched, mode -> ${nextBackfillMode}`);
 
       return Response.json({
-        success: true,
+        success: messageIds.size === 0 || counts.messages_fetched > 0,
         run_id: runId,
         mode,
         counts,
