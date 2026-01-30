@@ -29,6 +29,7 @@ async function acquireLock(base44, scopeKey, runId) {
       scope_key: scopeKey,
       lock_until: new Date(Date.now() + LOCK_TTL_MS).toISOString(),
       lock_owner: runId,
+      locked_at: new Date().toISOString(),
       consecutive_failures: 0,
       backfill_mode: 'off'
     });
@@ -36,18 +37,26 @@ async function acquireLock(base44, scopeKey, runId) {
   }
 
   const now = Date.now();
-  const lockUntil = syncState.lock_until ? new Date(syncState.lock_until).getTime() : 0;
+  const lockUntilMs = syncState.lock_until ? new Date(syncState.lock_until).getTime() : 0;
 
-  // LOCK SELF-HEAL: If lock_until is in past, treat as unlocked
-  if (lockUntil > now) {
-    // Lock held by another process
+  // LOCK SELF-HEAL: If lock_until is missing, invalid, or in past, clear lock fields
+  if (!syncState.lock_until || isNaN(lockUntilMs) || lockUntilMs <= now) {
+    // Auto-heal stale lock
+    syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
+      lock_until: null,
+      lock_owner: null,
+      locked_at: null
+    });
+  } else {
+    // Active lock held by another process
     return { acquired: false, reason: 'locked', locked_until: syncState.lock_until, syncState };
   }
 
-  // Try to acquire lock
+  // Acquire lock
   syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
     lock_until: new Date(now + LOCK_TTL_MS).toISOString(),
-    lock_owner: runId
+    lock_owner: runId,
+    locked_at: new Date().toISOString()
   });
 
   return { acquired: true, syncState };
