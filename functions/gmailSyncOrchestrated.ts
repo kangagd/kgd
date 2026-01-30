@@ -79,8 +79,12 @@ async function attemptCidResolutionBatch(base44, maxBatch = 25) {
 
       // Attempt resolution (non-blocking)
       try {
-        // This would call attemptResolveInlineCids; for now, skip to avoid circular dependency
-        // In production, invoke the function or call it directly
+        const result = await base44.functions.invoke('attemptResolveInlineCids', {
+          message_id: message.id
+        });
+        if (result.data?.resolved) {
+          resolved++;
+        }
       } catch (err) {
         // Silently continue; CID resolution failures don't block the sync
       }
