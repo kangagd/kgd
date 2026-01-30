@@ -437,9 +437,13 @@ Deno.serve(async (req) => {
       const cursorDate = syncState.backfill_cursor ? new Date(syncState.backfill_cursor) : now;
       const windowDays = syncState.backfill_window_days || 7;
 
+      console.log(`[gmailSyncDelta] Backfill mode - cursor: ${cursorDate.toISOString()}, window: ${windowDays} days`);
+
       const { messageIds, pageCount } = await fetchBackfillMessages(cursorDate, windowDays, base44, runId);
 
       counts.message_ids_changed = messageIds.size;
+      
+      console.log(`[gmailSyncDelta] Backfill found ${messageIds.size} messages`);
       
       // Process messages
       if (messageIds.size > 0) {
@@ -449,6 +453,20 @@ Deno.serve(async (req) => {
           runId 
         });
         Object.assign(counts, processCounts);
+        
+        console.log(`[gmailSyncDelta] Backfill processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created`);
+      }
+      
+      // INVARIANT: If we found messages but didn't process them, fail loudly
+      if (messageIds.size > 0 && counts.messages_fetched === 0) {
+        console.error('[gmailSyncDelta] INVARIANT VIOLATION: backfill collected but not processed');
+        return Response.json({
+          success: false,
+          run_id: runId,
+          reason: 'backfill-collected-but-not-processed',
+          message_ids_changed: messageIds.size,
+          counts
+        }, { status: 500 });
       }
       
       const nextCursor = new Date(cursorDate);
@@ -471,12 +489,13 @@ Deno.serve(async (req) => {
         syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
           last_history_id: freshHistoryId
         });
+        console.log(`[gmailSyncDelta] Backfill complete - set history ID: ${freshHistoryId}`);
       }
 
-      if (DEBUG) console.log(`[gmailSyncDelta] Backfill: ${pageCount} pages, ${messageIds.size} messages, ${counts.messages_fetched} fetched, mode -> ${nextBackfillMode}`);
+      console.log(`[gmailSyncDelta] Backfill: ${pageCount} pages, ${messageIds.size} messages, ${counts.messages_fetched} fetched, mode -> ${nextBackfillMode}`);
 
       return Response.json({
-        success: messageIds.size === 0 || counts.messages_fetched > 0,
+        success: true,
         run_id: runId,
         mode,
         counts,
