@@ -520,57 +520,49 @@ Deno.serve(async (req) => {
     if (syncState.last_history_id && syncState.backfill_mode === 'off') {
       try {
         console.log(`[gmailSyncDelta] Delta mode - startHistoryId: ${syncState.last_history_id}`);
-        const { messageIds, deletedIds, newHistoryId, pageCount, debugBreakdown } = await fetchHistoryDelta(
+        
+        // STEP 1: History delta collection (optimisation)
+        const hist = await fetchHistoryDelta(
           syncState.last_history_id,
           maxHistoryPages
         );
 
-        counts.history_pages = pageCount;
-        counts.message_ids_changed = messageIds.size;
+        counts.history_pages = hist.pageCount;
+        const historyMessageIds = hist.messageIds || new Set();
         
-        console.log(`[gmailSyncDelta] Delta found ${messageIds.size} changed messages, ${deletedIds.size} deleted`);
+        console.log(`[gmailSyncDelta] History found ${historyMessageIds.size} changed messages, ${hist.deletedIds?.size || 0} deleted`);
         
         // Mark deleted messages
-        if (deletedIds.size > 0) {
-          const deletedCount = await markDeleted(base44, deletedIds);
+        if (hist.deletedIds?.size > 0) {
+          const deletedCount = await markDeleted(base44, hist.deletedIds);
           counts.deleted_count = deletedCount;
         }
         
-        // Verify recent inbox if delta returned 0 (fallback for quirky Gmail History)
-        let verifyAdded = 0;
-        let verifyUsed = false;
-        if (messageIds.size === 0) {
-          const lastDelta = syncState.last_delta_sync_at ? new Date(syncState.last_delta_sync_at) : null;
-          const minutesSinceLastDelta = lastDelta ? (Date.now() - lastDelta.getTime()) / 60000 : 999;
-          
-          if (minutesSinceLastDelta > 2) {
-            try {
-              const verifyResult = await gmailFetch('/gmail/v1/users/me/messages', 'GET', {
-                q: 'newer_than:2d label:inbox',
-                maxResults: 50
-              });
-              
-              if (verifyResult.messages) {
-                const verifyIds = verifyResult.messages.map(m => m.id);
-                for (const msgId of verifyIds.slice(0, 25)) {
-                  const exists = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id: msgId });
-                  if (exists.length === 0) {
-                    messageIds.add(msgId);
-                    verifyAdded++;
-                  }
-                }
-              }
-              verifyUsed = true;
-            } catch (verifyErr) {
-              console.error('[gmailSyncDelta] Verify recent inbox failed:', verifyErr.message);
-            }
-          }
-        }
+        // STEP 2: INBOX reconciliation (UNCONDITIONAL - source of truth)
+        console.log('[gmailSyncDelta] Running inbox reconciliation (7 days)');
+        const inboxRecentIds = await listRecentInboxMessageIds({ days: 7, maxResults: 200 });
+        const inboxMissingIds = await filterMissingEmailMessageIds({ 
+          base44, 
+          messageIds: inboxRecentIds, 
+          maxMissing: 100 
+        });
         
-        // Process messages
-        if (messageIds.size > 0) {
+        counts.inbox_recent_ids = inboxRecentIds.length;
+        counts.inbox_missing_ids = inboxMissingIds.length;
+        
+        console.log(`[gmailSyncDelta] Inbox reconcile: ${inboxRecentIds.length} recent, ${inboxMissingIds.length} missing in DB`);
+        
+        // STEP 3: Union history + inbox reconciliation
+        const unionIds = new Set([...Array.from(historyMessageIds), ...inboxMissingIds]);
+        counts.message_ids_changed = unionIds.size;
+        counts.history_message_ids = historyMessageIds.size;
+        
+        console.log(`[gmailSyncDelta] Union: ${unionIds.size} total message IDs to process`);
+        
+        // STEP 4: Process messages
+        if (unionIds.size > 0) {
           const processCounts = await processMessageIds({ 
-            messageIds: Array.from(messageIds), 
+            messageIds: Array.from(unionIds), 
             base44, 
             runId,
             maxMessagesFetched
@@ -580,9 +572,20 @@ Deno.serve(async (req) => {
           console.log(`[gmailSyncDelta] Processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created`);
         }
         
+        // Invariant check
+        if (unionIds.size > 0 && counts.messages_fetched === 0) {
+          console.error('[gmailSyncDelta] INVARIANT VIOLATION: ids collected but not processed');
+          return Response.json({
+            success: false,
+            run_id: runId,
+            reason: 'ids-collected-but-not-processed',
+            counts
+          }, { status: 500 });
+        }
+        
         // Update state
         syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
-          last_history_id: newHistoryId,
+          last_history_id: hist.newHistoryId,
           last_delta_sync_at: new Date().toISOString(),
           last_success_at: new Date().toISOString(),
           consecutive_failures: 0
@@ -595,14 +598,12 @@ Deno.serve(async (req) => {
           run_id: runId,
           mode,
           counts,
-          new_last_history_id: newHistoryId,
+          new_last_history_id: hist.newHistoryId,
           debug: {
             history: {
-              pages: pageCount,
-              breakdown: debugBreakdown
-            },
-            verify_recent_inbox_used: verifyUsed,
-            verify_added_ids: verifyAdded
+              pages: hist.pageCount,
+              breakdown: hist.debugBreakdown
+            }
           }
         });
       } catch (err) {
