@@ -290,6 +290,45 @@ async function markDeleted(base44, deletedIds) {
 }
 
 /**
+ * List recent INBOX message IDs (bounded, for reconciliation)
+ */
+async function listRecentInboxMessageIds({ days = 7, maxResults = 200 }) {
+  const q = `label:inbox newer_than:${days}d`;
+  const ids = [];
+  let pageToken = null;
+
+  for (let page = 0; page < 3; page++) {
+    const params = { q, maxResults: String(Math.min(100, maxResults - ids.length)) };
+    if (pageToken) params.pageToken = pageToken;
+
+    const result = await gmailFetch('/gmail/v1/users/me/messages', 'GET', params);
+    if (result.messages?.length) {
+      for (const m of result.messages) {
+        if (m?.id) ids.push(m.id);
+        if (ids.length >= maxResults) break;
+      }
+    }
+    if (!result.nextPageToken || ids.length >= maxResults) break;
+    pageToken = result.nextPageToken;
+  }
+
+  return ids;
+}
+
+/**
+ * Filter message IDs not present in EmailMessage entity
+ */
+async function filterMissingEmailMessageIds({ base44, messageIds, maxMissing = 100 }) {
+  const missing = [];
+  for (const id of messageIds) {
+    const existing = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id: id });
+    if (!existing?.length) missing.push(id);
+    if (missing.length >= maxMissing) break;
+  }
+  return missing;
+}
+
+/**
  * Process Gmail message IDs - fetches and syncs to EmailMessage
  * Returns: { messages_fetched, messages_created, messages_upgraded, messages_skipped_existing, messages_failed, deleted_count }
  */
