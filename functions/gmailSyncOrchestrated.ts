@@ -147,23 +147,13 @@ Deno.serve(async (req) => {
       }
 
       // Phase 2: Run delta or backfill
-      const deltaResult = await (async () => {
-        try {
-          const res = await fetch('http://localhost:8000/gmailSyncDelta', {
-            method: 'POST',
-            body: JSON.stringify({
-              scope_key: scopeKey,
-              max_history_pages: 10,
-              max_messages_fetched: 500
-            })
-          });
+      const deltaResponse = await base44.functions.invoke('gmailSyncDelta', {
+        scope_key: scopeKey,
+        max_history_pages: 10,
+        max_messages_fetched: 500
+      });
 
-          if (!res.ok) throw new Error(await res.text());
-          return await res.json();
-        } catch (err) {
-          throw new Error(`Delta/backfill failed: ${err.message}`);
-        }
-      })();
+      const deltaResult = deltaResponse.data;
 
       if (!deltaResult.success) {
         throw new Error(deltaResult.error || 'Delta returned failure');
