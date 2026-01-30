@@ -479,7 +479,7 @@ Deno.serve(async (req) => {
     if (syncState.last_history_id && syncState.backfill_mode === 'off') {
       try {
         console.log(`[gmailSyncDelta] Delta mode - startHistoryId: ${syncState.last_history_id}`);
-        const { messageIds, newHistoryId, pageCount } = await fetchHistoryDelta(
+        const { messageIds, deletedIds, newHistoryId, pageCount, debugBreakdown } = await fetchHistoryDelta(
           syncState.last_history_id,
           maxHistoryPages
         );
@@ -487,30 +487,56 @@ Deno.serve(async (req) => {
         counts.history_pages = pageCount;
         counts.message_ids_changed = messageIds.size;
         
-        console.log(`[gmailSyncDelta] Delta found ${messageIds.size} changed messages`);
+        console.log(`[gmailSyncDelta] Delta found ${messageIds.size} changed messages, ${deletedIds.size} deleted`);
+        
+        // Mark deleted messages
+        if (deletedIds.size > 0) {
+          const deletedCount = await markDeleted(base44, deletedIds);
+          counts.deleted_count = deletedCount;
+        }
+        
+        // Verify recent inbox if delta returned 0 (fallback for quirky Gmail History)
+        let verifyAdded = 0;
+        let verifyUsed = false;
+        if (messageIds.size === 0) {
+          const lastDelta = syncState.last_delta_sync_at ? new Date(syncState.last_delta_sync_at) : null;
+          const minutesSinceLastDelta = lastDelta ? (Date.now() - lastDelta.getTime()) / 60000 : 999;
+          
+          if (minutesSinceLastDelta > 2) {
+            try {
+              const verifyResult = await gmailFetch('/gmail/v1/users/me/messages', 'GET', {
+                q: 'newer_than:2d label:inbox',
+                maxResults: 50
+              });
+              
+              if (verifyResult.messages) {
+                const verifyIds = verifyResult.messages.map(m => m.id);
+                for (const msgId of verifyIds.slice(0, 25)) {
+                  const exists = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id: msgId });
+                  if (exists.length === 0) {
+                    messageIds.add(msgId);
+                    verifyAdded++;
+                  }
+                }
+              }
+              verifyUsed = true;
+            } catch (verifyErr) {
+              console.error('[gmailSyncDelta] Verify recent inbox failed:', verifyErr.message);
+            }
+          }
+        }
         
         // Process messages
         if (messageIds.size > 0) {
           const processCounts = await processMessageIds({ 
             messageIds: Array.from(messageIds), 
             base44, 
-            runId 
+            runId,
+            maxMessagesFetched
           });
           Object.assign(counts, processCounts);
           
           console.log(`[gmailSyncDelta] Processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created`);
-        }
-        
-        // INVARIANT: If we found changed messages but didn't fetch any, something is broken
-        if (messageIds.size > 0 && counts.messages_fetched === 0) {
-          console.error('[gmailSyncDelta] INVARIANT VIOLATION: messageIds collected but not processed');
-          return Response.json({
-            success: false,
-            run_id: runId,
-            reason: 'delta-collected-but-not-processed',
-            message_ids_changed: messageIds.size,
-            counts
-          }, { status: 500 });
         }
         
         // Update state
@@ -528,7 +554,15 @@ Deno.serve(async (req) => {
           run_id: runId,
           mode,
           counts,
-          new_last_history_id: newHistoryId
+          new_last_history_id: newHistoryId,
+          debug: {
+            history: {
+              pages: pageCount,
+              breakdown: debugBreakdown
+            },
+            verify_recent_inbox_used: verifyUsed,
+            verify_added_ids: verifyAdded
+          }
         });
       } catch (err) {
         if (err.message.includes('404') || err.message.includes('Invalid')) {
