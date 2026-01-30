@@ -1471,6 +1471,21 @@ Link: ${threadLink}
               <History className="w-3 h-3" />
               Search Gmail History
             </button>
+            {user?.email === 'admin@kangaroogd.com.au' && (
+              <button
+                onClick={handleForceUnlock}
+                disabled={isSyncing}
+                className={`w-full px-3 py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                  isSyncing 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-red-50 hover:bg-red-100 text-red-700'
+                }`}
+                title="Force clear sync lock (admin only)"
+              >
+                <XIcon className="w-3 h-3" />
+                Force Unlock
+              </button>
+            )}
           </div>
 
           {/* List */}
