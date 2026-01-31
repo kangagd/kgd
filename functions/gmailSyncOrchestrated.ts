@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
       const deltaResponse = await base44.functions.invoke('gmailSyncDelta', {
         scope_key: scopeKey,
         max_history_pages: 10,
-        max_messages_fetched: 500
+        max_messages_fetched: 10
       });
 
       const deltaResult = deltaResponse.data;
