@@ -606,7 +606,7 @@ Deno.serve(async (req) => {
           body_text: finalBodyText,
           body_quality: finalQuality,
           body_extracted_at: finalQuality !== 'empty' ? now : existing?.body_extracted_at || null,
-          sent_at: headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString(),
+          sent_at: gmailMsg.internalDate ? new Date(parseInt(gmailMsg.internalDate)).toISOString() : (headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString()),
           is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
           attachments: incomingAttachments.length > 0 ? incomingAttachments : (existing?.attachments || []),
           has_body: hasBodyTruth(finalBodyHtml, finalBodyText),
