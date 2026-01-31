@@ -387,7 +387,7 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
   let processedCount = 0;
   for (const [threadId, msgIds] of threadMap.entries()) {
     try {
-      const response = await base44.functions.invoke('gmailSyncThreadMessages', { 
+      const response = await base44.asServiceRole.functions.invoke('gmailSyncThreadMessages', { 
         gmail_thread_id: threadId 
       });
 
