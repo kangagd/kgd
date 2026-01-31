@@ -794,7 +794,7 @@ export default function InboxV2() {
       // Use backend function for assignment (handles audit trail)
       const response = await base44.functions.invoke("assignEmailThread", {
         thread_id: selectedThread.id,
-        assigned_to_user_email: userEmail || null,
+        assigned_to_email: userEmail || null,
       });
       
       // Patch cache immediately (don't wait for refetch)
