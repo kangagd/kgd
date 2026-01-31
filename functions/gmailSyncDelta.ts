@@ -332,7 +332,7 @@ async function filterMissingEmailMessageIds({ base44, messageIds, maxMissing = 1
  * Process Gmail message IDs - fetches and syncs to EmailMessage
  * Returns: { messages_fetched, messages_created, messages_upgraded, messages_skipped_existing, messages_failed, deleted_count }
  */
-async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 50 }) {
+async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 10 }) {
   const counts = {
     messages_fetched: 0,
     messages_created: 0,
