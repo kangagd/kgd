@@ -469,11 +469,6 @@ function deriveSnippet(bodyText, maxLength = 140) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const bodyText = await req.text();
     const requestBody = bodyText ? JSON.parse(bodyText) : {};
