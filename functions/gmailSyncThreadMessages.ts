@@ -542,6 +542,7 @@ Deno.serve(async (req) => {
     let failedCount = 0;
     const failures = [];
     let newestSentAtMs = 0;
+    let newestHeaders = null;
 
     const now = new Date().toISOString();
 
@@ -609,10 +610,11 @@ Deno.serve(async (req) => {
           ? new Date(parseInt(gmailMsg.internalDate)).toISOString() 
           : (headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString());
         
-        // Track newest message timestamp for thread update
+        // Track newest message timestamp and headers for thread update
         const sentMs = new Date(sentAtIso).getTime();
-        if (Number.isFinite(sentMs) && sentMs > newestSentAtMs) {
+        if (Number.isFinite(sentMs) && sentMs >= newestSentAtMs) {
           newestSentAtMs = sentMs;
+          newestHeaders = headers;
         }
 
         // Build message data with monotonic body content + CID state
@@ -672,11 +674,13 @@ Deno.serve(async (req) => {
     }
 
     // Update thread last_message_date and snippet (single efficient query)
+    const lastMessageDate = newestSentAtMs 
+      ? new Date(newestSentAtMs).toISOString() 
+      : new Date().toISOString();
+    
+    const gmailMessageCount = threadDetail.messages?.length || syncedCount;
+
     try {
-      const lastMessageDate = newestSentAtMs 
-        ? new Date(newestSentAtMs).toISOString() 
-        : new Date().toISOString();
-      
       // Fetch latest message with body in single query
       const latestMessages = await base44.asServiceRole.entities.EmailMessage.filter(
         { thread_id: threadId, has_body: true },
@@ -686,8 +690,21 @@ Deno.serve(async (req) => {
 
       const updates = {
         last_message_date: lastMessageDate,
-        message_count: threadDetail.messages?.length || syncedCount
+        message_count: gmailMessageCount
       };
+
+      // Update header fields from newest message
+      if (newestHeaders) {
+        if (newestHeaders['subject']) {
+          updates.subject = sanitizeSubject(newestHeaders['subject']);
+        }
+        if (newestHeaders['from']) {
+          updates.from_address = newestHeaders['from'];
+        }
+        if (newestHeaders['to']) {
+          updates.to_addresses = newestHeaders['to'].split(',').map(e => e.trim()).filter(Boolean);
+        }
+      }
 
       if (latestMessages.length > 0) {
         const latestMsg = latestMessages[0];
@@ -709,7 +726,9 @@ Deno.serve(async (req) => {
       okCount,
       partialCount,
       failedCount,
-      failures
+      failures,
+      thread_last_message_date: lastMessageDate,
+      thread_message_count: gmailMessageCount
     });
   } catch (error) {
     console.error('[gmailSyncThreadMessages] Fatal error:', error.message);
