@@ -470,7 +470,7 @@ Deno.serve(async (req) => {
 
     const runId = crypto.randomUUID();
     const maxHistoryPages = max_history_pages || 10;
-    const maxMessagesFetched = max_messages_fetched || 50;
+    const maxMessagesFetched = max_messages_fetched || 10;
 
     if (!scope_key) {
       return Response.json({ error: 'Missing scope_key' }, { status: 400 });
