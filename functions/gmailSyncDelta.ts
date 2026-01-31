@@ -316,30 +316,41 @@ async function listRecentInboxMessageIds({ days = 7, maxResults = 200 }) {
 }
 
 /**
- * Filter message IDs not present in EmailMessage entity
+ * Filter message IDs not present in EmailMessage entity (BATCHED)
  */
-async function filterMissingEmailMessageIds({ base44, messageIds, maxMissing = 100 }) {
-  const missing = [];
-  for (const id of messageIds) {
-    const existing = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id: id });
-    if (!existing?.length) missing.push(id);
-    if (missing.length >= maxMissing) break;
-  }
-  return missing;
+async function filterMissingEmailMessageIds({ base44, messageIds, maxMissing = 50 }) {
+  if (!messageIds?.length) return [];
+  
+  // Cap input to avoid huge queries
+  const idsToCheck = messageIds.slice(0, 100);
+  
+  // Batch query: fetch all existing messages with these IDs
+  const existing = await base44.asServiceRole.entities.EmailMessage.filter({
+    gmail_message_id: { $in: idsToCheck }
+  });
+  
+  const existingSet = new Set(existing.map(m => m.gmail_message_id));
+  const missing = idsToCheck.filter(id => !existingSet.has(id));
+  
+  // Cap missing results
+  return missing.slice(0, maxMissing);
 }
 
 /**
  * Process Gmail message IDs - fetches and syncs to EmailMessage
  * Returns: { messages_fetched, messages_created, messages_upgraded, messages_skipped_existing, messages_failed, deleted_count }
  */
-async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 10 }) {
+async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 10, runStartedAt, maxRunMs }) {
   const counts = {
     messages_fetched: 0,
     messages_created: 0,
     messages_upgraded: 0,
     messages_skipped_existing: 0,
     messages_failed: 0,
-    deleted_count: 0
+    deleted_count: 0,
+    threads_queued: 0,
+    threads_capped: false,
+    budget_exhausted: false
   };
 
   // Deduplicate and cap (reduced to avoid DB rate limits)
@@ -353,13 +364,27 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
 
   // Group messages by thread to invoke gmailSyncThreadMessages
   const threadMap = new Map();
+  const MAX_THREADS_PER_RUN = 5;
 
   for (const msgId of idsToProcess) {
+    // Budget guard: stop if we're approaching timeout
+    if (runStartedAt && maxRunMs && Date.now() - runStartedAt > maxRunMs) {
+      counts.budget_exhausted = true;
+      console.log(`[gmailSyncDelta] Budget exhausted, stopping message fetch`);
+      break;
+    }
+
     try {
       // Fetch message to get thread ID
       const gmailMsg = await gmailFetch(`/gmail/v1/users/me/messages/${msgId}`, 'GET', { format: 'minimal' });
       
+      // Cap threads: stop adding new threads after MAX_THREADS_PER_RUN
       if (!threadMap.has(gmailMsg.threadId)) {
+        if (threadMap.size >= MAX_THREADS_PER_RUN) {
+          counts.threads_capped = true;
+          console.log(`[gmailSyncDelta] Thread cap reached (${MAX_THREADS_PER_RUN}), skipping remaining messages`);
+          break;
+        }
         threadMap.set(gmailMsg.threadId, []);
       }
       threadMap.get(gmailMsg.threadId).push(msgId);
@@ -383,9 +408,18 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
     }
   }
 
+  counts.threads_queued = threadMap.size;
+
   // Process each thread with rate limiting
   let processedCount = 0;
   for (const [threadId, msgIds] of threadMap.entries()) {
+    // Budget guard: stop if approaching timeout
+    if (runStartedAt && maxRunMs && Date.now() - runStartedAt > maxRunMs) {
+      counts.budget_exhausted = true;
+      console.log(`[gmailSyncDelta] Budget exhausted after processing ${processedCount} threads`);
+      break;
+    }
+
     try {
       const response = await base44.asServiceRole.functions.invoke('gmailSyncThreadMessages', { 
         gmail_thread_id: threadId 
@@ -457,6 +491,9 @@ async function fetchBackfillMessages(cursorDate, windowDays, base44, runId) {
 // ============================================================================
 
 Deno.serve(async (req) => {
+  const runStartedAt = Date.now();
+  const MAX_RUN_MS = 35000; // 35s budget (leaves headroom for orchestrator)
+
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -466,7 +503,7 @@ Deno.serve(async (req) => {
     }
 
     const bodyText = await req.text();
-    const { scope_key, max_history_pages, max_messages_fetched } = bodyText ? JSON.parse(bodyText) : {};
+    const { scope_key, max_history_pages, max_messages_fetched, force_reconcile } = bodyText ? JSON.parse(bodyText) : {};
 
     const runId = crypto.randomUUID();
     const maxHistoryPages = max_history_pages || 10;
@@ -492,10 +529,15 @@ Deno.serve(async (req) => {
     const counts = {
       history_pages: 0,
       message_ids_changed: 0,
+      history_message_ids: 0,
       messages_fetched: 0,
       messages_created: 0,
       messages_upgraded: 0,
-      messages_failed: 0
+      messages_failed: 0,
+      threads_queued: 0,
+      threads_capped: false,
+      budget_exhausted: false,
+      inbox_reconciled: false
     };
 
     // If no history ID exists, bootstrap with current history ID and enter backfill mode
@@ -529,6 +571,7 @@ Deno.serve(async (req) => {
 
         counts.history_pages = hist.pageCount;
         const historyMessageIds = hist.messageIds || new Set();
+        counts.history_message_ids = historyMessageIds.size;
         
         console.log(`[gmailSyncDelta] History found ${historyMessageIds.size} changed messages, ${hist.deletedIds?.size || 0} deleted`);
         
@@ -538,24 +581,35 @@ Deno.serve(async (req) => {
           counts.deleted_count = deletedCount;
         }
         
-        // STEP 2: INBOX reconciliation (UNCONDITIONAL - source of truth)
-        console.log('[gmailSyncDelta] Running inbox reconciliation (7 days)');
-        const inboxRecentIds = await listRecentInboxMessageIds({ days: 7, maxResults: 200 });
-        const inboxMissingIds = await filterMissingEmailMessageIds({ 
-          base44, 
-          messageIds: inboxRecentIds, 
-          maxMissing: 100 
-        });
+        // STEP 2: CONDITIONAL inbox reconciliation (only when needed)
+        let inboxMissingIds = [];
+        const shouldReconcile = 
+          force_reconcile === true || 
+          historyMessageIds.size === 0 && (!syncState.last_success_at || Date.now() - new Date(syncState.last_success_at).getTime() > 10 * 60 * 1000) ||
+          (syncState.consecutive_failures || 0) > 0 ||
+          syncState.backfill_mode !== 'off';
         
-        counts.inbox_recent_ids = inboxRecentIds.length;
-        counts.inbox_missing_ids = inboxMissingIds.length;
-        
-        console.log(`[gmailSyncDelta] Inbox reconcile: ${inboxRecentIds.length} recent, ${inboxMissingIds.length} missing in DB`);
+        if (shouldReconcile) {
+          console.log('[gmailSyncDelta] Running inbox reconciliation (conditional)');
+          const inboxRecentIds = await listRecentInboxMessageIds({ days: 7, maxResults: 100 });
+          inboxMissingIds = await filterMissingEmailMessageIds({ 
+            base44, 
+            messageIds: inboxRecentIds, 
+            maxMissing: 50 
+          });
+          
+          counts.inbox_recent_ids = inboxRecentIds.length;
+          counts.inbox_missing_ids = inboxMissingIds.length;
+          counts.inbox_reconciled = true;
+          
+          console.log(`[gmailSyncDelta] Inbox reconcile: ${inboxRecentIds.length} recent, ${inboxMissingIds.length} missing in DB`);
+        } else {
+          console.log('[gmailSyncDelta] Skipping inbox reconciliation (not needed)');
+        }
         
         // STEP 3: Union history + inbox reconciliation
         const unionIds = new Set([...Array.from(historyMessageIds), ...inboxMissingIds]);
         counts.message_ids_changed = unionIds.size;
-        counts.history_message_ids = historyMessageIds.size;
         
         console.log(`[gmailSyncDelta] Union: ${unionIds.size} total message IDs to process`);
         
@@ -565,11 +619,13 @@ Deno.serve(async (req) => {
             messageIds: Array.from(unionIds), 
             base44, 
             runId,
-            maxMessagesFetched
+            maxMessagesFetched,
+            runStartedAt,
+            maxRunMs: MAX_RUN_MS
           });
           Object.assign(counts, processCounts);
           
-          console.log(`[gmailSyncDelta] Processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created`);
+          console.log(`[gmailSyncDelta] Processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created, budget_exhausted: ${processCounts.budget_exhausted}`);
         }
         
         // Invariant check
@@ -591,7 +647,10 @@ Deno.serve(async (req) => {
           consecutive_failures: 0
         });
 
-        console.log(`[gmailSyncDelta] Delta complete: ${counts.messages_fetched} messages fetched`);
+        const elapsedMs = Date.now() - runStartedAt;
+        counts.budget_remaining_ms = MAX_RUN_MS - elapsedMs;
+
+        console.log(`[gmailSyncDelta] Delta complete: ${counts.messages_fetched} messages fetched, ${elapsedMs}ms elapsed`);
 
         return Response.json({
           success: true,
@@ -603,7 +662,8 @@ Deno.serve(async (req) => {
             history: {
               pages: hist.pageCount,
               breakdown: hist.debugBreakdown
-            }
+            },
+            elapsed_ms: elapsedMs
           }
         });
       } catch (err) {
@@ -638,11 +698,13 @@ Deno.serve(async (req) => {
           messageIds: Array.from(messageIds), 
           base44, 
           runId,
-          maxMessagesFetched
+          maxMessagesFetched,
+          runStartedAt,
+          maxRunMs: MAX_RUN_MS
         });
         Object.assign(counts, processCounts);
         
-        console.log(`[gmailSyncDelta] Backfill processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created`);
+        console.log(`[gmailSyncDelta] Backfill processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created, budget_exhausted: ${processCounts.budget_exhausted}`);
       }
       
       // INVARIANT: If we found messages but didn't process them, fail loudly
@@ -680,14 +742,20 @@ Deno.serve(async (req) => {
         console.log(`[gmailSyncDelta] Backfill complete - set history ID: ${freshHistoryId}`);
       }
 
-      console.log(`[gmailSyncDelta] Backfill: ${pageCount} pages, ${messageIds.size} messages, ${counts.messages_fetched} fetched, mode -> ${nextBackfillMode}`);
+      const elapsedMs = Date.now() - runStartedAt;
+      counts.budget_remaining_ms = MAX_RUN_MS - elapsedMs;
+
+      console.log(`[gmailSyncDelta] Backfill: ${pageCount} pages, ${messageIds.size} messages, ${counts.messages_fetched} fetched, mode -> ${nextBackfillMode}, ${elapsedMs}ms elapsed`);
 
       return Response.json({
         success: true,
         run_id: runId,
         mode,
         counts,
-        next_backfill_mode: nextBackfillMode
+        next_backfill_mode: nextBackfillMode,
+        debug: {
+          elapsed_ms: elapsedMs
+        }
       });
     }
 
@@ -695,7 +763,10 @@ Deno.serve(async (req) => {
       success: true,
       run_id: runId,
       mode: 'idle',
-      counts
+      counts,
+      debug: {
+        elapsed_ms: Date.now() - runStartedAt
+      }
     });
   } catch (error) {
     console.error(`[gmailSyncDelta] Error:`, error.message);
