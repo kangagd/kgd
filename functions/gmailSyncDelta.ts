@@ -344,7 +344,7 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
 
   // Deduplicate and cap (reduced to avoid DB rate limits)
   const uniqueIds = [...new Set(messageIds)];
-  const cap = Math.min(maxMessagesFetched || 50, 50);
+  const cap = Math.min(maxMessagesFetched || 10, 10);
   const idsToProcess = uniqueIds.slice(0, cap);
 
   if (DEBUG && uniqueIds.length > cap) {
