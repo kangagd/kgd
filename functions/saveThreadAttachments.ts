@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { decodeBase64UrlToBytes } from './shared/base64UrlDecoder.ts';
 
 // Helper to refresh Gmail token (copied from getGmailAttachment)
