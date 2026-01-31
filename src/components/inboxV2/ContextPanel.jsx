@@ -297,7 +297,7 @@ export default function InboxV2ContextPanel({
     mutationFn: async (userEmail) => {
       const response = await base44.functions.invoke('assignEmailThread', {
         thread_id: thread.id,
-        assigned_to_user_email: userEmail || null,
+        assigned_to_email: userEmail || null,
       });
       return response.data;
     },
