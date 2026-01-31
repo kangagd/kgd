@@ -1393,11 +1393,11 @@ Link: ${threadLink}
           {activeView === "threads" && !selectionMode && (
             <div className="px-3 py-2 border-b border-[#E5E7EB] flex gap-1 flex-wrap">
               {[
-                { key: 'unassigned', label: 'Unassigned' },
-                { key: 'my-actions', label: 'My Actions' },
-                { key: 'waiting', label: 'Waiting' },
-                { key: 'fyi', label: 'FYI' },
-                { key: 'done', label: 'Done' },
+                { key: 'unassigned', label: 'Unassigned', countKey: 'unassigned' },
+                { key: 'my-actions', label: 'My Actions', countKey: 'my_actions' },
+                { key: 'waiting', label: 'Waiting', countKey: 'waiting' },
+                { key: 'fyi', label: 'FYI', countKey: 'fyi' },
+                { key: 'done', label: 'Done', countKey: 'done' },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -1408,7 +1408,7 @@ Link: ${threadLink}
                       : 'bg-white text-[#6B7280] hover:bg-[#F3F4F6]'
                   }`}
                 >
-                  {tab.label} ({workflowCounts[tab.key] || 0})
+                  {tab.label} ({workflowCounts[tab.countKey] || 0})
                 </button>
               ))}
             </div>
