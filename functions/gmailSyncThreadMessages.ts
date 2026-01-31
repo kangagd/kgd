@@ -513,12 +513,23 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Compute last_message_date from newest message internalDate
+      const newestMsg = threadDetail.messages.reduce((latest, msg) => {
+        const msgTime = msg.internalDate ? parseInt(msg.internalDate) : 0;
+        const latestTime = latest.internalDate ? parseInt(latest.internalDate) : 0;
+        return msgTime > latestTime ? msg : latest;
+      }, threadDetail.messages[0]);
+      
+      const lastMessageDate = newestMsg?.internalDate 
+        ? new Date(parseInt(newestMsg.internalDate)).toISOString()
+        : new Date().toISOString();
+
       const newThread = await base44.asServiceRole.entities.EmailThread.create({
         subject: sanitizeSubject(lastHeaders['subject']) || '(no subject)',
         gmail_thread_id: gmail_thread_id,
         from_address: lastHeaders['from'] || '',
         to_addresses: lastHeaders['to'] ? lastHeaders['to'].split(',').map(e => e.trim()) : [],
-        last_message_date: new Date().toISOString(),
+        last_message_date: lastMessageDate,
         message_count: threadDetail.messages.length
       });
       threadId = newThread.id;
@@ -530,6 +541,7 @@ Deno.serve(async (req) => {
     let partialCount = 0;
     let failedCount = 0;
     const failures = [];
+    let newestSentAtMs = 0;
 
     const now = new Date().toISOString();
 
@@ -592,6 +604,17 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Compute sent_at from Gmail internalDate (authoritative timestamp)
+        const sentAtIso = gmailMsg.internalDate 
+          ? new Date(parseInt(gmailMsg.internalDate)).toISOString() 
+          : (headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString());
+        
+        // Track newest message timestamp for thread update
+        const sentMs = new Date(sentAtIso).getTime();
+        if (Number.isFinite(sentMs) && sentMs > newestSentAtMs) {
+          newestSentAtMs = sentMs;
+        }
+
         // Build message data with monotonic body content + CID state
         const messageData = {
           thread_id: threadId,
@@ -606,7 +629,7 @@ Deno.serve(async (req) => {
           body_text: finalBodyText,
           body_quality: finalQuality,
           body_extracted_at: finalQuality !== 'empty' ? now : existing?.body_extracted_at || null,
-          sent_at: gmailMsg.internalDate ? new Date(parseInt(gmailMsg.internalDate)).toISOString() : (headers['date'] ? new Date(headers['date']).toISOString() : new Date().toISOString()),
+          sent_at: sentAtIso,
           is_outbound: headers['from']?.includes('kangaroogd.com.au') || false,
           attachments: incomingAttachments.length > 0 ? incomingAttachments : (existing?.attachments || []),
           has_body: hasBodyTruth(finalBodyHtml, finalBodyText),
@@ -648,26 +671,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update thread snippet from latest message
+    // Update thread last_message_date and snippet (single efficient query)
     try {
-      const latestMessages = await base44.asServiceRole.entities.EmailMessage.filter({
-        thread_id: threadId,
-        has_body: true
-      });
+      const lastMessageDate = newestSentAtMs 
+        ? new Date(newestSentAtMs).toISOString() 
+        : new Date().toISOString();
+      
+      // Fetch latest message with body in single query
+      const latestMessages = await base44.asServiceRole.entities.EmailMessage.filter(
+        { thread_id: threadId, has_body: true },
+        '-sent_at',
+        1
+      );
+
+      const updates = {
+        last_message_date: lastMessageDate,
+        message_count: threadDetail.messages?.length || syncedCount
+      };
 
       if (latestMessages.length > 0) {
-        // Sort by sent_at, get latest
-        latestMessages.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
         const latestMsg = latestMessages[0];
         const snippet = latestMsg.body_text ? deriveSnippet(latestMsg.body_text) : '';
-
-        await base44.asServiceRole.entities.EmailThread.update(threadId, {
-          snippet: snippet,
-          has_preview: !!snippet
-        });
+        updates.snippet = snippet;
+        updates.has_preview = !!snippet;
       }
+
+      await base44.asServiceRole.entities.EmailThread.update(threadId, updates);
     } catch (err) {
-      console.error('[gmailSyncThreadMessages] Error updating thread snippet:', err.message);
+      console.error('[gmailSyncThreadMessages] Error updating thread metadata:', err.message);
     }
 
     console.log(`[gmailSyncThreadMessages] Complete: synced=${syncedCount}, ok=${okCount}, partial=${partialCount}, failed=${failedCount}`);
