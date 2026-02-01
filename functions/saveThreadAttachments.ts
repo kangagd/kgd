@@ -6,6 +6,13 @@ async function refreshTokenIfNeeded(user, base44) {
   const expiry = user.gmail_token_expiry ? new Date(user.gmail_token_expiry) : new Date(0);
   const now = new Date();
   
+  // Guard against invalid dates
+  if (isNaN(expiry.getTime())) {
+    console.error('Invalid gmail_token_expiry:', user.gmail_token_expiry);
+    // Force refresh by treating as expired
+    expiry.setTime(0);
+  }
+  
   if (expiry - now < 5 * 60 * 1000) {
     const clientId = Deno.env.get('GMAIL_CLIENT_ID');
     const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
