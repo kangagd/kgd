@@ -171,12 +171,16 @@ export default function DraftsList({ onOpenDraft }) {
                        ? formatDistanceToNow(new Date(draft.updated_date), { addSuffix: true })
                        : "Not saved"}
                    </span>
-                    
-                    {linkedEntity && (
-                      <Badge variant="outline" className="text-xs">
-                        {linkedEntity.type}: {linkedEntity.label}
-                      </Badge>
-                    )}
+
+                   <Badge className={`text-xs ${getScopeBadgeColor(draft.draft_scope)}`}>
+                     {draft.draft_scope}
+                   </Badge>
+
+                   {linkedEntity && (
+                     <Badge variant="outline" className="text-xs">
+                       {linkedEntity.type}: {linkedEntity.label}
+                     </Badge>
+                   )}
                   </div>
 
 
