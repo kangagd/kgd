@@ -371,17 +371,21 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   // Only fetch inventory data when parts tab is active
   const { data: priceListItems = [] } = useQuery({
-    queryKey: ['priceListItems'],
+    queryKey: priceListKey,
     queryFn: () => base44.entities.PriceListItem.list(),
     enabled: activeTab === 'parts',
-    ...QUERY_CONFIG.reference
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: inventoryQuantities = [] } = useQuery({
-    queryKey: ['inventoryQuantities'],
+    queryKey: inventoryQtyKey,
     queryFn: () => base44.entities.InventoryQuantity.list(),
     enabled: activeTab === 'parts',
-    ...QUERY_CONFIG.reference
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const inventoryByItem = useMemo(() => {
