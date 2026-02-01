@@ -22,7 +22,7 @@ export default function DraftsList({ onOpenDraft }) {
       const user = await base44.auth.me();
       if (!user) return [];
       const allDrafts = await base44.entities.EmailDraft.filter(
-        { status: 'draft', created_by: user.email },
+        { status: 'active', created_by: user.email },
         "-updated_date"
       );
       return allDrafts;
