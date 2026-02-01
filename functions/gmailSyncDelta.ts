@@ -749,10 +749,25 @@ Deno.serve(async (req) => {
       
       console.log(`[gmailSyncDelta] Backfill found ${messageIds.size} messages`);
       
+      // Load pending queue
+      let pending = new Set();
+      try {
+        const pendingJson = syncState.pending_message_ids_json || '[]';
+        pending = new Set(JSON.parse(pendingJson));
+      } catch (err) {
+        console.warn('[gmailSyncDelta] Failed to parse pending queue, starting fresh');
+      }
+
+      // Enqueue backfill IDs
+      const newIds = messageIds;
+      newIds.forEach(id => pending.add(id));
+      counts.enqueued_count = newIds.size;
+      counts.message_ids_changed = pending.size;
+      
       // Process messages
-      if (messageIds.size > 0) {
-        const processCounts = await processMessageIds({ 
-          messageIds: Array.from(messageIds), 
+      if (pending.size > 0) {
+        const { counts: processCounts, failedIds } = await processMessageIds({ 
+          messageIds: Array.from(pending), 
           base44, 
           runId,
           maxMessagesFetched,
@@ -761,7 +776,22 @@ Deno.serve(async (req) => {
         });
         Object.assign(counts, processCounts);
         
-        console.log(`[gmailSyncDelta] Backfill processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created, budget_exhausted: ${processCounts.budget_exhausted}`);
+        // Update pending: remove successfully processed IDs
+        const successfulIds = new Set([...pending].filter(id => !failedIds.has(id)));
+        counts.drained_count = successfulIds.size;
+        
+        // Persist updated pending queue
+        pending = failedIds;
+        syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
+          pending_message_ids_json: JSON.stringify(Array.from(pending)),
+          backlog_size: pending.size
+        });
+        
+        counts.backlog_remaining = pending.size;
+        
+        console.log(`[gmailSyncDelta] Backfill drained: ${counts.drained_count}, remaining in backlog: ${pending.size}`);
+      } else {
+        counts.backlog_remaining = 0;
       }
       
       // INVARIANT: If we found messages but didn't process them, fail loudly
