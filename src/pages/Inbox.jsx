@@ -26,6 +26,14 @@ import CreateProjectFromEmailModal from "@/components/inbox/CreateProjectFromEma
 import GmailHistorySearchModal from "@/components/inbox/GmailHistorySearchModal";
 import DraftsList from "@/components/inbox/DraftsList";
 import UnifiedEmailComposer from "@/components/inbox/UnifiedEmailComposer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /* -------------------------
    Direction helpers
