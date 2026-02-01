@@ -707,6 +707,14 @@ export default function UnifiedEmailComposer({
     [saveDraft]
   );
 
+  // Notify parent when dirty state changes (for thread-switching protection)
+  useEffect(() => {
+    const dirty = isDirty();
+    if (onDirtyStateChange) {
+      onDirtyStateChange(dirty);
+    }
+  }, [isDirty, onDirtyStateChange]);
+
   useEffect(() => {
     debouncedSave({ to: toChips, cc: ccChips, bcc: bccChips, subject, body });
     return () => debouncedSave.cancel();
