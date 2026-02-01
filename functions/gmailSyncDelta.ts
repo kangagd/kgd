@@ -425,7 +425,9 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
     // Budget guard: stop if approaching timeout
     if (runStartedAt && maxRunMs && Date.now() - runStartedAt > maxRunMs) {
       counts.budget_exhausted = true;
-      console.log(`[gmailSyncDelta] Budget exhausted after processing ${processedCount} threads`);
+      // Keep all unprocessed message IDs in queue
+      msgIds.forEach(id => failedIds.add(id));
+      console.log(`[gmailSyncDelta] Budget exhausted after ${processedCount} threads, keeping ${failedIds.size} IDs in pending`);
       break;
     }
 
@@ -435,19 +437,37 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
       });
 
       const result = response.data || {};
-      counts.messages_created += result.okCount || 0;
-      counts.messages_upgraded += result.partialCount || 0;
-      counts.messages_failed += result.failedCount || 0;
+      const okCount = result.okCount || 0;
+      const partialCount = result.partialCount || 0;
+      const failedCount = result.failedCount || 0;
+      
+      counts.messages_created += okCount;
+      counts.messages_upgraded += partialCount;
+      counts.messages_failed += failedCount;
+
+      // Only remove IDs if thread sync had any success
+      if (okCount + partialCount > 0) {
+        // Success: these IDs leave the queue
+        msgIds.forEach(id => {
+          // Don't add to failedIds - they're done
+        });
+      } else if (failedCount > 0) {
+        // Hard failure: keep in queue for retry
+        msgIds.forEach(id => failedIds.add(id));
+      }
 
       processedCount++;
 
-      // Rate limiting: aggressive delays to respect Base44 DB quota
-      if (processedCount % 5 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      // Rate limiting: checkpoint every 10 threads
+      if (processedCount % 10 === 0) {
+        console.log(`[gmailSyncDelta] Checkpoint: processed ${processedCount} threads`);
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     } catch (err) {
       console.error(`[gmailSyncDelta] Failed to sync thread ${threadId}:`, err.message);
       counts.messages_failed += msgIds.length;
+      // Keep failed thread's IDs in pending
+      msgIds.forEach(id => failedIds.add(id));
 
       // If we hit rate limit, wait longer before continuing
       if (err.message?.includes('429') || err.message?.includes('Rate limit')) {
@@ -456,7 +476,7 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
     }
   }
 
-  return counts;
+  return { counts, failedIds };
 }
 
 // ============================================================================
