@@ -742,29 +742,12 @@ export default function InboxV2() {
       result = result.filter((t) => t._status === "done");
     }
 
-    // Sorting per view
-    if (workflowView === "unassigned" || workflowView === "my-actions") {
-      // Newest last_message_date first
-      result.sort((a, b) => {
-        const ta = safeTs(a.last_message_date);
-        const tb = safeTs(b.last_message_date);
-        return tb - ta;
-      });
-    } else if (workflowView === "waiting") {
-      // Oldest last_message_date first (stalled items surface)
-      result.sort((a, b) => {
-        const ta = safeTs(a.last_message_date);
-        const tb = safeTs(b.last_message_date);
-        return ta - tb;
-      });
-    } else {
-      // FYI / Done: newest first
-      result.sort((a, b) => {
-        const ta = safeTs(a.last_message_date);
-        const tb = safeTs(b.last_message_date);
-        return tb - ta;
-      });
-    }
+    // Sorting per view - all views show newest first
+    result.sort((a, b) => {
+      const ta = safeTs(a.last_message_date);
+      const tb = safeTs(b.last_message_date);
+      return tb - ta;
+    });
 
     return result;
   }, [derivedThreads, searchTerm, user?.email, workflowView]);
