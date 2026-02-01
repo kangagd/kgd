@@ -582,11 +582,28 @@ export default function UnifiedEmailComposer({
     setter(list.filter((e) => e !== email));
   };
 
-  // Compute compose context key for draft isolation
-  const computeComposeContextKey = () => {
-    const normalize = (e) => e.trim().toLowerCase();
-    const toSorted = (toChips || []).map(normalize).sort().join(",");
-    return `${mode}|${thread?.id || ""}|${linkTarget?.type || ""}|${linkTarget?.id || ""}|${toSorted}`;
+  // Compute draft_key for deterministic draft identity (one draft per context per user)
+  const computeDraftKey = () => {
+    const userEmail = currentUser?.email?.toLowerCase() || "";
+    
+    // Determine scope and context_id
+    let scope = "standalone";
+    let contextId = null;
+    
+    if (thread?.id) {
+      scope = "thread";
+      contextId = thread.id;
+    } else if (linkTarget?.type === "project" && linkTarget?.id) {
+      scope = "project";
+      contextId = linkTarget.id;
+    } else if (linkTarget?.type === "job" && linkTarget?.id) {
+      scope = "job";
+      contextId = linkTarget.id;
+    }
+    
+    // Draft key: scope:contextId:user
+    const key = `${scope}:${contextId || "none"}:${userEmail}`;
+    return { scope, contextId, key };
   };
 
   // Check if current state differs from last saved
