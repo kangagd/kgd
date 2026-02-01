@@ -334,6 +334,57 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     }
   }, [job.notes, notesDirty]);
 
+  // Initialize draft states from server (prevent refetch overwrites)
+  useEffect(() => {
+    const source = visitsEnabled && activeVisit ? activeVisit : job;
+    
+    // Only re-init drafts when visit.id changes (not on every refetch)
+    if (!overviewDirty) {
+      const serverVal = source.work_performed || source.overview || "";
+      const serverHash = JSON.stringify(serverVal);
+      if (serverHash !== overviewServerRef.current) {
+        setOverviewDraft(serverVal);
+        overviewServerRef.current = serverHash;
+      }
+    }
+    
+    if (!issuesFoundDirty) {
+      const serverVal = source.issues_found || "";
+      const serverHash = JSON.stringify(serverVal);
+      if (serverHash !== issuesFoundServerRef.current) {
+        setIssuesFoundDraft(serverVal);
+        issuesFoundServerRef.current = serverHash;
+      }
+    }
+    
+    if (!resolutionDirty) {
+      const serverVal = source.resolution || "";
+      const serverHash = JSON.stringify(serverVal);
+      if (serverHash !== resolutionServerRef.current) {
+        setResolutionDraft(serverVal);
+        resolutionServerRef.current = serverHash;
+      }
+    }
+    
+    if (!nextStepsDirty) {
+      const serverVal = source.next_steps || "";
+      const serverHash = JSON.stringify(serverVal);
+      if (serverHash !== nextStepsServerRef.current) {
+        setNextStepsDraft(serverVal);
+        nextStepsServerRef.current = serverHash;
+      }
+    }
+    
+    if (!communicationDirty) {
+      const serverVal = source.communication_notes || source.communication_with_client || "";
+      const serverHash = JSON.stringify(serverVal);
+      if (serverHash !== communicationServerRef.current) {
+        setCommunicationDraft(serverVal);
+        communicationServerRef.current = serverHash;
+      }
+    }
+  }, [activeVisit?.id, job.id, overviewDirty, issuesFoundDirty, resolutionDirty, nextStepsDirty, communicationDirty, visitsEnabled]);
+
   // Sync state when data source changes
   useEffect(() => {
     const source = visitsEnabled && activeVisit ? activeVisit : job;
