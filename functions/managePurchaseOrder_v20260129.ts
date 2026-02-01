@@ -529,9 +529,34 @@ Deno.serve(async (req) => {
             });
         }
 
-        // Supported actions for v20260129: updateStatus only (stripped down version for step 1)
+        // Action: delete
+        if (action === 'delete') {
+            if (!id) {
+                return Response.json({ error: 'id is required' }, { status: 400 });
+            }
+
+            const existing = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+            if (!existing) {
+                return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+            }
+
+            // Delete associated line items first
+            const lines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
+            for (const line of lines) {
+                await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
+            }
+
+            // Delete the PO
+            await base44.asServiceRole.entities.PurchaseOrder.delete(id);
+
+            console.log('[managePurchaseOrder_v20260129] action=delete Deleted PO:', id);
+
+            return Response.json({ success: true });
+        }
+
+        // Supported actions for v20260129
         return Response.json({ 
-            error: 'Invalid action. Supported in v20260129: updateStatus' 
+            error: 'Invalid action. Supported in v20260129: create, updateStatus, delete' 
         }, { status: 400 });
 
     } catch (error) {
