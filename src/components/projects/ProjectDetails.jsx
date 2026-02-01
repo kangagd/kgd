@@ -278,9 +278,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
         return response.data;
       },
-     staleTime: 5000,
+     staleTime: 30000,
      refetchOnWindowFocus: false,
      refetchOnMount: false,
+     refetchInterval: false,
    });
 
   const project = projectData?.project || initialProject;
