@@ -289,6 +289,27 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   // VISIT MODEL FEATURE FLAG: Source execution data from Visit or Job
   const executionSource = visitsEnabled && activeVisit ? activeVisit : job;
   
+  // Draft state for Visit free-text fields (prevent flickering on refetch)
+  const [overviewDraft, setOverviewDraft] = useState(executionSource.work_performed || executionSource.overview || "");
+  const [overviewDirty, setOverviewDirty] = useState(false);
+  const overviewServerRef = useRef("");
+  
+  const [issuesFoundDraft, setIssuesFoundDraft] = useState(executionSource.issues_found || "");
+  const [issuesFoundDirty, setIssuesFoundDirty] = useState(false);
+  const issuesFoundServerRef = useRef("");
+  
+  const [resolutionDraft, setResolutionDraft] = useState(executionSource.resolution || "");
+  const [resolutionDirty, setResolutionDirty] = useState(false);
+  const resolutionServerRef = useRef("");
+  
+  const [nextStepsDraft, setNextStepsDraft] = useState(executionSource.next_steps || "");
+  const [nextStepsDirty, setNextStepsDirty] = useState(false);
+  const nextStepsServerRef = useRef("");
+  
+  const [communicationDraft, setCommunicationDraft] = useState(executionSource.communication_notes || executionSource.communication_with_client || "");
+  const [communicationDirty, setCommunicationDirty] = useState(false);
+  const communicationServerRef = useRef("");
+  
   const [measurements, setMeasurements] = useState(executionSource.measurements || null);
   const [notes, setNotes] = useState(job.notes || "");
   const [overview, setOverview] = useState(executionSource.work_performed || executionSource.overview || "");
