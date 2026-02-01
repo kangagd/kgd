@@ -113,9 +113,11 @@ export default function Projects() {
   devLog(`[Projects Page] Displaying ${projects.length} projects after filtering out deleted/lost`);
 
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
-    queryKey: jobKeys.all,
+    queryKey: jobsQueryKey,
     queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
-    ...QUERY_CONFIG.heavy,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     onError: (error) => {
       if (error?.response?.status === 429) {
         toast.error('Rate limit hit – slowing down');
