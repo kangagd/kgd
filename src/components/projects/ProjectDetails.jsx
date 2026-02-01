@@ -202,7 +202,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [composerMessage, setComposerMessage] = useState(null);
 
   const deleteDraftMutation = useMutation({
-    mutationFn: (draftId) => base44.entities.DraftEmail.delete(draftId),
+    mutationFn: (draftId) => base44.entities.EmailDraft.delete(draftId),
     onSuccess: () => {
       debouncedInvalidate(projectKeys.drafts(project.id), 500);
       debouncedInvalidate(projectKeys.withRelations(project.id, activeTab), 500);
