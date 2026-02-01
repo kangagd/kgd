@@ -109,13 +109,7 @@ export default function Projects() {
   const { data: allJobs = [], isLoading: isJobsLoading } = useQuery({
     queryKey: jobKeys.all,
     queryFn: () => base44.entities.Job.filter({ deleted_at: { $exists: false } }),
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchInterval: false,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    ...QUERY_CONFIG.heavy,
     onError: (error) => {
       if (error?.response?.status === 429) {
         toast.error('Rate limit hit – slowing down');
