@@ -128,38 +128,49 @@ export default function Projects() {
   const { data: allParts = [] } = useQuery({
     queryKey: ['parts', 'all'],
     queryFn: () => base44.entities.Part.list(),
-    ...QUERY_CONFIG.heavy,
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allTradeRequirements = [] } = useQuery({
     queryKey: ['tradeRequirements', 'all'],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
-    ...QUERY_CONFIG.heavy,
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders', 'all'],
     queryFn: () => base44.entities.PurchaseOrder.list(),
-    ...QUERY_CONFIG.heavy,
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allAttentionItems = [] } = useQuery({
     queryKey: ['attentionItems', 'all'],
     queryFn: () => base44.entities.AttentionItem.list(),
-    ...QUERY_CONFIG.light,
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: allEmailThreads = [] } = useQuery({
     queryKey: ['emailThreads', 'all'],
     queryFn: () => base44.entities.EmailThread.list(),
-    ...QUERY_CONFIG.heavy,
+    staleTime: 3 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: projectTags = [] } = useQuery({
     queryKey: ['projectTags'],
     queryFn: () => base44.entities.ProjectTagDefinition.list(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Build indexes for O(1) lookups instead of per-row scans
