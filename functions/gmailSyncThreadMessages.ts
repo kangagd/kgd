@@ -713,6 +713,12 @@ Deno.serve(async (req) => {
         updates.has_preview = !!snippet;
       }
 
+      // Reset thread to unassigned when new messages arrive
+      updates.next_action_status = null;
+      updates.assigned_to = null;
+      updates.assigned_by = null;
+      updates.assigned_at = null;
+
       await base44.asServiceRole.entities.EmailThread.update(threadId, updates);
     } catch (err) {
       console.error('[gmailSyncThreadMessages] Error updating thread metadata:', err.message);
