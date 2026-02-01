@@ -93,30 +93,31 @@ export default function AttachmentCard({
     const autoSaveAttachment = async () => {
       autoSaveAttempted.current = true;
       
-      // Use queue to prevent race conditions
-      addToSaveQueue(linkedProjectId, async () => {
-        try {
-          // Resolve the URL first (independent of queue)
-          let urlToSave = resolvedUrl;
-          if (!urlToSave) {
-            try {
-              const result = await base44.functions.invoke('getGmailAttachment', {
-                gmail_message_id: effectiveGmailMessageId,
-                attachment_id: effectiveAttachmentId,
-                filename: attachment.filename,
-                mime_type: attachment.mime_type
-              });
-              if (result.data?.url) {
-                urlToSave = result.data.url;
-                setResolvedUrl(urlToSave);
-              }
-            } catch (fetchError) {
-              console.warn('Auto-save: Could not fetch attachment:', attachment.filename);
-              return;
+      try {
+        // Resolve the URL first (outside queue to fail fast)
+        let urlToSave = resolvedUrl;
+        if (!urlToSave) {
+          try {
+            const result = await base44.functions.invoke('getGmailAttachment', {
+              gmail_message_id: effectiveGmailMessageId,
+              attachment_id: effectiveAttachmentId,
+              filename: attachment.filename,
+              mime_type: attachment.mime_type
+            });
+            if (result.data?.url) {
+              urlToSave = result.data.url;
+              setResolvedUrl(urlToSave);
             }
+          } catch (fetchError) {
+            console.warn('Auto-save: Could not fetch attachment:', attachment.filename);
+            return; // Stop here - don't queue anything
           }
-          
-          if (!urlToSave) return;
+        }
+        
+        if (!urlToSave) return;
+      
+        // Only queue if we successfully got a URL
+        await addToSaveQueue(linkedProjectId, async () => {
 
           // Fetch fresh project data INSIDE the queue task
           const freshProject = await base44.entities.Project.get(linkedProjectId);
