@@ -145,8 +145,12 @@ export default function Projects() {
     queryKey: ['tradeRequirements', 'all'],
     queryFn: () => base44.entities.ProjectTradeRequirement.list(),
     staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
-    ...QUERY_CONFIG.reference,
+    refetchOnReconnect: false,
+    refetchInterval: false,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 
   const { data: allPurchaseOrders = [] } = useQuery({
