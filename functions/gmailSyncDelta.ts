@@ -338,9 +338,9 @@ async function filterMissingEmailMessageIds({ base44, messageIds, maxMissing = 5
 
 /**
  * Process Gmail message IDs - fetches and syncs to EmailMessage
- * Returns: { messages_fetched, messages_created, messages_upgraded, messages_skipped_existing, messages_failed, deleted_count }
+ * Returns counts + failed IDs that should stay in pending queue
  */
-async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 10, runStartedAt, maxRunMs }) {
+async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched = 75, runStartedAt, maxRunMs }) {
   const counts = {
     messages_fetched: 0,
     messages_created: 0,
@@ -353,10 +353,13 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
     budget_exhausted: false
   };
 
-  // Deduplicate and cap (reduced to avoid DB rate limits)
+  // Deduplicate and cap at drainLimit
   const uniqueIds = [...new Set(messageIds)];
-  const cap = Math.min(maxMessagesFetched || 10, 10);
-  const idsToProcess = uniqueIds.slice(0, cap);
+  const drainLimit = Math.min(maxMessagesFetched || 75, 200);
+  const idsToProcess = uniqueIds.slice(0, drainLimit);
+  
+  // Track which IDs failed (stay in queue)
+  const failedIds = new Set();
 
   if (DEBUG && uniqueIds.length > cap) {
     console.log(`[gmailSyncDelta] Capped ${uniqueIds.length} messages to ${cap}`);
