@@ -225,6 +225,14 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const canCreateJobs = isAdminOrManager;
   const canViewFinancials = isAdminOrManager;
 
+  // Stabilize all query keys
+  const projectWithRelationsKey = useMemo(() => projectKeys.withRelations(initialProject.id, activeTab), [initialProject.id, activeTab]);
+  const projectDraftsKey = useMemo(() => projectKeys.drafts(initialProject.id), [initialProject.id]);
+  const priceListKey = useMemo(() => ['priceListItems'], []);
+  const inventoryQtyKey = useMemo(() => ['inventoryQuantities'], []);
+  const techniciansKey = useMemo(() => ['technicians'], []);
+  const projectViewersKey = useMemo(() => ['projectViewers', initialProject.id], [initialProject.id]);
+
   // Single batch query to fetch project + all relations in ONE call
   // Include flags optimized per tab: Overview loads minimal set, other tabs load as needed
   const getIncludeFlags = (tab) => {
