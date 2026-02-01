@@ -23,7 +23,7 @@ const ITERATION_SLEEP_MS = 150;
 // Lock Management
 // ============================================================================
 
-async function acquireLock(base44, scopeKey, runId) {
+async function acquireLock(base44, scopeKey, runId, forceUnlock = false) {
   const states = await base44.asServiceRole.entities.EmailSyncState.filter({ scope_key: scopeKey });
   let syncState = states[0];
 
@@ -42,6 +42,15 @@ async function acquireLock(base44, scopeKey, runId) {
 
   const now = Date.now();
   const lockUntilMs = syncState.lock_until ? new Date(syncState.lock_until).getTime() : 0;
+
+  // Force unlock if requested
+  if (forceUnlock) {
+    syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
+      lock_until: null,
+      lock_owner: null,
+      locked_at: null
+    });
+  }
 
   // LOCK SELF-HEAL: If lock_until is missing, invalid, or in past, clear lock fields
   if (!syncState.lock_until || isNaN(lockUntilMs) || lockUntilMs <= now) {
