@@ -266,6 +266,7 @@ export default function UnifiedEmailComposer({
   onClose = () => {},
   onSent = null,
   onDraftSaved = null,
+  onDirtyStateChange = null, // NEW: expose dirty state to parent
 }) {
   const queryClient = useQueryClient();
   const [currentUser, setCurrentUser] = useState(null);
