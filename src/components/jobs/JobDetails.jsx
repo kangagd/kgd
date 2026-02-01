@@ -1320,9 +1320,30 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     return checkedCount === totalItems;
   };
 
-  const handleAssignedToChange = (emails) => {
+  const handleAssignedToChange = async (emails) => {
     const newAssignedEmails = Array.isArray(emails) ? emails : emails ? [emails] : [];
     const currentAssignedToNormalized = Array.isArray(job.assigned_to) ? job.assigned_to : job.assigned_to ? [job.assigned_to] : [];
+    
+    // Check for conflicts before updating assignment
+    if (newAssignedEmails.length > 0 && job.scheduled_date && job.scheduled_time) {
+      try {
+        const response = await base44.functions.invoke('checkJobSchedulingConflicts', {
+          jobId: job.id,
+          assignedTo: newAssignedEmails[0],
+          scheduledDate: job.scheduled_date,
+          scheduledTime: job.scheduled_time,
+          expectedDuration: job.expected_duration || 1
+        });
+
+        if (response.data?.conflicts && response.data.conflicts.length > 0) {
+          toast.error(`Scheduling conflict detected with ${response.data.conflicts.length} job(s)`);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking conflicts:', error);
+        // Proceed anyway if check fails
+      }
+    }
     
     const techNames = newAssignedEmails.map((email) => {
       const tech = technicians.find((t) => t.email === email);
@@ -1342,6 +1363,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         ...updates
       }));
       debouncedInvalidate(['jobs'], 2000);
+      toast.success('Assignment updated');
     });
   };
 
