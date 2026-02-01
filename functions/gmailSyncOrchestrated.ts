@@ -91,10 +91,29 @@ async function releaseLock(base44, syncStateId, runId) {
 }
 
 // ============================================================================
-// CID Resolution (opportunistic)
+// Lock Heartbeat
 // ============================================================================
 
-async function attemptCidResolutionBatch(base44, maxBatch = 25) {
+async function refreshLockHeartbeat(base44, syncStateId, runId) {
+  try {
+    const currentState = await base44.asServiceRole.entities.EmailSyncState.get(syncStateId);
+    if (currentState.lock_owner === runId) {
+      await base44.asServiceRole.entities.EmailSyncState.update(syncStateId, {
+        lock_until: new Date(Date.now() + LOCK_TTL_MS).toISOString()
+      });
+      return true;
+    }
+  } catch (err) {
+    console.warn(`[refreshLockHeartbeat] Warning:`, err.message);
+  }
+  return false;
+}
+
+// ============================================================================
+// CID Resolution (opportunistic, disabled by default)
+// ============================================================================
+
+async function attemptCidResolutionBatch(base44, maxBatch = 10) {
   try {
     const messages = await base44.asServiceRole.entities.EmailMessage.filter({
       cid_state: 'unresolved'
