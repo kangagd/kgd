@@ -554,9 +554,57 @@ Deno.serve(async (req) => {
             return Response.json({ success: true });
         }
 
+        // Action: getOrCreateProjectSupplierDraft
+        if (action === 'getOrCreateProjectSupplierDraft') {
+            const { project_id, supplier_id } = await req.json();
+            
+            if (!project_id || !supplier_id) {
+                return Response.json({ error: 'project_id and supplier_id are required' }, { status: 400 });
+            }
+
+            // Try to find existing draft PO for this project + supplier
+            const existingDrafts = await base44.asServiceRole.entities.PurchaseOrder.filter({
+                project_id,
+                supplier_id,
+                status: PO_STATUS.DRAFT
+            });
+
+            if (existingDrafts.length > 0) {
+                return Response.json({ success: true, purchaseOrder: existingDrafts[0] });
+            }
+
+            // Create new draft PO
+            const supplier = await base44.asServiceRole.entities.Supplier.get(supplier_id);
+            const poData = {
+                supplier_id,
+                supplier_name: supplier?.name || null,
+                project_id,
+                status: PO_STATUS.DRAFT,
+                delivery_method: PO_DELIVERY_METHOD.DELIVERY,
+                created_by: user.email,
+                order_date: new Date().toISOString().split('T')[0],
+            };
+
+            const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
+            
+            // Generate reference if missing
+            if (!newPO.po_reference) {
+                const generatedRef = `PO-${newPO.id.slice(0, 8)}`;
+                const updated = await base44.asServiceRole.entities.PurchaseOrder.update(newPO.id, {
+                    po_reference: generatedRef,
+                    po_number: generatedRef,
+                    order_reference: generatedRef,
+                    reference: generatedRef,
+                });
+                return Response.json({ success: true, purchaseOrder: updated });
+            }
+
+            return Response.json({ success: true, purchaseOrder: newPO });
+        }
+
         // Supported actions for v20260129
         return Response.json({ 
-            error: 'Invalid action. Supported in v20260129: create, updateStatus, delete' 
+            error: 'Invalid action. Supported in v20260129: create, updateStatus, delete, getOrCreateProjectSupplierDraft' 
         }, { status: 400 });
 
     } catch (error) {
