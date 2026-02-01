@@ -405,13 +405,15 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   // No separate query needed - prevents duplicate API calls
 
   const { data: technicians = [] } = useQuery({
-    queryKey: ['technicians'],
+    queryKey: techniciansKey,
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
-    ...QUERY_CONFIG.reference
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const { data: activeViewers = [] } = useQuery({
-    queryKey: ['projectViewers', project.id],
+    queryKey: projectViewersKey,
     queryFn: async () => {
       try {
         const user = await base44.auth.me();
