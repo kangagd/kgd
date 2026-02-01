@@ -197,6 +197,7 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
+        const body = await req.json();
         const {
           action, id, data,
           supplier_id, project_id, delivery_method, delivery_location,
@@ -204,7 +205,9 @@ Deno.serve(async (req) => {
           reference, po_number, po_reference, order_reference,
           name, eta, expected_date, attachments, vehicle_id,
           expected_write_version, write_source
-        } = await req.json();
+        } = body;
+        
+        console.log('[managePurchaseOrder_v20260129] action=', action, 'id=', id);
 
         // Action: create (fully functional)
         if (action === 'create') {
