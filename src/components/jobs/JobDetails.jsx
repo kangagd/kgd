@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -173,6 +173,24 @@ const buildMeasurementSummary = (m) => {
 
 export default function JobDetails({ job: initialJob, onClose, onStatusChange, onDelete }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  
+  // Invalidation debouncer to prevent flickering
+  const lastInvalidationRef = useRef({});
+  
+  const debouncedInvalidate = useCallback((queryKey, minInterval = 500) => {
+    const keyStr = JSON.stringify(queryKey);
+    const now = Date.now();
+    const lastTime = lastInvalidationRef.current[keyStr] || 0;
+    
+    if (now - lastTime < minInterval) {
+      return; // Skip - too soon
+    }
+    
+    lastInvalidationRef.current[keyStr] = now;
+    queryClient.invalidateQueries({ queryKey });
+  }, [queryClient]);
+  
   const visitsEnabled = isFeatureEnabled('visits_enabled');
   const [defaultTab, setDefaultTab] = useState("details");
 
@@ -216,7 +234,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
   const [showProcessStockModal, setShowProcessStockModal] = useState(false);
-  const queryClient = useQueryClient();
 
   // Sync checkedItems state when job data changes
   useEffect(() => {
@@ -282,7 +299,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [outcome, setOutcome] = useState(executionSource.outcome || "");
   const [logisticsOutcome, setLogisticsOutcome] = useState(job.logistics_outcome || "none");
   const [validationError, setValidationError] = useState("");
-
 
   // Initialize notes draft from server (only if not dirty)
   useEffect(() => {
@@ -666,9 +682,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-      // Don't invalidate all jobs - too broad
+      debouncedInvalidate(['checkIns', job.id], 500);
+      debouncedInvalidate(['job', job.id], 1000);
       toast.success("Checked in successfully");
     },
     onError: (error) => {
@@ -813,15 +828,13 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     },
     onSuccess: () => {
       setValidationError("");
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['checkIns', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobSummaries', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['projectJobSummaries', job.project_id] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      debouncedInvalidate(['checkIns', job.id], 500);
+      debouncedInvalidate(['jobSummaries', job.id], 500);
+      debouncedInvalidate(['projectJobSummaries', job.project_id], 1000);
+      debouncedInvalidate(['job', job.id], 1000);
       if (job.project_id) {
-        queryClient.invalidateQueries({ queryKey: ['projectWithRelations', job.project_id] });
+        debouncedInvalidate(['projectWithRelations', job.project_id], 1500);
       }
-      // Don't invalidate all jobs/projects - too broad
     },
     onError: (error) => {
       setValidationError(error.message);
@@ -857,9 +870,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         ...oldData,
         ...updatedJob
       }));
-      // Only invalidate if critical display fields changed
+      // Skip invalidating the job query - rely on optimistic update
+      // Only invalidate list if critical display fields changed
       if (updatedJob.status || updatedJob.scheduled_date || updatedJob.customer_name) {
-        queryClient.invalidateQueries({ queryKey: jobKeys.all });
+        debouncedInvalidate(jobKeys.all, 2000);
       }
     }
   });
@@ -908,17 +922,17 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       await base44.entities.Job.update(job.id, { measurements: data });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["job", job.id] });
-      queryClient.invalidateQueries({ queryKey: ["activeVisits", job.id] });
-      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      debouncedInvalidate(["job", job.id], 1000);
+      debouncedInvalidate(["activeVisits", job.id], 500);
+      debouncedInvalidate(["jobs"], 3000);
     }
   });
 
   const updateCustomerMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Customer.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer', job.customer_id] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      debouncedInvalidate(['customer', job.customer_id], 1000);
+      debouncedInvalidate(['jobs'], 2000);
       setShowCustomerEdit(false);
     }
   });
@@ -956,8 +970,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      debouncedInvalidate(['xeroInvoice'], 500);
+      debouncedInvalidate(['job', job.id], 1000);
       setShowInvoiceModal(false);
       toast.success(`Invoice #${data.xero_invoice_number} created successfully in Xero`);
     },
@@ -976,8 +990,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoice', job.xero_invoice_id] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      debouncedInvalidate(['xeroInvoice', job.xero_invoice_id], 500);
+      debouncedInvalidate(['job', job.id], 1000);
       if (data.voided) {
         toast.info('Invoice was voided in Xero and removed from the app');
       }
@@ -1021,8 +1035,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoice', job.xero_invoice_id] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+      debouncedInvalidate(['xeroInvoice', job.xero_invoice_id], 500);
+      debouncedInvalidate(['job', job.id], 1000);
       setShowPaymentModal(false);
       toast.success('Payment processed successfully');
     },
@@ -1077,12 +1091,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       return invoiceRecord;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoices'] });
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoicesSearch'] });
-      queryClient.invalidateQueries({ queryKey: ['linkedXeroInvoices'] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      debouncedInvalidate(['xeroInvoice'], 500);
+      debouncedInvalidate(['xeroInvoices'], 500);
+      debouncedInvalidate(['xeroInvoicesSearch'], 500);
+      debouncedInvalidate(['linkedXeroInvoices'], 500);
+      debouncedInvalidate(['job', job.id], 1000);
+      debouncedInvalidate(['jobs'], 2000);
       setShowLinkInvoiceModal(false);
       toast.success('Invoice linked successfully');
     },
@@ -1108,10 +1122,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoice'] });
-      queryClient.invalidateQueries({ queryKey: ['xeroInvoices'] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      debouncedInvalidate(['xeroInvoice'], 500);
+      debouncedInvalidate(['xeroInvoices'], 500);
+      debouncedInvalidate(['job', job.id], 1000);
+      debouncedInvalidate(['jobs'], 2000);
       toast.success('Invoice unlinked from job');
     },
     onError: (error) => {
@@ -1150,11 +1164,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         
         base44.functions.invoke('manageJob', { action: 'update', id: job.id, data: updates }).then((res) => {
           const updatedJob = res.data.job;
-          queryClient.invalidateQueries({ queryKey: ['jobs'] });
           queryClient.setQueryData(['job', job.id], (oldData) => ({
             ...oldData,
             ...updatedJob
           }));
+          debouncedInvalidate(['jobs'], 2000);
         });
         return;
         }
@@ -1269,8 +1283,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     
     try {
       await base44.entities.Job.update(job.id, { logistics_outcome: value });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.setQueryData(['job', job.id], (oldData) => ({
+        ...oldData,
+        logistics_outcome: value
+      }));
+      debouncedInvalidate(['jobs'], 2000);
       toast.success('Logistics outcome updated');
     } catch (error) {
       toast.error('Failed to update logistics outcome');
@@ -1288,6 +1305,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         ...oldData,
         checked_items: newCheckedItems
       }));
+      // Don't invalidate - optimistic update is enough
     } catch (error) {
       console.error('Failed to save checklist state:', error);
       toast.error('Failed to save checklist state');
@@ -1319,11 +1337,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     logChange('assigned_to', currentAssignedToNormalized, newAssignedEmails);
     
     base44.entities.Job.update(job.id, updates).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
       queryClient.setQueryData(['job', job.id], (oldData) => ({
         ...oldData,
         ...updates
       }));
+      debouncedInvalidate(['jobs'], 2000);
     });
   };
 
@@ -1368,9 +1386,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         }
       }
       
-      queryClient.invalidateQueries({ queryKey: ['jobs'] });
-      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-      queryClient.invalidateQueries({ queryKey: ['jobParts', job.id] });
+      queryClient.setQueryData(['job', job.id], (oldData) => ({
+        ...oldData,
+        ...updates
+      }));
+      debouncedInvalidate(['jobs'], 2000);
+      debouncedInvalidate(['jobParts', job.id], 500);
       
       toast.success('Job type updated');
     } catch (error) {
@@ -1394,7 +1415,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         
         if (photosToDelete.length > 0) {
           await Promise.all(photosToDelete.map(p => base44.entities.Photo.delete(p.id)));
-          queryClient.invalidateQueries({ queryKey: ['photos'] });
+          debouncedInvalidate(['photos'], 1000);
           toast.success(`Deleted ${photosToDelete.length} photo(s)`);
         }
       } catch (error) {
@@ -1603,10 +1624,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                          client_confirmed_at: newValue ? new Date().toISOString() : null
                        }));
                        toast.success(newValue ? 'Job marked as confirmed' : 'Job marked as unconfirmed');
-                     } catch (error) {
-                       queryClient.invalidateQueries({ queryKey: ['job', job.id] });
+                       } catch (error) {
+                       debouncedInvalidate(['job', job.id], 1000);
                        toast.error('Failed to update confirmation status');
-                     }
+                       }
                    }}
                    className={`flex items-center gap-1 px-2 py-1 rounded-lg transition-all ${
                      job.client_confirmed === true
@@ -1695,8 +1716,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                     logChange('address', job.address, updates.address);
                     base44.entities.Job.update(job.id, updates).then(() => {
-                      queryClient.invalidateQueries({ queryKey: ['job', job.id] });
-                      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+                      queryClient.setQueryData(['job', job.id], (oldData) => ({
+                        ...oldData,
+                        ...updates
+                      }));
+                      debouncedInvalidate(['jobs'], 2000);
                       toast.success('Address updated');
                     });
                   }}
