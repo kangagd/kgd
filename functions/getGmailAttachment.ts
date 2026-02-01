@@ -201,9 +201,9 @@ Deno.serve(async (req) => {
     const bytes = decodeBase64UrlToBytes(attData.data);
     console.log(`[${runId}] Decoded ${bytes.length} bytes`);
 
-    // Upload to Base44 file storage
-    const file = new File([bytes], filename || 'attachment', { type: mime_type || 'application/octet-stream' });
-    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+    // Upload to Base44 file storage (convert bytes to base64 string for transport)
+    const base64Data = btoa(String.fromCharCode(...bytes));
+    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file: base64Data });
 
     if (!uploadResult?.file_url) {
       console.error(`[${runId}] Upload to Base44 storage failed`);
