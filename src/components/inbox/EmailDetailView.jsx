@@ -224,7 +224,7 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
                     idx === 0 || (prevDay && currDay && prevDay !== currDay);
 
                   return (
-                    <React.Fragment key={msg.id}>
+                    <React.Fragment key={msg.id} {...{ 'data-source-location': undefined }}>
                       {/* DATE DIVIDER */}
                       {showDayDivider && (
                         <div className="bg-[#F9FAFB] px-6 py-2 text-xs font-medium text-[#6B7280] flex items-center gap-3">
