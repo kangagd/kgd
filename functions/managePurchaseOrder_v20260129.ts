@@ -535,23 +535,168 @@ Deno.serve(async (req) => {
                 return Response.json({ error: 'id is required' }, { status: 400 });
             }
 
-            const existing = await base44.asServiceRole.entities.PurchaseOrder.get(id);
-            if (!existing) {
-                return Response.json({ error: 'Purchase Order not found' }, { status: 404 });
+            // Idempotency: check if PO exists
+            let po;
+            try {
+                po = await base44.asServiceRole.entities.PurchaseOrder.get(id);
+            } catch (err) {
+                // PO not found - already deleted
+                console.log('[managePurchaseOrder_v20260129] action=delete PO not found (already deleted):', id);
+                return Response.json({ success: true, mode: 'already_deleted' });
             }
 
-            // Delete associated line items first
+            // Idempotency: check if already soft-deleted
+            if (po.is_deleted === true) {
+                console.log('[managePurchaseOrder_v20260129] action=delete PO already soft-deleted:', id);
+                return Response.json({ success: true, mode: 'already_soft_deleted' });
+            }
+
+            // Load dependencies
             const lines = await base44.asServiceRole.entities.PurchaseOrderLine.filter({ purchase_order_id: id });
-            for (const line of lines) {
-                await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
+            
+            // Find all linked parts (both fields)
+            const partsA = await base44.asServiceRole.entities.Part.filter({ purchase_order_id: id });
+            const partsB = await base44.asServiceRole.entities.Part.filter({ primary_purchase_order_id: id });
+            const allPartsMap = new Map();
+            [...partsA, ...partsB].forEach(p => allPartsMap.set(p.id, p));
+            const allParts = Array.from(allPartsMap.values());
+
+            console.log('[managePurchaseOrder_v20260129] action=delete PO dependencies:', {
+                po_id: id,
+                status: po.status,
+                arrived_at: po.arrived_at,
+                lines_count: lines.length,
+                linked_parts_count: allParts.length
+            });
+
+            // Determine if safe to hard delete
+            const isDraftOrCancelled = po.status === 'draft' || po.status === 'cancelled';
+            const hasNotArrived = !po.arrived_at;
+            const hasNoParts = allParts.length === 0;
+            const safeToHardDelete = isDraftOrCancelled && hasNotArrived && hasNoParts;
+
+            // Check if should be blocked
+            const hasReceivedActivity = po.arrived_at || 
+                ['in_loading_bay', 'in_storage', 'in_vehicle', 'installed'].includes(po.status);
+            
+            if (hasReceivedActivity && allParts.length > 0) {
+                // This PO has activity and parts - block deletion to prevent data loss
+                console.warn('[managePurchaseOrder_v20260129] action=delete BLOCKED - PO has received activity and linked parts:', id);
+                return Response.json({ 
+                    success: false, 
+                    mode: 'blocked', 
+                    reason: 'po_has_received_activity',
+                    message: 'Cannot delete PO with received activity and linked parts. Consider cancelling instead.'
+                }, { status: 400 });
             }
 
-            // Delete the PO
-            await base44.asServiceRole.entities.PurchaseOrder.delete(id);
+            // HARD DELETE PATH (safe POs only)
+            if (safeToHardDelete) {
+                console.log('[managePurchaseOrder_v20260129] action=delete Hard delete (safe PO):', id);
+                
+                // Delete lines in chunks to avoid timeouts
+                const CHUNK_SIZE = 20;
+                for (let i = 0; i < lines.length; i += CHUNK_SIZE) {
+                    const chunk = lines.slice(i, i + CHUNK_SIZE);
+                    await Promise.all(chunk.map(line => 
+                        base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id)
+                    ));
+                    if (i + CHUNK_SIZE < lines.length) {
+                        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay between chunks
+                    }
+                }
 
-            console.log('[managePurchaseOrder_v20260129] action=delete Deleted PO:', id);
+                // Delete the PO
+                await base44.asServiceRole.entities.PurchaseOrder.delete(id);
 
-            return Response.json({ success: true });
+                console.log('[managePurchaseOrder_v20260129] action=delete Hard deleted PO:', id);
+
+                return Response.json({ 
+                    success: true, 
+                    mode: 'hard_deleted',
+                    deleted_line_count: lines.length
+                });
+            }
+
+            // SOFT DELETE PATH (most real-world cases)
+            console.log('[managePurchaseOrder_v20260129] action=delete Soft delete (has parts or activity):', id);
+
+            // 1) Unlink parts first
+            for (const part of allParts) {
+                const updates = {};
+                let needsUpdate = false;
+
+                if (part.purchase_order_id === id) {
+                    updates.purchase_order_id = null;
+                    needsUpdate = true;
+                }
+                
+                if (part.primary_purchase_order_id === id) {
+                    updates.primary_purchase_order_id = null;
+                    needsUpdate = true;
+                }
+
+                if (needsUpdate) {
+                    // Clear PO references
+                    updates.po_number = null;
+                    updates.order_reference = null;
+                    
+                    // Revert status if it came from PO ordering
+                    if (['on_order', 'in_transit'].includes(part.status)) {
+                        updates.status = PART_STATUS.PENDING;
+                        updates.location = PART_LOCATION.SUPPLIER;
+                    }
+
+                    await base44.asServiceRole.entities.Part.update(part.id, updates);
+                    console.log(`[managePurchaseOrder_v20260129] action=delete Unlinked part ${part.id} from PO ${id}`);
+                }
+            }
+
+            // 2) Soft delete lines (mark as deleted if field exists, otherwise hard delete)
+            for (const line of lines) {
+                try {
+                    await base44.asServiceRole.entities.PurchaseOrderLine.update(line.id, {
+                        is_deleted: true
+                    });
+                } catch (err) {
+                    // If is_deleted field doesn't exist, hard delete
+                    await base44.asServiceRole.entities.PurchaseOrderLine.delete(line.id);
+                }
+            }
+
+            // 3) Soft delete PO
+            await base44.asServiceRole.entities.PurchaseOrder.update(id, {
+                is_deleted: true,
+                deleted_at: new Date().toISOString(),
+                deleted_by: user.email,
+                status: 'cancelled',
+                write_version: (po.write_version || 1) + 1
+            });
+
+            // 4) Update project activity if linked
+            if (po.project_id) {
+                try {
+                    await base44.asServiceRole.entities.Project.update(po.project_id, {
+                        last_activity_at: new Date().toISOString(),
+                        last_activity_type: 'PO Deleted'
+                    });
+                } catch (err) {
+                    console.error('[managePurchaseOrder_v20260129] action=delete Error updating project activity:', err);
+                }
+            }
+
+            console.log('[managePurchaseOrder_v20260129] action=delete Soft deleted PO:', {
+                po_id: id,
+                unlinked_parts: allParts.length,
+                line_items_affected: lines.length
+            });
+
+            return Response.json({ 
+                success: true, 
+                mode: 'soft_deleted',
+                unlinked_parts: allParts.length,
+                line_items_affected: lines.length
+            });
         }
 
         // Supported actions for v20260129
