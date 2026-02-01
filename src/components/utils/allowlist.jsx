@@ -1,5 +1,9 @@
 export const ALLOWLIST = {
-  INBOX_V2_EMAILS: new Set(["admin@kangaroogd.com.au"]),
+  INBOX_V2_EMAILS: new Set([
+    "admin@kangaroogd.com.au",
+    "customersupport@kangaroogd.com.au",
+    "avshalom770@gmail.com.au"
+  ]),
 };
 
 export function normEmail(v) {
