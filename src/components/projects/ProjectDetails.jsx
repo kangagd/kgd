@@ -368,11 +368,17 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     queryKey: projectDraftsKey,
     queryFn: async () => {
        try {
-          const allDrafts = await base44.entities.DraftEmail.list();
-          const filtered = allDrafts.filter(d => 
-            d.linkedEntityId === project.id && d.linkedEntityType === 'project'
+          const user = await base44.auth.me();
+          const allDrafts = await base44.entities.EmailDraft.filter(
+            { 
+              draft_scope: 'project', 
+              draft_context_id: project.id,
+              created_by: user.email,
+              status: 'active'
+            },
+            '-updated_date'
           );
-          return filtered;
+          return allDrafts;
         } catch (error) {
           return [];
         }
