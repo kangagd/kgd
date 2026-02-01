@@ -1338,7 +1338,11 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         });
 
         if (response.data?.conflicts && response.data.conflicts.length > 0) {
-          toast.error(`Scheduling conflict detected with ${response.data.conflicts.length} job(s)`);
+          setConflictWarning({
+            open: true,
+            conflicts: response.data.conflicts,
+            pendingEmails: newAssignedEmails
+          });
           return;
         }
       } catch (error) {
