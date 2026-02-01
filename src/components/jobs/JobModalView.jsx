@@ -74,7 +74,31 @@ export default function JobModalView({ job, onJobUpdated }) {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(normalized.address_display)}&travelmode=driving`, '_blank');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Check for conflicts if assignment or schedule changed
+    if (editData.assigned_to?.[0] && editData.scheduled_date && editData.scheduled_time) {
+      try {
+        const response = await base44.functions.invoke('checkJobSchedulingConflicts', {
+          jobId: job.id,
+          assignedTo: editData.assigned_to[0],
+          scheduledDate: editData.scheduled_date,
+          scheduledTime: editData.scheduled_time,
+          expectedDuration: job.expected_duration || 1
+        });
+
+        if (response.data?.conflicts && response.data.conflicts.length > 0) {
+          setConflictWarning({
+            open: true,
+            conflicts: response.data.conflicts
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking conflicts:', error);
+        // Proceed anyway if check fails
+      }
+    }
+
     updateMutation.mutate({
       id: job.id,
       data: editData
