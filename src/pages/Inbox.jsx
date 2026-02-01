@@ -914,7 +914,16 @@ export default function Inbox() {
                       key={thread.id}
                       thread={thread}
                       isSelected={selectedThreadId === thread.id}
-                      onClick={() => !selectionMode && setSelectedThreadId(thread.id)}
+                      onClick={() => {
+                        if (selectionMode) {
+                          handleBulkSelect(thread.id, !selectedThreadIds.has(thread.id));
+                        } else if (composerDirty) {
+                          // Protect thread switch if composer is dirty
+                          setPendingThreadSwitch(thread.id);
+                        } else {
+                          setSelectedThreadId(thread.id);
+                        }
+                      }}
                       currentUser={user}
                       onThreadUpdate={() => refetchThreads()}
                       selectionMode={selectionMode}
