@@ -197,7 +197,6 @@ Deno.serve(async (req) => {
         const user = await base44.auth.me();
         if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const body = await req.json();
         const {
           action, id, data,
           supplier_id, project_id, delivery_method, delivery_location,
@@ -205,9 +204,7 @@ Deno.serve(async (req) => {
           reference, po_number, po_reference, order_reference,
           name, eta, expected_date, attachments, vehicle_id,
           expected_write_version, write_source
-        } = body;
-        
-        console.log('[managePurchaseOrder_v20260129] action=', action, 'id=', id);
+        } = await req.json();
 
         // Action: create (fully functional)
         if (action === 'create') {
@@ -557,55 +554,9 @@ Deno.serve(async (req) => {
             return Response.json({ success: true });
         }
 
-        // Action: getOrCreateProjectSupplierDraft
-        if (action === 'getOrCreateProjectSupplierDraft') {
-            if (!project_id || !supplier_id) {
-                return Response.json({ error: 'project_id and supplier_id are required' }, { status: 400 });
-            }
-
-            // Try to find existing draft PO for this project + supplier
-            const existingDrafts = await base44.asServiceRole.entities.PurchaseOrder.filter({
-                project_id,
-                supplier_id,
-                status: PO_STATUS.DRAFT
-            });
-
-            if (existingDrafts.length > 0) {
-                return Response.json({ success: true, purchaseOrder: existingDrafts[0] });
-            }
-
-            // Create new draft PO
-            const supplier = await base44.asServiceRole.entities.Supplier.get(supplier_id);
-            const poData = {
-                supplier_id,
-                supplier_name: supplier?.name || null,
-                project_id,
-                status: PO_STATUS.DRAFT,
-                delivery_method: PO_DELIVERY_METHOD.DELIVERY,
-                created_by: user.email,
-                order_date: new Date().toISOString().split('T')[0],
-            };
-
-            const newPO = await base44.asServiceRole.entities.PurchaseOrder.create(poData);
-            
-            // Generate reference if missing
-            if (!newPO.po_reference) {
-                const generatedRef = `PO-${newPO.id.slice(0, 8)}`;
-                const updated = await base44.asServiceRole.entities.PurchaseOrder.update(newPO.id, {
-                    po_reference: generatedRef,
-                    po_number: generatedRef,
-                    order_reference: generatedRef,
-                    reference: generatedRef,
-                });
-                return Response.json({ success: true, purchaseOrder: updated });
-            }
-
-            return Response.json({ success: true, purchaseOrder: newPO });
-        }
-
         // Supported actions for v20260129
         return Response.json({ 
-            error: 'Invalid action. Supported in v20260129: create, updateStatus, delete, getOrCreateProjectSupplierDraft' 
+            error: 'Invalid action. Supported in v20260129: create, updateStatus, delete' 
         }, { status: 400 });
 
     } catch (error) {
