@@ -95,9 +95,13 @@ export default function Projects() {
       devLog(`[Projects Page] Received ${response.data?.projects?.length || 0} projects from backend`);
       return response.data?.projects || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
-    ...QUERY_CONFIG.reference,
+    refetchOnReconnect: false,
+    refetchInterval: false,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     onError: (error) => {
       if (error?.response?.status === 429) {
         toast.error('Rate limit hit – slowing down');
