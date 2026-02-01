@@ -962,9 +962,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
       
       const newJob = createJobResponse.data.job;
 
-      // Refresh batch data
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "overview") });
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+      // Refresh batch data with debouncing (not immediately)
+      debouncedInvalidate(projectKeys.withRelations(project.id, "overview"), 2000);
+      debouncedInvalidate(projectKeys.withRelations(project.id, "all"), 2000);
       
       // Navigate to the new job
       navigate(createPageUrl("Jobs") + `?jobId=${newJob.id}`);
