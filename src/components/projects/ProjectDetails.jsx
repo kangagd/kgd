@@ -2287,7 +2287,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                       </div>
                       <button
                         onClick={() => {
-                          setComposerMode(draft.threadId ? 'reply' : 'compose');
+                          setComposerMode('compose');
                           setComposerMessage({ existingDraft: draft });
                         }}
                         className="w-full text-left hover:opacity-80 transition-opacity"
@@ -2296,12 +2296,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                           <div className="text-sm font-medium text-[#111827] mb-1">{draft.subject}</div>
                         )}
                         <div className="text-xs text-[#6B7280] line-clamp-2">
-                          {draft.bodyText?.substring(0, 100) || draft.bodyHtml?.substring(0, 100) || 'No content'}
+                          {draft.body_html?.substring(0, 100) || draft.body_text?.substring(0, 100) || 'No content'}
                         </div>
                       </button>
-                      {draft.to && draft.to.length > 0 && (
+                      {draft.to_addresses && draft.to_addresses.length > 0 && (
                         <div className="text-xs text-[#9CA3AF] mt-2">
-                          To: {draft.to[0]}
+                          To: {draft.to_addresses[0]}
                         </div>
                       )}
                     </div>
