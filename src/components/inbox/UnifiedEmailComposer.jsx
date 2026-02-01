@@ -1632,25 +1632,45 @@ export default function UnifiedEmailComposer({
     </>
   );
 
+  // Compute time elapsed since last save for banner
+  const getTimeSinceLastSave = () => {
+    if (!lastSaved) return null;
+    const seconds = Math.floor((Date.now() - lastSaved.getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    return minutes < 60 ? `${minutes}m ago` : `${Math.floor(minutes / 60)}h ago`;
+  };
+
   const draftStatus = (
-    <div className="text-[12px] text-[#9CA3AF] flex items-center gap-1.5">
+    <div className="text-[12px] flex items-center gap-1.5">
       {isSavingDraft && (
         <>
-          <Loader2 className="w-3 h-3 animate-spin" />
-          <span>Saving…</span>
+          <Loader2 className="w-3 h-3 animate-spin text-blue-500" />
+          <span className="text-blue-600">Saving…</span>
         </>
       )}
       {!isSavingDraft && saveError && (
         <>
-          <X className="w-3 h-3 text-amber-600" />
-          <span className="text-amber-600">Offline — changes not saved</span>
+          <X className="w-3 h-3 text-red-500" />
+          <span className="text-red-600">Save failed</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSaveError(false);
+              saveDraft({ to: toChips, cc: ccChips, bcc: bccChips, subject, body });
+            }}
+            className="h-5 px-1.5 text-[11px] text-red-600 hover:bg-red-50"
+          >
+            Retry
+          </Button>
         </>
       )}
       {!isSavingDraft && !saveError && lastSaved && (
         <>
           <Check className="w-3 h-3 text-green-600" />
-          <span className="text-green-600">
-            Saved at {format(lastSaved, "HH:mm")}
+          <span className="text-[#6B7280]">
+            Saved • {getTimeSinceLastSave()}
           </span>
         </>
       )}
