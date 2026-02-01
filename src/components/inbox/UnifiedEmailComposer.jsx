@@ -613,13 +613,12 @@ export default function UnifiedEmailComposer({
     return JSON.stringify(current) !== JSON.stringify(lastSavedSnapshotRef.current);
   };
 
-  // Draft auto-save
+  // Draft auto-save: one draft per context using draft_key
   const saveDraft = useCallback(
     async (draftData) => {
       if (!draftData.subject && draftData.to.length === 0 && !draftData.body) return;
 
       // GUARDRAIL: Only set isSavingDraft state if editor is NOT focused
-      // This prevents re-renders that cause Quill selection instability
       if (!editorFocusedRef.current) {
         setIsSavingDraft(true);
         setSaveError(false);
@@ -627,7 +626,8 @@ export default function UnifiedEmailComposer({
 
       try {
         const now = new Date().toISOString();
-        const currentContextKey = computeComposeContextKey();
+        const { scope, contextId, key: draftKey } = computeDraftKey();
+        
         const draft = {
           thread_id: thread?.id || null,
           to_addresses: draftData.to || [],
@@ -638,29 +638,45 @@ export default function UnifiedEmailComposer({
           mode: mode !== "compose" ? mode : "compose",
           status: "active",
           last_saved_at: now,
-          compose_context_key: currentContextKey,
+          draft_key: draftKey,
+          draft_scope: scope,
+          draft_context_id: contextId,
           // Link to project/contract if provided
           ...(linkTarget?.type === "project" && { project_id: linkTarget.id }),
           ...(linkTarget?.type === "contract" && { contract_id: linkTarget.id }),
         };
 
-        // Check if compose context changed - if so, create new draft instead of updating
-        if (draftId && lastSavedComposeKeyRef.current && lastSavedComposeKeyRef.current !== currentContextKey) {
-          devLog('[UnifiedEmailComposer] Compose context changed - creating new draft instead of updating');
-          const newDraft = await base44.entities.EmailDraft.create(draft);
-          setDraftId(newDraft.id);
-          lastSavedComposeKeyRef.current = currentContextKey;
-        } else if (draftId) {
+        // Try to find existing draft by draft_key (one draft per context per user)
+        let existingDraft = null;
+        if (!draftId) {
+          try {
+            const matches = await base44.entities.EmailDraft.filter(
+              { draft_key: draftKey, status: "active" },
+              "-updated_date",
+              1
+            );
+            existingDraft = matches?.[0];
+          } catch (err) {
+            devLog('[UnifiedEmailComposer] Could not query for existing draft:', err);
+          }
+        }
+
+        // Update existing draft if found, otherwise create new
+        if (draftId) {
           await base44.entities.EmailDraft.update(draftId, draft);
-          lastSavedComposeKeyRef.current = currentContextKey;
+        } else if (existingDraft?.id) {
+          await base44.entities.EmailDraft.update(existingDraft.id, draft);
+          setDraftId(existingDraft.id);
+          devLog('[UnifiedEmailComposer] Found existing draft by draft_key, updating instead of creating');
         } else {
           const newDraft = await base44.entities.EmailDraft.create(draft);
           setDraftId(newDraft.id);
-          lastSavedComposeKeyRef.current = currentContextKey;
         }
+        
         // Update snapshot after successful save
         lastSavedSnapshotRef.current = { to: draftData.to, cc: draftData.cc, bcc: draftData.bcc, subject: draftData.subject, body: draftData.body };
-        // GUARDRAIL: Only update lastSaved UI state if editor not focused (no re-render during active editing)
+        
+        // GUARDRAIL: Only update lastSaved UI state if editor not focused
         if (!editorFocusedRef.current) {
           setLastSaved(new Date());
           setSaveError(false);
@@ -677,7 +693,7 @@ export default function UnifiedEmailComposer({
         }
       }
     },
-    [draftId, thread?.id, mode, linkTarget, onDraftSaved]
+    [draftId, thread?.id, mode, linkTarget, currentUser?.email, onDraftSaved]
   );
 
   const debouncedSave = useCallback(
