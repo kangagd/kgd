@@ -11,9 +11,13 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-const LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const LOCK_TTL_MS = 2 * 60 * 1000; // 2 minutes
+const HEARTBEAT_INTERVAL_MS = 10 * 1000; // 10 seconds
 const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 const MAX_CONSECUTIVE_FAILURES = 3;
+const TIME_BUDGET_MS = 40 * 1000; // 40 seconds (under 45s platform limit)
+const DRAIN_BATCH_DEFAULT = 75;
+const ITERATION_SLEEP_MS = 150;
 
 // ============================================================================
 // Lock Management
