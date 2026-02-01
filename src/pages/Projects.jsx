@@ -88,14 +88,20 @@ export default function Projects() {
   const [pageNum, setPageNum] = useState(1);
   const pageSize = 50;
 
+  // Stabilize query keys
+  const projectsQueryKey = useMemo(() => projectKeys.all, []);
+  const jobsQueryKey = useMemo(() => jobKeys.all, []);
+
   const { data: allProjects = [], isLoading } = useQuery({
-    queryKey: [...projectKeys.all, pageNum],
+    queryKey: projectsQueryKey,
     queryFn: async () => {
       const response = await base44.functions.invoke('getProjectsForRole', { limit: 500, filters: {} });
       devLog(`[Projects Page] Received ${response.data?.projects?.length || 0} projects from backend`);
       return response.data?.projects || [];
     },
-    ...QUERY_CONFIG.heavy,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
     onError: (error) => {
       if (error?.response?.status === 429) {
         toast.error('Rate limit hit – slowing down');
