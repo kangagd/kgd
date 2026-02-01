@@ -94,6 +94,10 @@ export default function Inbox() {
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
   const [selectedMessageForProject, setSelectedMessageForProject] = useState(null);
 
+  // Composer dirty state & thread switching protection
+  const [composerDirty, setComposerDirty] = useState(false);
+  const [pendingThreadSwitch, setPendingThreadSwitch] = useState(null);
+
   // Cleanup on unmount to avoid setState warnings and reset sync lock
   useEffect(() => {
     return () => {
