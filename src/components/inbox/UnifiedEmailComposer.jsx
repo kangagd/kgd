@@ -1110,19 +1110,27 @@ export default function UnifiedEmailComposer({
   };
 
   const handleClose = async () => {
-    // Flush debounced save and do final save if dirty (max 800ms)
-    debouncedSave.flush();
+    // Flush debounced save immediately
+    await debouncedSave.flush();
 
+    // Final save with proper timeout (3-5s instead of 800ms for reliability)
     if (isDirty() && (toChips.length > 0 || subject || body)) {
       try {
         const finalSavePromise = saveDraft({ to: toChips, cc: ccChips, bcc: bccChips, subject, body });
-        // Hard cap: wait max 800ms for final save
         await Promise.race([
           finalSavePromise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Save timeout')), 800))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Save timeout')), 5000))
         ]);
       } catch (err) {
-        devLog('[UnifiedEmailComposer] Final save timeout or failed, closing anyway:', err.message);
+        // If save is still pending, keep composer open and warn user
+        if (err.message === 'Save timeout') {
+          toast.warning('Draft save is taking longer than expected. Please keep this tab open.', {
+            duration: 6000
+          });
+          devLog('[UnifiedEmailComposer] Final save timed out, keeping composer open');
+          return; // Do NOT close
+        }
+        devLog('[UnifiedEmailComposer] Final save failed:', err.message);
       }
     }
 
