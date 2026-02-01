@@ -268,21 +268,14 @@ export default function PurchaseOrderDetail({ poId, onClose, mode = "page" }) {
 
     const deletePOMutation = useMutation({
     mutationFn: async () => {
-      // Debug log to confirm payload
-      console.log('[PO DELETE] Calling with:', { action: 'delete', id: poId, fn: BackendFn.managePurchaseOrderStatus });
-      
-      const response = await base44.functions.invoke(BackendFn.managePurchaseOrderStatus, {
-        action: 'delete',
-        id: poId
-      });
-      
-      console.log('[PO DELETE] Response:', response);
-      
-      const data = fnData(response);
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to delete PO');
+      // Delete associated line items first
+      const lines = await base44.entities.PurchaseOrderLine.filter({ purchase_order_id: poId });
+      for (const line of lines) {
+        await base44.entities.PurchaseOrderLine.delete(line.id);
       }
-      return data;
+      
+      // Delete the PO
+      await base44.entities.PurchaseOrder.delete(poId);
     },
     onSuccess: async () => {
       await invalidatePurchaseOrderBundle(queryClient, poId);
