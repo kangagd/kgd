@@ -361,19 +361,21 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
   // Track which IDs failed (stay in queue)
   const failedIds = new Set();
 
-  if (DEBUG && uniqueIds.length > cap) {
-    console.log(`[gmailSyncDelta] Capped ${uniqueIds.length} messages to ${cap}`);
+  if (idsToProcess.length < uniqueIds.length) {
+    console.log(`[gmailSyncDelta] Draining ${idsToProcess.length} of ${uniqueIds.length} pending IDs`);
   }
 
   // Group messages by thread to invoke gmailSyncThreadMessages
   const threadMap = new Map();
-  const MAX_THREADS_PER_RUN = 5;
+  const MAX_THREADS_PER_RUN = 10;
 
   for (const msgId of idsToProcess) {
     // Budget guard: stop if we're approaching timeout
     if (runStartedAt && maxRunMs && Date.now() - runStartedAt > maxRunMs) {
       counts.budget_exhausted = true;
-      console.log(`[gmailSyncDelta] Budget exhausted, stopping message fetch`);
+      // Any unprocessed IDs stay in pending
+      failedIds.add(msgId);
+      console.log(`[gmailSyncDelta] Budget exhausted at message fetch, keeping ${failedIds.size} IDs in pending`);
       break;
     }
 
@@ -385,7 +387,9 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
       if (!threadMap.has(gmailMsg.threadId)) {
         if (threadMap.size >= MAX_THREADS_PER_RUN) {
           counts.threads_capped = true;
-          console.log(`[gmailSyncDelta] Thread cap reached (${MAX_THREADS_PER_RUN}), skipping remaining messages`);
+          // Unprocessed IDs stay in queue
+          failedIds.add(msgId);
+          console.log(`[gmailSyncDelta] Thread cap reached (${MAX_THREADS_PER_RUN}), keeping ${failedIds.size} IDs in pending`);
           break;
         }
         threadMap.set(gmailMsg.threadId, []);
@@ -394,7 +398,7 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
       counts.messages_fetched++;
     } catch (err) {
       if (err.message.includes('404')) {
-        // Message deleted
+        // Message deleted - remove from pending
         try {
           const existing = await base44.asServiceRole.entities.EmailMessage.filter({ gmail_message_id: msgId });
           if (existing.length > 0) {
@@ -406,6 +410,8 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
         }
       } else {
         counts.messages_failed++;
+        // Keep failed fetch in pending for retry
+        failedIds.add(msgId);
         console.error(`[gmailSyncDelta] Failed to fetch message ${msgId}:`, err.message);
       }
     }
