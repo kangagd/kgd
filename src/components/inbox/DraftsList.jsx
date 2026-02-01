@@ -88,14 +88,26 @@ export default function DraftsList({ onOpenDraft }) {
   };
 
   const getLinkedEntity = (draft) => {
-    if (draft.linkedEntityType === "project" && draft.linkedEntityId) {
-      const project = linkedProjects.find(p => p.id === draft.linkedEntityId);
+    if (draft.draft_scope === "project" && draft.draft_context_id) {
+      const project = linkedProjects.find(p => p.id === draft.draft_context_id);
       return project ? { type: "Project", label: `#${project.project_number} ${project.title}` } : null;
-    } else if (draft.linkedEntityType === "job" && draft.linkedEntityId) {
-      const job = linkedJobs.find(j => j.id === draft.linkedEntityId);
+    } else if (draft.draft_scope === "job" && draft.draft_context_id) {
+      const job = linkedJobs.find(j => j.id === draft.draft_context_id);
       return job ? { type: "Job", label: `#${job.job_number}` } : null;
+    } else if (draft.draft_scope === "thread") {
+      return { type: "Email Thread", label: "Reply" };
     }
     return null;
+  };
+
+  const getScopeBadgeColor = (scope) => {
+    const colors = {
+      thread: "bg-blue-100 text-blue-700",
+      project: "bg-purple-100 text-purple-700",
+      job: "bg-green-100 text-green-700",
+      standalone: "bg-gray-100 text-gray-700"
+    };
+    return colors[scope] || colors.standalone;
   };
 
   const getStatusBadge = (status) => {
