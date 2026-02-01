@@ -235,6 +235,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
   const [checkedItems, setCheckedItems] = useState(job.checked_items || {});
   const [minimizedVisits, setMinimizedVisits] = useState({});
   const [showProcessStockModal, setShowProcessStockModal] = useState(false);
+  const [conflictWarning, setConflictWarning] = useState({ open: false, conflicts: [], pendingEmails: [] });
 
   // Sync checkedItems state when job data changes
   useEffect(() => {
