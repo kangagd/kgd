@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { devLog } from "@/components/utils/devLog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -145,6 +145,27 @@ const jobStatusColors = {
 export default function ProjectDetails({ project: initialProject, onClose, onEdit, onDelete, emailThreadId: propsEmailThreadId }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // Phase 4: Invalidation debouncer to prevent cascading updates
+  const lastInvalidationRef = useRef({});
+  const invalidationTimeoutRef = useRef(null);
+  
+  const debouncedInvalidate = useCallback((queryKey, minInterval = 1000) => {
+    const keyStr = JSON.stringify(queryKey);
+    const now = Date.now();
+    const lastTime = lastInvalidationRef.current[keyStr] || 0;
+    
+    if (now - lastTime < minInterval) {
+      // Skip this invalidation - too soon
+      devLog(`[Invalidation Guard] Skipped ${keyStr} (${now - lastTime}ms since last)`);
+      return;
+    }
+    
+    lastInvalidationRef.current[keyStr] = now;
+    queryClient.invalidateQueries({ queryKey });
+    devLog(`[Invalidation Guard] Allowed ${keyStr}`);
+  }, [queryClient]);
+  
   const [uploading, setUploading] = useState(false);
   const [newDoor, setNewDoor] = useState({ height: "", width: "", type: "", style: "" });
   const [showAddDoor, setShowAddDoor] = useState(false);
@@ -183,8 +204,8 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId) => base44.entities.DraftEmail.delete(draftId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.drafts(project.id) });
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+      debouncedInvalidate(projectKeys.drafts(project.id), 500);
+      debouncedInvalidate(projectKeys.withRelations(project.id, activeTab), 500);
       toast.success('Draft deleted');
     },
     onError: () => {
@@ -513,12 +534,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       // Invalidate both current tab and "all" for cross-tab fields
       const crossTabFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode'];
       if (crossTabFields.includes(variables.field)) {
-        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+        debouncedInvalidate(projectKeys.withRelations(project.id, "all"), 1000);
       }
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+      debouncedInvalidate(projectKeys.withRelations(project.id, activeTab), 500);
       // Only invalidate global projects list if the change affects list view (title, status, etc.)
       if (crossTabFields.includes(variables.field)) {
-        queryClient.invalidateQueries({ queryKey: projectKeys.list() });
+        debouncedInvalidate(projectKeys.list(), 2000); // Longer debounce for expensive list
       }
     }
   });
@@ -537,12 +558,12 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       // Invalidate both current tab and "all" for cross-tab fields
       const crossTabFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'updated_date', 'address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode'];
       if (Object.keys(fields).some(f => crossTabFields.includes(f))) {
-        queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, "all") });
+        debouncedInvalidate(projectKeys.withRelations(project.id, "all"), 1000);
       }
-      queryClient.invalidateQueries({ queryKey: projectKeys.withRelations(project.id, activeTab) });
+      debouncedInvalidate(projectKeys.withRelations(project.id, activeTab), 500);
       // Only invalidate global projects list if critical display fields changed
       if (Object.keys(fields).some(f => crossTabFields.includes(f))) {
-        queryClient.invalidateQueries({ queryKey: projectKeys.list() });
+        debouncedInvalidate(projectKeys.list(), 2000);
       }
     }
   });
