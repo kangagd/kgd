@@ -3255,45 +3255,42 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
                       <RichTextField
                         label="Work Performed (Overview) *"
-                        value={overview}
-                        onChange={setOverview}
-                        onBlur={handleOverviewBlur}
+                        value={overviewDraft}
+                        onChange={handleOverviewChange}
                         placeholder="Detailed description of tasks completed..."
-                        helperText="Required for checkout"
+                        helperText="Auto-saves after 0.8s of inactivity"
                       />
 
                       <RichTextField
                         label="Issues Found"
-                        value={issuesFound}
-                        onChange={setIssuesFound}
-                        onBlur={handleIssuesFoundBlur}
+                        value={issuesFoundDraft}
+                        onChange={handleIssuesFoundChange}
                         placeholder="Diagnosis of problems identified..."
+                        helperText="Auto-saves after 0.8s of inactivity"
                       />
 
                       <RichTextField
                         label="Resolution"
-                        value={resolution}
-                        onChange={setResolution}
-                        onBlur={handleResolutionBlur}
+                        value={resolutionDraft}
+                        onChange={handleResolutionChange}
                         placeholder="How the issues were resolved..."
+                        helperText="Auto-saves after 0.8s of inactivity"
                       />
 
                       <RichTextField
                         label="Next Steps / Recommendations *"
-                        value={nextSteps}
-                        onChange={setNextSteps}
-                        onBlur={handleNextStepsBlur}
+                        value={nextStepsDraft}
+                        onChange={handleNextStepsChange}
                         placeholder="What needs to happen next? Any follow-up required…"
-                        helperText="Required for checkout"
+                        helperText="Auto-saves after 0.8s of inactivity"
                       />
 
                       <RichTextField
                         label="Communication *"
-                        value={communicationWithClient}
-                        onChange={setCommunicationWithClient}
-                        onBlur={handleCommunicationBlur}
+                        value={communicationDraft}
+                        onChange={handleCommunicationChange}
                         placeholder="What was discussed with the client? Any agreements made…"
-                        helperText="Required for checkout"
+                        helperText="Auto-saves after 0.8s of inactivity"
                       />
 
                       <div>
