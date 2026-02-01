@@ -41,6 +41,7 @@ export default function JobModalView({ job, onJobUpdated }) {
     assigned_to: normalized.assigned_to || []
   });
   const [techniciansSearch, setTechniciansSearch] = useState('');
+  const [conflictWarning, setConflictWarning] = useState({ open: false, conflicts: [] });
   const queryClient = useQueryClient();
 
   const { data: technicians = [] } = useQuery({
