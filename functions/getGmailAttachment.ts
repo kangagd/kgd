@@ -1,36 +1,31 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { decodeBase64UrlToBytes } from './shared/base64UrlDecoder.ts';
+import { getGmailClient } from './shared/gmailClient.ts';
 
-async function refreshTokenIfNeeded(user, base44) {
-  const expiry = new Date(user.gmail_token_expiry);
-  const now = new Date();
+// Rate limiting: track requests per attachment
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 60 seconds
+const MAX_REQUESTS_PER_WINDOW = 3;
+
+function checkRateLimit(key) {
+  const now = Date.now();
+  const record = rateLimitMap.get(key) || { count: 0, windowStart: now };
   
-  if (expiry - now < 5 * 60 * 1000) {
-    const clientId = Deno.env.get('GMAIL_CLIENT_ID');
-    const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
-    
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        refresh_token: user.gmail_refresh_token,
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'refresh_token'
-      })
-    });
-    
-    const tokens = await tokenResponse.json();
-    
-    await base44.asServiceRole.entities.User.update(user.id, {
-      gmail_access_token: tokens.access_token,
-      gmail_token_expiry: new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-    });
-    
-    return tokens.access_token;
+  // Reset window if expired
+  if (now - record.windowStart > RATE_LIMIT_WINDOW) {
+    record.count = 0;
+    record.windowStart = now;
   }
   
-  return user.gmail_access_token;
+  record.count++;
+  rateLimitMap.set(key, record);
+  
+  if (record.count > MAX_REQUESTS_PER_WINDOW) {
+    const retryAfter = RATE_LIMIT_WINDOW - (now - record.windowStart);
+    return { allowed: false, retryAfter };
+  }
+  
+  return { allowed: true };
 }
 
 Deno.serve(async (req) => {
