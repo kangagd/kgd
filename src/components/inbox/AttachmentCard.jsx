@@ -144,13 +144,13 @@ export default function AttachmentCard({
             is_image: isImage
           });
           
-            setSaved(true);
-            if (linkedProjectId) {
-              await queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
-              // Force refetch to ensure UI updates
-              await queryClient.refetchQueries({ queryKey: ['project', linkedProjectId] });
-            }
-            console.log(`Auto-saved ${attachment.filename} to project as ${isImage ? 'image' : 'document'}`);
+          setSaved(true);
+          if (linkedProjectId) {
+            await queryClient.invalidateQueries({ queryKey: ['project', linkedProjectId] });
+            // Force refetch to ensure UI updates
+            await queryClient.refetchQueries({ queryKey: ['project', linkedProjectId] });
+          }
+          console.log(`Auto-saved ${attachment.filename} to project as ${isImage ? 'image' : 'document'}`);
         });
       } catch (error) {
         console.warn('Auto-save failed:', error.message);
