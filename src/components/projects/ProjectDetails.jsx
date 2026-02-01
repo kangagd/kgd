@@ -261,7 +261,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   };
 
    const { data: projectData, isLoading: isProjectLoading } = useQuery({
-     queryKey: projectKeys.withRelations(initialProject.id, activeTab),
+     queryKey: projectWithRelationsKey,
      queryFn: async () => {
         const response = await base44.functions.invoke('getProjectWithRelations', { 
           project_id: initialProject.id,
