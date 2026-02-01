@@ -638,16 +638,27 @@ Deno.serve(async (req) => {
           console.log('[gmailSyncDelta] Skipping inbox reconciliation (not needed)');
         }
         
-        // STEP 3: Union history + inbox reconciliation
-        const unionIds = new Set([...Array.from(historyMessageIds), ...inboxMissingIds]);
-        counts.message_ids_changed = unionIds.size;
+        // STEP 3: Load pending queue
+        let pending = new Set();
+        try {
+          const pendingJson = syncState.pending_message_ids_json || '[]';
+          pending = new Set(JSON.parse(pendingJson));
+        } catch (err) {
+          console.warn('[gmailSyncDelta] Failed to parse pending queue, starting fresh');
+        }
+
+        // STEP 4: Union history + inbox + pending
+        const newIds = new Set([...Array.from(historyMessageIds), ...inboxMissingIds]);
+        newIds.forEach(id => pending.add(id));
+        counts.enqueued_count = newIds.size;
+        counts.message_ids_changed = pending.size;
         
-        console.log(`[gmailSyncDelta] Union: ${unionIds.size} total message IDs to process`);
+        console.log(`[gmailSyncDelta] Enqueued: ${newIds.size} new, pending: ${pending.size} total`);
         
-        // STEP 4: Process messages
-        if (unionIds.size > 0) {
-          const processCounts = await processMessageIds({ 
-            messageIds: Array.from(unionIds), 
+        // STEP 5: Drain and process
+        if (pending.size > 0) {
+          const { counts: processCounts, failedIds } = await processMessageIds({ 
+            messageIds: Array.from(pending), 
             base44, 
             runId,
             maxMessagesFetched,
@@ -656,7 +667,22 @@ Deno.serve(async (req) => {
           });
           Object.assign(counts, processCounts);
           
-          console.log(`[gmailSyncDelta] Processed: ${processCounts.messages_fetched} fetched, ${processCounts.messages_created} created, budget_exhausted: ${processCounts.budget_exhausted}`);
+          // Update pending: remove successfully processed IDs
+          const successfulIds = new Set([...pending].filter(id => !failedIds.has(id)));
+          counts.drained_count = successfulIds.size;
+          
+          // Persist updated pending queue
+          pending = failedIds;
+          syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
+            pending_message_ids_json: JSON.stringify(Array.from(pending)),
+            backlog_size: pending.size
+          });
+          
+          counts.backlog_remaining = pending.size;
+          
+          console.log(`[gmailSyncDelta] Drained: ${counts.drained_count}, remaining in backlog: ${pending.size}`);
+        } else {
+          counts.backlog_remaining = 0;
         }
         
         // Invariant check
