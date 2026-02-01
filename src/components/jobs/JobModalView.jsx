@@ -354,6 +354,24 @@ export default function JobModalView({ job, onJobUpdated }) {
           Navigate
         </Button>
       </div>
+
+      {/* Conflict Warning Modal */}
+      <ConflictWarningModal
+        open={conflictWarning.open}
+        onClose={() => setConflictWarning({ open: false, conflicts: [] })}
+        onConfirm={() => {
+          setConflictWarning({ open: false, conflicts: [] });
+          updateMutation.mutate({
+            id: job.id,
+            data: editData
+          });
+        }}
+        draggedJob={job}
+        conflictingJobs={conflictWarning.conflicts}
+        newDate={editData.scheduled_date}
+        newTime={editData.scheduled_time}
+        isSubmitting={updateMutation.isPending}
+      />
     </div>
   );
 }
