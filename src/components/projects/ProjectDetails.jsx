@@ -2270,7 +2270,7 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                         <span className="text-xs font-medium text-amber-800">Draft</span>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-amber-600">
-                            {new Date(draft.lastSavedAt || draft.created_date).toLocaleDateString()}
+                            {new Date(draft.updated_date || draft.created_date).toLocaleDateString()}
                           </span>
                           <button
                             onClick={(e) => {
