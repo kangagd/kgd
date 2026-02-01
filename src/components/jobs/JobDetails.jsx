@@ -1321,13 +1321,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setCommunicationDirty(true);
   };
 
-  const handleOverviewBlur = () => {
-    if (overview !== job.overview) {
-      logChange('overview', job.overview, overview);
-      updateJobMutation.mutate({ field: 'overview', value: overview });
-    }
-  };
-
   const handlePricingProvidedBlur = () => {
     if (pricingProvided !== job.pricing_provided) {
       logChange('pricing_provided', job.pricing_provided, pricingProvided);
@@ -1339,34 +1332,6 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     if (additionalInfo !== job.additional_info) {
       logChange('additional_info', job.additional_info, additionalInfo);
       updateJobMutation.mutate({ field: 'additional_info', value: additionalInfo });
-    }
-  };
-
-  const handleNextStepsBlur = () => {
-    if (nextSteps !== job.next_steps) {
-      logChange('next_steps', job.next_steps, nextSteps);
-      updateJobMutation.mutate({ field: 'next_steps', value: nextSteps });
-    }
-  };
-
-  const handleCommunicationBlur = () => {
-    if (communicationWithClient !== job.communication_with_client) {
-      logChange('communication_with_client', job.communication_with_client, communicationWithClient);
-      updateJobMutation.mutate({ field: 'communication_with_client', value: communicationWithClient });
-    }
-  };
-
-  const handleIssuesFoundBlur = () => {
-    if (issuesFound !== job.issues_found) {
-      logChange('issues_found', job.issues_found, issuesFound);
-      updateJobMutation.mutate({ field: 'issues_found', value: issuesFound });
-    }
-  };
-
-  const handleResolutionBlur = () => {
-    if (resolution !== job.resolution) {
-      logChange('resolution', job.resolution, resolution);
-      updateJobMutation.mutate({ field: 'resolution', value: resolution });
     }
   };
 
