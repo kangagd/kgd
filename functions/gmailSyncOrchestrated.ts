@@ -152,6 +152,7 @@ async function attemptCidResolutionBatch(base44, maxBatch = 10) {
 
 Deno.serve(async (req) => {
   const runId = crypto.randomUUID();
+  const START_TIME = Date.now();
   
   try {
     const base44 = createClientFromRequest(req);
@@ -162,14 +163,23 @@ Deno.serve(async (req) => {
     }
 
     const bodyText = await req.text();
-    const { scope_key } = bodyText ? JSON.parse(bodyText) : {};
+    const payload = bodyText ? JSON.parse(bodyText) : {};
+    const {
+      scope_key,
+      mode = 'default',
+      drain_batch,
+      max_history_pages = 10,
+      enable_cid = false,
+      force_unlock = false
+    } = payload;
 
     const scopeKey = scope_key || `user:${user.id}`;
+    const drainBatch = Number.isFinite(drain_batch) ? drain_batch : DRAIN_BATCH_DEFAULT;
 
-    console.log(`[gmailSyncOrchestrated] Starting run ${runId} for scope ${scopeKey}`);
+    console.log(`[gmailSyncOrchestrated] Starting run ${runId} for scope ${scopeKey}, drain_batch=${drainBatch}`);
 
     // Phase 1: Acquire lock
-    const lockResult = await acquireLock(base44, scopeKey, runId);
+    const lockResult = await acquireLock(base44, scopeKey, runId, force_unlock);
 
     if (!lockResult.acquired) {
       return Response.json({
@@ -182,6 +192,7 @@ Deno.serve(async (req) => {
     }
 
     const syncState = lockResult.syncState;
+    let forcedUnlock = force_unlock && !lockResult.acquired;
 
     try {
       // Check for cooldown after too many failures
@@ -199,21 +210,82 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Phase 2: Run delta or backfill
-      const deltaResponse = await base44.functions.invoke('gmailSyncDelta', {
-        scope_key: scopeKey,
-        max_history_pages: 10,
-        max_messages_fetched: 10
-      });
+      // Phase 2: Orchestrated loop with time budget
+      let iterations = 0;
+      let lastHeartbeatTime = START_TIME;
+      const totalCounts = {
+        messages_fetched: 0,
+        messages_created: 0,
+        messages_upgraded: 0,
+        messages_failed: 0,
+        deleted_count: 0,
+        message_ids_changed: 0,
+        history_pages: 0
+      };
+      let lastDeltaMode = null;
+      let backlogRemaining = 0;
 
-      const deltaResult = deltaResponse.data;
+      while (Date.now() - START_TIME < TIME_BUDGET_MS) {
+        iterations++;
 
-      if (!deltaResult.success) {
-        throw new Error(deltaResult.error || 'Delta returned failure');
+        // Heartbeat: refresh lock every 10 seconds
+        const now = Date.now();
+        if (now - lastHeartbeatTime >= HEARTBEAT_INTERVAL_MS) {
+          await refreshLockHeartbeat(base44, syncState.id, runId);
+          lastHeartbeatTime = now;
+        }
+
+        // Invoke delta with current drain batch
+        const deltaResponse = await base44.functions.invoke('gmailSyncDelta', {
+          scope_key: scopeKey,
+          mode,
+          max_history_pages: max_history_pages,
+          max_messages_fetched: drainBatch
+        });
+
+        const deltaResult = deltaResponse.data;
+
+        if (!deltaResult.success) {
+          throw new Error(deltaResult.error || 'Delta returned failure');
+        }
+
+        lastDeltaMode = deltaResult.mode;
+
+        // Accumulate counts
+        if (deltaResult.counts) {
+          totalCounts.messages_fetched += deltaResult.counts.messages_fetched || 0;
+          totalCounts.messages_created += deltaResult.counts.messages_created || 0;
+          totalCounts.messages_upgraded += deltaResult.counts.messages_upgraded || 0;
+          totalCounts.messages_failed += deltaResult.counts.messages_failed || 0;
+          totalCounts.deleted_count += deltaResult.counts.deleted_count || 0;
+          totalCounts.message_ids_changed += deltaResult.counts.message_ids_changed || 0;
+          totalCounts.history_pages += deltaResult.counts.history_pages || 0;
+        }
+
+        backlogRemaining = deltaResult.backlog_remaining || 0;
+
+        // Stop conditions
+        const noFetch = (deltaResult.counts?.message_ids_changed || 0) === 0 && (deltaResult.counts?.messages_fetched || 0) === 0;
+        const noProgress = (deltaResult.counts?.messages_fetched || 0) === 0;
+
+        if (noFetch || noProgress) {
+          console.log(`[gmailSyncOrchestrated] Stopping: noFetch=${noFetch}, noProgress=${noProgress}`);
+          break;
+        }
+
+        // Small sleep between iterations to avoid tight loop
+        if (Date.now() - START_TIME < TIME_BUDGET_MS) {
+          await new Promise(resolve => setTimeout(resolve, ITERATION_SLEEP_MS));
+        }
       }
 
-      // Phase 3: Opportunistic CID resolution
-      const cidResult = await attemptCidResolutionBatch(base44, 25);
+      console.log(`[gmailSyncOrchestrated] Completed ${iterations} iteration(s)`);
+
+      // Phase 3: Opportunistic CID resolution (only if enabled)
+      let cidResult = { attempted: 0, resolved: 0 };
+      if (enable_cid && Date.now() - START_TIME < TIME_BUDGET_MS) {
+        cidResult = await attemptCidResolutionBatch(base44, 10);
+      }
 
       // Phase 4: Update state on success
       await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
@@ -223,21 +295,24 @@ Deno.serve(async (req) => {
         last_error_message: null
       });
 
+      const elapsedMs = Date.now() - START_TIME;
       const summary = {
         success: true,
         run_id: runId,
-        mode: deltaResult.mode,
-        state: {
-          last_history_id: deltaResult.new_last_history_id || syncState.last_history_id,
-          backfill_mode: syncState.backfill_mode,
-          backfill_cursor: syncState.backfill_cursor
-        },
+        iterations,
+        elapsed_ms: elapsedMs,
+        mode: lastDeltaMode,
         counts: {
-          ...deltaResult.counts,
+          ...totalCounts,
           cid_resolution_attempted: cidResult.attempted,
           cid_resolution_resolved: cidResult.resolved
-        }
+        },
+        backlog_remaining: backlogRemaining
       };
+
+      if (forcedUnlock) {
+        summary.forced_unlock = true;
+      }
 
       console.log(`[gmailSyncOrchestrated] Success: ${JSON.stringify(summary)}`);
 
@@ -267,7 +342,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error(`[gmailSyncOrchestrated] Fatal error:`, error.message);
     return Response.json(
-      { error: error.message, run_id: runId },
+      { error: error.message, run_id: crypto.randomUUID() },
       { status: 500 }
     );
   }
