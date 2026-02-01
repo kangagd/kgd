@@ -78,6 +78,10 @@ const isLogoOrReview = (filename, size) => {
   return false;
 };
 
+// Global idempotency cache - tracks recent calls to prevent loops
+const recentCalls = new Map();
+const IDEMPOTENCY_WINDOW_MS = 30000; // 30 seconds
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -87,6 +91,32 @@ Deno.serve(async (req) => {
 
     if (!thread_id || !target_type || !target_id) {
       return Response.json({ error: 'Missing required parameters' }, { status: 400 });
+    }
+
+    // Idempotency check - prevent rapid repeated calls
+    const callKey = `${thread_id}:${target_type}:${target_id}`;
+    const lastCall = recentCalls.get(callKey);
+    const now = Date.now();
+    
+    if (lastCall && (now - lastCall) < IDEMPOTENCY_WINDOW_MS) {
+      console.log(`[Guardrail] Skipping duplicate call for ${callKey} - last called ${now - lastCall}ms ago`);
+      return Response.json({ 
+        success: true, 
+        skipped: true,
+        message: 'Request skipped - same operation called recently' 
+      });
+    }
+    
+    // Record this call
+    recentCalls.set(callKey, now);
+    
+    // Cleanup old entries every 100 calls
+    if (recentCalls.size > 100) {
+      for (const [key, timestamp] of recentCalls.entries()) {
+        if (now - timestamp > IDEMPOTENCY_WINDOW_MS) {
+          recentCalls.delete(key);
+        }
+      }
     }
 
     // Get the thread messages
