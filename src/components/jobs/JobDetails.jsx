@@ -4042,6 +4042,37 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         currentInvoiceId={job.xero_invoice_id}
       />
 
+      <ConflictWarningModal
+        open={conflictWarning.open}
+        onClose={() => setConflictWarning({ open: false, conflicts: [], pendingEmails: [] })}
+        onConfirm={() => {
+          setConflictWarning({ open: false, conflicts: [], pendingEmails: [] });
+          const techNames = conflictWarning.pendingEmails.map((email) => {
+            const tech = technicians.find((t) => t.email === email);
+            return tech?.display_name || tech?.full_name;
+          }).filter(Boolean);
+          
+          const updates = {
+            assigned_to: conflictWarning.pendingEmails,
+            assigned_to_name: techNames
+          };
+          
+          base44.entities.Job.update(job.id, updates).then(() => {
+            queryClient.setQueryData(['job', job.id], (oldData) => ({
+              ...oldData,
+              ...updates
+            }));
+            debouncedInvalidate(['jobs'], 2000);
+            toast.success('Assignment updated despite conflicts');
+          });
+        }}
+        draggedJob={job}
+        conflictingJobs={conflictWarning.conflicts}
+        newDate={job.scheduled_date}
+        newTime={job.scheduled_time}
+        isSubmitting={false}
+      />
+
       <ManageJobStockModal
         job={job}
         projectParts={enrichedProjectParts}
