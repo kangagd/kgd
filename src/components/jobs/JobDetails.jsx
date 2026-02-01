@@ -4044,7 +4044,10 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
 
       <ConflictWarningModal
         open={conflictWarning.open}
-        onClose={() => setConflictWarning({ open: false, conflicts: [], pendingEmails: [] })}
+        onClose={() => {
+          setConflictWarning({ open: false, conflicts: [], pendingEmails: [] });
+          debouncedInvalidate(['job', job.id], 500);
+        }}
         onConfirm={() => {
           setConflictWarning({ open: false, conflicts: [], pendingEmails: [] });
           const techNames = conflictWarning.pendingEmails.map((email) => {
