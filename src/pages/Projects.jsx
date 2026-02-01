@@ -132,13 +132,7 @@ export default function Projects() {
   const { data: allPurchaseOrders = [] } = useQuery({
     queryKey: ['purchaseOrders', 'all'],
     queryFn: () => base44.entities.PurchaseOrder.list(),
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchInterval: false,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    ...QUERY_CONFIG.heavy,
   });
 
   const { data: allAttentionItems = [] } = useQuery({
