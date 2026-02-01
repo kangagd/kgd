@@ -556,8 +556,6 @@ Deno.serve(async (req) => {
 
         // Action: getOrCreateProjectSupplierDraft
         if (action === 'getOrCreateProjectSupplierDraft') {
-            const { project_id, supplier_id } = await req.json();
-            
             if (!project_id || !supplier_id) {
                 return Response.json({ error: 'project_id and supplier_id are required' }, { status: 400 });
             }
