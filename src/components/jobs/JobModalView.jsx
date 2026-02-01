@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { normalizeJob } from "@/components/utils/normalizeJob";
 import { resolveTechnicianDisplayName } from "@/components/utils/technicianDisplay";
+import ConflictWarningModal from "../schedule/ConflictWarningModal";
 
 const statusColors = {
   "Open": "bg-slate-100 text-slate-700",
