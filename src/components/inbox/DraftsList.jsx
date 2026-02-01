@@ -35,15 +35,15 @@ export default function DraftsList({ onOpenDraft }) {
     refetch();
   }, []);
 
-  // Fetch linked entities for display
+  // Fetch linked entities for display (projects and jobs)
   const { data: linkedProjects = [] } = useQuery({
-    queryKey: ["draftLinkedProjects", drafts.map(d => d.linkedEntityId).filter(Boolean)],
+    queryKey: ["draftLinkedProjects", drafts.map(d => d.draft_context_id).filter(d => d)],
     queryFn: async () => {
       const projectIds = drafts
-        .filter(d => d.linkedEntityType === "project" && d.linkedEntityId)
-        .map(d => d.linkedEntityId);
+        .filter(d => d.draft_scope === "project" && d.draft_context_id)
+        .map(d => d.draft_context_id);
       if (projectIds.length === 0) return [];
-      
+
       const projects = await Promise.all(
         projectIds.map(id => base44.entities.Project.get(id).catch(() => null))
       );
@@ -53,13 +53,13 @@ export default function DraftsList({ onOpenDraft }) {
   });
 
   const { data: linkedJobs = [] } = useQuery({
-    queryKey: ["draftLinkedJobs", drafts.map(d => d.linkedEntityId).filter(Boolean)],
+    queryKey: ["draftLinkedJobs", drafts.map(d => d.draft_context_id).filter(d => d)],
     queryFn: async () => {
       const jobIds = drafts
-        .filter(d => d.linkedEntityType === "job" && d.linkedEntityId)
-        .map(d => d.linkedEntityId);
+        .filter(d => d.draft_scope === "job" && d.draft_context_id)
+        .map(d => d.draft_context_id);
       if (jobIds.length === 0) return [];
-      
+
       const jobs = await Promise.all(
         jobIds.map(id => base44.entities.Job.get(id).catch(() => null))
       );
