@@ -1101,6 +1101,38 @@ export default function Inbox() {
       {/* Gmail history search */}
       <GmailHistorySearchModal open={showHistorySearch} onOpenChange={setShowHistorySearch} mode="inbox" />
 
+      {/* Thread switch protection dialog */}
+      <AlertDialog open={!!pendingThreadSwitch} onOpenChange={(open) => !open && setPendingThreadSwitch(null)}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Unsaved changes</AlertDialogTitle>
+          <AlertDialogDescription>
+            You have unsaved draft content. What would you like to do?
+          </AlertDialogDescription>
+          <div className="flex gap-3 justify-end">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <button
+              onClick={() => {
+                setComposerOpen(false);
+                setPendingThreadSwitch(null);
+                setTimeout(() => setSelectedThreadId(pendingThreadSwitch), 100);
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg"
+            >
+              Discard
+            </button>
+            <AlertDialogAction
+              onClick={() => {
+                setComposerOpen(false);
+                setPendingThreadSwitch(null);
+                setTimeout(() => setSelectedThreadId(pendingThreadSwitch), 100);
+              }}
+            >
+              Save &amp; Switch
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Unified composer drawer */}
       <UnifiedEmailComposer
         variant="drawer"
@@ -1111,6 +1143,7 @@ export default function Inbox() {
             setComposerDraftId(null);
             setComposerMode("new");
             setComposerThreadId(null);
+            setComposerDirty(false); // Reset dirty state
           }
           setComposerOpen(open);
         }}
@@ -1120,6 +1153,7 @@ export default function Inbox() {
         existingDraft={composerDraftId ? { id: composerDraftId } : null}
         onClose={() => {
           setComposerOpen(false);
+          setComposerDirty(false); // Reset on close
           refetchDrafts();
         }}
         onSent={() => {
@@ -1127,7 +1161,9 @@ export default function Inbox() {
           queryClient.invalidateQueries({ queryKey: inboxKeys.drafts() });
           refetchThreads();
           refetchDrafts();
+          setComposerDirty(false); // Reset on send
         }}
+        onDirtyStateChange={setComposerDirty}
       />
 
       {/* Warning for unsync'd threads */}
