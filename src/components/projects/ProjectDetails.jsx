@@ -344,7 +344,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
 
   // Fetch draft emails linked to this project
   const { data: projectDrafts = [] } = useQuery({
-    queryKey: projectKeys.drafts(project.id),
+    queryKey: projectDraftsKey,
     queryFn: async () => {
        try {
           const allDrafts = await base44.entities.DraftEmail.list();
@@ -356,7 +356,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
           return [];
         }
       },
-    ...QUERY_CONFIG.reference
+    staleTime: 1 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const [description, setDescription] = useState(project.description || "");
