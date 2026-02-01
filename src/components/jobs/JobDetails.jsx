@@ -1209,7 +1209,7 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         logChange('notes', job.notes, notesDraft);
         updateJobMutation.mutate({ field: 'notes', value: notesDraft });
       }
-    }, 1000); // 1 second debounce
+    }, 800); // 800ms debounce
     
     return () => clearTimeout(timer);
   }, [notesDraft, notesDirty]);
@@ -1224,6 +1224,101 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
     setNotesDraft(updatedJob.notes || "");
     setNotesDirty(false);
     notesServerRef.current = JSON.stringify(updatedJob.notes || "");
+  };
+
+  // Debounced autosave for overview/work_performed
+  useEffect(() => {
+    if (!overviewDirty || overviewDraft === null) return;
+    
+    const timer = setTimeout(() => {
+      if (overviewDraft !== overview) {
+        logChange('overview', overview, overviewDraft);
+        updateJobMutation.mutate({ field: 'overview', value: overviewDraft });
+      }
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [overviewDraft, overviewDirty]);
+
+  const handleOverviewChange = (val) => {
+    setOverviewDraft(val);
+    setOverviewDirty(true);
+  };
+
+  // Debounced autosave for issues_found
+  useEffect(() => {
+    if (!issuesFoundDirty || issuesFoundDraft === null) return;
+    
+    const timer = setTimeout(() => {
+      if (issuesFoundDraft !== issuesFound) {
+        logChange('issues_found', issuesFound, issuesFoundDraft);
+        updateJobMutation.mutate({ field: 'issues_found', value: issuesFoundDraft });
+      }
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [issuesFoundDraft, issuesFoundDirty]);
+
+  const handleIssuesFoundChange = (val) => {
+    setIssuesFoundDraft(val);
+    setIssuesFoundDirty(true);
+  };
+
+  // Debounced autosave for resolution
+  useEffect(() => {
+    if (!resolutionDirty || resolutionDraft === null) return;
+    
+    const timer = setTimeout(() => {
+      if (resolutionDraft !== resolution) {
+        logChange('resolution', resolution, resolutionDraft);
+        updateJobMutation.mutate({ field: 'resolution', value: resolutionDraft });
+      }
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [resolutionDraft, resolutionDirty]);
+
+  const handleResolutionChange = (val) => {
+    setResolutionDraft(val);
+    setResolutionDirty(true);
+  };
+
+  // Debounced autosave for next_steps
+  useEffect(() => {
+    if (!nextStepsDirty || nextStepsDraft === null) return;
+    
+    const timer = setTimeout(() => {
+      if (nextStepsDraft !== nextSteps) {
+        logChange('next_steps', nextSteps, nextStepsDraft);
+        updateJobMutation.mutate({ field: 'next_steps', value: nextStepsDraft });
+      }
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [nextStepsDraft, nextStepsDirty]);
+
+  const handleNextStepsChange = (val) => {
+    setNextStepsDraft(val);
+    setNextStepsDirty(true);
+  };
+
+  // Debounced autosave for communication_with_client
+  useEffect(() => {
+    if (!communicationDirty || communicationDraft === null) return;
+    
+    const timer = setTimeout(() => {
+      if (communicationDraft !== communicationWithClient) {
+        logChange('communication_with_client', communicationWithClient, communicationDraft);
+        updateJobMutation.mutate({ field: 'communication_with_client', value: communicationDraft });
+      }
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [communicationDraft, communicationDirty]);
+
+  const handleCommunicationChange = (val) => {
+    setCommunicationDraft(val);
+    setCommunicationDirty(true);
   };
 
   const handleOverviewBlur = () => {
