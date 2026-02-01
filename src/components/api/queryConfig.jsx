@@ -98,6 +98,28 @@ export const QUERY_CONFIG = {
     retryDelay: getRetryDelay,
   },
 
+  // Light queries - small entities, infrequent updates
+  light: {
+    staleTime: 300000, // 5 minutes
+    cacheTime: 1800000, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
+    retry: (failureCount, error) => shouldRetry(failureCount, error, 2),
+    retryDelay: getRetryDelay,
+  },
+
+  // Heavy queries - large datasets (threads, messages, parts, POs)
+  heavy: {
+    staleTime: 300000, // 5 minutes
+    cacheTime: 1800000, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 10000),
+  },
+
   // Project detail lazy load - for tab-based data
   projectDetailLazy: {
     staleTime: 300000, // 5 minutes
