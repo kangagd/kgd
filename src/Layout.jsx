@@ -520,7 +520,7 @@ export default function Layout({ children, currentPageName }) {
                   )}
 
                   {/* Primary Navigation */}
-                  {primaryNavigationItems.map((item) => {
+                  {navigationItems.map((item) => {
                   const isActive = location.pathname === item.url;
                   return (
                     <Link
@@ -538,8 +538,24 @@ export default function Layout({ children, currentPageName }) {
                       title={isCollapsed ? item.title : ''}
                     >
                       {isActive && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
-                      <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
-                      {!isCollapsed && <span className="text-[14px]">{item.title}</span>}
+                      <div className="relative">
+                        <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                        {item.badge && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+                            {item.badge > 99 ? '99+' : item.badge}
+                          </span>
+                        )}
+                      </div>
+                      {!isCollapsed && (
+                        <div className="flex items-center gap-2 flex-1">
+                          <span className="text-[14px]">{item.title}</span>
+                          {item.badge && (
+                            <span className="bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1.5 flex items-center justify-center">
+                              {item.badge > 99 ? '99+' : item.badge}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </Link>
                   );
                   })}
