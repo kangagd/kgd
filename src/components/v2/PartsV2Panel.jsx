@@ -51,15 +51,17 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
   }, [visitId]);
 
   // Fetch visits for selected project
-  const { data: visits = [] } = useQuery({
-    queryKey: ['visits', projectId],
-    queryFn: async () => {
-      return await base44.entities.Visit.filter({ project_id: projectId });
-    },
-    enabled: !!projectId,
-    staleTime: 30000,
-    refetchOnWindowFocus: false,
-  });
+   const { data: visits = [] } = useQuery({
+     queryKey: ['visits', projectId],
+     queryFn: async () => {
+       if (!projectId) return [];
+       const allVisits = await base44.entities.Visit.list();
+       return allVisits.filter(v => v.project_id === projectId);
+     },
+     enabled: !!projectId,
+     staleTime: 30000,
+     refetchOnWindowFocus: false,
+   });
 
   // Fetch requirements
   const { data: requirements = [] } = useQuery({
