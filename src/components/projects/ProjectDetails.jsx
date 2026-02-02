@@ -172,6 +172,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const [showHistory, setShowHistory] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [user, setUser] = useState(null);
+  const [userLoaded, setUserLoaded] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
