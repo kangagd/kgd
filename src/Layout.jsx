@@ -53,7 +53,7 @@ import XeroConnectionBanner from "@/components/common/XeroConnectionBanner";
 
 const primaryNavigationItems = [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Inbox", url: createPageUrl("Inbox"), icon: Mail },
+  { title: "Inbox", url: createPageUrl("InboxV2"), icon: Mail },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Leads", url: createPageUrl("Leads"), icon: TrendingUp },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
@@ -141,7 +141,7 @@ export default function Layout({ children, currentPageName }) {
   
   // Auto-collapse sidebar when on Inbox page with email open
   useEffect(() => {
-    const isInboxPage = (currentPageName === "Inbox") || location.pathname.includes("Inbox");
+    const isInboxPage = (currentPageName === "InboxV2") || location.pathname.includes("InboxV2");
     const params = new URLSearchParams(location.search);
     const hasEmailOpen = params.has('threadId');
 
@@ -860,8 +860,8 @@ export default function Layout({ children, currentPageName }) {
                      <CheckSquare className="w-5 h-5" />
                    </Link>
                    <Link
-                     to={createPageUrl("Inbox")}
-                     className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("Inbox") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
+                     to={createPageUrl("InboxV2")}
+                     className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("InboxV2") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Inbox"
                    >
                      <Mail className="w-5 h-5" />
