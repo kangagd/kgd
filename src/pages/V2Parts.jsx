@@ -52,25 +52,11 @@ export default function V2Parts() {
   const { data: projects = [] } = useQuery({
     queryKey: ['projects', 'v2parts'],
     queryFn: async () => {
-      const allProjects = await base44.entities.Project.filter({ 
-        deleted_at: { $exists: false },
-        status: { $ne: "Lost" }
-      });
+      const allProjects = await base44.entities.Project.list('-updated_date', 200);
       return allProjects;
     },
     enabled: isAllowed,
   });
-
-  // Fetch selected project data
- const { data: projects = [] } = useQuery({
-  queryKey: ["projects", "v2parts"],
-  queryFn: async () => {
-    // safest pilot query: just fetch recent projects
-    const res = await base44.entities.Project.list(); 
-    return res;
-  },
-  enabled: isAllowed,
-});
 
   // Fetch visits for selected project
   const { data: visits = [] } = useQuery({
@@ -243,13 +229,18 @@ export default function V2Parts() {
                 <SelectValue placeholder="Choose a project..." />
               </SelectTrigger>
               <SelectContent>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    #{p.project_number} - {p.title}
-                  </SelectItem>
-                ))}
+                {projects.map(p => {
+                  const projectNum = p.project_number || p.projectNumber || p.number || '?';
+                  const projectTitle = p.title || p.name || p.project_name || p.address || p.client_name || 'Untitled';
+                  return (
+                    <SelectItem key={p.id} value={p.id}>
+                      #{projectNum} - {projectTitle}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
+            <p className="text-xs text-gray-500 mt-1">Loaded projects: {projects.length}</p>
           </div>
         </div>
       </div>
