@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import DOMPurify from 'dompurify';
+import { base44 } from '@/api/base44Client';
+import PartsV2Panel from '@/components/v2/PartsV2Panel';
+import { isPartsLogisticsV2PilotAllowed } from '@/components/utils/allowlist';
 
 const normalizeDoors = (measurements) => {
   if (!measurements) return [];
@@ -41,6 +44,7 @@ const normalizeDoors = (measurements) => {
 
 export default function VisitDetailView({ visit }) {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     summary: true,
     measurements: true,
@@ -48,6 +52,18 @@ export default function VisitDetailView({ visit }) {
     nextSteps: false,
     photos: false,
   });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -230,6 +246,18 @@ export default function VisitDetailView({ visit }) {
             </CollapsibleContent>
           </Card>
         </Collapsible>
+      )}
+
+      {/* Parts (V2) Section - Admin Only */}
+      {isPartsLogisticsV2PilotAllowed(user) && visit.project_id && (
+        <Card className="border-2 border-blue-200">
+          <CardHeader className="bg-blue-50">
+            <h4 className="font-semibold text-[#111827] text-sm">Parts (V2) — Pilot</h4>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <PartsV2Panel projectId={visit.project_id} visitId={visit.id} />
+          </CardContent>
+        </Card>
       )}
     </div>
   );
