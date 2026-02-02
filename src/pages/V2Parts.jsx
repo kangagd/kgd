@@ -62,11 +62,15 @@ export default function V2Parts() {
   });
 
   // Fetch selected project data
-  const { data: selectedProject } = useQuery({
-    queryKey: ['project', selectedProjectId],
-    queryFn: () => base44.entities.Project.get(selectedProjectId),
-    enabled: !!selectedProjectId && isAllowed,
-  });
+ const { data: projects = [] } = useQuery({
+  queryKey: ["projects", "v2parts"],
+  queryFn: async () => {
+    // safest pilot query: just fetch recent projects
+    const res = await base44.entities.Project.list(); 
+    return res;
+  },
+  enabled: isAllowed,
+});
 
   // Fetch visits for selected project
   const { data: visits = [] } = useQuery({
