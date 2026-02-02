@@ -439,22 +439,22 @@ export default function V2Parts() {
                     <p className="text-gray-600 text-center py-8">No allocations yet</p>
                   ) : (
                     <div className="space-y-4">
-                      {['unassigned', ...visitTargets.map(j => j.id)].map(jobId => {
+                      {['unassigned', ...visitTargets.map(j => j.job_id)].map(jobId => {
                         const jobAllocations = allocations.filter(a => 
                           jobId === 'unassigned' ? !a.job_id : a.job_id === jobId
                         );
                         if (jobAllocations.length === 0) return null;
-                        
-                        const job = visitTargets.find(j => j.id === jobId);
+
+                        const target = visitTargets.find(j => j.job_id === jobId);
                         const jobLabel = jobId === 'unassigned' 
                           ? 'Unassigned'
-                          : `Job #${job?.job_number || jobId} — ${job?.job_type_name || ''} — ${job?.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : 'Unscheduled'}`;
-                        
+                          : target?.label || `Job: ${jobId}`;
+
                         return (
                           <div key={jobId}>
                             <h4 className="font-medium mb-2">{jobLabel}</h4>
                             <div className="space-y-2">
-                              {visitAllocations.map(alloc => (
+                              {jobAllocations.map(alloc => (
                                 <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
                                   <div className="flex-1">
                                     <div className="flex items-center gap-2">
