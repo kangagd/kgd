@@ -51,9 +51,9 @@ import PullToRefresh from "@/components/common/PullToRefresh";
 import OnboardingFlow from "@/components/onboarding/OnboardingFlow";
 import XeroConnectionBanner from "@/components/common/XeroConnectionBanner";
 
-const primaryNavigationItems = [
+const primaryNavigationItems = (unassignedCount) => [
   { title: "Dashboard", url: createPageUrl("Dashboard"), icon: LayoutDashboard },
-  { title: "Inbox", url: createPageUrl("InboxV2"), icon: Mail },
+  { title: "Inbox", url: createPageUrl("InboxV2"), icon: Mail, badge: unassignedCount > 0 ? unassignedCount : null },
   { title: "Tasks", url: createPageUrl("Tasks"), icon: CheckSquare },
   { title: "Leads", url: createPageUrl("Leads"), icon: TrendingUp },
   { title: "Schedule", url: createPageUrl("Schedule"), icon: Calendar },
