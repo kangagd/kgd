@@ -215,6 +215,34 @@ Deno.serve(async (req) => {
       const statusUpdate = { ...data, status: deriveVisitStatus(merged) };
 
       const updatedVisit = await base44.asServiceRole.entities.Visit.update(visit_id, statusUpdate);
+
+      // Auto-resolve "Return Visit Required" attention items when scheduled_date added (Option C)
+      if (data.scheduled_date && !visit.scheduled_date) {
+        try {
+          const job = await base44.asServiceRole.entities.Job.get(visit.job_id);
+          if (job?.project_id) {
+            const attentionItems = await base44.asServiceRole.entities.AttentionItem.filter({
+              entity_type: 'Project',
+              entity_id: job.project_id,
+              category: 'Access & Site',
+              message: { $regex: 'Return visit required', $options: 'i' },
+              resolved_at: { $exists: false }
+            });
+            
+            for (const item of attentionItems) {
+              await base44.asServiceRole.entities.AttentionItem.update(item.id, {
+                resolved_at: new Date().toISOString(),
+                resolved_by: user.email,
+                resolved_by_name: user.display_name || user.full_name || user.email,
+                resolution_notes: `Auto-resolved: Visit scheduled`
+              });
+            }
+          }
+        } catch (error) {
+          console.warn(`[manageVisit] Failed to auto-resolve attention items:`, error);
+        }
+      }
+
       return Response.json({ success: true, visit: updatedVisit });
     }
 
