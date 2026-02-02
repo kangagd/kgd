@@ -70,31 +70,17 @@ export default function V2Parts() {
     enabled: isAllowed,
   });
 
-  // Fetch visits for selected project (via jobs)
-  const { data: visits = [] } = useQuery({
-    queryKey: ['visits', selectedProjectId],
+  // Fetch visit targets (jobs) for selected project
+  const { data: visitTargets = [] } = useQuery({
+    queryKey: ['visitTargets', selectedProjectId],
     queryFn: async () => {
       if (!selectedProjectId) return [];
-      const jobsForProject = await base44.entities.Job.filter({ project_id: selectedProjectId });
-      const jobIds = jobsForProject.map(job => job.id);
-      if (jobIds.length === 0) return [];
-      
-      // Fetch visits per job (no $in operator for reliability)
-      const visitLists = await Promise.all(
-        jobIds.map(jobId => base44.entities.Visit.filter({ job_id: jobId }))
+      const jobs = await base44.entities.Job.filter({ project_id: selectedProjectId }, '-scheduled_date');
+      // Filter out deleted jobs and logistics job types
+      return jobs.filter(job => 
+        !job.deleted_at && 
+        !LOGISTICS_JOB_TYPES.includes(job.job_type_name)
       );
-      
-      // Flatten and dedupe by id
-      const visits = visitLists.flat();
-      const unique = Array.from(new Map(visits.map(v => [v.id, v])).values());
-      
-      // Sort newest first
-      unique.sort((a, b) => 
-        new Date(b.start_time || b.visit_date || b.created_at) - 
-        new Date(a.start_time || a.visit_date || a.created_at)
-      );
-      
-      return unique;
     },
     enabled: !!selectedProjectId && isAllowed,
   });
