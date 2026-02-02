@@ -956,7 +956,7 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => {
-            if (visitTargets.length > 0 && !formData.job_id) {
+            if (!formData.job_id) {
               toast.error('Please select a job');
               return;
             }
