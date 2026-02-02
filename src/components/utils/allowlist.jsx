@@ -28,3 +28,16 @@ export function isInboxV2Allowed(user) {
   const email = normEmail(getUserEmail(user));
   return ALLOWLIST.INBOX_V2_EMAILS.has(email);
 }
+
+export function isPartsLogisticsV2PilotAllowed(user) {
+  const email = normEmail(getUserEmail(user));
+  return ALLOWLIST.PARTS_LOGISTICS_V2_PILOT_EMAILS.has(email);
+}
+
+export function isPartsV2Allowed(user) {
+  return isPartsLogisticsV2PilotAllowed(user);
+}
+
+export function isLogisticsV2Allowed(user) {
+  return isPartsLogisticsV2PilotAllowed(user);
+}
