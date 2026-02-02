@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { isPartsLogisticsV2PilotAllowed } from "@/components/utils/allowlist";
 import { createPageUrl } from "@/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card.jsx";
 import { Package, Truck, Warehouse, AlertCircle } from "lucide-react";
 
 export default function V2Dashboard() {
