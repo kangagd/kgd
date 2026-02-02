@@ -932,15 +932,15 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets 
               <SelectTrigger>
                 <SelectValue placeholder="Choose job..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-72 overflow-auto">
                 {visitTargets.map(t => (
                   <SelectItem key={t.job_id} value={t.job_id}>
-                    {t.label}
+                    {t.label || t.job_id}
                   </SelectItem>
                 ))}
               </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">Targets loaded: {visitTargets.length}</p>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">Targets loaded: {visitTargets.length}</p>
           </div>
 
           <div>
