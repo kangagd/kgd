@@ -563,6 +563,7 @@ export default function V2Parts() {
             visitTargets={visitTargets}
             priceListItems={priceListItems}
             allocations={allocations}
+            user={user}
             onSubmit={(data) => {
               const requirement = requirements.find(r => r.id === data.requirement_line_id);
               if (requirement) {
