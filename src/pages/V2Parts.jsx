@@ -961,15 +961,15 @@ function UsageModal({ open, onClose, projectId, visitTargets, allocations, price
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Visit</Label>
-            <Select value={formData.visit_id} onValueChange={(val) => setFormData({ ...formData, visit_id: val, source_allocation_id: '' })}>
+            <Label>Job (Required)</Label>
+            <Select value={formData.job_id} onValueChange={(val) => setFormData({ ...formData, job_id: val, source_allocation_id: '' })}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose visit..." />
+                <SelectValue placeholder="Choose job..." />
               </SelectTrigger>
               <SelectContent>
-                {visits.map(v => (
-                  <SelectItem key={v.id} value={v.id}>
-                    Visit #{v.visit_number || v.id}
+                {visitTargets.map(j => (
+                  <SelectItem key={j.id} value={j.id}>
+                    Job #{j.job_number} — {j.job_type_name}
                   </SelectItem>
                 ))}
               </SelectContent>
