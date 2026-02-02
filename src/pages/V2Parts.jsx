@@ -1054,8 +1054,8 @@ function UsageModal({ open, onClose, projectId, visitTargets, allocations, price
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => {
-            if (!formData.visit_id) {
-              toast.error('Please select a visit');
+            if (!formData.job_id) {
+              toast.error('Please select a job');
               return;
             }
             if (mode === 'allocated' && !formData.source_allocation_id) {
@@ -1067,8 +1067,8 @@ function UsageModal({ open, onClose, projectId, visitTargets, allocations, price
               return;
             }
             onSubmit(mode === 'allocated'
-              ? { ...formData, catalog_item_id: null, description: null }
-              : { ...formData, source_allocation_id: null }
+              ? { ...formData, catalog_item_id: null, description: null, visit_id: null }
+              : { ...formData, source_allocation_id: null, visit_id: null }
             );
           }}>
             Record Usage
