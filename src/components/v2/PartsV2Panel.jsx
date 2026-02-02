@@ -370,10 +370,23 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
                     
                     return (
                       <div key={vid} className={isCurrentVisit ? 'border-2 border-blue-300 rounded-lg p-2' : ''}>
-                        <h4 className="font-medium mb-2">
-                          {vid === 'unassigned' ? 'Unassigned' : `Visit: ${visit?.visit_number || vid}`}
-                          {isCurrentVisit && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
-                        </h4>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">
+                            {vid === 'unassigned' ? 'Unassigned' : `Visit: ${visit?.visit_number || vid}`}
+                            {isCurrentVisit && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
+                          </h4>
+                          {vid !== 'unassigned' && user?.role === 'admin' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => createLogisticsRunMutation.mutate({ visit })}
+                              disabled={createLogisticsRunMutation.isPending}
+                            >
+                              <Truck className="w-3 h-3 mr-1" />
+                              Create Run for Visit
+                            </Button>
+                          )}
+                        </div>
                         <div className="space-y-2">
                           {visitAllocations.map(alloc => (
                             <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
