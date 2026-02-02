@@ -58,12 +58,16 @@ export default function V2Parts() {
     enabled: isAllowed,
   });
 
-  // Fetch visits for selected project
+  // Fetch visits for selected project (via jobs)
   const { data: visits = [] } = useQuery({
     queryKey: ['visits', selectedProjectId],
     queryFn: async () => {
-      const allVisits = await base44.entities.Visit.filter({ project_id: selectedProjectId });
-      return allVisits;
+      if (!selectedProjectId) return [];
+      const jobsForProject = await base44.entities.Job.filter({ project_id: selectedProjectId });
+      const jobIds = jobsForProject.map(job => job.id);
+      if (jobIds.length === 0) return [];
+      const visitsForJobs = await base44.entities.Visit.filter({ job_id: { $in: jobIds } });
+      return visitsForJobs;
     },
     enabled: !!selectedProjectId && isAllowed,
   });
