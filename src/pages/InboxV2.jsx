@@ -716,7 +716,7 @@ export default function InboxV2() {
   const filteredThreads = useMemo(() => {
     let result = derivedThreads;
 
-    // Text search
+    // Text search - searches ALL threads regardless of workflow view
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       result = result.filter(
@@ -727,19 +727,19 @@ export default function InboxV2() {
           t.to_addresses?.some((addr) => addr?.toLowerCase().includes(search)) ||
           t.last_message_snippet?.toLowerCase().includes(search)
       );
-    }
-
-    // Apply workflow view filter
-    if (workflowView === "unassigned") {
-      result = result.filter((t) => t._status === "needs_action" && !t.assigned_to);
-    } else if (workflowView === "my-actions") {
-      result = result.filter((t) => t._status === "needs_action" && t.assigned_to === user?.email);
-    } else if (workflowView === "waiting") {
-      result = result.filter((t) => t._status === "waiting");
-    } else if (workflowView === "fyi") {
-      result = result.filter((t) => t._status === "fyi");
-    } else if (workflowView === "done") {
-      result = result.filter((t) => t._status === "done");
+    } else {
+      // Apply workflow view filter ONLY when NOT searching
+      if (workflowView === "unassigned") {
+        result = result.filter((t) => t._status === "needs_action" && !t.assigned_to);
+      } else if (workflowView === "my-actions") {
+        result = result.filter((t) => t._status === "needs_action" && t.assigned_to === user?.email);
+      } else if (workflowView === "waiting") {
+        result = result.filter((t) => t._status === "waiting");
+      } else if (workflowView === "fyi") {
+        result = result.filter((t) => t._status === "fyi");
+      } else if (workflowView === "done") {
+        result = result.filter((t) => t._status === "done");
+      }
     }
 
     // Sorting per view - all views show newest first
