@@ -878,6 +878,7 @@ function AllocationModal({ open, onClose, projectId, requirements, visits, price
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-gray-500 mt-1">Visits loaded: {visits.length}</p>
           </div>
 
           <div>
