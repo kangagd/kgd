@@ -223,8 +223,10 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
       try {
         const currentUser = await base44.auth.me();
         setUser(currentUser);
+        setUserLoaded(true);
       } catch (error) {
         // Error loading user
+        setUserLoaded(true);
       }
     };
     loadUser();
