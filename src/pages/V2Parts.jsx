@@ -462,7 +462,7 @@ export default function V2Parts() {
                           <div key={jobId}>
                             <h4 className="font-medium mb-2">{jobLabel}</h4>
                             <div className="space-y-2">
-                              {visitConsumptions.map(cons => (
+                              {jobConsumptions.map(cons => (
                                 <div key={cons.id} className="border rounded-lg p-3">
                                   <div className="flex items-center gap-2 mb-1">
                                     <span className="font-medium">{cons.description || cons.catalog_item_id}</span>
