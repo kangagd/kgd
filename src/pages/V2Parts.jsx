@@ -14,6 +14,18 @@ import { AlertCircle, Package, Plus, Pencil, Trash2, CheckCircle, XCircle } from
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
+
+// Logistics job types to exclude (same as ProjectVisitsTab)
+const LOGISTICS_JOB_TYPES = [
+  'Parts Pickup',
+  'Parts Delivery',
+  'Stock Transfer',
+  'Warehouse Pickup',
+  'Supplier Pickup',
+  'Drop Off Parts',
+  'Collect Parts'
+];
 
 export default function V2Parts() {
   const [user, setUser] = useState(null);
