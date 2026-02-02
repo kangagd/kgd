@@ -1054,15 +1054,23 @@ export default function UnifiedEmailComposer({
         );
       }
 
-      // Mark draft as sent after successful send
+      // Delete draft after successful send (cleanup)
       if (draftId) {
         try {
-          await base44.entities.EmailDraft.update(draftId, {
-            status: "sent",
-            sent_at: new Date().toISOString(),
-          });
+          await base44.entities.EmailDraft.delete(draftId);
+          // Immediately invalidate drafts query to update UI
+          queryClient.invalidateQueries({ queryKey: inboxKeys.drafts() });
         } catch (err) {
-          devLog("Failed to update draft status:", err);
+          devLog("Failed to delete draft after send:", err);
+          // Fallback: mark as sent
+          try {
+            await base44.entities.EmailDraft.update(draftId, {
+              status: "sent",
+              sent_at: new Date().toISOString(),
+            });
+          } catch (updateErr) {
+            devLog("Failed to mark draft as sent:", updateErr);
+          }
         }
       }
 
