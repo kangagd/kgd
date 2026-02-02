@@ -203,8 +203,9 @@ const CATEGORY_PATTERNS = {
 };
 
 function suggestCategory(thread) {
-  const text = thread?.subject || "";
-  const snippet = thread?.snippet || thread?.preview || thread?.body_preview || "";
+  if (!thread) return { value: "uncategorised", reason: "no thread", confidence: 0 };
+  const text = thread.subject || "";
+  const snippet = thread.snippet || thread.preview || thread.body_preview || "";
   const combined = `${text}\n${snippet}`;
 
   const scores = [];
