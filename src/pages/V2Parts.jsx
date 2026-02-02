@@ -998,7 +998,7 @@ function UsageModal({ open, onClose, projectId, visitTargets, allocations, price
                   <SelectValue placeholder="Choose allocation..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {visitAllocations.map(a => (
+                  {jobAllocations.map(a => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.description || a.catalog_item_id} (Qty: {a.qty_allocated})
                     </SelectItem>
