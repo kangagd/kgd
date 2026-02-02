@@ -896,8 +896,8 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets,
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => {
-            if (visits.length > 0 && !formData.visit_id) {
-              toast.error('Please select a visit');
+            if (visitTargets.length > 0 && !formData.job_id) {
+              toast.error('Please select a job');
               return;
             }
             if (mode === 'requirement' && !formData.requirement_line_id) {
@@ -909,8 +909,8 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets,
               return;
             }
             onSubmit(mode === 'requirement' 
-              ? { ...formData, catalog_item_id: null, description: null }
-              : { ...formData, requirement_line_id: null }
+              ? { ...formData, catalog_item_id: null, description: null, visit_id: null }
+              : { ...formData, requirement_line_id: null, visit_id: null }
             );
           }}>
             Allocate
