@@ -437,6 +437,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const { data: technicians = [] } = useQuery({
     queryKey: techniciansKey,
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
+    enabled: userLoaded,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
