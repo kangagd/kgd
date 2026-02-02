@@ -82,6 +82,8 @@ import RequirementsTab from "./RequirementsTab";
 import PartsTab from "./PartsTab";
 import ProjectTagsDisplay from "./ProjectTagsDisplay";
 import ProjectTagsSelector from "./ProjectTagsSelector";
+import PartsV2Panel from "../v2/PartsV2Panel";
+import { isPartsLogisticsV2PilotAllowed } from "../utils/allowlist";
 
 import UnifiedAttentionPanel from "../attention/UnifiedAttentionPanel";
 import UnifiedEmailComposer from "../inbox/UnifiedEmailComposer";
@@ -1862,6 +1864,9 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
                 )}
                 <TabsTrigger value="quoting" className="flex-1 whitespace-nowrap">Quoting</TabsTrigger>
                 <TabsTrigger value="parts" className="flex-1 whitespace-nowrap">Parts</TabsTrigger>
+                {isPartsLogisticsV2PilotAllowed(user) && (
+                  <TabsTrigger value="partsv2" className="flex-1 whitespace-nowrap">Parts (V2)</TabsTrigger>
+                )}
                 <TabsTrigger value="invoices" className="flex-1 whitespace-nowrap">Invoices</TabsTrigger>
                 {(user?.role === 'admin' || user?.role === 'manager') && (
                   <TabsTrigger value="financials" className="flex-1 whitespace-nowrap">Financials</TabsTrigger>
@@ -2229,6 +2234,12 @@ Format as HTML bullet points using <ul> and <li> tags. Include only the most cri
               inventoryByItem={inventoryByItem}
             />
           </TabsContent>
+
+          {isPartsLogisticsV2PilotAllowed(user) && (
+            <TabsContent value="partsv2" className="mt-3">
+              <PartsV2Panel projectId={project.id} />
+            </TabsContent>
+          )}
 
           <TabsContent value="activity" className="mt-3 space-y-4">
             {composerMode && (
