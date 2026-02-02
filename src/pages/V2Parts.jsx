@@ -501,7 +501,7 @@ export default function V2Parts() {
             onClose={() => setAllocationModalOpen(false)}
             projectId={selectedProjectId}
             requirements={requirements}
-            visits={visits}
+            visitTargets={visitTargets}
             priceListItems={priceListItems}
             allocations={allocations}
             onSubmit={(data) => {
