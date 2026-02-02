@@ -273,7 +273,7 @@ export default function Layout({ children, currentPageName }) {
     ? technicianNavigationItems 
     : isViewer 
       ? viewerNavigationItems 
-      : primaryNavigationItems;
+      : primaryNavigationItems(unassignedEmailCount);
 
   // Filter navigation sections for regular users and managers
   const filteredNavigationSections = isRegularUser 
