@@ -212,10 +212,11 @@ Deno.serve(async (req) => {
              await updateProjectActivity(base44, job.project_id, 'Visit Completed');
          }
 
-         // Create attention item for "Return Visit Required"
+         // Manage "Return Visit Required" attention items
+         const targetEntity = job.project_id ? 'Project' : 'Job';
+         const targetId = job.project_id || jobId;
+         
          if (outcome === 'return_visit_required') {
-             const targetEntity = job.project_id ? 'Project' : 'Job';
-             const targetId = job.project_id || jobId;
              const address = job.address_full || job.address || '';
              const jobType = job.job_type_name || job.job_type || 'Visit';
              
@@ -241,6 +242,28 @@ Deno.serve(async (req) => {
                  }
              } catch (error) {
                  console.warn(`[performCheckOut] Failed to create attention item:`, error);
+             }
+         } else {
+             // Remove attention item if outcome changed from "return_visit_required" to something else
+             try {
+                 const attentionItems = await base44.asServiceRole.entities.AttentionItem.filter({
+                     entity_type: targetEntity,
+                     entity_id: targetId,
+                     category: 'Access & Site',
+                     message: { $regex: 'Return visit required', $options: 'i' },
+                     resolved_at: { $exists: false }
+                 });
+                 
+                 for (const item of attentionItems) {
+                     await base44.asServiceRole.entities.AttentionItem.update(item.id, {
+                         resolved_at: new Date().toISOString(),
+                         resolved_by: user.email,
+                         resolved_by_name: user.display_name || user.full_name || user.email,
+                         resolution_notes: `Auto-resolved: Outcome changed to ${outcome}`
+                     });
+                 }
+             } catch (error) {
+                 console.warn(`[performCheckOut] Failed to remove attention item:`, error);
              }
          }
 
