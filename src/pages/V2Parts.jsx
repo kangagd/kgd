@@ -836,7 +836,7 @@ function RequirementModal({ open, onClose, requirement, projectId, priceListItem
 }
 
 // Allocation Modal Component
-function AllocationModal({ open, onClose, projectId, requirements, visitTargets, priceListItems, allocations, onSubmit }) {
+function AllocationModal({ open, onClose, projectId, requirements, visitTargets = [], priceListItems, allocations, user, onSubmit }) {
   const [formData, setFormData] = useState({
     requirement_line_id: '',
     job_id: '',
