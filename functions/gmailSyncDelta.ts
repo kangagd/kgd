@@ -688,7 +688,7 @@ Deno.serve(async (req) => {
         }
         
         // Invariant check
-        if (unionIds.size > 0 && counts.messages_fetched === 0) {
+        if (newIds.size > 0 && counts.messages_fetched === 0) {
           console.error('[gmailSyncDelta] INVARIANT VIOLATION: ids collected but not processed');
           return Response.json({
             success: false,
