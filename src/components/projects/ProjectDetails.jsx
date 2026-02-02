@@ -447,7 +447,6 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
     queryKey: projectViewersKey,
     queryFn: async () => {
       try {
-        const user = await base44.auth.me();
         const viewers = await base44.entities.ProjectViewer.filter({ project_id: project.id });
         const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
         return viewers.filter(v => v.last_seen > oneMinuteAgo && v.user_email !== user.email);
@@ -455,6 +454,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         return [];
       }
     },
+    enabled: userLoaded,
     staleTime: 120000, // 2 minutes - less critical
     refetchInterval: 120000, // Poll every 2 minutes instead of 1
     refetchOnWindowFocus: false,
