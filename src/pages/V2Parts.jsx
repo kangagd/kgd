@@ -70,17 +70,72 @@ export default function V2Parts() {
     enabled: isAllowed,
   });
 
-  // Fetch visit targets (jobs) for selected project
+  // Fetch visit targets (combined jobs + job summaries) for selected project
   const { data: visitTargets = [] } = useQuery({
     queryKey: ['visitTargets', selectedProjectId],
     queryFn: async () => {
       if (!selectedProjectId) return [];
-      const jobs = await base44.entities.Job.filter({ project_id: selectedProjectId }, '-scheduled_date');
-      // Filter out deleted jobs and logistics job types
-      return jobs.filter(job => 
+      const [jobs, summaries] = await Promise.all([
+        base44.entities.Job.filter({ project_id: selectedProjectId }, '-scheduled_date'),
+        base44.entities.JobSummary.filter({ project_id: selectedProjectId }, '-check_out_time'),
+      ]);
+      
+      // Filter out deleted and logistics job types
+      const filteredJobs = jobs.filter(job => 
         !job.deleted_at && 
         !LOGISTICS_JOB_TYPES.includes(job.job_type_name)
       );
+      
+      const filteredSummaries = summaries.filter(s =>
+        !s.deleted_at &&
+        !LOGISTICS_JOB_TYPES.includes(s.job_type_name)
+      );
+      
+      // Build unified targets, preferring jobs over summaries
+      const targetsByJobId = {};
+      
+      // Add jobs first
+      filteredJobs.forEach(job => {
+        const label = `Job #${job.job_number || job.id} — ${job.job_type_name || 'Job'} — ${job.scheduled_date || ''}`.trim();
+        targetsByJobId[job.id] = {
+          job_id: job.id,
+          id: job.id,
+          kind: 'job',
+          label,
+          sortDate: job.scheduled_date,
+          job_number: job.job_number,
+          job_type_name: job.job_type_name,
+          scheduled_date: job.scheduled_date,
+        };
+      });
+      
+      // Add summaries (only if not already a job)
+      filteredSummaries.forEach(s => {
+        if (!targetsByJobId[s.job_id]) {
+          const label = `Visit (checked out) — Job #${s.job_number || s.job_id} — ${s.check_out_time || ''}`.trim();
+          targetsByJobId[s.job_id] = {
+            job_id: s.job_id,
+            id: s.job_id,
+            kind: 'summary',
+            label,
+            sortDate: s.check_out_time,
+            job_number: s.job_number,
+            job_type_name: s.job_type_name,
+            check_out_time: s.check_out_time,
+          };
+        }
+      });
+      
+      // Sort by date descending
+      const targets = Object.values(targetsByJobId)
+        .sort((a, b) => {
+          if (!a.sortDate && !b.sortDate) return 0;
+          if (!a.sortDate) return 1;
+          if (!b.sortDate) return -1;
+          return new Date(b.sortDate) - new Date(a.sortDate);
+        });
+      
+      return targets;
     },
     enabled: !!selectedProjectId && isAllowed,
   });
