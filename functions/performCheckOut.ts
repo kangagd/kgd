@@ -212,6 +212,38 @@ Deno.serve(async (req) => {
              await updateProjectActivity(base44, job.project_id, 'Visit Completed');
          }
 
+         // Create attention item for "Return Visit Required"
+         if (outcome === 'return_visit_required') {
+             const targetEntity = job.project_id ? 'Project' : 'Job';
+             const targetId = job.project_id || jobId;
+             const address = job.address_full || job.address || '';
+             const jobType = job.job_type_name || job.job_type || 'Visit';
+             
+             try {
+                 // Check if attention item already exists
+                 const existing = await base44.asServiceRole.entities.AttentionItem.filter({
+                     entity_type: targetEntity,
+                     entity_id: targetId,
+                     category: 'Access & Site',
+                     message: { $regex: 'Return visit required', $options: 'i' },
+                     resolved_at: { $exists: false }
+                 });
+                 
+                 if (existing.length === 0) {
+                     await base44.asServiceRole.entities.AttentionItem.create({
+                         entity_type: targetEntity,
+                         entity_id: targetId,
+                         category: 'Access & Site',
+                         priority: 'High',
+                         message: `Return visit required - ${jobType} at ${address}`,
+                         metadata: { job_id: jobId, outcome }
+                     });
+                 }
+             } catch (error) {
+                 console.warn(`[performCheckOut] Failed to create attention item:`, error);
+             }
+         }
+
          // Trigger post-completion orchestration (idempotent)
          try {
              await base44.asServiceRole.functions.invoke('manageJob', { action: 'postComplete', id: jobId });
