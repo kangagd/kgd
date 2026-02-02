@@ -15,7 +15,21 @@ export function normalizeUtf8(text) {
   try {
     // Fix common double-encoded UTF-8 sequences
     // This converts text that was incorrectly decoded as Latin-1 back to proper UTF-8
-    return decodeURIComponent(escape(text));
+    let normalized = decodeURIComponent(escape(text));
+    
+    // Additional cleanup: replace problematic characters that survived normalization
+    normalized = normalized
+      .replace(/â€"/g, '—')  // em dash
+      .replace(/â€"/g, '–')  // en dash
+      .replace(/â€™/g, "'")  // right single quote
+      .replace(/â€˜/g, "'")  // left single quote
+      .replace(/â€\u009d/g, '"')  // right double quote
+      .replace(/â€\u009c/g, '"')  // left double quote
+      .replace(/â€¦/g, '…')  // ellipsis
+      .replace(/Â /g, ' ')   // non-breaking space corruption
+      .replace(/Â/g, '');    // stray Â
+    
+    return normalized;
   } catch {
     // If normalization fails, return original text
     return text;
