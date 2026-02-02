@@ -594,6 +594,30 @@ Deno.serve(async (req) => {
             if (job.project_id && !isLogisticsJob) {
                 await updateProjectActivity(base44, job.project_id, 'Job Created');
             }
+
+            // Auto-resolve "Return Visit Required" attention items when new visit is booked
+            if (job.project_id && job.scheduled_date) {
+                try {
+                    const attentionItems = await base44.asServiceRole.entities.AttentionItem.filter({
+                        entity_type: 'Project',
+                        entity_id: job.project_id,
+                        category: 'Access & Site',
+                        message: { $regex: 'Return visit required', $options: 'i' },
+                        resolved_at: { $exists: false }
+                    });
+                    
+                    for (const item of attentionItems) {
+                        await base44.asServiceRole.entities.AttentionItem.update(item.id, {
+                            resolved_at: new Date().toISOString(),
+                            resolved_by: user.email,
+                            resolved_by_name: user.display_name || user.full_name || user.email,
+                            resolution_notes: `Auto-resolved: New visit scheduled (Job #${job.job_number})`
+                        });
+                    }
+                } catch (error) {
+                    console.warn(`[manageJob] Failed to auto-resolve attention items:`, error);
+                }
+            }
         } else if (action === 'update') {
                // GUARDRAIL: Verify job exists
                if (!id) {
