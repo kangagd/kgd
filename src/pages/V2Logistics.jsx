@@ -80,7 +80,7 @@ export default function V2Logistics() {
       const allStops = await base44.entities.LogisticsStop.filter({ run_id: selectedRunId });
       return allStops.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
     },
-    enabled: !!selectedRunId && isAllowed,
+    enabled: !!selectedRunId && !!isAllowed,
   });
 
   // Fetch confirmations for selected run
