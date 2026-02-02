@@ -533,6 +533,9 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
   const updateProjectMutation = useMutation({
     mutationFn: ({ field, value }) => base44.entities.Project.update(project.id, { [field]: value }),
     onSuccess: (data, variables) => {
+      // Immediately invalidate parent's project query to prevent stale prop overwrites
+      queryClient.invalidateQueries({ queryKey: projectKeys.all });
+      
       // Optimistically update the batch query cache
       queryClient.setQueryData(projectKeys.withRelations(project.id, activeTab), (oldData) => ({
         ...oldData,
@@ -542,7 +545,7 @@ export default function ProjectDetails({ project: initialProject, onClose, onEdi
         }
       }));
       // Invalidate both current tab and "all" for cross-tab fields
-      const crossTabFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode'];
+      const crossTabFields = ['title', 'status', 'customer_name', 'project_number', 'deleted_at', 'address_full', 'address_street', 'address_suburb', 'address_state', 'address_postcode', 'customer_type', 'project_type', 'project_tag_ids', 'project_tags_snapshot'];
       if (crossTabFields.includes(variables.field)) {
         debouncedInvalidate(projectKeys.withRelations(project.id, "all"), 1000);
       }
