@@ -57,6 +57,8 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
       return await base44.entities.Visit.filter({ project_id: projectId });
     },
     enabled: !!projectId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch requirements
@@ -66,6 +68,8 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
       return await base44.entities.ProjectRequirementLine.filter({ project_id: projectId });
     },
     enabled: !!projectId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch allocations
@@ -75,6 +79,8 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
       return await base44.entities.StockAllocation.filter({ project_id: projectId });
     },
     enabled: !!projectId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch usage
@@ -84,12 +90,16 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
       return await base44.entities.StockConsumption.filter({ project_id: projectId });
     },
     enabled: !!projectId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch price list items for catalog search
   const { data: priceListItems = [] } = useQuery({
     queryKey: ['priceListItems'],
     queryFn: () => base44.entities.PriceListItem.list(),
+    staleTime: 60000,
+    refetchOnWindowFocus: false,
   });
 
   // Compute readiness summary
