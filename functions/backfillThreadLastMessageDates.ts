@@ -15,21 +15,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { batch_size = 50, dry_run = false } = await req.json().catch(() => ({}));
+    const { batch_size = 10, dry_run = false, max_threads = 100 } = await req.json().catch(() => ({}));
 
-    console.log(`[backfillThreadLastMessageDates] Starting (dry_run=${dry_run})`);
+    console.log(`[backfillThreadLastMessageDates] Starting (dry_run=${dry_run}, batch_size=${batch_size}, max_threads=${max_threads})`);
 
-    // Fetch all threads
-    const allThreads = await base44.asServiceRole.entities.EmailThread.filter({});
-    console.log(`[backfillThreadLastMessageDates] Found ${allThreads.length} threads`);
+    // Fetch threads in limited batches
+    const allThreads = await base44.asServiceRole.entities.EmailThread.filter({}, '-last_message_date', max_threads);
+    console.log(`[backfillThreadLastMessageDates] Found ${allThreads.length} threads to process`);
 
     let updated = 0;
     let unchanged = 0;
     let errors = 0;
 
-    // Process in batches
+    // Process in small batches with delays
     for (let i = 0; i < allThreads.length; i += batch_size) {
       const batch = allThreads.slice(i, i + batch_size);
+      console.log(`[backfillThreadLastMessageDates] Processing batch ${Math.floor(i / batch_size) + 1}/${Math.ceil(allThreads.length / batch_size)}`);
 
       for (const thread of batch) {
         try {
@@ -63,18 +64,19 @@ Deno.serve(async (req) => {
 
           updated++;
 
-          if (updated % 10 === 0) {
-            console.log(`[backfillThreadLastMessageDates] Progress: ${updated} updated, ${unchanged} unchanged`);
-          }
+          // Delay between updates to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
         } catch (err) {
           console.error(`[backfillThreadLastMessageDates] Error on thread ${thread.id}:`, err.message);
+          console.error('Error data:', err.data || err);
           errors++;
         }
       }
 
       // Rate limiting between batches
       if (i + batch_size < allThreads.length) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log(`[backfillThreadLastMessageDates] Progress: ${updated} updated, ${unchanged} unchanged, ${errors} errors`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
