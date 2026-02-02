@@ -924,9 +924,9 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets,
 }
 
 // Usage Modal Component
-function UsageModal({ open, onClose, projectId, visits, allocations, priceListItems, onSubmit }) {
+function UsageModal({ open, onClose, projectId, visitTargets, allocations, priceListItems, onSubmit }) {
   const [formData, setFormData] = useState({
-    visit_id: '',
+    job_id: '',
     catalog_item_id: '',
     description: '',
     qty_consumed: 1,
@@ -938,7 +938,7 @@ function UsageModal({ open, onClose, projectId, visits, allocations, priceListIt
   useEffect(() => {
     if (open) {
       setFormData({
-        visit_id: '',
+        job_id: '',
         catalog_item_id: '',
         description: '',
         qty_consumed: 1,
@@ -949,8 +949,8 @@ function UsageModal({ open, onClose, projectId, visits, allocations, priceListIt
     }
   }, [open]);
 
-  const visitAllocations = formData.visit_id 
-    ? allocations.filter(a => a.visit_id === formData.visit_id && a.status !== 'released')
+  const jobAllocations = formData.job_id 
+    ? allocations.filter(a => a.job_id === formData.job_id && a.status !== 'released')
     : [];
 
   return (
