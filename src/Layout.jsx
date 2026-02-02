@@ -44,6 +44,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import GlobalSearchDropdown from "./components/common/GlobalSearchDropdown";
 import { RoleBadge, PermissionsProvider } from "./components/common/PermissionsContext";
 import NotificationBell from "./components/notifications/NotificationBell";
+import { isPartsLogisticsV2PilotAllowed } from "./components/utils/allowlist";
 
 import CommandPalette from "@/components/common/CommandPalette";
 import ActiveCheckInBanner from "@/components/common/ActiveCheckInBanner";
