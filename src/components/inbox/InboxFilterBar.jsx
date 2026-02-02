@@ -55,7 +55,7 @@ export default function InboxFilterBar({
            <Input
              value={searchTerm}
              onChange={(e) => onSearchChange(e.target.value)}
-             placeholder="Search threads..."
+             placeholder="Search all threads and emails..."
              className="pl-9 h-8 text-[13px]"
            />
          </div>
