@@ -9,10 +9,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function PartsV2Panel({ projectId, visitId = null }) {
   const [activeTab, setActiveTab] = useState("requirements");
@@ -28,6 +30,7 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
   const [quickActionVisitId, setQuickActionVisitId] = useState(visitId);
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -164,6 +167,56 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
       queryClient.invalidateQueries(['stockConsumptions', projectId]);
       setUsageModalOpen(false);
       toast.success('Usage recorded');
+    },
+  });
+
+  const createLogisticsRunMutation = useMutation({
+    mutationFn: async ({ visit }) => {
+      // Create the run
+      const run = await base44.entities.LogisticsRun.create({
+        assigned_to_user_id: visit.assigned_to_user_id || null,
+        assigned_to_name: visit.assigned_to_name || null,
+        vehicle_id: visit.vehicle_id || null,
+        scheduled_start: visit.start_time || null,
+        status: "draft",
+        notes: `Auto-created from Parts V2 allocations for Visit ${visit.visit_number || visit.id}`,
+      });
+
+      // Create stops
+      const stops = [
+        {
+          run_id: run.id,
+          sequence: 1,
+          purpose: "storage_to_vehicle",
+          project_id: projectId,
+          requires_photos: false,
+          instructions: "Load parts from storage to vehicle",
+        },
+        {
+          run_id: run.id,
+          sequence: 2,
+          purpose: "vehicle_to_site",
+          project_id: projectId,
+          requires_photos: false,
+          instructions: "Deliver parts to site",
+        },
+      ];
+
+      await Promise.all(stops.map(stop => base44.entities.LogisticsStop.create(stop)));
+
+      return run;
+    },
+    onSuccess: (run) => {
+      queryClient.invalidateQueries(['logisticsRuns']);
+      toast.success('Draft run created. Open in Logistics (V2).', {
+        action: {
+          label: 'View Run',
+          onClick: () => navigate(createPageUrl("V2Logistics") + `?runId=${run.id}`),
+        },
+      });
+    },
+    onError: () => {
+      toast.error('Failed to create logistics run');
     },
   });
 
