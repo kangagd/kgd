@@ -550,7 +550,9 @@ Deno.serve(async (req) => {
       syncState = await base44.asServiceRole.entities.EmailSyncState.create({
         scope_key,
         consecutive_failures: 0,
-        backfill_mode: 'off',
+        backfill_mode: 'catchup',
+        backfill_cursor: new Date().toISOString(),
+        backfill_window_days: 7,
         pending_message_ids_json: '[]',
         backlog_size: 0
       });
