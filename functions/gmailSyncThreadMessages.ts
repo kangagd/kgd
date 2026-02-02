@@ -713,8 +713,13 @@ Deno.serve(async (req) => {
         updates.has_preview = !!snippet;
       }
 
-      // Reset workflow status to uncategorised when new messages arrive (retain assignment)
-      updates.next_action_status = null;
+      // Reset to unassigned and needs_action when new messages arrive
+      updates.next_action_status = 'needs_action';
+      updates.assigned_to = null;
+      updates.assigned_to_name = null;
+      updates.assigned_by = null;
+      updates.assigned_by_name = null;
+      updates.assigned_at = null;
 
       await base44.asServiceRole.entities.EmailThread.update(threadId, updates);
     } catch (err) {
