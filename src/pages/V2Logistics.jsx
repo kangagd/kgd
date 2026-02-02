@@ -93,7 +93,7 @@ export default function V2Logistics() {
       const allConfirmations = await base44.entities.StopConfirmation.list();
       return allConfirmations.filter(c => stopIds.includes(c.stop_id));
     },
-    enabled: !!selectedRunId && stops.length > 0 && isAllowed,
+    enabled: !!selectedRunId && Array.isArray(stops) && stops.length > 0 && !!isAllowed,
   });
 
   // Fetch reference data
