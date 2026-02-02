@@ -898,10 +898,15 @@ export default function Layout({ children, currentPageName }) {
                    </Link>
                    <Link
                      to={createPageUrl("InboxV2")}
-                     className={`p-2 rounded-lg transition-colors ${location.pathname === createPageUrl("InboxV2") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
+                     className={`p-2 rounded-lg transition-colors relative ${location.pathname === createPageUrl("InboxV2") ? 'bg-[#FAE008]/20 text-[#111827]' : 'text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#111827]'}`}
                      title="Inbox"
                    >
                      <Mail className="w-5 h-5" />
+                     {unassignedEmailCount > 0 && (
+                       <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+                         {unassignedEmailCount > 99 ? '99+' : unassignedEmailCount}
+                       </span>
+                     )}
                    </Link>
                    <Link
                      to={createPageUrl("Schedule")}
