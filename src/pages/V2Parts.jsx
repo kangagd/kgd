@@ -447,18 +447,20 @@ export default function V2Parts() {
                     <p className="text-gray-600 text-center py-8">No usage recorded yet</p>
                   ) : (
                     <div className="space-y-4">
-                      {['unassigned', ...visits.map(v => v.id)].map(visitId => {
-                        const visitConsumptions = consumptions.filter(c => 
-                          visitId === 'unassigned' ? !c.visit_id : c.visit_id === visitId
+                      {['unassigned', ...visitTargets.map(j => j.id)].map(jobId => {
+                        const jobConsumptions = consumptions.filter(c => 
+                          jobId === 'unassigned' ? !c.job_id : c.job_id === jobId
                         );
-                        if (visitConsumptions.length === 0) return null;
+                        if (jobConsumptions.length === 0) return null;
                         
-                        const visit = visits.find(v => v.id === visitId);
+                        const job = visitTargets.find(j => j.id === jobId);
+                        const jobLabel = jobId === 'unassigned' 
+                          ? 'Unassigned'
+                          : `Job #${job?.job_number || jobId} — ${job?.job_type_name || ''} — ${job?.scheduled_date ? format(new Date(job.scheduled_date), 'MMM d, yyyy') : 'Unscheduled'}`;
+                        
                         return (
-                          <div key={visitId}>
-                            <h4 className="font-medium mb-2">
-                              {visitId === 'unassigned' ? 'Unassigned' : `Visit: ${visit?.visit_number || visitId}`}
-                            </h4>
+                          <div key={jobId}>
+                            <h4 className="font-medium mb-2">{jobLabel}</h4>
                             <div className="space-y-2">
                               {visitConsumptions.map(cons => (
                                 <div key={cons.id} className="border rounded-lg p-3">
