@@ -592,6 +592,23 @@ export default function Layout({ children, currentPageName }) {
                                 </Link>
                               );
                             })}
+                            {/* V2 Pilot Nav Entry - Admin Only */}
+                            {section.title === "Admin" && user && isPartsLogisticsV2PilotAllowed(user) && (
+                              <Link
+                                to={createPageUrl("V2Dashboard")}
+                                className={`
+                                  flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative no-underline
+                                  ${location.pathname === createPageUrl("V2Dashboard")
+                                    ? 'bg-[#FAE008]/10 text-[#111827] font-semibold' 
+                                    : 'text-[#111827] hover:bg-[#F3F4F6]'
+                                  }
+                                `}
+                              >
+                                {location.pathname === createPageUrl("V2Dashboard") && <div className="absolute left-0 w-1 h-6 bg-[#FAE008] rounded-r" />}
+                                <TestTube2 className={`w-5 h-5 flex-shrink-0 ${location.pathname === createPageUrl("V2Dashboard") ? 'text-[#FAE008]' : 'text-[#111827]'}`} />
+                                <span className="text-[14px]">V2 Pilot</span>
+                              </Link>
+                            )}
                           </div>
                         </div>
                       ))}
