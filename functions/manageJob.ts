@@ -899,6 +899,30 @@ Deno.serve(async (req) => {
                 await updateProjectActivity(base44, job.project_id, 'Job Updated');
             }
 
+            // Auto-resolve "Return Visit Required" attention items on reschedule (Option B)
+            if (job.project_id && job.scheduled_date && previousJob.scheduled_date !== job.scheduled_date) {
+                try {
+                    const attentionItems = await base44.asServiceRole.entities.AttentionItem.filter({
+                        entity_type: 'Project',
+                        entity_id: job.project_id,
+                        category: 'Access & Site',
+                        message: { $regex: 'Return visit required', $options: 'i' },
+                        resolved_at: { $exists: false }
+                    });
+                    
+                    for (const item of attentionItems) {
+                        await base44.asServiceRole.entities.AttentionItem.update(item.id, {
+                            resolved_at: new Date().toISOString(),
+                            resolved_by: user.email,
+                            resolved_by_name: user.display_name || user.full_name || user.email,
+                            resolution_notes: `Auto-resolved: Job rescheduled (Job #${job.job_number})`
+                        });
+                    }
+                } catch (error) {
+                    console.warn(`[manageJob] Failed to auto-resolve attention items:`, error);
+                }
+            }
+
             // Handle job completion
             if (job.status === 'Completed' && previousJob.status !== 'Completed') {
                 // LOGISTICS JOB: Record stock movements
