@@ -355,8 +355,8 @@ export default function Layout({ children, currentPageName }) {
     // Flatten all navigation items for recent pages tracking
     const allNavigationItems = React.useMemo(() => {
     const sectionItems = navigationSections.flatMap(section => section.items);
-    return [...primaryNavigationItems, ...sectionItems];
-    }, []);
+    return [...primaryNavigationItems(unassignedEmailCount), ...sectionItems];
+    }, [unassignedEmailCount]);
 
   // Track recent pages
   useEffect(() => {
