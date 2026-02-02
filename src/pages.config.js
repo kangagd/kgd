@@ -87,6 +87,10 @@ import Team from './pages/Team';
 import ToolsAdmin from './pages/ToolsAdmin';
 import UserProfile from './pages/UserProfile';
 import WarehouseInventory from './pages/WarehouseInventory';
+import V2Dashboard from './pages/V2Dashboard';
+import V2Parts from './pages/V2Parts';
+import V2Logistics from './pages/V2Logistics';
+import V2LoadingBay from './pages/V2LoadingBay';
 import __Layout from './Layout.jsx';
 
 
@@ -131,6 +135,10 @@ export const PAGES = {
     "ToolsAdmin": ToolsAdmin,
     "UserProfile": UserProfile,
     "WarehouseInventory": WarehouseInventory,
+    "V2Dashboard": V2Dashboard,
+    "V2Parts": V2Parts,
+    "V2Logistics": V2Logistics,
+    "V2LoadingBay": V2LoadingBay,
 }
 
 export const pagesConfig = {
