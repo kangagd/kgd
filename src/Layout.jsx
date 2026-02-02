@@ -173,6 +173,27 @@ export default function Layout({ children, currentPageName }) {
   const touchStartY = useRef(0);
   const touchStartX = useRef(0);
 
+  // Fetch unassigned email count for inbox badge
+  const { data: unassignedEmailCount = 0 } = useQuery({
+    queryKey: ['unassignedEmailCount'],
+    queryFn: async () => {
+      try {
+        const threads = await base44.entities.EmailThread.filter({
+          assigned_to: { $exists: false },
+          is_deleted: { $ne: true },
+          userStatus: { $ne: 'closed' }
+        });
+        return threads.length;
+      } catch (error) {
+        return 0;
+      }
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+  });
+
   useEffect(() => {
     const loadUser = async () => {
       try {
