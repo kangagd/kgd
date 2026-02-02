@@ -867,20 +867,20 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets,
           )}
 
           <div>
-            <Label>Visit (Required if available)</Label>
-            <Select value={formData.visit_id} onValueChange={(val) => setFormData({ ...formData, visit_id: val })}>
+            <Label>Job (Required)</Label>
+            <Select value={formData.job_id} onValueChange={(val) => setFormData({ ...formData, job_id: val })}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose visit..." />
+                <SelectValue placeholder="Choose job..." />
               </SelectTrigger>
               <SelectContent>
-                {visits.map(v => (
-                  <SelectItem key={v.id} value={v.id}>
-                    Visit #{v.visit_number || v.id}
+                {visitTargets.map(j => (
+                  <SelectItem key={j.id} value={j.id}>
+                    Job #{j.job_number} — {j.job_type_name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500 mt-1">Visits loaded: {visits.length}</p>
+            <p className="text-xs text-gray-500 mt-1">Jobs loaded: {visitTargets.length}</p>
           </div>
 
           <div>
