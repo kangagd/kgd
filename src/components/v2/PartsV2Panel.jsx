@@ -55,8 +55,8 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
      queryKey: ['visits', projectId],
      queryFn: async () => {
        if (!projectId) return [];
-       const allJobs = await base44.entities.Job.filter({ project_id: projectId });
-       const jobIds = allJobs.map(j => j.id);
+       const allJobs = await base44.entities.Job.list();
+       const jobIds = allJobs.filter(j => j.project_id === projectId).map(j => j.id);
        if (jobIds.length === 0) return [];
        const allVisits = await base44.entities.Visit.list();
        return allVisits.filter(v => jobIds.includes(v.job_id));
