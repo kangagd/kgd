@@ -526,6 +526,7 @@ export default function V2Parts() {
               createAllocationMutation.mutate({
                 ...data,
                 project_id: selectedProjectId,
+                visit_id: null,
                 allocated_by_user_id: user?.id,
                 allocated_by_name: user?.full_name || user?.email,
                 allocated_at: new Date().toISOString(),
