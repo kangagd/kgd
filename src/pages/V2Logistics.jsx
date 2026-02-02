@@ -69,7 +69,7 @@ export default function V2Logistics() {
         return new Date(dateB) - new Date(dateA);
       });
     },
-    enabled: isAllowed,
+    enabled: !!isAllowed,
   });
 
   // Fetch stops for selected run
@@ -100,19 +100,19 @@ export default function V2Logistics() {
   const { data: users = [] } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => base44.entities.User.filter({ is_field_technician: true }),
-    enabled: isAllowed,
+    enabled: !!isAllowed,
   });
 
   const { data: vehicles = [] } = useQuery({
     queryKey: ['vehicles'],
     queryFn: () => base44.entities.Vehicle.list(),
-    enabled: isAllowed,
+    enabled: !!isAllowed,
   });
 
   const { data: locations = [] } = useQuery({
     queryKey: ['inventoryLocations'],
     queryFn: () => base44.entities.InventoryLocation.list(),
-    enabled: isAllowed,
+    enabled: !!isAllowed,
   });
 
   const selectedRun = runs.find(r => r.id === selectedRunId);
