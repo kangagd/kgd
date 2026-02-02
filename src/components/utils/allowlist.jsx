@@ -4,6 +4,9 @@ export const ALLOWLIST = {
     "customersupport@kangaroogd.com.au",
     "avshalom770@gmail.com.au"
   ]),
+  PARTS_LOGISTICS_V2_PILOT_EMAILS: new Set([
+    "admin@kangaroogd.com.au"
+  ]),
 };
 
 export function normEmail(v) {
