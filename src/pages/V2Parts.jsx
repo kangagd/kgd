@@ -560,6 +560,7 @@ export default function V2Parts() {
               createConsumptionMutation.mutate({
                 ...data,
                 project_id: selectedProjectId,
+                visit_id: null,
                 consumed_by_user_id: user?.id,
                 consumed_by_name: user?.full_name || user?.email,
                 consumed_at: new Date().toISOString(),
