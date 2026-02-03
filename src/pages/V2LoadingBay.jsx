@@ -428,10 +428,11 @@ export default function V2LoadingBay() {
 
       {/* Receipts Table */}
       {!receiptsLoading && receipts.length > 0 && (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+        <TooltipProvider>
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
                 <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                   <tr>
                     <th className="px-4 py-3">
