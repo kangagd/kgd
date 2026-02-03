@@ -1131,49 +1131,7 @@ function AllocationModal({ open, onClose, projectId, requirements, jobs, priceLi
   );
 }
 
-// Usage Action Button with Check-in Gate
-function UsageActionButton({ visitId, jobId, user, onOpen }) {
-  const [visits, setVisits] = useState([]);
-  
-  useEffect(() => {
-    const loadVisits = async () => {
-      if (jobId) {
-        try {
-          const jobVisits = await base44.entities.Visit.filter({ job_id: jobId });
-          setVisits(jobVisits);
-        } catch (error) {
-          console.error('Error loading visits:', error);
-        }
-      }
-    };
-    loadVisits();
-  }, [jobId]);
 
-  // Check if user is checked-in to the current visit
-  const currentVisit = visitId ? visits.find(v => v.id === visitId) : null;
-  const isCheckedIn = currentVisit?.checked_in_technicians?.includes(user?.email);
-
-  return (
-    <div>
-      {isCheckedIn ? (
-        <Button onClick={onOpen}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Usage
-        </Button>
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button disabled>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Usage
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Check-in required to record usage</TooltipContent>
-        </Tooltip>
-      )}
-    </div>
-  );
-}
 
 // Usage Modal
 function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocations, priceListItems, consumptions, preselectedJobId, user, onSubmit }) {
