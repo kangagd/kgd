@@ -109,6 +109,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Reconcile allocation status after consumption
+    if (source_allocation_id) {
+      await reconcileAllocationAfterConsumption(base44.asServiceRole, source_allocation_id, user);
+    }
+
     return Response.json({
       success: true,
       consumption,
