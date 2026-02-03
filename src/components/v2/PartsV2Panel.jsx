@@ -658,9 +658,9 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisti
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => createLogisticsRunMutation.mutate({ jobId: groupKey })}
+                  onClick={() => createLogisticsRunMutation.mutate({ jobId: groupKey, visitId: null })}
                   disabled={createLogisticsRunMutation.isPending}
-                  title="Draft logistics run (V2)"
+                  title="Draft logistics run (V2) - idempotent"
                 >
                   <Truck className="w-3 h-3 mr-1" />
                   Create Run
