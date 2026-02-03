@@ -278,6 +278,10 @@ export default function V2LoadingBay() {
           setShowCreateRunModal(false);
           setSelectedReceipts([]);
           
+          // Invalidate both queries
+          queryClient.invalidateQueries({ queryKey: ['loadingBayReceipts', 'open'] });
+          queryClient.invalidateQueries({ queryKey: ['loadingBayReceipts', 'cleared'] });
+          
           // Navigate to run
           window.location.href = `${createPageUrl('V2Logistics')}?runId=${run_id}`;
         } else {
