@@ -378,7 +378,7 @@ export default function V2Logistics() {
         stop={selectedStop}
         user={user}
         onSubmit={async (data) => {
-          await base44.entities.StopConfirmation.create({
+          const confirmation = await base44.entities.StopConfirmation.create({
             stop_id: selectedStop.id,
             completed_by_user_id: user.id,
             completed_by_name: user.full_name || user.email,
@@ -386,6 +386,19 @@ export default function V2Logistics() {
             notes: data.notes || '',
             photos_json: JSON.stringify(data.photos || []),
           });
+          
+          // Auto-create receipt for loading bay delivery stops
+          try {
+            const receiptResult = await base44.functions.invoke('ensureReceiptForStopConfirmation', {
+              stop_confirmation_id: confirmation.id
+            });
+            if (receiptResult.data?.success && !receiptResult.data?.skipped) {
+              console.log('Receipt auto-created:', receiptResult.data.receipt_id);
+            }
+          } catch (error) {
+            console.error('Receipt creation failed (non-blocking):', error);
+          }
+          
           queryClient.invalidateQueries(['stopConfirmations', selectedRunId]);
           setCompleteStopModalOpen(false);
           setSelectedStop(null);
