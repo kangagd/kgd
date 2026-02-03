@@ -458,8 +458,51 @@ export default function V2LoadingBay() {
         </Card>
       )}
 
-      {/* Receipts Table */}
-      {!receiptsLoading && receipts.length > 0 && (
+      {/* Completion Banner */}
+      {completionBanner && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start justify-between">
+          <div>
+            <p className="font-semibold text-green-800">✅ {completionBanner.message}</p>
+          </div>
+          <div className="flex gap-2">
+            {completionBanner.runId && (
+              <Link
+                to={`${createPageUrl('V2Logistics')}?runId=${completionBanner.runId}`}
+                className="text-sm text-green-700 hover:underline"
+              >
+                View Run
+              </Link>
+            )}
+            <button
+              onClick={() => {
+                setActiveTab('cleared');
+                setHighlightedReceiptIds(completionBanner.receiptIds || []);
+                setCompletionBanner(null);
+              }}
+              className="text-sm text-green-700 hover:underline"
+            >
+              View Cleared Receipts
+            </button>
+            <button
+              onClick={() => setCompletionBanner(null)}
+              className="text-green-600 hover:text-green-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList>
+          <TabsTrigger value="open">Open ({receipts.length})</TabsTrigger>
+          <TabsTrigger value="cleared">Cleared (7 days) ({clearedReceipts.length})</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* Open Receipts Table */}
+      {activeTab === 'open' && !receiptsLoading && receipts.length > 0 && (
         <TooltipProvider>
           <Card>
             <CardContent className="p-0">
