@@ -65,7 +65,7 @@ export default function Dashboard() {
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ['projects'],
-    queryFn: () => base44.entities.Project.list('-updated_date', 5),
+    queryFn: () => base44.entities.Project.list('-updated_date'),
     ...QUERY_CONFIG.reference,
     enabled: !!user, // Defer until user loads
   });
