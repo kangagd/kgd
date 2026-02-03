@@ -89,6 +89,20 @@ export default function V2Parts() {
         job_type_name: j.job_type_name
       })));
       
+      // Check specifically for #5141-A
+      const job5141A = jobs.find(j => j.job_number === '5141-A');
+      console.log('[visitTargets] Job #5141-A found in raw results?', !!job5141A);
+      if (job5141A) {
+        console.log('[visitTargets] #5141-A details:', {
+          id: job5141A.id,
+          project_id: job5141A.project_id,
+          deleted_at: job5141A.deleted_at,
+          job_type_name: job5141A.job_type_name,
+          is_logistics_job: job5141A.is_logistics_job
+        });
+      }
+      console.log('[visitTargets] selectedProjectId being queried:', selectedProjectId);
+      
       // Filter out deleted and logistics job types
       const filteredJobs = jobs.filter(job => 
         !job.deleted_at && 
@@ -96,6 +110,7 @@ export default function V2Parts() {
       );
       
       console.log('[visitTargets] Filtered jobs:', filteredJobs.length);
+      console.log('[visitTargets] Job #5141-A in filtered results?', !!filteredJobs.find(j => j.job_number === '5141-A'));
       
       const filteredSummaries = summaries.filter(s =>
         !s.deleted_at &&
