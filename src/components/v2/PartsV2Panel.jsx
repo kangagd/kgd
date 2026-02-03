@@ -650,9 +650,10 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
+      </div>
+      </TooltipProvider>
+      );
+      }
 
 // Allocations Grouped By Job
 function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisticsRunMutation, updateAllocationMutation }) {
