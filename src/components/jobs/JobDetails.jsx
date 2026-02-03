@@ -76,6 +76,8 @@ import ProjectRequirementsPanel from "./ProjectRequirementsPanel";
 import { isFeatureEnabled } from "../domain/featureFlags";
 import { isJobV2Enabled, shouldHideLegacySections, hasVisitExecution, detectLegacyFields, warnJobV2Drift } from "./jobModelRules";
 import ConflictWarningModal from "../schedule/ConflictWarningModal";
+import { isPartsLogisticsV2PilotAllowed } from "../utils/allowlist";
+import PartsV2Panel from "../v2/PartsV2Panel";
 
 function isLastCheckedInTechnician(checkIns, currentUserEmail) {
   if (!checkIns || checkIns.length === 0 || !currentUserEmail) return false;
