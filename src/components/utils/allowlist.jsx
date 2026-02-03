@@ -2,7 +2,7 @@ export const ALLOWLIST = {
   INBOX_V2_EMAILS: new Set([
     "admin@kangaroogd.com.au",
     "customersupport@kangaroogd.com.au",
-    "avshalom770@gmail.com.au"
+    "avshalom770@gmail.com"
   ]),
   PARTS_LOGISTICS_V2_PILOT_EMAILS: new Set([
     "admin@kangaroogd.com.au"
