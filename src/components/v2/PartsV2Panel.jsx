@@ -481,12 +481,38 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
         open={usageModalOpen}
         onClose={() => setUsageModalOpen(false)}
         projectId={projectId}
+        visitId={visitId}
         jobs={jobs}
         allocations={allocations}
         priceListItems={priceListItems}
         consumptions={consumptions}
         preselectedJobId={quickActionJobId}
-        onSubmit={(data) => {
+        onSubmit={async (data) => {
+          // Use backend function for visit consumption with allocation
+          if (visitId && data.source_allocation_id) {
+            try {
+              const result = await base44.functions.invoke('recordVisitConsumption', {
+                project_id: projectId,
+                visit_id: visitId,
+                source_allocation_id: data.source_allocation_id,
+                qty_consumed: data.qty_consumed,
+                notes: data.notes
+              });
+              
+              if (result.data?.success) {
+                queryClient.invalidateQueries(['stockConsumptions', projectId]);
+                setUsageModalOpen(false);
+                toast.success('Usage recorded');
+              } else {
+                toast.error(result.data?.error || 'Failed to record usage');
+              }
+            } catch (error) {
+              toast.error(error.message || 'Failed to record usage');
+            }
+            return;
+          }
+          
+          // Fallback: direct entity creation for non-visit or ad-hoc usage
           if (data.source_allocation_id) {
             const allocation = allocations.find(a => a.id === data.source_allocation_id);
             const consumedFromAlloc = consumptions
@@ -504,6 +530,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
           createConsumptionMutation.mutate({
             ...data,
             project_id: projectId,
+            visit_id: visitId || data.visit_id || null,
             consumed_by_user_id: user?.id,
             consumed_by_name: user?.full_name || user?.email,
             consumed_at: new Date().toISOString(),
