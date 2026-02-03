@@ -468,10 +468,12 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Usage {jobId && '(This Job)'}</CardTitle>
-                <Button onClick={() => { setQuickActionJobId(jobId); setUsageModalOpen(true); }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Usage
-                </Button>
+                <UsageActionButton 
+                  visitId={visitId}
+                  jobId={jobId}
+                  user={user}
+                  onOpen={() => { setQuickActionJobId(jobId); setUsageModalOpen(true); }}
+                />
               </div>
             </CardHeader>
             <CardContent>
