@@ -307,6 +307,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
     },
     onSuccess: (run) => {
       queryClient.invalidateQueries(['logisticsRuns']);
+      queryClient.invalidateQueries(['stockAllocations', projectId]);
       toast.success('Draft run created', {
         action: {
           label: 'Open in Logistics (V2)',
