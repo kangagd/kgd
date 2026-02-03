@@ -1025,7 +1025,7 @@ function AllocationModal({ open, onClose, projectId, requirements, jobs, priceLi
 }
 
 // Usage Modal
-function UsageModal({ open, onClose, projectId, jobs, allocations, priceListItems, consumptions, preselectedJobId, onSubmit }) {
+function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocations, priceListItems, consumptions, preselectedJobId, onSubmit }) {
   const [formData, setFormData] = useState({
     job_id: '',
     catalog_item_id: '',
