@@ -397,6 +397,7 @@ export default function V2Logistics() {
             }
           } catch (error) {
             console.error('Receipt creation failed (non-blocking):', error);
+            toast.warning('Stop completed, but receipt creation failed (check console).');
           }
           
           queryClient.invalidateQueries(['stopConfirmations', selectedRunId]);
