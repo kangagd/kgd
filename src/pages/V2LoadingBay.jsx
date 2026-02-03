@@ -275,7 +275,6 @@ export default function V2LoadingBay() {
   };
 
   // Handle ensure locations
-  const [isEnsuringLocations, setIsEnsuringLocations] = useState(false);
   const handleEnsureLocations = async () => {
     setIsEnsuringLocations(true);
     try {
