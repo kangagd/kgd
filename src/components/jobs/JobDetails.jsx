@@ -2298,6 +2298,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
                   <span className="hidden md:inline">Invoice</span>
                 </TabsTrigger>
               )}
+              {user && isPartsLogisticsV2PilotAllowed(user) && (
+                <TabsTrigger value="partsv2" className="flex-1">
+                  <Package className="w-4 h-4 mr-1.5" />
+                  <span className="hidden md:inline">Parts (V2)</span>
+                </TabsTrigger>
+              )}
               </TabsList>
 
             <TabsContent value="details" className="space-y-4 mt-3">
