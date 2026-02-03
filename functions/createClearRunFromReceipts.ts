@@ -140,39 +140,22 @@ Deno.serve(async (req) => {
 
     console.log(`[createClearRun] ${reused ? 'Reused' : 'Created'} run ${run.id} for ${eligibleReceipts.length} receipts`);
 
-    // Create stops for each receipt
-    let createdStops = 0;
-    for (let i = 0; i < eligibleReceipts.length; i++) {
-      const receipt = eligibleReceipts[i];
-
-      try {
-        const stopData = {
-          run_id: run.id,
-          sequence: i + 1,
-          purpose: 'clear_loading_bay',
-          instructions: 'Clear Loading Bay receipt'
-        };
-
-        if (receipt.location_id) stopData.location_id = receipt.location_id;
-        if (target_location_id) stopData.to_location_id = target_location_id;
-        if (receipt.project_id) stopData.project_id = receipt.project_id;
-        if (receipt.purchase_order_id) stopData.purchase_order_id = receipt.purchase_order_id;
-        if (receipt.id) stopData.receipt_id = receipt.id;
-
-        await base44.asServiceRole.entities.LogisticsStop.create(stopData);
-        
-        // Update receipt with clear_run_id
-        await base44.asServiceRole.entities.Receipt.update(receipt.id, {
-          clear_run_id: run.id
-        });
-
-        createdStops++;
-        console.log(`[createClearRun] Created stop for receipt ${receipt.id}`);
-      } catch (error) {
-        console.error(`[createClearRun] Failed to create stop for receipt ${receipt.id}:`, error);
-        skippedReceipts.push({ id: receipt.id, reason: 'stop_creation_failed', error: error.message });
+    // Update receipts with clear_run_id (only if new run was created)
+    let updatedReceipts = 0;
+    if (!reused) {
+      for (const receipt of eligibleReceipts) {
+        try {
+          await base44.asServiceRole.entities.Receipt.update(receipt.id, {
+            clear_run_id: run.id
+          });
+          updatedReceipts++;
+        } catch (error) {
+          console.error(`[createClearRun] Failed to link receipt ${receipt.id}:`, error);
+        }
       }
     }
+
+    const createdStops = reused ? 0 : stopsDraftData.length;
 
     return Response.json({
       success: true,
