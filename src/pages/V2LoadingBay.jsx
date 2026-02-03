@@ -46,7 +46,7 @@ export default function V2LoadingBay() {
   }, []);
 
   const { data: receipts = [], isLoading: receiptsLoading } = useQuery({
-    queryKey: ['loadingBayReceipts'],
+    queryKey: ['loadingBayReceipts', 'open'],
     queryFn: async () => {
       const results = await base44.entities.Receipt.filter({ status: 'open' });
       return results.sort((a, b) => {
@@ -57,7 +57,28 @@ export default function V2LoadingBay() {
     },
     enabled: allowed,
     staleTime: 30000,
-    refetchOnWindowFocus: true, // Auto-refresh when returning to page
+    refetchOnWindowFocus: true,
+  });
+
+  // Fetch cleared receipts (last 7 days)
+  const { data: clearedReceipts = [], isLoading: clearedLoading } = useQuery({
+    queryKey: ['loadingBayReceipts', 'cleared'],
+    queryFn: async () => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const results = await base44.entities.Receipt.filter({
+        $or: [
+          { status: 'cleared' },
+          { cleared_at: { $exists: true } }
+        ]
+      });
+      return results
+        .filter(r => r.cleared_at && new Date(r.cleared_at) >= sevenDaysAgo)
+        .sort((a, b) => new Date(b.cleared_at).getTime() - new Date(a.cleared_at).getTime());
+    },
+    enabled: allowed,
+    staleTime: 30000,
+    refetchOnWindowFocus: true,
   });
 
   // Fetch related projects
