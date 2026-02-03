@@ -5,16 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { isPartsLogisticsV2PilotAllowed } from '@/components/utils/allowlist';
-import { Package, Clock, AlertTriangle, CheckCircle, Camera, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
+import { Package, Clock, AlertTriangle, CheckCircle, Camera, ExternalLink, Loader2, RefreshCw, Truck } from 'lucide-react';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function V2LoadingBay() {
   const [user, setUser] = useState(null);
   const [allowed, setAllowed] = useState(false);
   const [isNormalizing, setIsNormalizing] = useState(false);
+  const [selectedReceipts, setSelectedReceipts] = useState([]);
+  const [showCreateRunModal, setShowCreateRunModal] = useState(false);
+  const [isCreatingRun, setIsCreatingRun] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -197,6 +204,62 @@ export default function V2LoadingBay() {
     }
   };
 
+  // Handle create clear run
+  const handleCreateClearRun = async (formData) => {
+    setIsCreatingRun(true);
+    try {
+      const result = await base44.functions.invoke('createClearRunFromReceipts', {
+        receipt_ids: selectedReceipts,
+        assigned_to_user_id: formData.assigned_to_user_id,
+        assigned_to_name: formData.assigned_to_name,
+        vehicle_id: formData.vehicle_id,
+        target_location_id: formData.target_location_id
+      });
+
+      if (result.data?.success) {
+        const { run_id, created_stops, skipped_receipts } = result.data;
+        
+        if (run_id) {
+          toast.success(`Created clear run with ${created_stops} stops`);
+          setShowCreateRunModal(false);
+          setSelectedReceipts([]);
+          
+          // Navigate to run
+          window.location.href = `${createPageUrl('V2Logistics')}?runId=${run_id}`;
+        } else {
+          toast.warning(`No run created: ${result.data.message}`);
+          setShowCreateRunModal(false);
+        }
+      } else {
+        toast.error(`Failed to create run: ${result.data?.error || 'unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Create clear run error:', error);
+      toast.error('Failed to create run (check console)');
+    } finally {
+      setIsCreatingRun(false);
+    }
+  };
+
+  // Toggle receipt selection
+  const toggleReceipt = (receiptId) => {
+    setSelectedReceipts(prev => 
+      prev.includes(receiptId) 
+        ? prev.filter(id => id !== receiptId)
+        : [...prev, receiptId]
+    );
+  };
+
+  // Toggle all receipts
+  const toggleAllReceipts = () => {
+    const eligibleReceipts = receipts.filter(r => !r.clear_run_id);
+    if (selectedReceipts.length === eligibleReceipts.length) {
+      setSelectedReceipts([]);
+    } else {
+      setSelectedReceipts(eligibleReceipts.map(r => r.id));
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -205,19 +268,30 @@ export default function V2LoadingBay() {
           <h1 className="text-h1 mb-2">Loading Bay (V2)</h1>
           <p className="text-secondary text-sm">Open receipts awaiting move (48h SLA)</p>
         </div>
-        <Button
-          onClick={handleNormalizeSLA}
-          disabled={isNormalizing}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          {isNormalizing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
+        <div className="flex gap-2">
+          {selectedReceipts.length > 0 && (
+            <Button
+              onClick={() => setShowCreateRunModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Truck className="w-4 h-4" />
+              Create Clear Run ({selectedReceipts.length})
+            </Button>
           )}
-          Normalize SLA from received_at
-        </Button>
+          <Button
+            onClick={handleNormalizeSLA}
+            disabled={isNormalizing}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            {isNormalizing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Normalize SLA
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -295,6 +369,12 @@ export default function V2LoadingBay() {
               <table className="w-full">
                 <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
                   <tr>
+                    <th className="px-4 py-3">
+                      <Checkbox
+                        checked={selectedReceipts.length === receipts.filter(r => !r.clear_run_id).length && receipts.filter(r => !r.clear_run_id).length > 0}
+                        onCheckedChange={toggleAllReceipts}
+                      />
+                    </th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Received</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Age</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">SLA</th>
@@ -302,7 +382,7 @@ export default function V2LoadingBay() {
                     <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">PO</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Location</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Photos</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Source</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -314,6 +394,14 @@ export default function V2LoadingBay() {
 
                     return (
                       <tr key={receipt.id} className="border-b border-[#E5E7EB] hover:bg-[#F9FAFB]">
+                        <td className="px-4 py-3">
+                          {!receipt.clear_run_id && (
+                            <Checkbox
+                              checked={selectedReceipts.includes(receipt.id)}
+                              onCheckedChange={() => toggleReceipt(receipt.id)}
+                            />
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm">
                           {receipt.received_at ? format(new Date(receipt.received_at), 'MMM d, HH:mm') : '-'}
                         </td>
@@ -381,16 +469,29 @@ export default function V2LoadingBay() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {receipt.source_stop_id ? (
-                            <Link
-                              to={`${createPageUrl('V2Logistics')}`}
-                              className="text-blue-600 hover:underline text-sm flex items-center gap-1"
-                            >
-                              View Stop
-                              <ExternalLink className="w-3 h-3" />
-                            </Link>
+                          {receipt.clear_run_id ? (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary">Run Created</Badge>
+                              <Link
+                                to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
+                                className="text-blue-600 hover:underline text-sm flex items-center gap-1"
+                              >
+                                View Run
+                                <ExternalLink className="w-3 h-3" />
+                              </Link>
+                            </div>
                           ) : (
-                            <span className="text-muted text-sm">-</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedReceipts([receipt.id]);
+                                setShowCreateRunModal(true);
+                              }}
+                              className="text-xs"
+                            >
+                              Create Run
+                            </Button>
                           )}
                         </td>
                       </tr>
@@ -402,6 +503,93 @@ export default function V2LoadingBay() {
           </CardContent>
         </Card>
       )}
+
+      {/* Create Run Modal */}
+      <CreateRunModal
+        open={showCreateRunModal}
+        onClose={() => {
+          setShowCreateRunModal(false);
+          setSelectedReceipts([]);
+        }}
+        onSubmit={handleCreateClearRun}
+        isLoading={isCreatingRun}
+        receiptCount={selectedReceipts.length}
+      />
     </div>
+  );
+}
+
+function CreateRunModal({ open, onClose, onSubmit, isLoading, receiptCount }) {
+  const [formData, setFormData] = useState({
+    assigned_to_user_id: '',
+    assigned_to_name: '',
+    vehicle_id: '',
+    target_location_id: ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create Clear Run</DialogTitle>
+          <DialogDescription>
+            Create a draft logistics run to clear {receiptCount} receipt{receiptCount !== 1 ? 's' : ''} from the loading bay.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="assigned_to_name">Assign to Technician (optional)</Label>
+            <Input
+              id="assigned_to_name"
+              placeholder="Technician name"
+              value={formData.assigned_to_name}
+              onChange={(e) => setFormData({ ...formData, assigned_to_name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="vehicle_id">Vehicle ID (optional)</Label>
+            <Input
+              id="vehicle_id"
+              placeholder="Vehicle ID"
+              value={formData.vehicle_id}
+              onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="target_location_id">Target Location ID (optional)</Label>
+            <Input
+              id="target_location_id"
+              placeholder="e.g., warehouse storage location ID"
+              value={formData.target_location_id}
+              onChange={(e) => setFormData({ ...formData, target_location_id: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Creating...
+                </>
+              ) : (
+                'Create Run'
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

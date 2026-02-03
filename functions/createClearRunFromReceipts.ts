@@ -1,0 +1,131 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Admin authorization
+    const user = await base44.auth.me();
+    if (user?.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { 
+      receipt_ids, 
+      assigned_to_user_id, 
+      assigned_to_name,
+      vehicle_id,
+      vehicle_name,
+      target_location_id
+    } = body;
+
+    if (!receipt_ids || !Array.isArray(receipt_ids) || receipt_ids.length === 0) {
+      return Response.json({ 
+        success: false, 
+        error: 'receipt_ids is required and must be a non-empty array' 
+      }, { status: 400 });
+    }
+
+    // Fetch receipts
+    const receipts = await Promise.all(
+      receipt_ids.map(id => base44.asServiceRole.entities.Receipt.get(id).catch(() => null))
+    );
+
+    const eligibleReceipts = [];
+    const skippedReceipts = [];
+
+    for (let i = 0; i < receipts.length; i++) {
+      const receipt = receipts[i];
+      const receiptId = receipt_ids[i];
+
+      if (!receipt) {
+        skippedReceipts.push({ id: receiptId, reason: 'not_found' });
+        continue;
+      }
+
+      if (receipt.status !== 'open') {
+        skippedReceipts.push({ id: receiptId, reason: 'not_open' });
+        continue;
+      }
+
+      if (receipt.clear_run_id) {
+        skippedReceipts.push({ id: receiptId, reason: 'already_linked_to_run', run_id: receipt.clear_run_id });
+        continue;
+      }
+
+      eligibleReceipts.push(receipt);
+    }
+
+    if (eligibleReceipts.length === 0) {
+      return Response.json({
+        success: true,
+        run_id: null,
+        created_stops: 0,
+        skipped_receipts: skippedReceipts,
+        message: 'No eligible receipts to process'
+      });
+    }
+
+    // Create LogisticsRun
+    const runData = {
+      status: 'draft',
+      notes: 'Auto-created from Loading Bay dashboard'
+    };
+
+    if (assigned_to_user_id) runData.assigned_to_user_id = assigned_to_user_id;
+    if (assigned_to_name) runData.assigned_to_name = assigned_to_name;
+    if (vehicle_id) runData.vehicle_id = vehicle_id;
+
+    const run = await base44.asServiceRole.entities.LogisticsRun.create(runData);
+    console.log(`[createClearRun] Created run ${run.id} for ${eligibleReceipts.length} receipts`);
+
+    // Create stops for each receipt
+    let createdStops = 0;
+    for (let i = 0; i < eligibleReceipts.length; i++) {
+      const receipt = eligibleReceipts[i];
+
+      try {
+        const stopData = {
+          run_id: run.id,
+          sequence: i + 1,
+          purpose: 'clear_loading_bay',
+          instructions: 'Clear Loading Bay receipt'
+        };
+
+        if (receipt.location_id) stopData.location_id = receipt.location_id;
+        if (target_location_id) stopData.to_location_id = target_location_id;
+        if (receipt.project_id) stopData.project_id = receipt.project_id;
+        if (receipt.purchase_order_id) stopData.purchase_order_id = receipt.purchase_order_id;
+        if (receipt.id) stopData.receipt_id = receipt.id;
+
+        await base44.asServiceRole.entities.LogisticsStop.create(stopData);
+        
+        // Update receipt with clear_run_id
+        await base44.asServiceRole.entities.Receipt.update(receipt.id, {
+          clear_run_id: run.id
+        });
+
+        createdStops++;
+        console.log(`[createClearRun] Created stop for receipt ${receipt.id}`);
+      } catch (error) {
+        console.error(`[createClearRun] Failed to create stop for receipt ${receipt.id}:`, error);
+        skippedReceipts.push({ id: receipt.id, reason: 'stop_creation_failed', error: error.message });
+      }
+    }
+
+    return Response.json({
+      success: true,
+      run_id: run.id,
+      created_stops: createdStops,
+      skipped_receipts: skippedReceipts
+    });
+
+  } catch (error) {
+    console.error('[createClearRun] Error:', error);
+    return Response.json({ 
+      success: false,
+      error: error.message 
+    }, { status: 500 });
+  }
+});
