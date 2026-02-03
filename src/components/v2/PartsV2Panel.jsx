@@ -198,10 +198,39 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
   });
 
   const createLogisticsRunMutation = useMutation({
-    mutationFn: async ({ jobId }) => {
+    mutationFn: async ({ jobId, visitId: currentVisitId }) => {
       // Load job details to prefill context
       const job = await base44.entities.Job.get(jobId);
       
+      // Get allocations for this job
+      const jobAllocations = allocations.filter(a => 
+        a.job_id === jobId && 
+        a.status !== 'released'
+      );
+      const allocationIds = jobAllocations.map(a => a.id);
+
+      // Build intent key for idempotency (inline helpers)
+      const stableSortedIds = (ids) => [...ids].sort();
+      const hashIds = (ids) => {
+        const sorted = stableSortedIds(ids);
+        const joined = sorted.join('|');
+        return btoa(joined).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+      };
+
+      const targetVehicleId = job.vehicle_id || null;
+      const targetLocationId = null; // Not specified in parts flow
+      const hash = hashIds(allocationIds);
+      const visit = currentVisitId || 'none';
+      const vehicle = targetVehicleId || 'none';
+      const location = targetLocationId || 'none';
+      const intent_key = `parts_allocations:${visit}:${vehicle}:${location}:${hash}`;
+      const intent_kind = 'parts_allocations';
+      const intent_meta_json = JSON.stringify({ 
+        allocation_ids: allocationIds,
+        visit_id: currentVisitId || null,
+        job_id: jobId 
+      });
+
       // Infer scheduling from job
       let scheduledStart = null;
       if (job.scheduled_date && job.scheduled_time) {
@@ -210,29 +239,24 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
         scheduledStart = `${job.scheduled_date}T09:00:00`;
       }
 
-      // Create the run
-      const run = await base44.entities.LogisticsRun.create({
+      // Prepare run draft data
+      const runDraftData = {
         assigned_to_user_id: job.assigned_to?.[0] || null,
         assigned_to_name: job.assigned_to_name?.[0] || null,
-        vehicle_id: job.vehicle_id || null,
+        vehicle_id: targetVehicleId,
         scheduled_start: scheduledStart,
-        status: "draft",
         notes: `Auto-created from Parts (V2) allocations for Job ${job.job_number || job.id}`,
-      });
+      };
 
-      // Create stops
-      const stops = [
+      // Prepare stops draft data
+      const stopsDraftData = [
         {
-          run_id: run.id,
-          sequence: 1,
           purpose: "storage_to_vehicle",
           project_id: job.project_id,
           requires_photos: false,
           instructions: "Load allocated parts into vehicle",
         },
         {
-          run_id: run.id,
-          sequence: 2,
           purpose: "vehicle_to_site",
           project_id: job.project_id,
           requires_photos: false,
@@ -240,9 +264,20 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
         },
       ];
 
-      await Promise.all(stops.map(stop => base44.entities.LogisticsStop.create(stop)));
+      // Use get-or-create function
+      const result = await base44.functions.invoke('getOrCreateLogisticsRun', {
+        intent_key,
+        intent_kind,
+        intent_meta_json,
+        runDraftData,
+        stopsDraftData
+      });
 
-      return run;
+      if (!result.data?.run) {
+        throw new Error('Failed to get or create run');
+      }
+
+      return result.data.run;
     },
     onSuccess: (run) => {
       queryClient.invalidateQueries(['logisticsRuns']);
