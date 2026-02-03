@@ -1300,9 +1300,11 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
                         .reduce((sum, c) => sum + (c.qty_consumed || 0), 0);
                       const remaining = a.qty_allocated - consumed;
                       const locName = inventoryLocations.find(loc => loc.id === a.from_location_id)?.name || 'Warehouse';
+                      // Get part name from price list if available
+                      const partName = priceListItems.find(p => p.id === a.catalog_item_id)?.item || a.description || 'Part';
                       return (
                         <SelectItem key={a.id} value={a.id}>
-                          {a.description || a.catalog_item_id} — Alloc: {a.qty_allocated}, Remain: {remaining}, Loc: {locName}
+                          {partName} (Alloc: {a.qty_allocated}, Remaining: {remaining}, {locName})
                         </SelectItem>
                       );
                     })
