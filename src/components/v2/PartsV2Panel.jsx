@@ -551,6 +551,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
         priceListItems={priceListItems}
         consumptions={consumptions}
         preselectedJobId={quickActionJobId}
+        user={user}
         onSubmit={async (data) => {
           // Use backend function for visit consumption with allocation
           if (visitId && data.source_allocation_id) {
