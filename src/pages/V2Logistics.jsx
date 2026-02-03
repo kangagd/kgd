@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { isPartsLogisticsV2PilotAllowed } from "../components/utils/allowlist";
 import BackButton from "../components/common/BackButton";
 import { createPageUrl } from "@/utils";
+import { resolveProjectLabel, resolvePurchaseOrderLabel } from "@/components/utils/labelResolvers";
 
 const STATUS_COLORS = {
   draft: "bg-gray-100 text-gray-700",
