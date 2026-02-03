@@ -567,15 +567,28 @@ export default function V2LoadingBay() {
                                   to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
                                   className="text-blue-600 hover:underline text-sm flex items-center gap-1"
                                 >
-                                  View Run
+                                  View Receipt
                                   <ExternalLink className="w-3 h-3" />
                                 </Link>
                               )}
                             </div>
-                          ) : isRunCreated ? (
+                          ) : isInRun ? (
                             <div className="flex items-center gap-2">
                               <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                                Run Created
+                                In Run
+                              </Badge>
+                              <Link
+                                to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
+                                className="text-blue-600 hover:underline text-sm flex items-center gap-1"
+                              >
+                                View Run
+                                <ExternalLink className="w-3 h-3" />
+                              </Link>
+                            </div>
+                          ) : isRunCreated ? (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-slate-100 text-slate-700 border-slate-300">
+                                Pending
                               </Badge>
                               <Link
                                 to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
