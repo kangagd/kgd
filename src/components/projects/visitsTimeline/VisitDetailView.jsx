@@ -88,6 +88,81 @@ export default function VisitDetailView({ visit }) {
 
   return (
     <div className="space-y-3">
+      {/* Visit Readiness (V2) - Admin Only */}
+      {isPartsLogisticsV2PilotAllowed(user) && visit.project_id && readiness && (
+        <Card className="border-2 border-blue-200 bg-blue-50/30">
+          <div className="px-4 py-3">
+            <h4 className="font-semibold text-[#111827] text-sm mb-3 flex items-center gap-2">
+              <Package className="w-4 h-4 text-blue-600" />
+              Visit Readiness (V2)
+            </h4>
+            <div className="space-y-2">
+              {/* Status Badge */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-[#6B7280]">Status:</span>
+                <Badge 
+                  variant={
+                    readiness.status === 'Ready + Packed' ? 'default' : 
+                    readiness.status === 'Ready (Not Packed)' ? 'secondary' : 
+                    'destructive'
+                  }
+                  className="text-xs"
+                >
+                  {readiness.status === 'Ready + Packed' && <CheckCircle className="w-3 h-3 mr-1" />}
+                  {readiness.status === 'Not Ready' && <AlertTriangle className="w-3 h-3 mr-1" />}
+                  {readiness.status}
+                </Badge>
+              </div>
+
+              {/* Missing Blocking Count */}
+              {readiness.missing_blocking > 0 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-medium text-red-600">
+                    {readiness.missing_blocking} blocking requirement{readiness.missing_blocking !== 1 ? 's' : ''} missing
+                  </span>
+                </div>
+              )}
+
+              {/* Packed Status */}
+              {readiness.missing_blocking === 0 && (
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-[#6B7280]">Packed:</span>
+                  <span className={readiness.packed ? 'text-green-600 font-medium' : 'text-amber-600'}>
+                    {readiness.packed ? 'Yes (loaded)' : 'No (not loaded)'}
+                  </span>
+                </div>
+              )}
+
+              {/* Loading Bay Receipts Warning */}
+              {readiness.loading_bay_receipts > 0 && (
+                <div className="flex items-center gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                  <AlertTriangle className="w-3 h-3 text-amber-600 flex-shrink-0" />
+                  <span className="text-amber-800">
+                    {readiness.loading_bay_receipts} open receipt{readiness.loading_bay_receipts !== 1 ? 's' : ''} in loading bay for this project
+                  </span>
+                </div>
+              )}
+
+              {/* Missing Details */}
+              {readiness.details && readiness.details.length > 0 && (
+                <details className="text-xs mt-2">
+                  <summary className="cursor-pointer font-medium text-[#6B7280] hover:text-[#111827]">
+                    View missing items ({readiness.details.length})
+                  </summary>
+                  <div className="mt-2 space-y-1 pl-3 border-l-2 border-red-200">
+                    {readiness.details.map((detail, idx) => (
+                      <div key={idx} className="text-red-600">
+                        {detail.description || 'Unknown item'}: Need {detail.missing} more (have {detail.allocated}/{detail.required})
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Outcome & Summary */}
       <Collapsible open={expandedSections.summary} onOpenChange={() => toggleSection('summary')}>
         <Card className="border border-[#E5E7EB] rounded-lg overflow-hidden">
