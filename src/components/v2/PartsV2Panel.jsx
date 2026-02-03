@@ -277,7 +277,33 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
         throw new Error('Failed to get or create run');
       }
 
-      return result.data.run;
+      const run = result.data.run;
+
+      // Backfill link: update allocations with logistics_run_id
+      if (allocationIds.length > 0) {
+        const updatePromises = allocationIds.map(async (allocId) => {
+          try {
+            const alloc = await base44.entities.StockAllocation.get(allocId);
+            
+            // Safe guard: only update if no existing run or same run
+            if (!alloc.logistics_run_id || alloc.logistics_run_id === run.id) {
+              await base44.entities.StockAllocation.update(allocId, {
+                logistics_run_id: run.id,
+                logistics_run_status: run.status,
+                logistics_linked_at: new Date().toISOString()
+              });
+            } else {
+              console.warn(`[PartsV2Panel] Allocation ${allocId} already linked to different run ${alloc.logistics_run_id}, skipping`);
+            }
+          } catch (error) {
+            console.error(`[PartsV2Panel] Failed to link allocation ${allocId}:`, error);
+          }
+        });
+
+        await Promise.all(updatePromises);
+      }
+
+      return run;
     },
     onSuccess: (run) => {
       queryClient.invalidateQueries(['logisticsRuns']);
