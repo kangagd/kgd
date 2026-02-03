@@ -117,9 +117,14 @@ export default function V2Logistics() {
 
   const selectedRun = runs.find(r => r.id === selectedRunId);
 
-  // Auto-select first run if none selected
+  // Auto-select from query param or first run
   useEffect(() => {
-    if (runs.length > 0 && !selectedRunId) {
+    const params = new URLSearchParams(window.location.search);
+    const runIdFromUrl = params.get('runId');
+    
+    if (runIdFromUrl && runs.find(r => r.id === runIdFromUrl)) {
+      setSelectedRunId(runIdFromUrl);
+    } else if (runs.length > 0 && !selectedRunId) {
       setSelectedRunId(runs[0].id);
     }
   }, [runs, selectedRunId]);
