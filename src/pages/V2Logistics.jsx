@@ -407,8 +407,31 @@ export default function V2Logistics() {
             console.error('Receipt creation failed (invoke threw):', error);
             toast.warning('Stop completed, but receipt creation failed (check console).');
           }
+
+          // Auto-clear receipt for clear_loading_bay stops
+          try {
+            const clearResult = await base44.functions.invoke('markReceiptClearedFromStopConfirmation', {
+              stop_confirmation_id: confirmation.id
+            });
+
+            const clearData = clearResult?.data;
+
+            if (!clearData?.success) {
+              console.error('Receipt clearing failed (non-blocking):', clearData);
+              toast.warning('Stop completed, but receipt clearing failed (check console)');
+            } else if (clearData?.skipped) {
+              console.log('Receipt clearing skipped:', clearData.reason);
+            } else if (clearData?.existed) {
+              console.log('Receipt already cleared:', clearData.receipt_id);
+            } else if (clearData?.updated) {
+              console.log('Receipt marked as cleared:', clearData.receipt_id);
+            }
+          } catch (error) {
+            console.error('Receipt clearing failed (invoke threw):', error);
+          }
           
           queryClient.invalidateQueries(['stopConfirmations', selectedRunId]);
+          queryClient.invalidateQueries(['receipts', 'loading-bay']); // Refresh Loading Bay
           setCompleteStopModalOpen(false);
           setSelectedStop(null);
           toast.success('Stop completed');
