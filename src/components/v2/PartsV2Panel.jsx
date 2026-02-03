@@ -1102,17 +1102,27 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
 
           {mode === 'allocated' ? (
             <div>
-              <Label>Source Allocation</Label>
+              <Label>Source Allocation {visitId && '(This Visit)'}</Label>
               <Select value={formData.source_allocation_id} onValueChange={(val) => setFormData({ ...formData, source_allocation_id: val })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose allocation..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {jobAllocations.map(a => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.description || a.catalog_item_id} (Qty: {a.qty_allocated})
-                    </SelectItem>
-                  ))}
+                  {jobAllocations.length === 0 ? (
+                    <div className="px-2 py-1 text-sm text-gray-500">No allocations available</div>
+                  ) : (
+                    jobAllocations.map(a => {
+                      const consumed = consumptions
+                        .filter(c => c.source_allocation_id === a.id)
+                        .reduce((sum, c) => sum + (c.qty_consumed || 0), 0);
+                      const remaining = a.qty_allocated - consumed;
+                      return (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.description || a.catalog_item_id} (Available: {remaining}/{a.qty_allocated})
+                        </SelectItem>
+                      );
+                    })
+                  )}
                 </SelectContent>
               </Select>
             </div>
