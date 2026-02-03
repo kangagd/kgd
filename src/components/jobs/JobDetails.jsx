@@ -4100,6 +4100,12 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
               </div>
               </TabsContent>
             )}
+
+            {user && isPartsLogisticsV2PilotAllowed(user) && (
+              <TabsContent value="partsv2" className="mt-2">
+                <PartsV2Panel projectId={job.project_id} jobId={job.id} />
+              </TabsContent>
+            )}
             </Tabs>
             </CardContent>
             </Card>
