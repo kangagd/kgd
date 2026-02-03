@@ -673,6 +673,9 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisti
               ? `Job #${job.job_number} — ${job.job_type_name || 'Job'}`
               : `Job: ...${groupKey.substring(groupKey.length - 6)}`;
 
+        // Check if allocations already have a linked run
+        const existingRunId = jobAllocations.find(a => a.logistics_run_id)?.logistics_run_id;
+
         return (
           <div key={groupKey} className={isCurrentJob ? 'border-2 border-blue-300 rounded-lg p-2' : ''}>
             <div className="flex items-center justify-between mb-2">
@@ -681,16 +684,28 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisti
                 {isCurrentJob && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
               </h4>
               {groupKey !== 'unassigned' && canCreateRun && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => createLogisticsRunMutation.mutate({ jobId: groupKey, visitId: null })}
-                  disabled={createLogisticsRunMutation.isPending}
-                  title="Draft logistics run (V2) - idempotent"
-                >
-                  <Truck className="w-3 h-3 mr-1" />
-                  Create Run
-                </Button>
+                existingRunId ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate(createPageUrl("V2Logistics") + `?runId=${existingRunId}`)}
+                    title="Open linked logistics run"
+                  >
+                    <Truck className="w-3 h-3 mr-1" />
+                    View Run
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => createLogisticsRunMutation.mutate({ jobId: groupKey, visitId: null })}
+                    disabled={createLogisticsRunMutation.isPending}
+                    title="Draft logistics run (V2) - idempotent"
+                  >
+                    <Truck className="w-3 h-3 mr-1" />
+                    Create Run
+                  </Button>
+                )
               )}
               {groupKey === 'unassigned' && (
                 <Badge variant="outline" className="text-xs text-orange-600 flex items-center gap-1">
