@@ -273,6 +273,27 @@ export default function V2LoadingBay() {
     }
   };
 
+  // Handle ensure locations
+  const [isEnsuringLocations, setIsEnsuringLocations] = useState(false);
+  const handleEnsureLocations = async () => {
+    setIsEnsuringLocations(true);
+    try {
+      const result = await base44.functions.invoke('ensureInventoryLocationsV2', {});
+      
+      if (result.data?.success) {
+        const { created, updated, skipped, vehicle_locations_created, vehicle_locations_updated } = result.data;
+        toast.success(`Locations ensured: ${created.length} created, ${updated.length} updated, ${skipped.length} skipped. Vehicles: ${vehicle_locations_created} created, ${vehicle_locations_updated} linked.`);
+      } else {
+        toast.error(`Failed: ${result.data?.error || 'unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Ensure locations error:', error);
+      toast.error('Failed to ensure locations (check console)');
+    } finally {
+      setIsEnsuringLocations(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
