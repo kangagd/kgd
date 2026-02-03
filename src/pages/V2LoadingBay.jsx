@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { isPartsLogisticsV2PilotAllowed } from '@/components/utils/allowlist';
-import { Package, Clock, AlertTriangle, CheckCircle, Camera, ExternalLink, Loader2, RefreshCw, Truck, Database } from 'lucide-react';
+import { Package, Clock, AlertTriangle, CheckCircle, Camera, ExternalLink, Loader2, RefreshCw, Truck, Database, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function V2LoadingBay() {
   const [user, setUser] = useState(null);
