@@ -10,6 +10,10 @@ import DOMPurify from 'dompurify';
 import { base44 } from '@/api/base44Client';
 import PartsV2Panel from '@/components/v2/PartsV2Panel';
 import { isPartsLogisticsV2PilotAllowed } from '@/components/utils/allowlist';
+import { computeVisitReadiness } from '@/components/v2parts/readinessHelpers';
+import { useQuery } from '@tanstack/react-query';
+import { AlertTriangle, CheckCircle, Package } from 'lucide-react';
+import { CardHeader, CardContent } from '@/components/ui/card';
 
 const normalizeDoors = (measurements) => {
   if (!measurements) return [];
