@@ -110,6 +110,13 @@ Deno.serve(async (req) => {
 
     // STEP 2: Clean up invoices linked to non-existent or incorrect projects (GHOST LINKS)
     for (const invoice of invoicesWithProjectLinks) {
+      // Check timeout
+      if (Date.now() - startTime > MAX_RUNTIME) {
+        console.log('[batchCleanupXeroInvoiceGhostLinks] Timeout approaching, stopping early');
+        actions.push({ type: 'timeout_reached', remaining_invoices: invoicesWithProjectLinks.length - invoicesUpdated });
+        break;
+      }
+
       try {
         const project = await base44.asServiceRole.entities.Project.get(invoice.project_id);
         
