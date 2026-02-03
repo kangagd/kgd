@@ -217,33 +217,38 @@ export default function V2Logistics() {
                 {selectedRun ? `Run Details` : 'Select a Run'}
               </CardTitle>
               {selectedRun && (
+              <div className="flex items-center gap-2">
                 <Button size="sm" onClick={() => setAddStopModalOpen(true)}>
                   <Plus className="w-4 h-4 mr-1" />
                   Add Stop
                 </Button>
+                <Badge variant="outline" className="text-xs">
+                  Stops: {stops.length} | Completed: {confirmations.length}
+                </Badge>
+              </div>
               )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!selectedRun ? (
+              </div>
+              </CardHeader>
+              <CardContent>
+              {!selectedRun ? (
               <p className="text-gray-600 text-center py-16">Select a run from the list to view details</p>
-            ) : (
+              ) : (
               <div className="space-y-4">
-                {/* Run Info */}
-                <RunInfoSection 
-                  run={selectedRun}
-                  users={users}
-                  vehicles={vehicles}
-                  onUpdate={async (updates) => {
-                    await base44.entities.LogisticsRun.update(selectedRun.id, updates);
-                    queryClient.invalidateQueries(['logisticsRuns']);
-                    toast.success('Run updated');
-                  }}
-                />
+              {/* Run Info */}
+              <RunInfoSection 
+                run={selectedRun}
+                users={users}
+                vehicles={vehicles}
+                onUpdate={async (updates) => {
+                  await base44.entities.LogisticsRun.update(selectedRun.id, updates);
+                  queryClient.invalidateQueries(['logisticsRuns']);
+                  toast.success('Run updated');
+                }}
+              />
 
-                {/* Stops */}
-                <div>
-                  <h3 className="font-semibold mb-3">Stops ({stops.length})</h3>
+              {/* Stops */}
+              <div>
+                <h3 className="font-semibold mb-3">Stops ({stops.length})</h3>
                   {stops.length === 0 ? (
                     <p className="text-gray-600 text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                       No stops yet. Click "Add Stop" to create one.
