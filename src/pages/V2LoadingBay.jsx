@@ -84,6 +84,20 @@ export default function V2LoadingBay() {
     enabled: allowed && poIds.length > 0,
   });
 
+  // Fetch logistics runs for receipts with clear_run_id
+  const runIds = [...new Set(receipts.map(r => r.clear_run_id).filter(Boolean))].slice(0, 25);
+  const { data: logisticsRuns = [] } = useQuery({
+    queryKey: ['loadingBayRuns', runIds],
+    queryFn: async () => {
+      if (runIds.length === 0) return [];
+      const results = await Promise.all(
+        runIds.map(id => base44.entities.LogisticsRun.get(id).catch(() => null))
+      );
+      return results.filter(Boolean);
+    },
+    enabled: allowed && runIds.length > 0,
+  });
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
