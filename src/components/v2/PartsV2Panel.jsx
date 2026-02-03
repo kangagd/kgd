@@ -394,6 +394,7 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
                     
                     const visit = visits.find(v => v.id === vid);
                     const isCurrentVisit = vid === visitId;
+                    const canCreateRun = vid !== 'unassigned' && user && isPartsLogisticsV2PilotAllowed(user);
                     
                     return (
                       <div key={vid} className={isCurrentVisit ? 'border-2 border-blue-300 rounded-lg p-2' : ''}>
@@ -402,15 +403,16 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
                             {vid === 'unassigned' ? 'Unassigned' : `Visit: ${visit?.visit_number || vid}`}
                             {isCurrentVisit && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
                           </h4>
-                          {vid !== 'unassigned' && user?.role === 'admin' && (
+                          {canCreateRun && (
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => createLogisticsRunMutation.mutate({ visit })}
+                              onClick={() => createLogisticsRunMutation.mutate({ jobId: visit.job_id })}
                               disabled={createLogisticsRunMutation.isPending}
+                              title="Draft logistics run (V2)"
                             >
                               <Truck className="w-3 h-3 mr-1" />
-                              Create Run for Visit
+                              Create Run
                             </Button>
                           )}
                         </div>
