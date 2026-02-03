@@ -5,14 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { isPartsLogisticsV2PilotAllowed } from '@/components/utils/allowlist';
-import { Package, Clock, AlertTriangle, CheckCircle, Camera, ExternalLink, Loader2 } from 'lucide-react';
+import { Package, Clock, AlertTriangle, CheckCircle, Camera, ExternalLink, Loader2, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { toast } from 'sonner';
 
 export default function V2LoadingBay() {
   const [user, setUser] = useState(null);
   const [allowed, setAllowed] = useState(false);
+  const [isNormalizing, setIsNormalizing] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -96,20 +98,23 @@ export default function V2LoadingBay() {
 
   // SLA computation helper
   const computeSLA = (receipt) => {
-    if (!receipt.received_at || !receipt.sla_due_at) {
-      return { status: 'Unknown', ageHours: 0, dueInHours: 0 };
-    }
-
     const now = new Date();
-    const receivedAt = new Date(receipt.received_at);
-    const dueAt = new Date(receipt.sla_due_at);
+    
+    // Use sla_clock_start_at as the primary clock source, fallback to received_at
+    const startAt = receipt.sla_clock_start_at 
+      ? new Date(receipt.sla_clock_start_at) 
+      : (receipt.received_at ? new Date(receipt.received_at) : null);
+    
+    const dueAt = receipt.sla_due_at 
+      ? new Date(receipt.sla_due_at) 
+      : (startAt ? new Date(startAt.getTime() + 48 * 3600 * 1000) : null);
 
     // Validate parsed dates
-    if (isNaN(receivedAt.getTime()) || isNaN(dueAt.getTime())) {
+    if (!startAt || !dueAt || isNaN(startAt.getTime()) || isNaN(dueAt.getTime())) {
       return { status: 'Unknown', ageHours: 0, dueInHours: 0 };
     }
 
-    const ageHours = Math.floor((now.getTime() - receivedAt.getTime()) / 3600000);
+    const ageHours = Math.floor((now.getTime() - startAt.getTime()) / 3600000);
     const dueInHours = Math.floor((dueAt.getTime() - now.getTime()) / 3600000);
 
     let status = 'OK';
@@ -169,12 +174,50 @@ export default function V2LoadingBay() {
     }
   };
 
+  // Handle normalize SLA
+  const handleNormalizeSLA = async () => {
+    setIsNormalizing(true);
+    try {
+      const result = await base44.functions.invoke('normalizeReceiptSlaFromReceivedAt', {});
+      
+      if (result.data?.success) {
+        const { checked, updated, skipped, failed } = result.data;
+        toast.success(`Normalized ${updated} receipts (${checked} checked, ${skipped} skipped, ${failed} failed)`);
+        
+        // Refresh receipts
+        window.location.reload();
+      } else {
+        toast.error(`Normalization failed: ${result.data?.error || 'unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Normalize SLA error:', error);
+      toast.error('Normalization failed (check console)');
+    } finally {
+      setIsNormalizing(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-h1 mb-2">Loading Bay (V2)</h1>
-        <p className="text-secondary text-sm">Open receipts awaiting move (48h SLA)</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-h1 mb-2">Loading Bay (V2)</h1>
+          <p className="text-secondary text-sm">Open receipts awaiting move (48h SLA)</p>
+        </div>
+        <Button
+          onClick={handleNormalizeSLA}
+          disabled={isNormalizing}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          {isNormalizing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Normalize SLA from received_at
+        </Button>
       </div>
 
       {/* Summary Cards */}
