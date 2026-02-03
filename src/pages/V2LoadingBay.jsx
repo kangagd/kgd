@@ -518,6 +518,91 @@ export default function V2LoadingBay() {
         </TabsList>
       </Tabs>
 
+      {/* Cleared Receipts Table */}
+      {activeTab === 'cleared' && !clearedLoading && clearedReceipts.length > 0 && (
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+              <thead className="bg-[#F9FAFB] border-b border-[#E5E7EB]">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Cleared</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Project</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">PO</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Target Location</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Photos</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-[#6B7280] uppercase">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clearedReceipts.map((receipt) => {
+                  const projectInfo = getProjectInfo(receipt.project_id);
+                  const poInfo = getPOInfo(receipt.purchase_order_id);
+                  const photoCount = getPhotoCount(receipt.photos_json);
+                  const isHighlighted = highlightedReceiptIds.includes(receipt.id);
+
+                  return (
+                    <tr key={receipt.id} className={`border-b border-[#E5E7EB] hover:bg-[#F9FAFB] ${isHighlighted ? 'bg-yellow-50' : ''}`}>
+                      <td className="px-4 py-3 text-sm">
+                        {receipt.cleared_at ? format(new Date(receipt.cleared_at), 'MMM d, HH:mm') : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {projectInfo ? (
+                          <Link
+                            to={`${createPageUrl('Projects')}?projectId=${receipt.project_id}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            #{projectInfo.number} {projectInfo.title}
+                          </Link>
+                        ) : receipt.project_id ? (
+                          <span className="text-muted">Project</span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {poInfo ? (
+                          <span className="text-[#111827]">{poInfo.reference}</span>
+                        ) : receipt.purchase_order_id ? (
+                          <span className="text-muted">PO</span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className="text-[#111827]">Loading Bay</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {photoCount > 0 ? (
+                          <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                            <Camera className="w-3 h-3" />
+                            {photoCount}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted text-sm">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {receipt.clear_run_id && (
+                          <Link
+                            to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
+                            className="text-blue-600 hover:underline text-sm flex items-center gap-1"
+                          >
+                            View Run
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Open Receipts Table */}
       {activeTab === 'open' && !receiptsLoading && receipts.length > 0 && (
         <TooltipProvider>
