@@ -53,12 +53,24 @@ Deno.serve(async (req) => {
     }
 
     // Idempotency check: look for existing receipt
-    const existingReceipts = await base44.asServiceRole.entities.Receipt.filter({
-      $or: [
-        { source_confirmation_id: stop_confirmation_id },
-        { source_stop_id: stop.id }
-      ]
-    });
+    let existingReceipts = [];
+    try {
+      const byConfirmation = await base44.asServiceRole.entities.Receipt.filter({
+        source_confirmation_id: stop_confirmation_id
+      });
+      const byStop = await base44.asServiceRole.entities.Receipt.filter({
+        source_stop_id: stop.id
+      });
+      const map = new Map();
+      [...byConfirmation, ...byStop].forEach(r => map.set(r.id, r));
+      existingReceipts = Array.from(map.values());
+    } catch (error) {
+      return Response.json({
+        success: false,
+        reason: 'receipt_idempotency_query_failed',
+        error: error.message
+      }, { status: 500 });
+    }
 
     if (existingReceipts.length > 0) {
       return Response.json({ 
@@ -67,6 +79,8 @@ Deno.serve(async (req) => {
         existed: true
       });
     }
+
+    console.log('[ensureReceipt] stop', stop.id, 'purpose', stop.purpose, 'confirmation', confirmation.id);
 
     // Determine location_id
     const location_id = stop.location_id || null;

@@ -392,11 +392,19 @@ export default function V2Logistics() {
             const receiptResult = await base44.functions.invoke('ensureReceiptForStopConfirmation', {
               stop_confirmation_id: confirmation.id
             });
-            if (receiptResult.data?.success && !receiptResult.data?.skipped) {
-              console.log('Receipt auto-created:', receiptResult.data.receipt_id);
+
+            const data = receiptResult?.data;
+
+            if (!data?.success) {
+              console.error('Receipt creation failed (non-blocking):', data);
+              toast.warning(`Stop completed, but receipt creation failed: ${data?.reason || data?.error || 'unknown'}`);
+            } else if (data?.skipped) {
+              console.log('Receipt creation skipped:', data.reason, data.stop_purpose);
+            } else {
+              console.log('Receipt auto-created:', data.receipt_id, data.existed ? '(existed)' : '(created)');
             }
           } catch (error) {
-            console.error('Receipt creation failed (non-blocking):', error);
+            console.error('Receipt creation failed (invoke threw):', error);
             toast.warning('Stop completed, but receipt creation failed (check console).');
           }
           
