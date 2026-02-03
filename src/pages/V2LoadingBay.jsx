@@ -436,8 +436,8 @@ export default function V2LoadingBay() {
         </Card>
       </div>
 
-      {/* Empty State */}
-      {receiptsLoading && (
+      {/* Empty / Loading States */}
+      {(activeTab === 'open' && receiptsLoading) && (
         <Card>
           <CardContent className="py-12 text-center">
             <Loader2 className="w-8 h-8 animate-spin text-[#6B7280] mx-auto mb-3" />
@@ -446,7 +446,7 @@ export default function V2LoadingBay() {
         </Card>
       )}
 
-      {!receiptsLoading && receipts.length === 0 && (
+      {activeTab === 'open' && !receiptsLoading && receipts.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
@@ -454,6 +454,23 @@ export default function V2LoadingBay() {
             </div>
             <h3 className="text-lg font-semibold mb-2">No items in Loading Bay 🎉</h3>
             <p className="text-muted">All receipts have been processed.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === 'cleared' && clearedLoading && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-[#6B7280] mx-auto mb-3" />
+            <p className="text-muted">Loading cleared receipts...</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {activeTab === 'cleared' && !clearedLoading && clearedReceipts.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted">No cleared receipts in the last 7 days.</p>
           </CardContent>
         </Card>
       )}
