@@ -51,6 +51,7 @@ export default function V2LoadingBay() {
     },
     enabled: allowed,
     staleTime: 30000,
+    refetchOnWindowFocus: true, // Auto-refresh when returning to page
   });
 
   // Fetch related projects
