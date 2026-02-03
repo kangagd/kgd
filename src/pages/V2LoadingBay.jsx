@@ -9,6 +9,7 @@ import { Package, Clock, AlertTriangle, CheckCircle, Camera, ExternalLink, Loade
 import { format } from 'date-fns';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { resolveProjectLabel, resolvePurchaseOrderLabel } from '@/components/utils/labelResolvers';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
