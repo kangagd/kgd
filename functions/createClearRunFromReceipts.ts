@@ -1,5 +1,27 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+// Lightweight hash helpers (inline for now)
+function stableSortedIds(ids) {
+  return [...ids].sort();
+}
+
+function hashIds(ids) {
+  const sorted = stableSortedIds(ids);
+  const joined = sorted.join('|');
+  const encoder = new TextEncoder();
+  const data = encoder.encode(joined);
+  const base64 = btoa(String.fromCharCode(...data))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  return base64;
+}
+
+function buildClearLoadingBayIntentKey(receiptIds) {
+  const hash = hashIds(receiptIds);
+  return `clear_loading_bay:${hash}`;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -26,6 +48,13 @@ Deno.serve(async (req) => {
         error: 'receipt_ids is required and must be a non-empty array' 
       }, { status: 400 });
     }
+
+    // Build intent key for idempotency
+    const intent_key = buildClearLoadingBayIntentKey(receipt_ids);
+    const intent_kind = 'clear_loading_bay';
+    const intent_meta_json = JSON.stringify({ receipt_ids });
+
+    console.log(`[createClearRun] Intent key: ${intent_key}`);
 
     // Fetch receipts
     const receipts = await Promise.all(
@@ -67,18 +96,49 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create LogisticsRun
-    const runData = {
-      status: 'draft',
+    // Build stops data
+    const stopsDraftData = eligibleReceipts.map((receipt, idx) => {
+      const stopData = {
+        purpose: 'clear_loading_bay',
+        instructions: 'Clear Loading Bay receipt'
+      };
+
+      if (receipt.location_id) stopData.location_id = receipt.location_id;
+      if (target_location_id) stopData.to_location_id = target_location_id;
+      if (receipt.project_id) stopData.project_id = receipt.project_id;
+      if (receipt.purchase_order_id) stopData.purchase_order_id = receipt.purchase_order_id;
+      if (receipt.id) stopData.receipt_id = receipt.id;
+
+      return stopData;
+    });
+
+    // Use get-or-create function
+    const runDraftData = {
       notes: 'Auto-created from Loading Bay dashboard'
     };
+    if (assigned_to_user_id) runDraftData.assigned_to_user_id = assigned_to_user_id;
+    if (assigned_to_name) runDraftData.assigned_to_name = assigned_to_name;
+    if (vehicle_id) runDraftData.vehicle_id = vehicle_id;
 
-    if (assigned_to_user_id) runData.assigned_to_user_id = assigned_to_user_id;
-    if (assigned_to_name) runData.assigned_to_name = assigned_to_name;
-    if (vehicle_id) runData.vehicle_id = vehicle_id;
+    const getOrCreateResult = await base44.functions.invoke('getOrCreateLogisticsRun', {
+      intent_key,
+      intent_kind,
+      intent_meta_json,
+      runDraftData,
+      stopsDraftData
+    });
 
-    const run = await base44.asServiceRole.entities.LogisticsRun.create(runData);
-    console.log(`[createClearRun] Created run ${run.id} for ${eligibleReceipts.length} receipts`);
+    if (!getOrCreateResult.data?.run) {
+      return Response.json({
+        success: false,
+        error: 'Failed to get or create run'
+      }, { status: 500 });
+    }
+
+    const run = getOrCreateResult.data.run;
+    const reused = getOrCreateResult.data.reused;
+
+    console.log(`[createClearRun] ${reused ? 'Reused' : 'Created'} run ${run.id} for ${eligibleReceipts.length} receipts`);
 
     // Create stops for each receipt
     let createdStops = 0;
