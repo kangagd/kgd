@@ -63,11 +63,18 @@ Deno.serve(async (req) => {
     };
 
     for (const quote of quotes) {
+      // Check timeout
+      if (Date.now() - startTime > MAX_RUNTIME) {
+        console.log('[batchSyncPandaDocStatuses] Timeout approaching, stopping early');
+        results.skipped = quotes.length - (results.synced + results.failed);
+        break;
+      }
+
       try {
         // Fetch document from PandaDoc with retry logic for rate limiting
         let response;
         let retries = 0;
-        const maxRetries = 3;
+        const maxRetries = 2; // Reduced retries to prevent timeout
         
         while (retries <= maxRetries) {
           response = await fetch(
@@ -81,8 +88,8 @@ Deno.serve(async (req) => {
           );
 
           if (response.status === 429) {
-            // Rate limited - wait and retry
-            const retryAfter = parseInt(response.headers.get('Retry-After') || '5');
+            // Rate limited - wait and retry (reduced delay)
+            const retryAfter = Math.min(parseInt(response.headers.get('Retry-After') || '3'), 3);
             console.log(`Rate limited, waiting ${retryAfter}s before retry ${retries + 1}/${maxRetries}`);
             await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
             retries++;
