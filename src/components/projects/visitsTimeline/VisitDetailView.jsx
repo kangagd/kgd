@@ -78,6 +78,14 @@ export default function VisitDetailView({ visit }) {
 
   const doors = normalizeDoors(visit.measurements);
 
+  // Fetch visit readiness (V2 pilot only)
+  const { data: readiness } = useQuery({
+    queryKey: ['visitReadiness', visit.id, visit.project_id],
+    queryFn: () => computeVisitReadiness({ visitId: visit.id, projectId: visit.project_id }),
+    enabled: isPartsLogisticsV2PilotAllowed(user) && !!visit.project_id,
+    staleTime: 30000, // 30 seconds
+  });
+
   return (
     <div className="space-y-3">
       {/* Outcome & Summary */}
