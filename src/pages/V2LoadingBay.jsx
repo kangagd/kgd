@@ -617,8 +617,8 @@ export default function V2LoadingBay() {
                 <tbody>
                   {displayReceipts.map((receipt) => {
                     const sla = computeSLA(receipt);
-                    const projectInfo = getProjectInfo(receipt.project_id);
-                    const poInfo = getPOInfo(receipt.purchase_order_id);
+                    const projectLabel = getProjectLabel(receipt.project_id);
+                    const poLabel = getPOLabel(receipt.purchase_order_id);
                     const photoCount = getPhotoCount(receipt.photos_json);
                     const isCleared = isReceiptCleared(receipt);
                     const linkedRun = receipt.clear_run_id ? logisticsRuns.find(r => r.id === receipt.clear_run_id) : null;
