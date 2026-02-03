@@ -149,8 +149,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Delay to avoid rate limiting (1 second between requests)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Reduced delay to 500ms to prevent timeout while respecting rate limits
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     return Response.json({
