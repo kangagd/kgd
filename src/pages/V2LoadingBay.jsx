@@ -325,6 +325,22 @@ export default function V2LoadingBay() {
             )}
             Normalize SLA
           </Button>
+          {user?.role === 'admin' && (
+            <Button
+              onClick={handleEnsureLocations}
+              disabled={isEnsuringLocations}
+              variant="outline"
+              className="flex items-center gap-2"
+              title="Ensure canonical inventory locations (WAREHOUSE_MAIN, LOADING_BAY, CONSUMED) and vehicle locations"
+            >
+              {isEnsuringLocations ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Database className="w-4 h-4" />
+              )}
+              Ensure Locations (V2)
+            </Button>
+          )}
         </div>
       </div>
 
