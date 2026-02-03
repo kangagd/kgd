@@ -116,6 +116,22 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
     refetchOnWindowFocus: false,
   });
 
+  // Fetch current visit (if visitId provided)
+  const { data: currentVisit = null } = useQuery({
+    queryKey: ['visit', visitId],
+    queryFn: async () => {
+      if (!visitId) return null;
+      return await base44.entities.Visit.get(visitId);
+    },
+    enabled: !!visitId,
+    staleTime: 30000,
+  });
+
+  // Check if user is checked-in to current visit
+  const isCheckedInToVisit = currentVisit && user 
+    ? currentVisit.checked_in_technicians?.includes(user.email)
+    : false;
+
   // Scoped filtering
   const scopedAllocations = jobId ? allocations.filter(a => a.job_id === jobId) : allocations;
   const scopedConsumptions = jobId ? consumptions.filter(c => c.job_id === jobId) : consumptions;
