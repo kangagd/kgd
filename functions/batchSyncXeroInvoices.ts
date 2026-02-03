@@ -7,11 +7,20 @@ console.log("[DEPLOY_SENTINEL] batchSyncXeroInvoices_v20260129 v=2026-01-29");
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    // ADMIN-ONLY: This is a scheduled task or admin-triggered sync
-    if (!user || user.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    
+    // Check if authenticated (manual trigger) or scheduled automation
+    let isAuthenticated = false;
+    try {
+      const user = await base44.auth.me();
+      isAuthenticated = true;
+      
+      // If manually triggered, require admin
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
+    } catch (authError) {
+      // Scheduled automation - no user context, proceed with service role
+      console.log('[batchSyncXeroInvoices] Running as scheduled automation (no user context)');
     }
 
     console.log('[batchSyncXeroInvoices] Starting sync...');
