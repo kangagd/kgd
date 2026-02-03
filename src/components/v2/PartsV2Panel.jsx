@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2, Truck } from "lucide-react";
+import { Plus, Pencil, Trash2, Truck, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,7 +17,17 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { isPartsLogisticsV2PilotAllowed } from "@/components/utils/allowlist";
 
-export default function PartsV2Panel({ projectId, visitId = null }) {
+const LOGISTICS_JOB_TYPES = [
+  'Parts Pickup',
+  'Parts Delivery',
+  'Stock Transfer',
+  'Warehouse Pickup',
+  'Supplier Pickup',
+  'Drop Off Parts',
+  'Collect Parts'
+];
+
+export default function PartsV2Panel({ projectId, jobId = null, visitId = null }) {
   const [activeTab, setActiveTab] = useState("requirements");
   const [user, setUser] = useState(null);
   
@@ -28,7 +38,7 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
   const [usageModalOpen, setUsageModalOpen] = useState(false);
   const [overrideModalOpen, setOverrideModalOpen] = useState(false);
   const [overrideData, setOverrideData] = useState(null);
-  const [quickActionVisitId, setQuickActionVisitId] = useState(visitId);
+  const [quickActionJobId, setQuickActionJobId] = useState(jobId);
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -46,26 +56,23 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
   }, []);
 
   useEffect(() => {
-    if (visitId) {
-      setQuickActionVisitId(visitId);
+    if (jobId) {
+      setQuickActionJobId(jobId);
     }
-  }, [visitId]);
+  }, [jobId]);
 
-  // Fetch visits for selected project
-   const { data: visits = [] } = useQuery({
-     queryKey: ['visits', projectId],
-     queryFn: async () => {
-       if (!projectId) return [];
-       const allJobs = await base44.entities.Job.list();
-       const jobIds = allJobs.filter(j => j.project_id === projectId).map(j => j.id);
-       if (jobIds.length === 0) return [];
-       const allVisits = await base44.entities.Visit.list();
-       return allVisits.filter(v => jobIds.includes(v.job_id));
-     },
-     enabled: !!projectId,
-     staleTime: 30000,
-     refetchOnWindowFocus: false,
-   });
+  // Fetch jobs for project (for grouping)
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['jobs', projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      const allJobs = await base44.entities.Job.filter({ project_id: projectId });
+      return allJobs.filter(j => !j.deleted_at && !LOGISTICS_JOB_TYPES.includes(j.job_type_name));
+    },
+    enabled: !!projectId && !jobId,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+  });
 
   // Fetch requirements
   const { data: requirements = [] } = useQuery({
@@ -108,16 +115,20 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
     refetchOnWindowFocus: false,
   });
 
+  // Scoped filtering
+  const scopedAllocations = jobId ? allocations.filter(a => a.job_id === jobId) : allocations;
+  const scopedConsumptions = jobId ? consumptions.filter(c => c.job_id === jobId) : consumptions;
+
   // Compute readiness summary
   const readinessSummary = useMemo(() => {
     const blockingLines = requirements.filter(r => r.is_blocking);
     const totalRequired = requirements.reduce((sum, r) => sum + (r.qty_required || 0), 0);
-    const totalAllocated = allocations
+    const totalAllocated = scopedAllocations
       .filter(a => a.status !== 'released')
       .reduce((sum, a) => sum + (a.qty_allocated || 0), 0);
     
     const blockingMissing = blockingLines.filter(line => {
-      const lineAllocated = allocations
+      const lineAllocated = scopedAllocations
         .filter(a => a.requirement_line_id === line.id && a.status !== 'released')
         .reduce((sum, a) => sum + (a.qty_allocated || 0), 0);
       return lineAllocated < line.qty_required;
@@ -130,7 +141,7 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
       totalAllocated,
       blockingMissing: blockingMissing.length,
     };
-  }, [requirements, allocations]);
+  }, [requirements, scopedAllocations]);
 
   // Mutations
   const createRequirementMutation = useMutation({
@@ -247,29 +258,20 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
     },
   });
 
-  // Filter allocations/consumptions by visit if visitId is provided
-  const filteredAllocations = visitId 
-    ? allocations.filter(a => a.visit_id === visitId)
-    : allocations;
-
-  const filteredConsumptions = visitId 
-    ? consumptions.filter(c => c.visit_id === visitId)
-    : consumptions;
-
   return (
     <div className="space-y-4">
-      {/* Quick Actions for Visit Context */}
-      {visitId && (
+      {/* Quick Actions for Job Context */}
+      {jobId && (
         <Card className="border-2 border-blue-200 bg-blue-50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-blue-900">Quick Actions for This Visit</CardTitle>
+            <CardTitle className="text-sm text-blue-900">Quick Actions for This Job</CardTitle>
           </CardHeader>
           <CardContent className="flex gap-2">
-            <Button size="sm" onClick={() => { setQuickActionVisitId(visitId); setAllocationModalOpen(true); }}>
-              Allocate to This Visit
+            <Button size="sm" onClick={() => { setQuickActionJobId(jobId); setAllocationModalOpen(true); }}>
+              Allocate to This Job
             </Button>
-            <Button size="sm" variant="outline" onClick={() => { setQuickActionVisitId(visitId); setUsageModalOpen(true); }}>
-              Add Usage for This Visit
+            <Button size="sm" variant="outline" onClick={() => { setQuickActionJobId(jobId); setUsageModalOpen(true); }}>
+              Add Usage for This Job
             </Button>
           </CardContent>
         </Card>
@@ -374,75 +376,25 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Allocations {visitId && '(Filtered to This Visit)'}</CardTitle>
-                <Button onClick={() => { setQuickActionVisitId(visitId); setAllocationModalOpen(true); }}>
+                <CardTitle>Allocations {jobId && '(This Job)'}</CardTitle>
+                <Button onClick={() => { setQuickActionJobId(jobId); setAllocationModalOpen(true); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Allocation
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {filteredAllocations.length === 0 ? (
+              {scopedAllocations.length === 0 ? (
                 <p className="text-gray-600 text-center py-8">No allocations yet</p>
               ) : (
-                <div className="space-y-4">
-                  {['unassigned', ...visits.map(v => v.id)].map(vid => {
-                    const visitAllocations = filteredAllocations.filter(a => 
-                      vid === 'unassigned' ? !a.visit_id : a.visit_id === vid
-                    );
-                    if (visitAllocations.length === 0) return null;
-                    
-                    const visit = visits.find(v => v.id === vid);
-                    const isCurrentVisit = vid === visitId;
-                    const canCreateRun = vid !== 'unassigned' && user && isPartsLogisticsV2PilotAllowed(user);
-                    
-                    return (
-                      <div key={vid} className={isCurrentVisit ? 'border-2 border-blue-300 rounded-lg p-2' : ''}>
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium">
-                            {vid === 'unassigned' ? 'Unassigned' : `Visit: ${visit?.visit_number || vid}`}
-                            {isCurrentVisit && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
-                          </h4>
-                          {canCreateRun && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => createLogisticsRunMutation.mutate({ jobId: visit.job_id })}
-                              disabled={createLogisticsRunMutation.isPending}
-                              title="Draft logistics run (V2)"
-                            >
-                              <Truck className="w-3 h-3 mr-1" />
-                              Create Run
-                            </Button>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          {visitAllocations.map(alloc => (
-                            <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">{alloc.description || alloc.catalog_item_id}</span>
-                                  <Badge className="text-xs">{alloc.status}</Badge>
-                                </div>
-                                <div className="text-sm text-gray-600">Qty: {alloc.qty_allocated}</div>
-                              </div>
-                              <div className="flex gap-2">
-                                {alloc.status === 'reserved' && (
-                                  <Button size="sm" onClick={() => updateAllocationMutation.mutate({ id: alloc.id, data: { status: 'loaded' } })}>
-                                    Mark Loaded
-                                  </Button>
-                                )}
-                                <Button variant="outline" size="sm" onClick={() => updateAllocationMutation.mutate({ id: alloc.id, data: { status: 'released' } })}>
-                                  Release
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <AllocationsGroupedByJob 
+                  allocations={scopedAllocations}
+                  jobs={jobs}
+                  jobId={jobId}
+                  user={user}
+                  createLogisticsRunMutation={createLogisticsRunMutation}
+                  updateAllocationMutation={updateAllocationMutation}
+                />
               )}
             </CardContent>
           </Card>
@@ -453,49 +405,22 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Usage {visitId && '(Filtered to This Visit)'}</CardTitle>
-                <Button onClick={() => { setQuickActionVisitId(visitId); setUsageModalOpen(true); }}>
+                <CardTitle>Usage {jobId && '(This Job)'}</CardTitle>
+                <Button onClick={() => { setQuickActionJobId(jobId); setUsageModalOpen(true); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Usage
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {filteredConsumptions.length === 0 ? (
+              {scopedConsumptions.length === 0 ? (
                 <p className="text-gray-600 text-center py-8">No usage recorded yet</p>
               ) : (
-                <div className="space-y-4">
-                  {['unassigned', ...visits.map(v => v.id)].map(vid => {
-                    const visitConsumptions = filteredConsumptions.filter(c => 
-                      vid === 'unassigned' ? !c.visit_id : c.visit_id === vid
-                    );
-                    if (visitConsumptions.length === 0) return null;
-                    
-                    const visit = visits.find(v => v.id === vid);
-                    const isCurrentVisit = vid === visitId;
-                    
-                    return (
-                      <div key={vid} className={isCurrentVisit ? 'border-2 border-blue-300 rounded-lg p-2' : ''}>
-                        <h4 className="font-medium mb-2">
-                          {vid === 'unassigned' ? 'Unassigned' : `Visit: ${visit?.visit_number || vid}`}
-                          {isCurrentVisit && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
-                        </h4>
-                        <div className="space-y-2">
-                          {visitConsumptions.map(cons => (
-                            <div key={cons.id} className="border rounded-lg p-3">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">{cons.description || cons.catalog_item_id}</span>
-                                {!cons.source_allocation_id && <Badge variant="outline" className="text-xs">Unallocated</Badge>}
-                              </div>
-                              <div className="text-sm text-gray-600">Qty: {cons.qty_consumed}</div>
-                              {cons.notes && <div className="text-sm text-gray-500 mt-1">{cons.notes}</div>}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <UsageGroupedByJob 
+                  consumptions={scopedConsumptions}
+                  jobs={jobs}
+                  jobId={jobId}
+                />
               )}
             </CardContent>
           </Card>
@@ -523,10 +448,10 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
         onClose={() => setAllocationModalOpen(false)}
         projectId={projectId}
         requirements={requirements}
-        visits={visits}
+        jobs={jobs}
         priceListItems={priceListItems}
         allocations={allocations}
-        preselectedVisitId={quickActionVisitId}
+        preselectedJobId={quickActionJobId}
         onSubmit={(data) => {
           const requirement = requirements.find(r => r.id === data.requirement_line_id);
           if (requirement) {
@@ -556,11 +481,11 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
         open={usageModalOpen}
         onClose={() => setUsageModalOpen(false)}
         projectId={projectId}
-        visits={visits}
+        jobs={jobs}
         allocations={allocations}
         priceListItems={priceListItems}
         consumptions={consumptions}
-        preselectedVisitId={quickActionVisitId}
+        preselectedJobId={quickActionJobId}
         onSubmit={(data) => {
           if (data.source_allocation_id) {
             const allocation = allocations.find(a => a.id === data.source_allocation_id);
@@ -635,7 +560,137 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
   );
 }
 
-// Sub-components (same as V2Parts.jsx)
+// Allocations Grouped By Job
+function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisticsRunMutation, updateAllocationMutation }) {
+  const jobIds = Array.from(new Set(allocations.map(a => a.job_id).filter(Boolean)));
+  const groups = ['unassigned', ...jobIds];
+  const canCreateRun = user && isPartsLogisticsV2PilotAllowed(user);
+
+  return (
+    <div className="space-y-4">
+      {groups.map(groupKey => {
+        const jobAllocations = groupKey === 'unassigned'
+          ? allocations.filter(a => !a.job_id)
+          : allocations.filter(a => a.job_id === groupKey);
+        
+        if (jobAllocations.length === 0) return null;
+
+        const job = jobs.find(j => j.id === groupKey);
+        const isCurrentJob = groupKey === jobId;
+        const jobLabel = groupKey === 'unassigned' 
+          ? 'Unassigned' 
+          : jobId 
+            ? 'This Job'
+            : job 
+              ? `Job #${job.job_number} — ${job.job_type_name || 'Job'}`
+              : `Job: ...${groupKey.substring(groupKey.length - 6)}`;
+
+        return (
+          <div key={groupKey} className={isCurrentJob ? 'border-2 border-blue-300 rounded-lg p-2' : ''}>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium">
+                {jobLabel}
+                {isCurrentJob && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
+              </h4>
+              {groupKey !== 'unassigned' && canCreateRun && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => createLogisticsRunMutation.mutate({ jobId: groupKey })}
+                  disabled={createLogisticsRunMutation.isPending}
+                  title="Draft logistics run (V2)"
+                >
+                  <Truck className="w-3 h-3 mr-1" />
+                  Create Run
+                </Button>
+              )}
+              {groupKey === 'unassigned' && (
+                <Badge variant="outline" className="text-xs text-orange-600 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  No Job — allocate to enable runs
+                </Badge>
+              )}
+            </div>
+            <div className="space-y-2">
+              {jobAllocations.map(alloc => (
+                <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{alloc.description || alloc.catalog_item_id}</span>
+                      <Badge className="text-xs">{alloc.status}</Badge>
+                    </div>
+                    <div className="text-sm text-gray-600">Qty: {alloc.qty_allocated}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    {alloc.status === 'reserved' && (
+                      <Button size="sm" onClick={() => updateAllocationMutation.mutate({ id: alloc.id, data: { status: 'loaded' } })}>
+                        Mark Loaded
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => updateAllocationMutation.mutate({ id: alloc.id, data: { status: 'released' } })}>
+                      Release
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Usage Grouped By Job
+function UsageGroupedByJob({ consumptions, jobs, jobId }) {
+  const jobIds = Array.from(new Set(consumptions.map(c => c.job_id).filter(Boolean)));
+  const groups = ['unassigned', ...jobIds];
+
+  return (
+    <div className="space-y-4">
+      {groups.map(groupKey => {
+        const jobConsumptions = groupKey === 'unassigned'
+          ? consumptions.filter(c => !c.job_id)
+          : consumptions.filter(c => c.job_id === groupKey);
+        
+        if (jobConsumptions.length === 0) return null;
+
+        const job = jobs.find(j => j.id === groupKey);
+        const isCurrentJob = groupKey === jobId;
+        const jobLabel = groupKey === 'unassigned' 
+          ? 'Unassigned' 
+          : jobId 
+            ? 'This Job'
+            : job 
+              ? `Job #${job.job_number} — ${job.job_type_name || 'Job'}`
+              : `Job: ...${groupKey.substring(groupKey.length - 6)}`;
+
+        return (
+          <div key={groupKey} className={isCurrentJob ? 'border-2 border-blue-300 rounded-lg p-2' : ''}>
+            <h4 className="font-medium mb-2">
+              {jobLabel}
+              {isCurrentJob && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
+            </h4>
+            <div className="space-y-2">
+              {jobConsumptions.map(cons => (
+                <div key={cons.id} className="border rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium">{cons.description || cons.catalog_item_id}</span>
+                    {!cons.source_allocation_id && <Badge variant="outline" className="text-xs">Unallocated</Badge>}
+                  </div>
+                  <div className="text-sm text-gray-600">Qty: {cons.qty_consumed}</div>
+                  {cons.notes && <div className="text-sm text-gray-500 mt-1">{cons.notes}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Requirement Modal
 function RequirementModal({ open, onClose, requirement, projectId, priceListItems, onSubmit }) {
   const [formData, setFormData] = useState({
     catalog_item_id: '',
@@ -793,13 +848,13 @@ function RequirementModal({ open, onClose, requirement, projectId, priceListItem
   );
 }
 
-function AllocationModal({ open, onClose, projectId, requirements, visits, priceListItems, allocations, preselectedVisitId, onSubmit }) {
+// Allocation Modal
+function AllocationModal({ open, onClose, projectId, requirements, jobs, priceListItems, allocations, preselectedJobId, onSubmit }) {
   const [formData, setFormData] = useState({
     requirement_line_id: '',
-    visit_id: '',
+    job_id: '',
     qty_allocated: 1,
     status: 'reserved',
-    vehicle_id: '',
     catalog_item_id: '',
     description: '',
   });
@@ -809,16 +864,15 @@ function AllocationModal({ open, onClose, projectId, requirements, visits, price
     if (open) {
       setFormData({
         requirement_line_id: '',
-        visit_id: preselectedVisitId || '',
+        job_id: preselectedJobId || '',
         qty_allocated: 1,
         status: 'reserved',
-        vehicle_id: '',
         catalog_item_id: '',
         description: '',
       });
       setMode('requirement');
     }
-  }, [open, preselectedVisitId]);
+  }, [open, preselectedJobId]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -884,19 +938,25 @@ function AllocationModal({ open, onClose, projectId, requirements, visits, price
           )}
 
           <div>
-            <Label>Visit (Required if available)</Label>
-            <Select value={formData.visit_id} onValueChange={(val) => setFormData({ ...formData, visit_id: val })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose visit..." />
-              </SelectTrigger>
-              <SelectContent>
-                {visits.map(v => (
-                  <SelectItem key={v.id} value={v.id}>
-                    Visit #{v.visit_number || v.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Job {preselectedJobId ? '(This Job)' : '(Required)'}</Label>
+            {preselectedJobId ? (
+              <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                This Job
+              </div>
+            ) : (
+              <Select value={formData.job_id} onValueChange={(val) => setFormData({ ...formData, job_id: val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose job..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobs.map(j => (
+                    <SelectItem key={j.id} value={j.id}>
+                      Job #{j.job_number} — {j.job_type_name || 'Job'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div>
@@ -912,8 +972,8 @@ function AllocationModal({ open, onClose, projectId, requirements, visits, price
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => {
-            if (visits.length > 0 && !formData.visit_id) {
-              toast.error('Please select a visit');
+            if (!formData.job_id) {
+              toast.error('Please select a job');
               return;
             }
             if (mode === 'requirement' && !formData.requirement_line_id) {
@@ -937,9 +997,10 @@ function AllocationModal({ open, onClose, projectId, requirements, visits, price
   );
 }
 
-function UsageModal({ open, onClose, projectId, visits, allocations, priceListItems, consumptions, preselectedVisitId, onSubmit }) {
+// Usage Modal
+function UsageModal({ open, onClose, projectId, jobs, allocations, priceListItems, consumptions, preselectedJobId, onSubmit }) {
   const [formData, setFormData] = useState({
-    visit_id: '',
+    job_id: '',
     catalog_item_id: '',
     description: '',
     qty_consumed: 1,
@@ -951,7 +1012,7 @@ function UsageModal({ open, onClose, projectId, visits, allocations, priceListIt
   useEffect(() => {
     if (open) {
       setFormData({
-        visit_id: preselectedVisitId || '',
+        job_id: preselectedJobId || '',
         catalog_item_id: '',
         description: '',
         qty_consumed: 1,
@@ -960,10 +1021,10 @@ function UsageModal({ open, onClose, projectId, visits, allocations, priceListIt
       });
       setMode('allocated');
     }
-  }, [open, preselectedVisitId]);
+  }, [open, preselectedJobId]);
 
-  const visitAllocations = formData.visit_id 
-    ? allocations.filter(a => a.visit_id === formData.visit_id && a.status !== 'released')
+  const jobAllocations = formData.job_id 
+    ? allocations.filter(a => a.job_id === formData.job_id && a.status !== 'released')
     : [];
 
   return (
@@ -974,19 +1035,25 @@ function UsageModal({ open, onClose, projectId, visits, allocations, priceListIt
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Visit</Label>
-            <Select value={formData.visit_id} onValueChange={(val) => setFormData({ ...formData, visit_id: val, source_allocation_id: '' })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose visit..." />
-              </SelectTrigger>
-              <SelectContent>
-                {visits.map(v => (
-                  <SelectItem key={v.id} value={v.id}>
-                    Visit #{v.visit_number || v.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Job {preselectedJobId ? '(This Job)' : '(Required)'}</Label>
+            {preselectedJobId ? (
+              <div className="px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                This Job
+              </div>
+            ) : (
+              <Select value={formData.job_id} onValueChange={(val) => setFormData({ ...formData, job_id: val, source_allocation_id: '' })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose job..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {jobs.map(j => (
+                    <SelectItem key={j.id} value={j.id}>
+                      Job #{j.job_number} — {j.job_type_name || 'Job'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div>
@@ -1011,7 +1078,7 @@ function UsageModal({ open, onClose, projectId, visits, allocations, priceListIt
                   <SelectValue placeholder="Choose allocation..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {visitAllocations.map(a => (
+                  {jobAllocations.map(a => (
                     <SelectItem key={a.id} value={a.id}>
                       {a.description || a.catalog_item_id} (Qty: {a.qty_allocated})
                     </SelectItem>
@@ -1067,8 +1134,8 @@ function UsageModal({ open, onClose, projectId, visits, allocations, priceListIt
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={() => {
-            if (!formData.visit_id) {
-              toast.error('Please select a visit');
+            if (!formData.job_id) {
+              toast.error('Please select a job');
               return;
             }
             if (mode === 'allocated' && !formData.source_allocation_id) {
