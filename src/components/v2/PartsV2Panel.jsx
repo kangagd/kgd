@@ -187,15 +187,26 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
   });
 
   const createLogisticsRunMutation = useMutation({
-    mutationFn: async ({ visit }) => {
+    mutationFn: async ({ jobId }) => {
+      // Load job details to prefill context
+      const job = await base44.entities.Job.get(jobId);
+      
+      // Infer scheduling from job
+      let scheduledStart = null;
+      if (job.scheduled_date && job.scheduled_time) {
+        scheduledStart = `${job.scheduled_date}T${job.scheduled_time}`;
+      } else if (job.scheduled_date) {
+        scheduledStart = `${job.scheduled_date}T09:00:00`;
+      }
+
       // Create the run
       const run = await base44.entities.LogisticsRun.create({
-        assigned_to_user_id: visit.assigned_to_user_id || null,
-        assigned_to_name: visit.assigned_to_name || null,
-        vehicle_id: visit.vehicle_id || null,
-        scheduled_start: visit.start_time || null,
+        assigned_to_user_id: job.assigned_to?.[0] || null,
+        assigned_to_name: job.assigned_to_name?.[0] || null,
+        vehicle_id: job.vehicle_id || null,
+        scheduled_start: scheduledStart,
         status: "draft",
-        notes: `Auto-created from Parts V2 allocations for Visit ${visit.visit_number || visit.id}`,
+        notes: `Auto-created from Parts (V2) allocations for Job ${job.job_number || job.id}`,
       });
 
       // Create stops
@@ -204,17 +215,17 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
           run_id: run.id,
           sequence: 1,
           purpose: "storage_to_vehicle",
-          project_id: projectId,
+          project_id: job.project_id,
           requires_photos: false,
-          instructions: "Load parts from storage to vehicle",
+          instructions: "Load allocated parts into vehicle",
         },
         {
           run_id: run.id,
           sequence: 2,
           purpose: "vehicle_to_site",
-          project_id: projectId,
+          project_id: job.project_id,
           requires_photos: false,
-          instructions: "Deliver parts to site",
+          instructions: "Deliver parts to site for install",
         },
       ];
 
@@ -224,9 +235,9 @@ export default function PartsV2Panel({ projectId, visitId = null }) {
     },
     onSuccess: (run) => {
       queryClient.invalidateQueries(['logisticsRuns']);
-      toast.success('Draft run created. Open in Logistics (V2).', {
+      toast.success('Draft run created', {
         action: {
-          label: 'View Run',
+          label: 'Open in Logistics (V2)',
           onClick: () => navigate(createPageUrl("V2Logistics") + `?runId=${run.id}`),
         },
       });
