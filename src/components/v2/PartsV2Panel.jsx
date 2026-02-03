@@ -1207,6 +1207,7 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
       const defaultMode = jobAllocations.length > 0 ? 'allocated' : 'adhoc';
       setFormData({
         job_id: preselectedJobId || '',
+        visit_id: visitId || '',
         catalog_item_id: '',
         description: '',
         qty_consumed: 1,
@@ -1216,7 +1217,7 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
       });
       setMode(defaultMode);
     }
-  }, [open, preselectedJobId, allocations]);
+  }, [open, preselectedJobId, visitId, allocations]);
 
   // Filter allocations by visit if visitId provided, otherwise by job
   const jobAllocations = visitId
