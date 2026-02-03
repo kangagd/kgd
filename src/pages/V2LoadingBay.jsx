@@ -466,13 +466,23 @@ export default function V2LoadingBay() {
                       <tr key={receipt.id} className={`border-b border-[#E5E7EB] hover:bg-[#F9FAFB] ${isCleared ? 'opacity-75 bg-green-50' : ''}`}>
                         <td className="px-4 py-3">
                           {isCleared ? (
-                            <div className="w-4 h-4 flex items-center justify-center">
-                              <CheckCircle className="w-4 h-4 text-green-600" />
-                            </div>
-                          ) : isRunCreated ? (
-                            <div className="text-xs text-muted" title="Run already created">
-                              <Checkbox checked={false} disabled />
-                            </div>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="w-4 h-4 flex items-center justify-center cursor-not-allowed">
+                                  <Lock className="w-4 h-4 text-green-600" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>Cleared (read-only)</TooltipContent>
+                            </Tooltip>
+                          ) : isRunCreated || isInRun ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="w-4 h-4 flex items-center justify-center cursor-not-allowed">
+                                  <Checkbox checked={false} disabled />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>In run (read-only)</TooltipContent>
+                            </Tooltip>
                           ) : (
                             <Checkbox
                               checked={selectedReceipts.includes(receipt.id)}
