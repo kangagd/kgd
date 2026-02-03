@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { isPartsLogisticsV2PilotAllowed } from "@/components/utils/allowlist";
 
 export default function PartsV2Panel({ projectId, visitId = null }) {
   const [activeTab, setActiveTab] = useState("requirements");
