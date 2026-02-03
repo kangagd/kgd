@@ -161,7 +161,8 @@ Deno.serve(async (req) => {
       success: true,
       run_id: run.id,
       created_stops: createdStops,
-      skipped_receipts: skippedReceipts
+      skipped_receipts: skippedReceipts,
+      reused
     });
 
   } catch (error) {
