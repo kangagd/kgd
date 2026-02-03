@@ -25,6 +25,10 @@ export default function V2LoadingBay() {
   const [showCreateRunModal, setShowCreateRunModal] = useState(false);
   const [isCreatingRun, setIsCreatingRun] = useState(false);
   const [isEnsuringLocations, setIsEnsuringLocations] = useState(false);
+  const [activeTab, setActiveTab] = useState('open');
+  const [completionBanner, setCompletionBanner] = useState(null);
+  const [highlightedReceiptIds, setHighlightedReceiptIds] = useState([]);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const loadUser = async () => {
