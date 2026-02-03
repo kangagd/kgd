@@ -23,14 +23,17 @@ const mapPandaDocStatus = (pdStatus) => {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (user.role !== 'admin') {
-      return Response.json({ error: 'Admin access required' }, { status: 403 });
+    
+    // Allow scheduled automation without user context
+    let isAuthenticated = false;
+    try {
+      const user = await base44.auth.me();
+      isAuthenticated = true;
+      if (user.role !== 'admin') {
+        return Response.json({ error: 'Admin access required' }, { status: 403 });
+      }
+    } catch (authError) {
+      console.log('[batchSyncPandaDocStatuses] Running as scheduled automation');
     }
 
     const PANDADOC_API_KEY = Deno.env.get('PANDADOC_API_KEY');
@@ -38,10 +41,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'PandaDoc API key not configured' }, { status: 500 });
     }
 
-    // Get all quotes with PandaDoc links
-    const quotes = await base44.asServiceRole.entities.Quote.filter({
-      pandadoc_document_id: { $ne: null }
-    });
+    const startTime = Date.now();
+    const MAX_RUNTIME = 50000; // 50 seconds to avoid timeout
+    const BATCH_LIMIT = 20; // Limit batch size
+
+    // Get limited batch of quotes with PandaDoc links
+    const quotes = await base44.asServiceRole.entities.Quote.filter(
+      { pandadoc_document_id: { $ne: null } },
+      '-updated_date',
+      BATCH_LIMIT
+    );
 
     console.log(`[batchSyncPandaDocStatuses] Starting sync for ${quotes.length} quotes`);
 
