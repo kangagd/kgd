@@ -1050,9 +1050,12 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
     }
   }, [open, preselectedJobId]);
 
-  const jobAllocations = formData.job_id 
-    ? allocations.filter(a => a.job_id === formData.job_id && a.status !== 'released')
-    : [];
+  // Filter allocations by visit if visitId provided, otherwise by job
+  const jobAllocations = visitId
+    ? allocations.filter(a => a.visit_id === visitId && a.status !== 'released')
+    : formData.job_id 
+      ? allocations.filter(a => a.job_id === formData.job_id && a.status !== 'released')
+      : [];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
