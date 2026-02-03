@@ -680,24 +680,20 @@ export default function V2LoadingBay() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          {projectInfo ? (
+                          {projectLabel ? (
                             <Link
                               to={`${createPageUrl('Projects')}?projectId=${receipt.project_id}`}
                               className="text-blue-600 hover:underline"
                             >
-                              #{projectInfo.number} {projectInfo.title}
+                              {projectLabel}
                             </Link>
-                          ) : receipt.project_id ? (
-                            <span className="text-muted">Project</span>
                           ) : (
                             '-'
                           )}
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          {poInfo ? (
-                            <span className="text-[#111827]">{poInfo.reference}</span>
-                          ) : receipt.purchase_order_id ? (
-                            <span className="text-muted">PO</span>
+                          {poLabel ? (
+                            <span className="text-[#111827]">{poLabel}</span>
                           ) : (
                             '-'
                           )}
