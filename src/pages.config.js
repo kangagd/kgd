@@ -91,6 +91,7 @@ import V2LoadingBay from './pages/V2LoadingBay';
 import V2Logistics from './pages/V2Logistics';
 import V2Parts from './pages/V2Parts';
 import WarehouseInventory from './pages/WarehouseInventory';
+import V2Diagnostics from './pages/V2Diagnostics';
 import __Layout from './Layout.jsx';
 
 
@@ -139,6 +140,7 @@ export const PAGES = {
     "V2Logistics": V2Logistics,
     "V2Parts": V2Parts,
     "WarehouseInventory": WarehouseInventory,
+    "V2Diagnostics": V2Diagnostics,
 }
 
 export const pagesConfig = {
