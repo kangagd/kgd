@@ -136,13 +136,24 @@ export default function V2LoadingBay() {
     return { status, ageHours, dueInHours };
   };
 
-  // Compute summary stats
-  const openCount = receipts.length;
-  const dueSoon = receipts.filter(r => {
+  // Helper: determine if receipt is cleared
+  const isReceiptCleared = (receipt) => {
+    return receipt.status === 'cleared' || 
+           !!receipt.cleared_at || 
+           (!!receipt.clear_run_id && !!receipt.moved_out_at);
+  };
+
+  // Filter out cleared receipts for display and counts
+  const displayReceipts = receipts; // Show all for transparency
+  const openReceipts = receipts.filter(r => !isReceiptCleared(r));
+
+  // Compute summary stats (only for open/non-cleared receipts)
+  const openCount = openReceipts.length;
+  const dueSoon = openReceipts.filter(r => {
     const sla = computeSLA(r);
     return sla.status === 'Due Soon';
   }).length;
-  const breached = receipts.filter(r => {
+  const breached = openReceipts.filter(r => {
     const sla = computeSLA(r);
     return sla.status === 'Breached';
   }).length;
@@ -252,10 +263,10 @@ export default function V2LoadingBay() {
     );
   };
 
-  // Toggle all receipts
+  // Toggle all receipts (exclude cleared receipts)
   const toggleAllReceipts = () => {
-    const eligibleReceipts = receipts.filter(r => !r.clear_run_id);
-    if (selectedReceipts.length === eligibleReceipts.length) {
+    const eligibleReceipts = receipts.filter(r => !r.clear_run_id && !isReceiptCleared(r));
+    if (selectedReceipts.length === eligibleReceipts.length && eligibleReceipts.length > 0) {
       setSelectedReceipts([]);
     } else {
       setSelectedReceipts(eligibleReceipts.map(r => r.id));
@@ -373,7 +384,7 @@ export default function V2LoadingBay() {
                   <tr>
                     <th className="px-4 py-3">
                       <Checkbox
-                        checked={selectedReceipts.length === receipts.filter(r => !r.clear_run_id).length && receipts.filter(r => !r.clear_run_id).length > 0}
+                        checked={selectedReceipts.length === receipts.filter(r => !r.clear_run_id && !isReceiptCleared(r)).length && receipts.filter(r => !r.clear_run_id && !isReceiptCleared(r)).length > 0}
                         onCheckedChange={toggleAllReceipts}
                       />
                     </th>
@@ -388,21 +399,22 @@ export default function V2LoadingBay() {
                   </tr>
                 </thead>
                 <tbody>
-                  {receipts.map((receipt) => {
+                  {displayReceipts.map((receipt) => {
                     const sla = computeSLA(receipt);
                     const projectInfo = getProjectInfo(receipt.project_id);
                     const poInfo = getPOInfo(receipt.purchase_order_id);
                     const photoCount = getPhotoCount(receipt.photos_json);
+                    const isCleared = isReceiptCleared(receipt);
+                    const isRunCreated = !!receipt.clear_run_id && !isCleared;
 
                     return (
-                      <tr key={receipt.id} className={`border-b border-[#E5E7EB] hover:bg-[#F9FAFB] ${receipt.status === 'cleared' ? 'opacity-70' : ''}`}>
+                      <tr key={receipt.id} className={`border-b border-[#E5E7EB] hover:bg-[#F9FAFB] ${isCleared ? 'opacity-75 bg-green-50' : ''}`}>
                         <td className="px-4 py-3">
-                          {receipt.status === 'cleared' ? (
-                            <div className="flex items-center gap-1 text-green-600 text-xs">
-                              <CheckCircle className="w-4 h-4" />
-                              <span>Cleared</span>
+                          {isCleared ? (
+                            <div className="w-4 h-4 flex items-center justify-center">
+                              <CheckCircle className="w-4 h-4 text-green-600" />
                             </div>
-                          ) : receipt.clear_run_id ? (
+                          ) : isRunCreated ? (
                             <div className="text-xs text-muted" title="Run already created">
                               <Checkbox checked={false} disabled />
                             </div>
@@ -480,9 +492,11 @@ export default function V2LoadingBay() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {receipt.status === 'cleared' ? (
+                          {isCleared ? (
                             <div className="flex items-center gap-2">
-                              <Badge className="bg-green-100 text-green-700">Cleared</Badge>
+                              <Badge className="bg-green-100 text-green-700 border-green-300">
+                                Cleared ✅
+                              </Badge>
                               {receipt.clear_run_id && (
                                 <Link
                                   to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
@@ -493,9 +507,11 @@ export default function V2LoadingBay() {
                                 </Link>
                               )}
                             </div>
-                          ) : receipt.clear_run_id ? (
+                          ) : isRunCreated ? (
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary">Run Created</Badge>
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                                Run Created
+                              </Badge>
                               <Link
                                 to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
                                 className="text-blue-600 hover:underline text-sm flex items-center gap-1"
