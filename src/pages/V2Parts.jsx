@@ -80,11 +80,22 @@ export default function V2Parts() {
         base44.entities.JobSummary.filter({ project_id: selectedProjectId }, '-check_out_time'),
       ]);
       
+      console.log('[visitTargets] Raw jobs returned:', jobs.length);
+      console.log('[visitTargets] Sample job data:', jobs.slice(0, 2).map(j => ({ 
+        id: j.id, 
+        job_number: j.job_number, 
+        project_id: j.project_id,
+        deleted_at: j.deleted_at,
+        job_type_name: j.job_type_name
+      })));
+      
       // Filter out deleted and logistics job types
       const filteredJobs = jobs.filter(job => 
         !job.deleted_at && 
         !LOGISTICS_JOB_TYPES.includes(job.job_type_name)
       );
+      
+      console.log('[visitTargets] Filtered jobs:', filteredJobs.length);
       
       const filteredSummaries = summaries.filter(s =>
         !s.deleted_at &&
