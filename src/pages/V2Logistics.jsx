@@ -429,6 +429,28 @@ export default function V2Logistics() {
           } catch (error) {
             console.error('Receipt clearing failed (invoke threw):', error);
           }
+
+          // Apply inventory movements for clear_loading_bay stops
+          try {
+            const movementResult = await base44.functions.invoke('applyInventoryMovementsForClearStop', {
+              stop_confirmation_id: confirmation.id
+            });
+
+            const movementData = movementResult?.data;
+
+            if (!movementData?.success) {
+              console.error('Inventory movements failed (non-blocking):', movementData);
+              if (movementData?.reason === 'missing_to_location') {
+                toast.warning('Stop completed, inventory not moved: missing destination location.');
+              }
+            } else if (movementData?.skipped) {
+              console.log('Inventory movements skipped:', movementData.reason);
+            } else {
+              console.log(`Inventory movements: created ${movementData.created}, skipped ${movementData.skipped}`);
+            }
+          } catch (error) {
+            console.error('Inventory movements failed (invoke threw):', error);
+          }
           
           queryClient.invalidateQueries(['stopConfirmations', selectedRunId]);
           queryClient.invalidateQueries(['receipts', 'loading-bay']); // Refresh Loading Bay
