@@ -451,9 +451,25 @@ export default function V2Logistics() {
           } catch (error) {
             console.error('Inventory movements failed (invoke threw):', error);
           }
+
+          // Update run status + propagate to linked records
+          try {
+            const runUpdateResult = await base44.functions.invoke('completeStopAndUpdateRun', {
+              stop_confirmation_id: confirmation.id
+            });
+
+            const runData = runUpdateResult?.data;
+            if (runData?.success && runData?.status_changed) {
+              console.log(`[V2Logistics] Run status updated to ${runData.run_status} (${runData.completed_count}/${runData.total_stops} stops completed)`);
+            }
+          } catch (error) {
+            console.error('Run status update failed (non-blocking):', error);
+          }
           
           queryClient.invalidateQueries(['stopConfirmations', selectedRunId]);
+          queryClient.invalidateQueries(['logisticsRuns']);
           queryClient.invalidateQueries(['receipts', 'loading-bay']); // Refresh Loading Bay
+          queryClient.invalidateQueries(['stockAllocations']); // Refresh allocations
           setCompleteStopModalOpen(false);
           setSelectedStop(null);
           toast.success('Stop completed');
