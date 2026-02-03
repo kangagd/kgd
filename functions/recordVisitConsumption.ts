@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { validateConsumptionCreation, reconcileAllocationAfterConsumption } from './shared/consumptionValidation.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -29,11 +30,21 @@ Deno.serve(async (req) => {
       notes 
     } = body;
 
-    // Validation
-    if (!project_id || !visit_id || !qty_consumed || qty_consumed <= 0) {
+    // Prepare consumption data for validation
+    const consumptionData = {
+      project_id,
+      visit_id,
+      source_allocation_id,
+      qty_consumed,
+      notes
+    };
+
+    // Validate using shared helper
+    const validation = await validateConsumptionCreation(base44.asServiceRole, consumptionData, user);
+    if (!validation.valid) {
       return Response.json({ 
         success: false, 
-        error: 'project_id, visit_id, and positive qty_consumed are required' 
+        error: validation.error 
       }, { status: 400 });
     }
 
@@ -45,29 +56,6 @@ Deno.serve(async (req) => {
 
     if (source_allocation_id) {
       allocation = await base44.asServiceRole.entities.StockAllocation.get(source_allocation_id);
-      
-      if (!allocation) {
-        return Response.json({ 
-          success: false, 
-          error: 'Allocation not found' 
-        }, { status: 404 });
-      }
-
-      // Check idempotency: total consumed cannot exceed allocated
-      const existingConsumptions = await base44.asServiceRole.entities.StockConsumption.filter({
-        source_allocation_id: source_allocation_id
-      });
-
-      const totalConsumed = existingConsumptions.reduce((sum, c) => sum + (c.qty_consumed || 0), 0);
-      const remainingQty = (allocation.qty_allocated || 0) - totalConsumed;
-
-      if (qty_consumed > remainingQty) {
-        return Response.json({ 
-          success: false, 
-          error: `Cannot consume ${qty_consumed}. Only ${remainingQty} remaining from allocation.`,
-          remaining: remainingQty
-        }, { status: 400 });
-      }
 
       catalog_item_id = allocation.catalog_item_id;
       description = allocation.description;
