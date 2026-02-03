@@ -1179,6 +1179,7 @@ function UsageActionButton({ visitId, jobId, user, onOpen }) {
 function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocations, priceListItems, consumptions, preselectedJobId, user, onSubmit }) {
   const [formData, setFormData] = useState({
     job_id: '',
+    visit_id: '',
     catalog_item_id: '',
     description: '',
     qty_consumed: 1,
