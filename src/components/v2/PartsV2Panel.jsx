@@ -322,9 +322,10 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
   });
 
   return (
-    <div className="space-y-4">
-      {/* Quick Actions for Job Context */}
-      {jobId && (
+    <TooltipProvider>
+      <div className="space-y-4">
+        {/* Quick Actions for Job Context */}
+        {jobId && (
         <Card className="border-2 border-blue-200 bg-blue-50">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm text-blue-900">Quick Actions for This Job</CardTitle>
