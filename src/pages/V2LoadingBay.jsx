@@ -23,6 +23,7 @@ export default function V2LoadingBay() {
   const [selectedReceipts, setSelectedReceipts] = useState([]);
   const [showCreateRunModal, setShowCreateRunModal] = useState(false);
   const [isCreatingRun, setIsCreatingRun] = useState(false);
+  const [isEnsuringLocations, setIsEnsuringLocations] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
