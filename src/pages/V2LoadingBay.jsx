@@ -458,6 +458,8 @@ export default function V2LoadingBay() {
                     const poInfo = getPOInfo(receipt.purchase_order_id);
                     const photoCount = getPhotoCount(receipt.photos_json);
                     const isCleared = isReceiptCleared(receipt);
+                    const linkedRun = receipt.clear_run_id ? logisticsRuns.find(r => r.id === receipt.clear_run_id) : null;
+                    const isInRun = !!receipt.clear_run_id && linkedRun && ['draft', 'in_progress'].includes(linkedRun.status);
                     const isRunCreated = !!receipt.clear_run_id && !isCleared;
 
                     return (
