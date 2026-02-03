@@ -386,8 +386,6 @@ export default function V2Logistics() {
           toast.success('Stop completed');
         }}
       />
-      </div>
-      )}
     </div>
   );
 }
