@@ -1364,6 +1364,10 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
               toast.error('Please provide catalog item or description');
               return;
             }
+            if (mode === 'adhoc' && formData.qty_consumed < 1) {
+              toast.error('Please enter a valid quantity');
+              return;
+            }
             onSubmit(mode === 'allocated'
               ? { ...formData, catalog_item_id: null, description: null, consumed_from_location_id: null }
               : { ...formData, source_allocation_id: null }
