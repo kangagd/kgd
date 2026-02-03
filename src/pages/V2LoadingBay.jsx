@@ -395,9 +395,18 @@ export default function V2LoadingBay() {
                     const photoCount = getPhotoCount(receipt.photos_json);
 
                     return (
-                      <tr key={receipt.id} className="border-b border-[#E5E7EB] hover:bg-[#F9FAFB]">
+                      <tr key={receipt.id} className={`border-b border-[#E5E7EB] hover:bg-[#F9FAFB] ${receipt.status === 'cleared' ? 'opacity-70' : ''}`}>
                         <td className="px-4 py-3">
-                          {!receipt.clear_run_id && (
+                          {receipt.status === 'cleared' ? (
+                            <div className="flex items-center gap-1 text-green-600 text-xs">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Cleared</span>
+                            </div>
+                          ) : receipt.clear_run_id ? (
+                            <div className="text-xs text-muted" title="Run already created">
+                              <Checkbox checked={false} disabled />
+                            </div>
+                          ) : (
                             <Checkbox
                               checked={selectedReceipts.includes(receipt.id)}
                               onCheckedChange={() => toggleReceipt(receipt.id)}
@@ -471,7 +480,20 @@ export default function V2LoadingBay() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {receipt.clear_run_id ? (
+                          {receipt.status === 'cleared' ? (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-green-100 text-green-700">Cleared</Badge>
+                              {receipt.clear_run_id && (
+                                <Link
+                                  to={`${createPageUrl('V2Logistics')}?runId=${receipt.clear_run_id}`}
+                                  className="text-blue-600 hover:underline text-sm flex items-center gap-1"
+                                >
+                                  View Run
+                                  <ExternalLink className="w-3 h-3" />
+                                </Link>
+                              )}
+                            </div>
+                          ) : receipt.clear_run_id ? (
                             <div className="flex items-center gap-2">
                               <Badge variant="secondary">Run Created</Badge>
                               <Link
