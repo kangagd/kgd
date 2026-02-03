@@ -1104,31 +1104,92 @@ function AllocationModal({ open, onClose, projectId, requirements, jobs, priceLi
   );
 }
 
+// Usage Action Button with Check-in Gate
+function UsageActionButton({ visitId, jobId, user, onOpen }) {
+  const [visits, setVisits] = useState([]);
+  
+  useEffect(() => {
+    const loadVisits = async () => {
+      if (jobId) {
+        try {
+          const jobVisits = await base44.entities.Visit.filter({ job_id: jobId });
+          setVisits(jobVisits);
+        } catch (error) {
+          console.error('Error loading visits:', error);
+        }
+      }
+    };
+    loadVisits();
+  }, [jobId]);
+
+  // Check if user is checked-in to the current visit
+  const currentVisit = visitId ? visits.find(v => v.id === visitId) : null;
+  const isCheckedIn = currentVisit?.checked_in_technicians?.includes(user?.email);
+
+  return (
+    <div>
+      {isCheckedIn ? (
+        <Button onClick={onOpen}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Usage
+        </Button>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button disabled>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Usage
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Check-in required to record usage</TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
 // Usage Modal
-function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocations, priceListItems, consumptions, preselectedJobId, onSubmit }) {
+function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocations, priceListItems, consumptions, preselectedJobId, user, onSubmit }) {
   const [formData, setFormData] = useState({
     job_id: '',
     catalog_item_id: '',
     description: '',
     qty_consumed: 1,
     source_allocation_id: '',
+    consumed_from_location_id: '',
     notes: '',
   });
   const [mode, setMode] = useState('allocated');
+  const [inventoryLocations, setInventoryLocations] = useState([]);
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      try {
+        const locations = await base44.entities.InventoryLocation.filter({});
+        setInventoryLocations(locations);
+      } catch (error) {
+        console.error('Error loading inventory locations:', error);
+      }
+    };
+    loadLocations();
+  }, []);
 
   useEffect(() => {
     if (open) {
+      // Default mode to 'allocated' if allocations exist, else 'adhoc'
+      const defaultMode = jobAllocations.length > 0 ? 'allocated' : 'adhoc';
       setFormData({
         job_id: preselectedJobId || '',
         catalog_item_id: '',
         description: '',
         qty_consumed: 1,
         source_allocation_id: '',
+        consumed_from_location_id: '',
         notes: '',
       });
-      setMode('allocated');
+      setMode(defaultMode);
     }
-  }, [open, preselectedJobId]);
+  }, [open, preselectedJobId, allocations]);
 
   // Filter allocations by visit if visitId provided, otherwise by job
   const jobAllocations = visitId
@@ -1137,9 +1198,23 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
       ? allocations.filter(a => a.job_id === formData.job_id && a.status !== 'released')
       : [];
 
+  // Get selected allocation details
+  const selectedAllocation = allocations.find(a => a.id === formData.source_allocation_id);
+  const consumedFromAlloc = selectedAllocation
+    ? consumptions
+        .filter(c => c.source_allocation_id === selectedAllocation.id)
+        .reduce((sum, c) => sum + (c.qty_consumed || 0), 0)
+    : 0;
+  const remainingQty = selectedAllocation ? selectedAllocation.qty_allocated - consumedFromAlloc : 0;
+
+  // Get allocation location info
+  const allocLocation = selectedAllocation
+    ? inventoryLocations.find(loc => loc.id === selectedAllocation.from_location_id)
+    : null;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Add Usage</DialogTitle>
         </DialogHeader>
@@ -1170,8 +1245,8 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
             <Label>Usage Mode</Label>
             <div className="flex gap-4 mt-2">
               <label className="flex items-center gap-2">
-                <input type="radio" checked={mode === 'allocated'} onChange={() => setMode('allocated')} />
-                <span>From Allocation</span>
+                <input type="radio" checked={mode === 'allocated'} onChange={() => setMode('allocated')} disabled={jobAllocations.length === 0} />
+                <span className={jobAllocations.length === 0 ? 'text-gray-400' : ''}>From Allocation</span>
               </label>
               <label className="flex items-center gap-2">
                 <input type="radio" checked={mode === 'adhoc'} onChange={() => setMode('adhoc')} />
@@ -1196,18 +1271,40 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
                         .filter(c => c.source_allocation_id === a.id)
                         .reduce((sum, c) => sum + (c.qty_consumed || 0), 0);
                       const remaining = a.qty_allocated - consumed;
+                      const locName = inventoryLocations.find(loc => loc.id === a.from_location_id)?.name || 'Warehouse';
                       return (
                         <SelectItem key={a.id} value={a.id}>
-                          {a.description || a.catalog_item_id} (Available: {remaining}/{a.qty_allocated})
+                          {a.description || a.catalog_item_id} — Alloc: {a.qty_allocated}, Remain: {remaining}, Loc: {locName}
                         </SelectItem>
                       );
                     })
                   )}
                 </SelectContent>
               </Select>
+              {selectedAllocation && (
+                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                  <p><strong>Allocated:</strong> {selectedAllocation.qty_allocated}</p>
+                  <p><strong>Already Consumed:</strong> {consumedFromAlloc}</p>
+                  <p><strong>Remaining:</strong> {remainingQty}</p>
+                  {allocLocation && <p><strong>Current Location:</strong> {allocLocation.name}</p>}
+                </div>
+              )}
             </div>
           ) : (
             <>
+              <div>
+                <Label>Source Location (Required for Ad-hoc)</Label>
+                <Select value={formData.consumed_from_location_id} onValueChange={(val) => setFormData({ ...formData, consumed_from_location_id: val })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose location..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {inventoryLocations.map(loc => (
+                      <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label>Catalog Item (optional)</Label>
                 <Select value={formData.catalog_item_id} onValueChange={(val) => setFormData({ ...formData, catalog_item_id: val })}>
@@ -1237,9 +1334,13 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
             <Input
               type="number"
               min="1"
+              max={mode === 'allocated' ? remainingQty : undefined}
               value={formData.qty_consumed}
               onChange={(e) => setFormData({ ...formData, qty_consumed: parseInt(e.target.value) || 1 })}
             />
+            {mode === 'allocated' && remainingQty > 0 && (
+              <p className="text-sm text-gray-600 mt-1">Max: {remainingQty} remaining</p>
+            )}
           </div>
 
           <div>
@@ -1262,12 +1363,20 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
               toast.error('Please select an allocation');
               return;
             }
+            if (mode === 'allocated' && formData.qty_consumed > remainingQty) {
+              toast.error(`Cannot consume more than remaining qty (${remainingQty})`);
+              return;
+            }
+            if (mode === 'adhoc' && !formData.consumed_from_location_id) {
+              toast.error('Please select a source location for ad-hoc usage');
+              return;
+            }
             if (mode === 'adhoc' && !formData.description && !formData.catalog_item_id) {
               toast.error('Please provide catalog item or description');
               return;
             }
             onSubmit(mode === 'allocated'
-              ? { ...formData, catalog_item_id: null, description: null }
+              ? { ...formData, catalog_item_id: null, description: null, consumed_from_location_id: null }
               : { ...formData, source_allocation_id: null }
             );
           }}>
