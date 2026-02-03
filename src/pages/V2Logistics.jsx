@@ -289,6 +289,13 @@ export default function V2Logistics() {
                             onDelete={async () => {
                               if (confirm('Delete this stop?')) {
                                 await base44.entities.LogisticsStop.delete(stop.id);
+                                // Re-sequence remaining stops to 1..N
+                                const remainingStops = stops.filter(s => s.id !== stop.id);
+                                for (let i = 0; i < remainingStops.length; i++) {
+                                  if (remainingStops[i].sequence !== i + 1) {
+                                    await base44.entities.LogisticsStop.update(remainingStops[i].id, { sequence: i + 1 });
+                                  }
+                                }
                                 queryClient.invalidateQueries(['logisticsStops', selectedRunId]);
                                 toast.success('Stop deleted');
                               }
