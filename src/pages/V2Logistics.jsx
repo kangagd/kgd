@@ -916,10 +916,10 @@ function AddStopModal({ open, onClose, runId, currentStopCount, locations, onSub
               </SelectTrigger>
               <SelectContent>
                 {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>
-                    #{p.project_number} - {p.title}
-                  </SelectItem>
-                ))}
+                    <SelectItem key={p.id} value={p.id}>
+                      {resolveProjectLabel(p) || "(unknown)"}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
