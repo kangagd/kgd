@@ -13,13 +13,27 @@ Deno.serve(async (req) => {
 
     console.log('[batchCleanupXeroInvoiceGhostLinks] Starting cleanup...');
 
-    // Get all projects with xero_invoices array
-    const allProjects = await base44.asServiceRole.entities.Project.list();
+    const startTime = Date.now();
+    const MAX_RUNTIME = 50000; // 50 seconds to avoid timeout
+
+    // Limit batch size to prevent timeout
+    const BATCH_LIMIT = 50;
+
+    // Get projects with xero_invoices array (limited batch)
+    const allProjects = await base44.asServiceRole.entities.Project.filter(
+      { 'xero_invoices.0': { $exists: true } },
+      '-updated_date',
+      BATCH_LIMIT
+    );
     const projectsWithInvoices = allProjects.filter(p => p.xero_invoices && p.xero_invoices.length > 0);
 
-    // Get all XeroInvoice entities with project links
-    const allInvoices = await base44.asServiceRole.entities.XeroInvoice.list();
-    const invoicesWithProjectLinks = allInvoices.filter(i => i.project_id);
+    // Get invoices with project links (limited batch)
+    const allInvoices = await base44.asServiceRole.entities.XeroInvoice.filter(
+      { project_id: { $exists: true, $ne: null } },
+      '-updated_date',
+      BATCH_LIMIT
+    );
+    const invoicesWithProjectLinks = allInvoices;
 
     console.log(`[batchCleanupXeroInvoiceGhostLinks] Found ${projectsWithInvoices.length} projects and ${invoicesWithProjectLinks.length} invoices to check`);
 
