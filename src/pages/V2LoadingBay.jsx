@@ -617,9 +617,10 @@ export default function V2LoadingBay() {
                   })}
                 </tbody>
               </table>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </TooltipProvider>
       )}
 
       {/* Create Run Modal */}
