@@ -486,12 +486,20 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Usage {jobId && '(This Job)'}</CardTitle>
-                <UsageActionButton 
-                  visitId={visitId}
-                  jobId={jobId}
-                  user={user}
-                  onOpen={() => { setQuickActionJobId(jobId); setUsageModalOpen(true); }}
-                />
+                <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          onClick={() => { setQuickActionJobId(jobId); setUsageModalOpen(true); }}
+                          disabled={!isCheckedInToVisit}
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Usage
+                        </Button>
+                      </TooltipTrigger>
+                      {!isCheckedInToVisit && (
+                        <TooltipContent>Check-in required to record usage</TooltipContent>
+                      )}
+                    </Tooltip>
               </div>
             </CardHeader>
             <CardContent>
