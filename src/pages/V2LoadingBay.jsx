@@ -102,13 +102,18 @@ export default function V2LoadingBay() {
 
     const now = new Date();
     const receivedAt = new Date(receipt.received_at);
-    const slaDueAt = new Date(receipt.sla_due_at);
+    const dueAt = new Date(receipt.sla_due_at);
 
-    const ageHours = Math.floor((now - receivedAt) / 3600000);
-    const dueInHours = Math.floor((slaDueAt - now) / 3600000);
+    // Validate parsed dates
+    if (isNaN(receivedAt.getTime()) || isNaN(dueAt.getTime())) {
+      return { status: 'Unknown', ageHours: 0, dueInHours: 0 };
+    }
+
+    const ageHours = Math.floor((now.getTime() - receivedAt.getTime()) / 3600000);
+    const dueInHours = Math.floor((dueAt.getTime() - now.getTime()) / 3600000);
 
     let status = 'OK';
-    if (now > slaDueAt) {
+    if (now.getTime() > dueAt.getTime()) {
       status = 'Breached';
     } else if (dueInHours <= 24) {
       status = 'Due Soon';
