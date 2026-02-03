@@ -43,30 +43,38 @@ Deno.serve(async (req) => {
 
     // STEP 1: Clean up projects with invalid invoice references
     for (const project of projectsWithInvoices) {
+      // Check timeout
+      if (Date.now() - startTime > MAX_RUNTIME) {
+        console.log('[batchCleanupXeroInvoiceGhostLinks] Timeout approaching, stopping early');
+        actions.push({ type: 'timeout_reached', remaining_projects: projectsWithInvoices.length - projectsUpdated });
+        break;
+      }
+
       try {
         const validInvoiceIds = [];
         
-        for (const invoiceId of project.xero_invoices) {
-          try {
-            const invoice = await base44.asServiceRole.entities.XeroInvoice.get(invoiceId);
-            if (invoice) {
-              validInvoiceIds.push(invoiceId);
-            } else {
-              actions.push({
-                type: 'removed_ghost_link_from_project',
-                project_id: project.id,
-                project_number: project.project_number,
-                invoice_id: invoiceId,
-                reason: 'Invoice entity does not exist'
-              });
+        // Batch fetch all invoices for this project at once
+        const invoiceChecks = await Promise.all(
+          project.xero_invoices.map(async (invoiceId) => {
+            try {
+              const invoice = await base44.asServiceRole.entities.XeroInvoice.get(invoiceId);
+              return { invoiceId, exists: !!invoice };
+            } catch (err) {
+              return { invoiceId, exists: false, error: err.message };
             }
-          } catch (err) {
+          })
+        );
+
+        for (const check of invoiceChecks) {
+          if (check.exists) {
+            validInvoiceIds.push(check.invoiceId);
+          } else {
             actions.push({
               type: 'removed_ghost_link_from_project',
               project_id: project.id,
               project_number: project.project_number,
-              invoice_id: invoiceId,
-              reason: 'Error fetching invoice: ' + err.message
+              invoice_id: check.invoiceId,
+              reason: check.error || 'Invoice entity does not exist'
             });
           }
         }
