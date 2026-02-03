@@ -526,39 +526,35 @@ export default function V2LoadingBay() {
               </thead>
               <tbody>
                 {clearedReceipts.map((receipt) => {
-                  const projectInfo = getProjectInfo(receipt.project_id);
-                  const poInfo = getPOInfo(receipt.purchase_order_id);
-                  const photoCount = getPhotoCount(receipt.photos_json);
-                  const isHighlighted = highlightedReceiptIds.includes(receipt.id);
+                   const projectLabel = getProjectLabel(receipt.project_id);
+                   const poLabel = getPOLabel(receipt.purchase_order_id);
+                   const photoCount = getPhotoCount(receipt.photos_json);
+                   const isHighlighted = highlightedReceiptIds.includes(receipt.id);
 
-                  return (
-                    <tr key={receipt.id} className={`border-b border-[#E5E7EB] hover:bg-[#F9FAFB] ${isHighlighted ? 'bg-yellow-50' : ''}`}>
-                      <td className="px-4 py-3 text-sm">
-                        {receipt.cleared_at ? format(new Date(receipt.cleared_at), 'MMM d, HH:mm') : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {projectInfo ? (
-                          <Link
-                            to={`${createPageUrl('Projects')}?projectId=${receipt.project_id}`}
-                            className="text-blue-600 hover:underline"
-                          >
-                            #{projectInfo.number} {projectInfo.title}
-                          </Link>
-                        ) : receipt.project_id ? (
-                          <span className="text-muted">Project</span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {poInfo ? (
-                          <span className="text-[#111827]">{poInfo.reference}</span>
-                        ) : receipt.purchase_order_id ? (
-                          <span className="text-muted">PO</span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
+                   return (
+                     <tr key={receipt.id} className={`border-b border-[#E5E7EB] hover:bg-[#F9FAFB] ${isHighlighted ? 'bg-yellow-50' : ''}`}>
+                       <td className="px-4 py-3 text-sm">
+                         {receipt.cleared_at ? format(new Date(receipt.cleared_at), 'MMM d, HH:mm') : '-'}
+                       </td>
+                       <td className="px-4 py-3 text-sm">
+                         {projectLabel ? (
+                           <Link
+                             to={`${createPageUrl('Projects')}?projectId=${receipt.project_id}`}
+                             className="text-blue-600 hover:underline"
+                           >
+                             {projectLabel}
+                           </Link>
+                         ) : (
+                           '-'
+                         )}
+                       </td>
+                       <td className="px-4 py-3 text-sm">
+                         {poLabel ? (
+                           <span className="text-[#111827]">{poLabel}</span>
+                         ) : (
+                           '-'
+                         )}
+                       </td>
                       <td className="px-4 py-3 text-sm">
                         <span className="text-[#111827]">Loading Bay</span>
                       </td>
