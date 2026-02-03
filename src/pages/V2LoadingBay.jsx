@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function V2LoadingBay() {
   const [user, setUser] = useState(null);
@@ -527,9 +528,59 @@ function CreateRunModal({ open, onClose, onSubmit, isLoading, receiptCount }) {
     target_location_id: ''
   });
 
+  // Fetch users
+  const { data: users = [] } = useQuery({
+    queryKey: ['users-for-run'],
+    queryFn: async () => {
+      const allUsers = await base44.entities.User.filter({ deleted_at: { $exists: false } });
+      // Filter to technicians if extended_role exists, otherwise include all
+      return allUsers.filter(u => !u.extended_role || u.extended_role === 'technician' || u.is_field_technician === true);
+    },
+    enabled: open
+  });
+
+  // Fetch vehicles
+  const { data: vehicles = [] } = useQuery({
+    queryKey: ['vehicles-for-run'],
+    queryFn: async () => {
+      return await base44.entities.Vehicle.filter({ deleted_at: { $exists: false } });
+    },
+    enabled: open
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
+  };
+
+  const handleTechnicianChange = (userId) => {
+    if (!userId) {
+      setFormData({ ...formData, assigned_to_user_id: '', assigned_to_name: '' });
+      return;
+    }
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      setFormData({
+        ...formData,
+        assigned_to_user_id: user.id,
+        assigned_to_name: user.full_name || user.email
+      });
+    }
+  };
+
+  const handleVehicleChange = (vehicleId) => {
+    if (!vehicleId) {
+      setFormData({ ...formData, vehicle_id: '', vehicle_name: '' });
+      return;
+    }
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+      setFormData({
+        ...formData,
+        vehicle_id: vehicle.id,
+        vehicle_name: vehicle.name
+      });
+    }
   };
 
   return (
@@ -544,23 +595,38 @@ function CreateRunModal({ open, onClose, onSubmit, isLoading, receiptCount }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="assigned_to_name">Assign to Technician (optional)</Label>
-            <Input
-              id="assigned_to_name"
-              placeholder="Technician name"
-              value={formData.assigned_to_name}
-              onChange={(e) => setFormData({ ...formData, assigned_to_name: e.target.value })}
-            />
+            <Label htmlFor="assigned_to_user">Assign to Technician (optional)</Label>
+            <Select value={formData.assigned_to_user_id} onValueChange={handleTechnicianChange}>
+              <SelectTrigger id="assigned_to_user">
+                <SelectValue placeholder="Select technician..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>None (unassigned)</SelectItem>
+                {users.map(user => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.full_name || user.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <Label htmlFor="vehicle_id">Vehicle ID (optional)</Label>
-            <Input
-              id="vehicle_id"
-              placeholder="Vehicle ID"
-              value={formData.vehicle_id}
-              onChange={(e) => setFormData({ ...formData, vehicle_id: e.target.value })}
-            />
+            <Label htmlFor="vehicle">Vehicle (optional)</Label>
+            <Select value={formData.vehicle_id} onValueChange={handleVehicleChange}>
+              <SelectTrigger id="vehicle">
+                <SelectValue placeholder="Select vehicle..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>None (unassigned)</SelectItem>
+                {vehicles.map(vehicle => (
+                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                    {vehicle.name}
+                    {vehicle.rego && ` (${vehicle.rego})`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
