@@ -203,29 +203,18 @@ export default function V2LoadingBay() {
     return sla.status === 'Breached';
   }).length;
 
-  // Helper to get project info
-  const getProjectInfo = (projectId) => {
+  // Helper to get project label with fallback
+  const getProjectLabel = (projectId) => {
     if (!projectId) return null;
     const project = projects.find(p => p.id === projectId);
-    if (project) {
-      return {
-        number: project.project_number,
-        title: project.title,
-      };
-    }
-    return null;
+    return project ? resolveProjectLabel(project) : null;
   };
 
-  // Helper to get PO info
-  const getPOInfo = (poId) => {
+  // Helper to get PO label with fallback
+  const getPOLabel = (poId) => {
     if (!poId) return null;
     const po = purchaseOrders.find(p => p.id === poId);
-    if (po) {
-      return {
-        reference: po.reference_number || po.supplier_po_number || 'PO',
-      };
-    }
-    return null;
+    return po ? resolvePurchaseOrderLabel(po) : null;
   };
 
   // Helper to get photo count
