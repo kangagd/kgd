@@ -158,7 +158,22 @@ export default function V2Logistics() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {runs.length === 0 && !runsLoading && (
+        <Card className="border-2 border-dashed border-gray-300">
+          <CardContent className="p-12 text-center">
+            <Truck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Create your first run</h3>
+            <p className="text-gray-600 mb-4">Start planning logistics by creating a new run</p>
+            <Button onClick={() => setCreateRunModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Run
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {runs.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Runs List */}
         <Card className="lg:col-span-1">
           <CardHeader>
