@@ -252,7 +252,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    report.summary = `Scanned ${report.locations_scanned} inactive locations in use. Reactivated: ${report.locations_reactivated}, Patched metadata: ${report.locations_patched_metadata}, Errors: ${report.locations_errors}. ${dryRun ? '[DRY RUN - no changes made]' : '[COMMITTED]'}`;
+    const modeStr = dryRun ? '[DRY RUN - no changes made]' : '[COMMITTED]';
+    report.summary = `Scanned ${report.locations_scanned} inactive locations in use. Reactivated: ${report.locations_reactivated}, Patched metadata: ${report.locations_patched_metadata}, Errors: ${report.locations_errors}. ${modeStr}`;
 
     return Response.json(report);
   } catch (error) {
