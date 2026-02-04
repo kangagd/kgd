@@ -881,7 +881,18 @@ function RequirementModal({ open, onClose, requirement, projectId, priceListItem
               toast.error('Please enter a description');
               return;
             }
-            onSubmit(isAdHoc ? { ...formData, catalog_item_id: null } : { ...formData, description: null });
+
+            let submitData = isAdHoc ? { ...formData, catalog_item_id: null } : { ...formData, description: null };
+
+            // Snapshot catalog_item_name when creating/updating requirement with catalog_item_id
+            if (!isAdHoc && formData.catalog_item_id) {
+              const selectedItem = priceListItems.find(p => p.id === formData.catalog_item_id);
+              if (selectedItem) {
+                submitData.catalog_item_name = selectedItem.item || selectedItem.name || selectedItem.title || null;
+              }
+            }
+
+            onSubmit(submitData);
           }}>
             {requirement ? 'Update' : 'Create'}
           </Button>
