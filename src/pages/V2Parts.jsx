@@ -921,13 +921,13 @@ function RequirementModal({ open, onClose, requirement, projectId, priceListItem
 }
 
 // Allocation Modal Component
-function AllocationModal({ open, onClose, projectId, requirements, visitTargets = [], priceListItems, allocations, user, onSubmit }) {
+function AllocationModal({ open, onClose, projectId, requirements, visitTargets = [], priceListItems, allocations, user, onSubmit, locations = [] }) {
   const [formData, setFormData] = useState({
     requirement_line_id: '',
     job_id: '',
     qty_allocated: 1,
     status: 'reserved',
-    vehicle_id: '',
+    from_location_id: '',
     catalog_item_id: '',
     description: '',
   });
@@ -940,7 +940,7 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets 
         job_id: '',
         qty_allocated: 1,
         status: 'reserved',
-        vehicle_id: '',
+        from_location_id: '',
         catalog_item_id: '',
         description: '',
       });
