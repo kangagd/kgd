@@ -93,6 +93,25 @@ Deno.serve(async (req) => {
 
     // Backfill StockAllocation
     const allocations = await base44.asServiceRole.entities.StockAllocation.list('-updated_date', limit);
+    
+    // Batch fetch requirements for allocations that reference them
+    const requirementIds = [...new Set(
+      allocations
+        .filter(a => a.requirement_line_id)
+        .map(a => a.requirement_line_id)
+    )];
+    
+    const requirements = requirementIds.length > 0
+      ? await base44.asServiceRole.entities.ProjectRequirementLine.filter({
+          id: { $in: requirementIds }
+        })
+      : [];
+    
+    const requirementMap = {};
+    for (const req of requirements) {
+      requirementMap[req.id] = req;
+    }
+    
     for (const alloc of allocations) {
       results.allocations.scanned++;
       
@@ -107,24 +126,38 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const catalogRefId = alloc.price_list_item_id || alloc.catalog_item_id;
+      // Get linked requirement if exists
+      const requirement = alloc.requirement_line_id ? requirementMap[alloc.requirement_line_id] : null;
       
-      if (!catalogRefId) {
-        results.allocations.missing_label++;
-        results.allocations.skipped++;
-        continue;
-      }
+      // Priority order for partRefId
+      const partRefId = 
+        alloc.catalog_item_id ||
+        alloc.price_list_item_id ||
+        alloc.catalog_item ||
+        alloc.price_list_item ||
+        alloc.priceListItemId ||
+        requirement?.catalog_item_id ||
+        requirement?.price_list_item_id ||
+        requirement?.catalog_item ||
+        null;
       
-      const label = itemMap[catalogRefId];
+      // Priority order for label
+      const label =
+        (alloc.catalog_item_name && !isPlaceholder(alloc.catalog_item_name) ? alloc.catalog_item_name : null) ||
+        (alloc.price_list_item_name && !isPlaceholder(alloc.price_list_item_name) ? alloc.price_list_item_name : null) ||
+        (requirement?.catalog_item_name && !isPlaceholder(requirement.catalog_item_name) ? requirement.catalog_item_name : null) ||
+        (requirement?.description && !isPlaceholder(requirement.description) ? requirement.description : null) ||
+        (partRefId && itemMap[partRefId] && !isPlaceholder(itemMap[partRefId]) ? itemMap[partRefId] : null) ||
+        null;
       
-      if (!label || isPlaceholder(label)) {
+      if (!partRefId || !label) {
         results.allocations.missing_label++;
         results.allocations.skipped++;
         continue;
       }
 
       const updateData = {};
-      if (!alloc.catalog_item_id) updateData.catalog_item_id = catalogRefId;
+      if (!alloc.catalog_item_id) updateData.catalog_item_id = partRefId;
       updateData.catalog_item_name = label; // Always overwrite if placeholder
       
       if (isPlaceholder(alloc.catalog_item_name)) {
