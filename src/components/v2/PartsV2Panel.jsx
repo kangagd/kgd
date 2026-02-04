@@ -240,7 +240,26 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
   });
 
   const createConsumptionMutation = useMutation({
-    mutationFn: (data) => base44.entities.StockConsumption.create(data),
+    mutationFn: (data) => {
+      // Add cached fields for catalog item
+      let cachedFields = {};
+      if (data.catalog_item_id) {
+        const selectedItem = priceListItems.find(p => p.id === data.catalog_item_id);
+        if (selectedItem) {
+          cachedFields = getPartCachedFields(selectedItem);
+        }
+      } else if (data.source_allocation_id) {
+        // Inherit from allocation if consumption is allocation-based
+        const alloc = allocations.find(a => a.id === data.source_allocation_id);
+        if (alloc) {
+          cachedFields = {
+            catalog_item_id: alloc.catalog_item_id || alloc.price_list_item_id || null,
+            catalog_item_name: alloc.catalog_item_name || null,
+          };
+        }
+      }
+      return base44.entities.StockConsumption.create({ ...data, ...cachedFields });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['stockConsumptions', projectId]);
       setUsageModalOpen(false);
