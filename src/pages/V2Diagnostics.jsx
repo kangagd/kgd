@@ -13,8 +13,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 export default function V2Diagnostics() {
   const [user, setUser] = useState(null);
   const [allowed, setAllowed] = useState(false);
-  const [catalogItems, setCatalogItems] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [projectId, setProjectId] = useState('');
   const [loading, setLoading] = useState({});
   const [results, setResults] = useState({});
@@ -28,14 +26,6 @@ export default function V2Diagnostics() {
   const [seededItems, setSeededItems] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
   const [locations, setLocations] = useState([]);
-  
-  // Seed inventory state
-  const [seedCatalogItemId, setSeedCatalogItemId] = useState('');
-  const [seedQuantity, setSeedQuantity] = useState('');
-  const [seedLocationId, setSeedLocationId] = useState('');
-  const [seedNote, setSeedNote] = useState('');
-  const [seedForce, setSeedForce] = useState(false);
-  const [seededItems, setSeededItems] = useState([]);
 
   React.useEffect(() => {
     const loadUser = async () => {
