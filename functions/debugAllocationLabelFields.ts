@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
     if (!user || user.role !== 'admin') {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
-
+ 
     // Fetch latest 20 allocations
     const allocations = await base44.asServiceRole.entities.StockAllocation.list('-updated_date', 20);
 
