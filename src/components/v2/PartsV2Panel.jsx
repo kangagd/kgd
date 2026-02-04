@@ -476,6 +476,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
                   jobs={jobs}
                   jobId={jobId}
                   user={user}
+                  priceListItems={priceListItems}
                   createLogisticsRunMutation={createLogisticsRunMutation}
                   updateAllocationMutation={updateAllocationMutation}
                 />
@@ -514,6 +515,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
                   consumptions={scopedConsumptions}
                   jobs={jobs}
                   jobId={jobId}
+                  priceListItems={priceListItems}
                 />
               )}
             </CardContent>
@@ -685,7 +687,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
       }
 
 // Allocations Grouped By Job
-function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisticsRunMutation, updateAllocationMutation }) {
+function AllocationsGroupedByJob({ allocations, jobs, jobId, user, priceListItems, createLogisticsRunMutation, updateAllocationMutation }) {
   const jobIds = Array.from(new Set(allocations.map(a => a.job_id).filter(Boolean)));
   const groups = ['unassigned', ...jobIds];
   const canCreateRun = user && isPartsLogisticsV2PilotAllowed(user);
@@ -781,7 +783,7 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisti
 }
 
 // Usage Grouped By Job
-function UsageGroupedByJob({ consumptions, jobs, jobId }) {
+function UsageGroupedByJob({ consumptions, jobs, jobId, priceListItems }) {
   const jobIds = Array.from(new Set(consumptions.map(c => c.job_id).filter(Boolean)));
   const groups = ['unassigned', ...jobIds];
 
