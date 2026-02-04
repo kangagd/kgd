@@ -203,18 +203,50 @@ export default function V2LoadingBay() {
     return sla.status === 'Breached';
   }).length;
 
-  // Helper to get project label with fallback
-  const getProjectLabel = (projectId) => {
-    if (!projectId) return null;
-    const project = projects.find(p => p.id === projectId);
-    return project ? resolveProjectLabel(project) : null;
+  // Helper to get project label - prioritize cached fields
+  const getProjectLabel = (receipt) => {
+    if (!receipt) return null;
+    // Use cached fields first (from Receipt entity)
+    if (receipt.project_number) {
+      const title = receipt.project_title || 'Project';
+      return `#${receipt.project_number} ${title}`;
+    }
+    // Fallback to lookup
+    if (receipt.project_id) {
+      const project = projects.find(p => p.id === receipt.project_id);
+      return project ? resolveProjectLabel(project) : null;
+    }
+    return null;
   };
 
-  // Helper to get PO label with fallback
-  const getPOLabel = (poId) => {
-    if (!poId) return null;
-    const po = purchaseOrders.find(p => p.id === poId);
-    return po ? resolvePurchaseOrderLabel(po) : null;
+  // Helper to get PO label - prioritize cached fields
+  const getPOLabel = (receipt) => {
+    if (!receipt) return null;
+    // Use cached fields first (from Receipt entity)
+    if (receipt.po_number) {
+      return `PO ${receipt.po_number}`;
+    }
+    // Fallback to lookup
+    if (receipt.purchase_order_id) {
+      const po = purchaseOrders.find(p => p.id === receipt.purchase_order_id);
+      return po ? resolvePurchaseOrderLabel(po) : null;
+    }
+    return null;
+  };
+
+  // Helper to get supplier name - prioritize cached fields
+  const getSupplierName = (receipt) => {
+    if (!receipt) return null;
+    // Use cached field from Receipt
+    if (receipt.supplier_name) {
+      return receipt.supplier_name;
+    }
+    // Fallback to lookup via PO
+    if (receipt.purchase_order_id) {
+      const po = purchaseOrders.find(p => p.id === receipt.purchase_order_id);
+      return po?.supplier_name || null;
+    }
+    return null;
   };
 
   // Helper to get photo count
