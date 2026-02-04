@@ -9,7 +9,7 @@
 export const resolveProjectLabel = (project) => {
   if (!project) return 'Unknown Project';
   const number = project.project_number || project.id?.substring(0, 6);
-  const title = project.title || '(no title)';
+  const title = project.title || project.name || project.project_title || '(no title)';
   return `#${number} ${title}`;
 };
 
