@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
         updates.description = 'Legacy location reactivated to preserve referential integrity (auto-repair).';
 
         if (Object.keys(updates).length > 0) {
-          if (!dry_run) {
+          if (!dryRun) {
             await base44.asServiceRole.entities.InventoryLocation.update(locationId, updates);
           }
           report.locations_patched_metadata++;
