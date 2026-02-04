@@ -200,6 +200,13 @@ export default function V2Parts() {
     enabled: isAllowed,
   });
 
+  // Fetch inventory locations
+  const { data: inventoryLocations = [] } = useQuery({
+    queryKey: ['inventoryLocations'],
+    queryFn: () => base44.entities.InventoryLocation.list(),
+    enabled: isAllowed,
+  });
+
   // Compute readiness summary
   const readinessSummary = useMemo(() => {
     const blockingLines = requirements.filter(r => r.is_blocking);
