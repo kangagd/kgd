@@ -928,6 +928,12 @@ function RequirementModal({ open, onClose, requirement, projectId, priceListItem
   );
 }
 
+// Helper to shorten IDs
+function shortenId(id) {
+  if (!id || typeof id !== 'string') return '???';
+  return id.substring(id.length - 6);
+}
+
 // Allocation Modal Component
 function AllocationModal({ open, onClose, projectId, requirements, visitTargets = [], priceListItems, allocations, user, onSubmit, locations = [] }) {
   const [formData, setFormData] = useState({
