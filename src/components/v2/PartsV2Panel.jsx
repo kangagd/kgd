@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { isPartsLogisticsV2PilotAllowed } from "@/components/utils/allowlist";
+import { buildPriceListItemMap, getRequirementLabel } from "@/components/v2/parts/requirementLabel";
 
 const LOGISTICS_JOB_TYPES = [
   'Parts Pickup',
@@ -115,6 +116,9 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
     staleTime: 60000,
     refetchOnWindowFocus: false,
   });
+
+  // Build item map for label resolution
+  const priceListItemMap = useMemo(() => buildPriceListItemMap(priceListItems), [priceListItems]);
 
   // Fetch current visit (if visitId provided)
   const { data: currentVisit = null } = useQuery({
@@ -422,7 +426,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
                       <div key={req.id} className="border rounded-lg p-4 flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium">{req.description || req.catalog_item_id}</span>
+                            <span className="font-medium">{getRequirementLabel(req, priceListItemMap)}</span>
                             {req.is_blocking && <Badge variant="destructive" className="text-xs">Blocking</Badge>}
                             <Badge variant="outline" className="text-xs">{req.priority}</Badge>
                             <Badge className="text-xs">{req.status}</Badge>
@@ -748,11 +752,11 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, createLogisti
             <div className="space-y-2">
               {jobAllocations.map(alloc => (
                 <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{alloc.description || alloc.catalog_item_id}</span>
-                      <Badge className="text-xs">{alloc.status}</Badge>
-                    </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{alloc.item_name || alloc.description || priceListItems.find(p => p.id === alloc.catalog_item_id)?.item || 'Part'}</span>
+                    <Badge className="text-xs">{alloc.status}</Badge>
+                  </div>
                     <div className="text-sm text-gray-600">Qty: {alloc.qty_allocated}</div>
                   </div>
                   <div className="flex gap-2">
@@ -809,7 +813,7 @@ function UsageGroupedByJob({ consumptions, jobs, jobId }) {
               {jobConsumptions.map(cons => (
                 <div key={cons.id} className="border rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{cons.description || cons.catalog_item_id}</span>
+                    <span className="font-medium">{cons.item_name || cons.description || priceListItems.find(p => p.id === cons.catalog_item_id)?.item || 'Part'}</span>
                     {!cons.source_allocation_id && <Badge variant="outline" className="text-xs">Unallocated</Badge>}
                   </div>
                   <div className="text-sm text-gray-600">Qty: {cons.qty_consumed}</div>
@@ -1039,7 +1043,7 @@ function AllocationModal({ open, onClose, projectId, requirements, jobs, priceLi
                 <SelectContent>
                   {requirements.map(req => (
                     <SelectItem key={req.id} value={req.id}>
-                      {req.description || req.catalog_item_id} (Req: {req.qty_required})
+                      {getRequirementLabel(req, priceListItemMap)} (Req: {req.qty_required})
                     </SelectItem>
                   ))}
                 </SelectContent>
