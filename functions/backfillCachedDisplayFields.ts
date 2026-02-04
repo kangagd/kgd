@@ -46,6 +46,13 @@ Deno.serve(async (req) => {
     // Backfill LogisticsStop
     await backfillEntity(base44, 'LogisticsStop', audit, [
       { cachedFields: ['location_name'], refEntity: 'InventoryLocation', refField: 'location_id' },
+      { cachedFields: ['project_number', 'project_title'], refEntity: 'Project', refField: 'project_id' },
+      { cachedFields: ['purchase_order_number', 'supplier_name'], refEntity: 'PurchaseOrder', refField: 'purchase_order_id' },
+    ]);
+
+    // Backfill ProjectRequirementLine
+    await backfillEntity(base44, 'ProjectRequirementLine', audit, [
+      { cachedFields: ['catalog_item_name', 'catalog_item_sku'], refEntity: 'PriceListItem', refField: 'catalog_item_id' },
     ]);
 
     return Response.json({
