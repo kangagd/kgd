@@ -67,32 +67,6 @@ export default function V2Diagnostics() {
     loadData();
   }, [allowed]);
 
-  // Load seeded items and reference data
-  React.useEffect(() => {
-    const loadData = async () => {
-      if (!allowed) return;
-      try {
-        const [seeds, items, locs] = await Promise.all([
-          base44.entities.StockMovement.filter(
-            { source_type: 'initial_seed' },
-            '-created_date',
-            50
-          ),
-          base44.entities.PriceListItem.filter({ track_inventory: true }, 'item'),
-          base44.entities.InventoryLocation.filter({ is_active: true }, 'location_code')
-        ]);
-        setSeededItems(seeds);
-        setCatalogItems(items);
-        setLocations(locs.filter(l => 
-          l.location_type === 'warehouse' || l.location_type === 'vehicle'
-        ));
-      } catch (error) {
-        console.error('Error loading data:', error);
-      }
-    };
-    loadData();
-  }, [allowed]);
-
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
