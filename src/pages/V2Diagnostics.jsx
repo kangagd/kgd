@@ -354,6 +354,36 @@ export default function V2Diagnostics() {
           </CardContent>
         </Card>
 
+        {/* Retire Legacy Vehicle Locations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Deactivate Legacy Vehicle Locations
+              <Badge variant="outline">Global</Badge>
+            </CardTitle>
+            <CardDescription>Safely retire duplicate vehicle locations not linked to Vehicle entities.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={() => runDiagnostic('deactivateLegacyVehicleLocations', {})}
+              disabled={loading['deactivateLegacyVehicleLocations']}
+              className="w-full"
+            >
+              {loading['deactivateLegacyVehicleLocations'] ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                'Deactivate Legacy Locations'
+              )}
+            </Button>
+            {results['deactivateLegacyVehicleLocations'] && (
+              <ResultsDisplay result={results['deactivateLegacyVehicleLocations']} />
+            )}
+          </CardContent>
+        </Card>
+
         {/* Seed Inventory */}
         <Card>
           <CardHeader>
