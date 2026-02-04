@@ -56,6 +56,9 @@ export const resolvePartLabel = (record, priceListItemMap = {}) => {
   if (record.price_list_item_name && !isPlaceholderLabel(record.price_list_item_name)) {
     return record.price_list_item_name;
   }
+  if (record.item_name && !isPlaceholderLabel(record.item_name)) {
+    return record.item_name;
+  }
   
   // 2. Try to lookup in price list map
   const partRefId = getPartRefId(record);
