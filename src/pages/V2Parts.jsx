@@ -410,38 +410,68 @@ export default function V2Parts() {
                     <p className="text-gray-600 text-center py-8">No requirements yet</p>
                   ) : (
                     <div className="space-y-2">
-                      {requirements.map(req => {
-                        const allocated = allocations
-                          .filter(a => a.requirement_line_id === req.id && a.status !== 'released')
-                          .reduce((sum, a) => sum + (a.qty_allocated || 0), 0);
-                        const remaining = Math.max(0, req.qty_required - allocated);
-                        return (
-                          <div key={req.id} className="border rounded-lg p-4 flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium">{req.description || req.catalog_item_id}</span>
-                                {req.is_blocking && <Badge variant="destructive" className="text-xs">Blocking</Badge>}
-                                <Badge variant="outline" className="text-xs">{req.priority}</Badge>
-                                <Badge className="text-xs">{req.status}</Badge>
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                Required: {req.qty_required} | Allocated: {allocated} | Remaining: {remaining}
-                              </div>
-                              {req.notes && <div className="text-sm text-gray-500 mt-1">{req.notes}</div>}
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingRequirement(req); setRequirementModalOpen(true); }}>
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={() => {
-                                if (confirm('Delete this requirement?')) deleteRequirementMutation.mutate(req.id);
-                              }}>
-                                <Trash2 className="w-4 h-4 text-red-600" />
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                     {requirements.map(req => {
+                       const allocated = allocations
+                         .filter(a => a.requirement_line_id === req.id && a.status !== 'released')
+                         .reduce((sum, a) => sum + (a.qty_allocated || 0), 0);
+                       const remaining = Math.max(0, req.qty_required - allocated);
+
+                       // Resolve display label
+                       let displayLabel = 'Unknown item';
+                       let secondaryText = null;
+
+                       if (req.catalog_item_name) {
+                         displayLabel = req.catalog_item_name;
+                         // Try to get SKU if available
+                         const catalogItem = priceListItems.find(p => p.id === req.catalog_item_id);
+                         if (catalogItem?.sku) {
+                           secondaryText = `SKU: ${catalogItem.sku}`;
+                         }
+                       } else if (req.description) {
+                         displayLabel = req.description;
+                       } else if (req.catalog_item_id && priceListItems.length > 0) {
+                         const catalogItem = priceListItems.find(p => p.id === req.catalog_item_id);
+                         if (catalogItem) {
+                           displayLabel = catalogItem.item;
+                           if (catalogItem.sku) {
+                             secondaryText = `SKU: ${catalogItem.sku}`;
+                           }
+                         }
+                       }
+
+                       return (
+                         <div key={req.id} className="border rounded-lg p-4 flex justify-between items-start">
+                           <div className="flex-1">
+                             <div className="flex items-center gap-2 mb-1">
+                               <span className="font-medium">{displayLabel}</span>
+                               {req.is_blocking && <Badge variant="destructive" className="text-xs">Blocking</Badge>}
+                               <Badge variant="outline" className="text-xs">{req.priority}</Badge>
+                               <Badge className="text-xs">{req.status}</Badge>
+                             </div>
+                             {secondaryText && (
+                               <div className="text-xs text-gray-500 font-mono">{secondaryText}</div>
+                             )}
+                             <div className="text-sm text-gray-600">
+                               Required: {req.qty_required} | Allocated: {allocated} | Remaining: {remaining}
+                             </div>
+                             {req.notes && <div className="text-sm text-gray-500 mt-1">{req.notes}</div>}
+                             {req.catalog_item_id && (
+                               <div className="text-xs text-gray-400 font-mono mt-1">ID: {req.catalog_item_id.slice(-6)}</div>
+                             )}
+                           </div>
+                           <div className="flex gap-2">
+                             <Button variant="ghost" size="sm" onClick={() => { setEditingRequirement(req); setRequirementModalOpen(true); }}>
+                               <Pencil className="w-4 h-4" />
+                             </Button>
+                             <Button variant="ghost" size="sm" onClick={() => {
+                               if (confirm('Delete this requirement?')) deleteRequirementMutation.mutate(req.id);
+                             }}>
+                               <Trash2 className="w-4 h-4 text-red-600" />
+                             </Button>
+                           </div>
+                         </div>
+                       );
+                     })}
                     </div>
                   )}
                 </CardContent>
