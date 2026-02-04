@@ -18,6 +18,8 @@ export default function V2Diagnostics() {
   const [projectId, setProjectId] = useState('');
   const [loading, setLoading] = useState({});
   const [results, setResults] = useState({});
+  const [repairLocationsModal, setRepairLocationsModal] = useState(false);
+  const [repairLocationsDryRunResult, setRepairLocationsDryRunResult] = useState(null);
   
   // Seed inventory state
   const [seedCatalogItemId, setSeedCatalogItemId] = useState('');
