@@ -94,16 +94,46 @@ Deno.serve(async (req) => {
     sla_due_date.setHours(sla_due_date.getHours() + 48);
     const sla_due_at = sla_due_date.toISOString();
 
+    // Fetch cached display fields from related entities
+    let project_number = null, project_title = null, po_number = null, supplier_id = null, supplier_name = null;
+    
+    if (stop.project_id) {
+      try {
+        const project = await base44.asServiceRole.entities.Project.get(stop.project_id);
+        project_number = project.project_number || null;
+        project_title = project.title || null;
+      } catch (err) {
+        console.warn('[ensureReceipt] Could not fetch project for caching:', err.message);
+      }
+    }
+    
+    if (stop.purchase_order_id) {
+      try {
+        const po = await base44.asServiceRole.entities.PurchaseOrder.get(stop.purchase_order_id);
+        po_number = po.po_number || null;
+        supplier_id = po.supplier_id || null;
+        supplier_name = po.supplier_name || null;
+      } catch (err) {
+        console.warn('[ensureReceipt] Could not fetch PO for caching:', err.message);
+      }
+    }
+
     // Create Receipt
     const receipt = await base44.asServiceRole.entities.Receipt.create({
       project_id: stop.project_id || null,
+      project_number: project_number,
+      project_title: project_title,
       purchase_order_id: stop.purchase_order_id || null,
+      po_number: po_number,
+      supplier_id: supplier_id,
+      supplier_name: supplier_name,
       location_id: location_id,
       received_by_user_id: confirmation.completed_by_user_id,
       received_by_name: confirmation.completed_by_name,
       received_at: received_at,
       notes: confirmation.notes || '',
       photos_json: confirmation.photos_json || null,
+      source_type: 'po_delivery_stop',
       source_stop_id: stop.id,
       source_confirmation_id: confirmation.id,
       sla_clock_start_at: sla_clock_start_at,
