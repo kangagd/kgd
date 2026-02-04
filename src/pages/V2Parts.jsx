@@ -635,14 +635,32 @@ export default function V2Parts() {
                 }
               }
               
-              createAllocationMutation.mutate({
+              // Snapshot catalog item name for allocation
+              let allocationData = {
                 ...data,
                 project_id: selectedProjectId,
                 visit_id: null,
                 allocated_by_user_id: user?.id,
                 allocated_by_name: user?.full_name || user?.email,
                 allocated_at: new Date().toISOString(),
-              });
+              };
+
+              // If against requirement, inherit catalog details
+              if (data.requirement_line_id) {
+                const req = requirements.find(r => r.id === data.requirement_line_id);
+                if (req) {
+                  allocationData.catalog_item_id = req.catalog_item_id || req.price_list_item_id || null;
+                  allocationData.catalog_item_name = req.catalog_item_name || req.description || null;
+                }
+              } else if (data.catalog_item_id) {
+                // Ad-hoc: snapshot from selected item
+                const selectedItem = priceListItems.find(p => p.id === data.catalog_item_id);
+                if (selectedItem) {
+                  allocationData.catalog_item_name = selectedItem.item || selectedItem.name || selectedItem.title || null;
+                }
+              }
+
+              createAllocationMutation.mutate(allocationData);
             }}
           />
 
