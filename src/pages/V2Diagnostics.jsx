@@ -354,32 +354,62 @@ export default function V2Diagnostics() {
           </CardContent>
         </Card>
 
-        {/* Retire Legacy Vehicle Locations */}
+        {/* Report Vehicle Duplicates */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              Deactivate Legacy Vehicle Locations
+              Report Vehicle Location Duplicates
               <Badge variant="outline">Global</Badge>
             </CardTitle>
-            <CardDescription>Safely retire duplicate vehicle locations not linked to Vehicle entities.</CardDescription>
+            <CardDescription>Check for vehicles with multiple active InventoryLocation records.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button
-              onClick={() => runDiagnostic('deactivateLegacyVehicleLocations', {})}
-              disabled={loading['deactivateLegacyVehicleLocations']}
+              onClick={() => runDiagnostic('reportVehicleLocationDuplicates', {})}
+              disabled={loading['reportVehicleLocationDuplicates']}
               className="w-full"
             >
-              {loading['deactivateLegacyVehicleLocations'] ? (
+              {loading['reportVehicleLocationDuplicates'] ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Scanning...
+                </>
+              ) : (
+                'Report Duplicates'
+              )}
+            </Button>
+            {results['reportVehicleLocationDuplicates'] && (
+              <ResultsDisplay result={results['reportVehicleLocationDuplicates']} />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Deduplicate Vehicle Locations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Deduplicate Vehicle Locations
+              <Badge variant="outline">Global</Badge>
+            </CardTitle>
+            <CardDescription>Ensure each vehicle has exactly one active InventoryLocation. Deactivates duplicates safely.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={() => runDiagnostic('deduplicateVehicleInventoryLocations', {})}
+              disabled={loading['deduplicateVehicleInventoryLocations']}
+              className="w-full bg-orange-600 hover:bg-orange-700"
+            >
+              {loading['deduplicateVehicleInventoryLocations'] ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Running...
                 </>
               ) : (
-                'Deactivate Legacy Locations'
+                'Deduplicate Vehicles'
               )}
             </Button>
-            {results['deactivateLegacyVehicleLocations'] && (
-              <ResultsDisplay result={results['deactivateLegacyVehicleLocations']} />
+            {results['deduplicateVehicleInventoryLocations'] && (
+              <ResultsDisplay result={results['deduplicateVehicleInventoryLocations']} />
             )}
           </CardContent>
         </Card>
