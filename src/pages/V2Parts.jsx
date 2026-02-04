@@ -993,7 +993,7 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets 
                 <SelectContent>
                   {requirements.map(req => (
                     <SelectItem key={req.id} value={req.id}>
-                      {req.description || req.catalog_item_id} (Req: {req.qty_required})
+                      {req.catalog_item_name || req.description || shortenId(req.id)} (Req: {req.qty_required})
                     </SelectItem>
                   ))}
                 </SelectContent>
