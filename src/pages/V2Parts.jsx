@@ -1012,6 +1012,20 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets 
           )}
 
           <div>
+            <Label>From Location (optional)</Label>
+            <Select value={formData.from_location_id} onValueChange={(val) => setFormData({ ...formData, from_location_id: val })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select location..." />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map(loc => (
+                  <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <Label>Job (Required)</Label>
             <Select value={formData.job_id} onValueChange={(val) => setFormData({ ...formData, job_id: val })}>
               <SelectTrigger>
