@@ -1326,12 +1326,11 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
                         .filter(c => c.source_allocation_id === a.id)
                         .reduce((sum, c) => sum + (c.qty_consumed || 0), 0);
                       const remaining = a.qty_allocated - consumed;
-                      const locName = inventoryLocations.find(loc => loc.id === a.from_location_id)?.name || 'Warehouse';
-                      const priceListItemMap = buildPriceListItemMap(priceListItems);
+                      const locName = inventoryLocations.find(loc => loc.id === a.from_location_id)?.name || '—';
                       const partName = resolvePartLabel(a, priceListItemMap);
                       return (
                         <SelectItem key={a.id} value={a.id}>
-                          {partName} (Alloc: {a.qty_allocated}, Remaining: {remaining}, {locName})
+                          {partName} · Qty {a.qty_allocated} · {remaining} remaining · {locName}
                         </SelectItem>
                       );
                     })
