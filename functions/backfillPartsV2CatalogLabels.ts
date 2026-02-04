@@ -248,7 +248,8 @@ Deno.serve(async (req) => {
     return Response.json({ 
       success: true, 
       results,
-      summary: `Requirements: ${results.requirements.updated} updated (${results.requirements.overwritten_placeholder} placeholders), Allocations: ${results.allocations.updated} updated (${results.allocations.overwritten_placeholder} placeholders), Consumptions: ${results.consumptions.updated} updated (${results.consumptions.overwritten_placeholder} placeholders)`
+      summary: `Requirements: ${results.requirements.updated} updated (${results.requirements.overwritten_placeholder} placeholders), Allocations: ${results.allocations.updated} updated (${results.allocations.overwritten_placeholder} placeholders, ${results.allocations.orphan_count} orphaned refs), Consumptions: ${results.consumptions.updated} updated (${results.consumptions.overwritten_placeholder} placeholders)`,
+      orphan_allocations: orphanAllocations
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
