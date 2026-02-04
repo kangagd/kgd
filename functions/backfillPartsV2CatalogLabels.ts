@@ -101,16 +101,18 @@ Deno.serve(async (req) => {
         .map(a => a.requirement_line_id)
     )];
     
-    const requirements = requirementIds.length > 0
+    const linkedRequirements = requirementIds.length > 0
       ? await base44.asServiceRole.entities.ProjectRequirementLine.filter({
           id: { $in: requirementIds }
         })
       : [];
     
     const requirementMap = {};
-    for (const req of requirements) {
+    for (const req of linkedRequirements) {
       requirementMap[req.id] = req;
     }
+    
+    const orphanAllocations = [];  // Track orphaned requirement references
     
     for (const alloc of allocations) {
       results.allocations.scanned++;
