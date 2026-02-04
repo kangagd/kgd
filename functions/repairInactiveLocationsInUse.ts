@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
       locations_patched_metadata: 0,
       locations_errors: 0,
       details: [],
-      dry_run,
+      dry_run: dryRun,
       summary: ''
     };
 
