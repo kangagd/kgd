@@ -185,7 +185,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const { dry_run = true } = await req.json().catch(() => ({}));
+    const input = await req.json().catch(() => ({}));
+    const dryRun = parseBool(input.dry_run, true);
 
     const inactiveLocationsInUse = await getInactiveLocationsInUse(base44);
     const report: RepairReport = {
