@@ -170,6 +170,47 @@ export default function V2Diagnostics() {
     }
   };
 
+  const runSeedInventory = async () => {
+    const fnName = 'seedInventoryItem';
+    setLoading(prev => ({ ...prev, [fnName]: true }));
+    try {
+      const result = await base44.functions.invoke(fnName, {
+        catalog_item_id: seedCatalogItemId,
+        quantity: parseFloat(seedQuantity),
+        to_location_id: seedLocationId,
+        note: seedNote || undefined,
+        force: seedForce
+      });
+
+      if (result.data?.success) {
+        toast.success(result.data.summary);
+        // Reload seeded items
+        const seeds = await base44.entities.StockMovement.filter(
+          { source_type: 'initial_seed' },
+          '-created_date',
+          50
+        );
+        setSeededItems(seeds);
+        // Reset form
+        setSeedCatalogItemId('');
+        setSeedQuantity('');
+        setSeedLocationId('');
+        setSeedNote('');
+        setSeedForce(false);
+      } else if (result.data?.requires_confirmation) {
+        toast.warning(result.data.warning);
+        setSeedForce(true); // Enable force mode for next submit
+      } else {
+        toast.error(result.data?.error || 'Seeding failed');
+      }
+    } catch (error) {
+      console.error(`${fnName} error:`, error);
+      toast.error(`${fnName} error: ${error.message}`);
+    } finally {
+      setLoading(prev => ({ ...prev, [fnName]: false }));
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8">
