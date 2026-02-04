@@ -754,15 +754,23 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, priceListItem
               )}
             </div>
             <div className="space-y-2">
-              {jobAllocations.map(alloc => (
-                <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{alloc.catalog_item_name || alloc.description || priceListItems.find(p => p.id === alloc.catalog_item_id)?.item || 'Part'}</span>
-                    <Badge className="text-xs">{alloc.status}</Badge>
-                  </div>
-                    <div className="text-sm text-gray-600">Qty: {alloc.qty_allocated}</div>
-                  </div>
+              {jobAllocations.map(alloc => {
+                const partLabel = alloc.catalog_item_name 
+                  || (alloc.catalog_item_id && priceListItems.find(p => p.id === alloc.catalog_item_id) 
+                      ? catalogItemLabel(priceListItems.find(p => p.id === alloc.catalog_item_id))
+                      : null)
+                  || alloc.description 
+                  || 'Part';
+                
+                return (
+                  <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{partLabel}</span>
+                      <Badge className="text-xs">{alloc.status}</Badge>
+                    </div>
+                      <div className="text-sm text-gray-600">Qty: {alloc.qty_allocated}</div>
+                    </div>
                   <div className="flex gap-2">
                     {alloc.status === 'reserved' && (
                       <Button size="sm" onClick={() => updateAllocationMutation.mutate({ id: alloc.id, data: { status: 'loaded' } })}>
