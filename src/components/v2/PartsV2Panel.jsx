@@ -167,7 +167,17 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
 
   // Mutations
   const createRequirementMutation = useMutation({
-    mutationFn: (data) => base44.entities.ProjectRequirementLine.create(data),
+    mutationFn: (data) => {
+      // Add cached fields for selected catalog item
+      if (data.catalog_item_id) {
+        const selectedItem = priceListItems.find(p => p.id === data.catalog_item_id);
+        if (selectedItem) {
+          const cachedFields = getPartCachedFields(selectedItem);
+          return base44.entities.ProjectRequirementLine.create({ ...data, ...cachedFields });
+        }
+      }
+      return base44.entities.ProjectRequirementLine.create(data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['projectRequirementLines', projectId]);
       setRequirementModalOpen(false);
