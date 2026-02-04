@@ -679,8 +679,33 @@ function RunInfoSection({ run, users, vehicles, onUpdate }) {
 // Stop Card Component
 function StopCard({ stop, index, totalStops, isCompleted, confirmation, locations, projectsById, purchaseOrdersById, onMoveUp, onMoveDown, onComplete, onDelete }) {
   const location = locations.find(l => l.id === stop.location_id);
-  const project = stop.project_id ? projectsById[stop.project_id] : null;
-  const po = stop.purchase_order_id ? purchaseOrdersById[stop.purchase_order_id] : null;
+  
+  // Use cached fields from LogisticsStop, fallback to lookup
+  const getProjectLabel = () => {
+    if (stop.project_number) {
+      const title = stop.project_title || 'Project';
+      return `#${stop.project_number} ${title}`;
+    }
+    if (stop.project_id) {
+      const project = projectsById[stop.project_id];
+      return project ? resolveProjectLabel(project) : `Project ${stop.project_id.substring(0, 8)}`;
+    }
+    return null;
+  };
+
+  const getPOLabel = () => {
+    if (stop.po_number) {
+      return `PO ${stop.po_number}`;
+    }
+    if (stop.purchase_order_id) {
+      const po = purchaseOrdersById[stop.purchase_order_id];
+      return po ? resolvePurchaseOrderLabel(po) : `PO ${stop.purchase_order_id.substring(0, 8)}`;
+    }
+    return null;
+  };
+
+  const projectLabel = getProjectLabel();
+  const poLabel = getPOLabel();
   
   return (
     <div className={`border rounded-lg p-3 ${isCompleted ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'}`}>
@@ -699,15 +724,15 @@ function StopCard({ stop, index, totalStops, isCompleted, confirmation, location
             </div>
           )}
           
-          {stop.project_id && (
+          {projectLabel && (
             <div className="text-xs text-gray-600 mb-1">
-              Project: {resolveProjectLabel(project || { id: stop.project_id, project_number: stop.project_number, project_title: stop.project_title })}
+              Project: {projectLabel}
             </div>
           )}
 
-          {stop.purchase_order_id && (
+          {poLabel && (
             <div className="text-xs text-gray-600 mb-1">
-              PO: {resolvePurchaseOrderLabel(po || { id: stop.purchase_order_id, purchase_order_number: stop.purchase_order_number, supplier_name: stop.supplier_name })}
+              PO: {poLabel}
             </div>
           )}
           
