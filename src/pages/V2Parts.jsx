@@ -1076,8 +1076,8 @@ function AllocationModal({ open, onClose, projectId, requirements, visitTargets 
               return;
             }
             onSubmit(mode === 'requirement' 
-              ? { ...formData, catalog_item_id: null, description: null, visit_id: null }
-              : { ...formData, requirement_line_id: null, visit_id: null }
+              ? { ...formData, catalog_item_id: null, description: null, visit_id: null, from_location_id: formData.from_location_id || null }
+              : { ...formData, requirement_line_id: null, visit_id: null, from_location_id: formData.from_location_id || null }
             );
           }}>
             Allocate
