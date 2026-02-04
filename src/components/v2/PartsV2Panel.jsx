@@ -823,16 +823,25 @@ function UsageGroupedByJob({ consumptions, jobs, jobId, priceListItems }) {
               {isCurrentJob && <Badge className="ml-2 text-xs bg-blue-600">Current</Badge>}
             </h4>
             <div className="space-y-2">
-              {jobConsumptions.map(cons => (
-                <div key={cons.id} className="border rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{cons.catalog_item_name || cons.description || priceListItems.find(p => p.id === cons.catalog_item_id)?.item || 'Part'}</span>
-                    {!cons.source_allocation_id && <Badge variant="outline" className="text-xs">Unallocated</Badge>}
+              {jobConsumptions.map(cons => {
+                const partLabel = cons.catalog_item_name 
+                  || (cons.catalog_item_id && priceListItems.find(p => p.id === cons.catalog_item_id) 
+                      ? catalogItemLabel(priceListItems.find(p => p.id === cons.catalog_item_id))
+                      : null)
+                  || cons.description 
+                  || 'Part';
+                
+                return (
+                  <div key={cons.id} className="border rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium">{partLabel}</span>
+                      {!cons.source_allocation_id && <Badge variant="outline" className="text-xs">Unallocated</Badge>}
+                    </div>
+                    <div className="text-sm text-gray-600">Qty: {cons.qty_consumed}</div>
+                    {cons.notes && <div className="text-sm text-gray-500 mt-1">{cons.notes}</div>}
                   </div>
-                  <div className="text-sm text-gray-600">Qty: {cons.qty_consumed}</div>
-                  {cons.notes && <div className="text-sm text-gray-500 mt-1">{cons.notes}</div>}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
