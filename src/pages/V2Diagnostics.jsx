@@ -58,9 +58,7 @@ export default function V2Diagnostics() {
         ]);
         setSeededItems(seeds);
         setCatalogItems(items);
-        setLocations(locs.filter(l => 
-          l.location_type === 'warehouse' || l.location_type === 'vehicle'
-        ));
+        setLocations(getTargetLocationsForDropdown(locs));
       } catch (error) {
         console.error('Error loading data:', error);
       }
