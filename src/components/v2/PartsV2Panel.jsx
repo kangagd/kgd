@@ -757,7 +757,7 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, priceListItem
                 <div key={alloc.id} className="border rounded-lg p-3 flex justify-between items-center">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{alloc.item_name || alloc.description || priceListItems.find(p => p.id === alloc.catalog_item_id)?.item || 'Part'}</span>
+                    <span className="font-medium">{alloc.catalog_item_name || alloc.description || priceListItems.find(p => p.id === alloc.catalog_item_id)?.item || 'Part'}</span>
                     <Badge className="text-xs">{alloc.status}</Badge>
                   </div>
                     <div className="text-sm text-gray-600">Qty: {alloc.qty_allocated}</div>
@@ -816,7 +816,7 @@ function UsageGroupedByJob({ consumptions, jobs, jobId, priceListItems }) {
               {jobConsumptions.map(cons => (
                 <div key={cons.id} className="border rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium">{cons.item_name || cons.description || priceListItems.find(p => p.id === cons.catalog_item_id)?.item || 'Part'}</span>
+                    <span className="font-medium">{cons.catalog_item_name || cons.description || priceListItems.find(p => p.id === cons.catalog_item_id)?.item || 'Part'}</span>
                     {!cons.source_allocation_id && <Badge variant="outline" className="text-xs">Unallocated</Badge>}
                   </div>
                   <div className="text-sm text-gray-600">Qty: {cons.qty_consumed}</div>
@@ -1266,8 +1266,8 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
                         .reduce((sum, c) => sum + (c.qty_consumed || 0), 0);
                       const remaining = a.qty_allocated - consumed;
                       const locName = inventoryLocations.find(loc => loc.id === a.from_location_id)?.name || 'Warehouse';
-                      // Get part name from price list if available
-                      const partName = priceListItems.find(p => p.id === a.catalog_item_id)?.item || a.description || 'Part';
+                      // Use cached catalog_item_name first, fallback to lookup
+                      const partName = a.catalog_item_name || a.description || priceListItems.find(p => p.id === a.catalog_item_id)?.item || 'Part';
                       return (
                         <SelectItem key={a.id} value={a.id}>
                           {partName} (Alloc: {a.qty_allocated}, Remaining: {remaining}, {locName})
