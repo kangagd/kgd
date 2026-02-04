@@ -28,6 +28,9 @@ export const resolveCatalogItemLabel = (item) => {
   return item.item || item.description || item.id?.substring(0, 6);
 };
 
+// Alias for consistency with other resolvers
+export const catalogItemLabel = resolveCatalogItemLabel;
+
 export const resolveLocationLabel = (location) => {
   if (!location) return 'Unknown Location';
   return location.name || location.location_code || location.id?.substring(0, 6);
