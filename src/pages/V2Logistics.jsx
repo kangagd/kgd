@@ -116,7 +116,34 @@ export default function V2Logistics() {
     enabled: !!isAllowed,
   });
 
+  const { data: projects = [] } = useQuery({
+    queryKey: ['projectsForLabels'],
+    queryFn: () => base44.entities.Project.list('-updated_date', 200),
+    enabled: !!isAllowed,
+    staleTime: 60000,
+  });
+
+  const { data: purchaseOrders = [] } = useQuery({
+    queryKey: ['purchaseOrdersForLabels'],
+    queryFn: () => base44.entities.PurchaseOrder.list('-updated_date', 200),
+    enabled: !!isAllowed,
+    staleTime: 60000,
+  });
+
   const selectedRun = runs.find(r => r.id === selectedRunId);
+
+  // Build lookup maps for labels
+  const projectsById = useMemo(() => {
+    const map = {};
+    for (const p of projects) map[p.id] = p;
+    return map;
+  }, [projects]);
+
+  const purchaseOrdersById = useMemo(() => {
+    const map = {};
+    for (const po of purchaseOrders) map[po.id] = po;
+    return map;
+  }, [purchaseOrders]);
 
   // Auto-select from query param or first run
   useEffect(() => {
@@ -289,6 +316,8 @@ export default function V2Logistics() {
                             isCompleted={isCompleted}
                             confirmation={confirmation}
                             locations={locations}
+                            projectsById={projectsById}
+                            purchaseOrdersById={purchaseOrdersById}
                             onMoveUp={async () => {
                               if (idx === 0) return;
                               const prevStop = stops[idx - 1];
@@ -358,6 +387,7 @@ export default function V2Logistics() {
         runId={selectedRunId}
         currentStopCount={stops.length}
         locations={locations}
+        purchaseOrders={purchaseOrders}
         onSubmit={async (data) => {
           await base44.entities.LogisticsStop.create({
             ...data,
@@ -647,8 +677,10 @@ function RunInfoSection({ run, users, vehicles, onUpdate }) {
 }
 
 // Stop Card Component
-function StopCard({ stop, index, totalStops, isCompleted, confirmation, locations, onMoveUp, onMoveDown, onComplete, onDelete }) {
+function StopCard({ stop, index, totalStops, isCompleted, confirmation, locations, projectsById, purchaseOrdersById, onMoveUp, onMoveDown, onComplete, onDelete }) {
   const location = locations.find(l => l.id === stop.location_id);
+  const project = stop.project_id ? projectsById[stop.project_id] : null;
+  const po = stop.purchase_order_id ? purchaseOrdersById[stop.purchase_order_id] : null;
   
   return (
     <div className={`border rounded-lg p-3 ${isCompleted ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'}`}>
@@ -669,13 +701,13 @@ function StopCard({ stop, index, totalStops, isCompleted, confirmation, location
           
           {stop.project_id && (
             <div className="text-xs text-gray-600 mb-1">
-              Project: {resolveProjectLabel({ id: stop.project_id, project_number: stop.project_number, title: stop.project_title }) || "(unknown)"}
+              Project: {resolveProjectLabel(project || { id: stop.project_id, project_number: stop.project_number, project_title: stop.project_title })}
             </div>
           )}
 
           {stop.purchase_order_id && (
             <div className="text-xs text-gray-600 mb-1">
-              PO: {resolvePurchaseOrderLabel({ id: stop.purchase_order_id, purchase_order_number: stop.purchase_order_number, supplier_name: stop.supplier_name }) || "(unknown)"}
+              PO: {resolvePurchaseOrderLabel(po || { id: stop.purchase_order_id, purchase_order_number: stop.purchase_order_number, supplier_name: stop.supplier_name })}
             </div>
           )}
           
@@ -829,7 +861,7 @@ function CreateRunModal({ open, onClose, users, vehicles, onSubmit }) {
 }
 
 // Add Stop Modal
-function AddStopModal({ open, onClose, runId, currentStopCount, locations, onSubmit }) {
+function AddStopModal({ open, onClose, runId, currentStopCount, locations, purchaseOrders, onSubmit }) {
   const [formData, setFormData] = useState({
     purpose: '',
     location_id: '',
@@ -933,7 +965,7 @@ function AddStopModal({ open, onClose, runId, currentStopCount, locations, onSub
               <SelectContent>
                 {purchaseOrders.map(po => (
                   <SelectItem key={po.id} value={po.id}>
-                    PO #{po.id.substring(0, 8)} - {po.supplier_name}
+                    {resolvePurchaseOrderLabel(po)}
                   </SelectItem>
                 ))}
               </SelectContent>
