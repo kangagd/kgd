@@ -9,6 +9,7 @@ import { Loader2, AlertTriangle, CheckCircle, Sprout } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { formatInventoryLocationLabel, getTargetLocationsForDropdown } from '@/components/utils/inventoryLocationUtils';
 
 export default function V2Diagnostics() {
   const [user, setUser] = useState(null);
