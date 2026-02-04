@@ -873,13 +873,11 @@ function AddStopModal({ open, onClose, runId, currentStopCount, locations, purch
   });
 
   const [projects, setProjects] = useState([]);
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
 
   useEffect(() => {
     if (open) {
-      // Load projects and POs
+      // Load projects
       base44.entities.Project.list('-updated_date', 200).then(setProjects).catch(() => setProjects([]));
-      base44.entities.PurchaseOrder.list().then(setPurchaseOrders).catch(() => setPurchaseOrders([]));
       
       setFormData({
         purpose: '',
