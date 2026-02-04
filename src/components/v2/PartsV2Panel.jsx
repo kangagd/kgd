@@ -544,6 +544,7 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
         requirements={requirements}
         jobs={jobs}
         priceListItems={priceListItems}
+        priceListItemMap={priceListItemMap}
         allocations={allocations}
         preselectedJobId={quickActionJobId}
         onSubmit={(data) => {
@@ -987,7 +988,7 @@ function RequirementModal({ open, onClose, requirement, projectId, priceListItem
 }
 
 // Allocation Modal
-function AllocationModal({ open, onClose, projectId, requirements, jobs, priceListItems, allocations, preselectedJobId, onSubmit }) {
+function AllocationModal({ open, onClose, projectId, requirements, jobs, priceListItems, priceListItemMap, allocations, preselectedJobId, onSubmit }) {
   const [formData, setFormData] = useState({
     requirement_line_id: '',
     job_id: '',
