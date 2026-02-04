@@ -136,6 +136,39 @@ async function backfillEntity(base44, entityName, audit, fieldMappings) {
                 updates.assigned_to_name = refRecord.full_name || refRecord.email;
                 hasUpdates = true;
               }
+            } else if (mapping.refEntity === 'PurchaseOrder') {
+              if (!record.purchase_order_number && refRecord.purchase_order_number) {
+                updates.purchase_order_number = refRecord.purchase_order_number;
+                hasUpdates = true;
+              }
+              if (!record.supplier_name && refRecord.supplier_name) {
+                updates.supplier_name = refRecord.supplier_name;
+                hasUpdates = true;
+              }
+            }
+
+            // Handle PriceListItem for both ReceiptLine/StockAllocation/StockConsumption AND ProjectRequirementLine
+            if (mapping.refEntity === 'PriceListItem') {
+              if (!record.catalog_item_name && refRecord.item) {
+                updates.catalog_item_name = refRecord.item;
+                hasUpdates = true;
+              }
+              if (!record.catalog_item_sku && refRecord.sku) {
+                updates.catalog_item_sku = refRecord.sku;
+                hasUpdates = true;
+              }
+            }
+
+            // Handle Project for LogisticsStop (project_number + project_title fields)
+            if (mapping.refEntity === 'Project' && entityName === 'LogisticsStop') {
+              if (!record.project_number && refRecord.project_number) {
+                updates.project_number = refRecord.project_number;
+                hasUpdates = true;
+              }
+              if (!record.project_title && refRecord.title) {
+                updates.project_title = refRecord.title;
+                hasUpdates = true;
+              }
             }
 
             if (hasUpdates) {
