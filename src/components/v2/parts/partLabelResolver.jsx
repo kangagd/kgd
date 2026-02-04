@@ -36,7 +36,7 @@ export const isPlaceholderLabel = (label) => {
  * Supports both catalog_item_id and price_list_item_id fields
  */
 export const getPartRefId = (record) => {
-  return record?.catalog_item_id || record?.price_list_item_id || null;
+  return record?.catalog_item_id || record?.price_list_item_id || record?.sku_id || null;
 };
 
 /**
