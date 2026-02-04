@@ -740,6 +740,7 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, priceListItem
   const jobIds = Array.from(new Set(allocations.map(a => a.job_id).filter(Boolean)));
   const groups = ['unassigned', ...jobIds];
   const canCreateRun = user && isPartsLogisticsV2PilotAllowed(user);
+  const priceListItemMap = buildPriceListItemMap(priceListItems);
 
   return (
     <div className="space-y-4">
@@ -835,6 +836,7 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, priceListItem
 function UsageGroupedByJob({ consumptions, jobs, jobId, priceListItems }) {
   const jobIds = Array.from(new Set(consumptions.map(c => c.job_id).filter(Boolean)));
   const groups = ['unassigned', ...jobIds];
+  const priceListItemMap = buildPriceListItemMap(priceListItems);
 
   return (
     <div className="space-y-4">
@@ -1317,8 +1319,8 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
                         .reduce((sum, c) => sum + (c.qty_consumed || 0), 0);
                       const remaining = a.qty_allocated - consumed;
                       const locName = inventoryLocations.find(loc => loc.id === a.from_location_id)?.name || 'Warehouse';
-                      // Use cached catalog_item_name first, fallback to lookup
-                      const partName = a.catalog_item_name || a.description || priceListItems.find(p => p.id === a.catalog_item_id)?.item || 'Part';
+                      const priceListItemMap = buildPriceListItemMap(priceListItems);
+                      const partName = resolvePartLabel(a, priceListItemMap);
                       return (
                         <SelectItem key={a.id} value={a.id}>
                           {partName} (Alloc: {a.qty_allocated}, Remaining: {remaining}, {locName})
