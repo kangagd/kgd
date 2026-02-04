@@ -1116,11 +1116,15 @@ function AllocationModal({ open, onClose, projectId, requirements, jobs, priceLi
                     <SelectValue placeholder="Choose item..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {priceListItems.map(item => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.item || item.name || item.title || `Item ${item.id.substring(item.id.length - 6)}`}
-                      </SelectItem>
-                    ))}
+                    {priceListItems.map(item => {
+                      const itemLabel = item.item || item.name || item.title;
+                      const displayLabel = itemLabel ? `${itemLabel}${item.sku ? ` (${item.sku})` : ''}` : `Item ${item.id.substring(item.id.length - 6)}`;
+                      return (
+                        <SelectItem key={item.id} value={item.id}>
+                          {displayLabel}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
