@@ -395,7 +395,7 @@ export default function V2Diagnostics() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Seedling className="w-5 h-5" />
+              <Sprout className="w-5 h-5" />
               Seed Inventory
               <Badge variant="outline">Global</Badge>
             </CardTitle>
