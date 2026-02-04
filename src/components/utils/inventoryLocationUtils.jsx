@@ -119,3 +119,52 @@ export function calculateOnHandFromPhysicalLocations(quantities = [], locations 
     .filter(q => q.price_list_item_id === skuId && physicalLocationIds.has(q.location_id))
     .reduce((sum, q) => sum + (q.quantity || 0), 0);
 }
+
+/**
+ * Format location for human-friendly dropdown display
+ * Replaces raw IDs/codes with contextual labels
+ * 
+ * @param {Object} location InventoryLocation record with type, name, assigned_technician_name
+ * @returns {string} Formatted label: "Vehicle: {name} — {technician}" or "Warehouse: {name}"
+ */
+export function formatInventoryLocationLabel(location) {
+  if (!location) return 'Unknown Location';
+  
+  const type = normalizeLocationType(location.type || location.location_type);
+  const name = location.name || location.location_code || 'Unnamed';
+  
+  if (type === 'vehicle') {
+    const techName = location.assigned_technician_name;
+    return techName 
+      ? `Vehicle: ${name} — ${techName}`
+      : `Vehicle: ${name}`;
+  }
+  
+  if (type === 'warehouse') {
+    return `Warehouse: ${name}`;
+  }
+  
+  return name;
+}
+
+/**
+ * Get locations suitable for Target Location dropdowns in stock operations
+ * Excludes LOADING_BAY, CONSUMED, and non-physical locations
+ * 
+ * @param {Array} locations Array of InventoryLocation records
+ * @returns {Array} Filtered locations safe for user selection
+ */
+export function getTargetLocationsForDropdown(locations = []) {
+  if (!Array.isArray(locations)) return [];
+  
+  return locations.filter(loc => {
+    // Must be physical and active
+    if (!isPhysicalAvailableLocation(loc)) return false;
+    
+    // Explicitly exclude virtual/system locations
+    const code = (loc.location_code || '').toUpperCase();
+    if (code === 'LOADING_BAY' || code === 'CONSUMED') return false;
+    
+    return true;
+  });
+}
