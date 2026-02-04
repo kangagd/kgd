@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { isPartsLogisticsV2PilotAllowed } from "@/components/utils/allowlist";
 import { buildPriceListItemMap, getRequirementLabel } from "@/components/v2/parts/requirementLabel";
+import { catalogItemLabel } from "@/components/utils/labelResolvers";
 
 const LOGISTICS_JOB_TYPES = [
   'Parts Pickup',
