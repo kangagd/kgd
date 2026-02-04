@@ -136,6 +136,31 @@ export default function V2Diagnostics() {
     }
   };
 
+  const runRepairInactiveLocations = async (dryRun = true) => {
+    const fnName = 'repairInactiveLocationsInUse';
+    setLoading(prev => ({ ...prev, [fnName]: true }));
+    try {
+      const result = await base44.functions.invoke(fnName, { dry_run: dryRun });
+      
+      if (result.data) {
+        if (dryRun) {
+          setRepairLocationsDryRunResult(result.data);
+          setRepairLocationsModal(true);
+          toast.info(`Dry run complete: ${result.data.summary}`);
+        } else {
+          setResults(prev => ({ ...prev, [fnName]: result.data }));
+          setRepairLocationsModal(false);
+          toast.success(result.data.summary);
+        }
+      }
+    } catch (error) {
+      console.error(`${fnName} error:`, error);
+      toast.error(`${fnName} error: ${error.message}`);
+    } finally {
+      setLoading(prev => ({ ...prev, [fnName]: false }));
+    }
+  };
+
   const runSeedInventory = async () => {
     const fnName = 'seedInventoryItem';
     setLoading(prev => ({ ...prev, [fnName]: true }));
