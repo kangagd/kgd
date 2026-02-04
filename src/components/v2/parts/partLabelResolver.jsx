@@ -9,6 +9,29 @@
  */
 
 /**
+ * Check if a label is a placeholder value that should be ignored
+ * @param {string} label - The label to check
+ * @returns {boolean} True if the label is a placeholder
+ */
+export const isPlaceholderLabel = (label) => {
+  if (!label || typeof label !== 'string') return true;
+  
+  const normalized = label.trim().toLowerCase();
+  
+  // Empty or very short
+  if (normalized.length === 0 || normalized === '-') return true;
+  
+  // Common placeholders
+  const placeholders = ['part', 'item', 'unknown', 'n/a', 'na'];
+  if (placeholders.includes(normalized)) return true;
+  
+  // Raw ID-like strings (12+ hex chars)
+  if (/^[a-f0-9]{12,}$/.test(normalized)) return true;
+  
+  return false;
+};
+
+/**
  * Get the price list item ID from any record
  * Supports both catalog_item_id and price_list_item_id fields
  */
@@ -26,22 +49,34 @@ export const getPartRefId = (record) => {
 export const resolvePartLabel = (record, priceListItemMap = {}) => {
   if (!record) return 'Part';
   
-  // 1. Try cached names first (most efficient)
-  if (record.catalog_item_name) return record.catalog_item_name;
-  if (record.price_list_item_name) return record.price_list_item_name;
+  // 1. Try cached names first, BUT skip if they're placeholders
+  if (record.catalog_item_name && !isPlaceholderLabel(record.catalog_item_name)) {
+    return record.catalog_item_name;
+  }
+  if (record.price_list_item_name && !isPlaceholderLabel(record.price_list_item_name)) {
+    return record.price_list_item_name;
+  }
   
   // 2. Try to lookup in price list map
   const partRefId = getPartRefId(record);
   if (partRefId && priceListItemMap[partRefId]) {
     const item = priceListItemMap[partRefId];
     // Support multiple possible field names for item label
-    return item.item || item.name || item.title || null;
+    const itemLabel = item.item || item.name || item.title;
+    if (itemLabel && !isPlaceholderLabel(itemLabel)) {
+      return itemLabel;
+    }
   }
   
   // 3. Try description field (for ad-hoc items)
-  if (record.description) return record.description;
+  if (record.description && !isPlaceholderLabel(record.description)) {
+    return record.description;
+  }
   
-  // 4. Last resort: generic fallback
+  // 4. Last resort: truncated ID or generic fallback
+  if (partRefId) {
+    return `Part ${partRefId.substring(partRefId.length - 6)}`;
+  }
   return 'Part';
 };
 

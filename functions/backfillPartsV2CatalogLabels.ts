@@ -1,5 +1,26 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+/**
+ * Check if a label is a placeholder that should be overwritten
+ */
+function isPlaceholder(label) {
+  if (!label || typeof label !== 'string') return true;
+  
+  const normalized = label.trim().toLowerCase();
+  
+  // Empty or very short
+  if (normalized.length === 0 || normalized === '-') return true;
+  
+  // Common placeholders
+  const placeholders = ['part', 'item', 'unknown', 'n/a', 'na'];
+  if (placeholders.includes(normalized)) return true;
+  
+  // Raw ID-like strings (12+ hex chars)
+  if (/^[a-f0-9]{12,}$/.test(normalized)) return true;
+  
+  return false;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -21,9 +42,9 @@ Deno.serve(async (req) => {
     }
 
     const results = {
-      requirements: { scanned: 0, updated: 0, skipped: 0, missing_label: 0 },
-      allocations: { scanned: 0, updated: 0, skipped: 0, missing_label: 0 },
-      consumptions: { scanned: 0, updated: 0, skipped: 0, missing_label: 0 },
+      requirements: { scanned: 0, updated: 0, skipped: 0, missing_label: 0, overwritten_placeholder: 0 },
+      allocations: { scanned: 0, updated: 0, skipped: 0, missing_label: 0, overwritten_placeholder: 0 },
+      consumptions: { scanned: 0, updated: 0, skipped: 0, missing_label: 0, overwritten_placeholder: 0 },
     };
 
     // Backfill ProjectRequirementLine
@@ -31,31 +52,43 @@ Deno.serve(async (req) => {
     for (const req of requirements) {
       results.requirements.scanned++;
       
-      const needsUpdate = !req.catalog_item_id || !req.catalog_item_name;
+      const needsUpdate = (
+        !req.catalog_item_id ||
+        !req.catalog_item_name ||
+        isPlaceholder(req.catalog_item_name)
+      );
+      
       if (!needsUpdate) {
         results.requirements.skipped++;
         continue;
       }
 
-      const partId = req.catalog_item_id || req.price_list_item_id;
-      const label = req.catalog_item_name || (partId && itemMap[partId]) || null;
-
-      if (!label && !partId) {
+      const catalogRefId = req.price_list_item_id || req.catalog_item_id;
+      
+      if (!catalogRefId) {
+        results.requirements.missing_label++;
+        results.requirements.skipped++;
+        continue;
+      }
+      
+      const label = itemMap[catalogRefId];
+      
+      if (!label || isPlaceholder(label)) {
+        results.requirements.missing_label++;
         results.requirements.skipped++;
         continue;
       }
 
       const updateData = {};
-      if (!req.catalog_item_id && partId) updateData.catalog_item_id = partId;
-      if (!req.catalog_item_name && label) updateData.catalog_item_name = label;
-
-      if (Object.keys(updateData).length > 0) {
-        await base44.asServiceRole.entities.ProjectRequirementLine.update(req.id, updateData);
-        results.requirements.updated++;
-      } else {
-        if (!label) results.requirements.missing_label++;
-        results.requirements.skipped++;
+      if (!req.catalog_item_id) updateData.catalog_item_id = catalogRefId;
+      updateData.catalog_item_name = label; // Always overwrite if placeholder
+      
+      if (isPlaceholder(req.catalog_item_name)) {
+        results.requirements.overwritten_placeholder++;
       }
+
+      await base44.asServiceRole.entities.ProjectRequirementLine.update(req.id, updateData);
+      results.requirements.updated++;
     }
 
     // Backfill StockAllocation
@@ -63,31 +96,43 @@ Deno.serve(async (req) => {
     for (const alloc of allocations) {
       results.allocations.scanned++;
       
-      const needsUpdate = !alloc.catalog_item_id || !alloc.catalog_item_name;
+      const needsUpdate = (
+        !alloc.catalog_item_id ||
+        !alloc.catalog_item_name ||
+        isPlaceholder(alloc.catalog_item_name)
+      );
+      
       if (!needsUpdate) {
         results.allocations.skipped++;
         continue;
       }
 
-      const partId = alloc.catalog_item_id || alloc.price_list_item_id;
-      const label = alloc.catalog_item_name || (partId && itemMap[partId]) || null;
-
-      if (!label && !partId) {
+      const catalogRefId = alloc.price_list_item_id || alloc.catalog_item_id;
+      
+      if (!catalogRefId) {
+        results.allocations.missing_label++;
+        results.allocations.skipped++;
+        continue;
+      }
+      
+      const label = itemMap[catalogRefId];
+      
+      if (!label || isPlaceholder(label)) {
+        results.allocations.missing_label++;
         results.allocations.skipped++;
         continue;
       }
 
       const updateData = {};
-      if (!alloc.catalog_item_id && partId) updateData.catalog_item_id = partId;
-      if (!alloc.catalog_item_name && label) updateData.catalog_item_name = label;
-
-      if (Object.keys(updateData).length > 0) {
-        await base44.asServiceRole.entities.StockAllocation.update(alloc.id, updateData);
-        results.allocations.updated++;
-      } else {
-        if (!label) results.allocations.missing_label++;
-        results.allocations.skipped++;
+      if (!alloc.catalog_item_id) updateData.catalog_item_id = catalogRefId;
+      updateData.catalog_item_name = label; // Always overwrite if placeholder
+      
+      if (isPlaceholder(alloc.catalog_item_name)) {
+        results.allocations.overwritten_placeholder++;
       }
+
+      await base44.asServiceRole.entities.StockAllocation.update(alloc.id, updateData);
+      results.allocations.updated++;
     }
 
     // Backfill StockConsumption
@@ -95,37 +140,49 @@ Deno.serve(async (req) => {
     for (const cons of consumptions) {
       results.consumptions.scanned++;
       
-      const needsUpdate = !cons.catalog_item_id || !cons.catalog_item_name;
+      const needsUpdate = (
+        !cons.catalog_item_id ||
+        !cons.catalog_item_name ||
+        isPlaceholder(cons.catalog_item_name)
+      );
+      
       if (!needsUpdate) {
         results.consumptions.skipped++;
         continue;
       }
 
-      const partId = cons.catalog_item_id || cons.price_list_item_id;
-      const label = cons.catalog_item_name || (partId && itemMap[partId]) || null;
-
-      if (!label && !partId) {
+      const catalogRefId = cons.price_list_item_id || cons.catalog_item_id;
+      
+      if (!catalogRefId) {
+        results.consumptions.missing_label++;
+        results.consumptions.skipped++;
+        continue;
+      }
+      
+      const label = itemMap[catalogRefId];
+      
+      if (!label || isPlaceholder(label)) {
+        results.consumptions.missing_label++;
         results.consumptions.skipped++;
         continue;
       }
 
       const updateData = {};
-      if (!cons.catalog_item_id && partId) updateData.catalog_item_id = partId;
-      if (!cons.catalog_item_name && label) updateData.catalog_item_name = label;
-
-      if (Object.keys(updateData).length > 0) {
-        await base44.asServiceRole.entities.StockConsumption.update(cons.id, updateData);
-        results.consumptions.updated++;
-      } else {
-        if (!label) results.consumptions.missing_label++;
-        results.consumptions.skipped++;
+      if (!cons.catalog_item_id) updateData.catalog_item_id = catalogRefId;
+      updateData.catalog_item_name = label; // Always overwrite if placeholder
+      
+      if (isPlaceholder(cons.catalog_item_name)) {
+        results.consumptions.overwritten_placeholder++;
       }
+
+      await base44.asServiceRole.entities.StockConsumption.update(cons.id, updateData);
+      results.consumptions.updated++;
     }
 
     return Response.json({ 
       success: true, 
       results,
-      summary: `Requirements: ${results.requirements.updated} updated, Allocations: ${results.allocations.updated} updated, Consumptions: ${results.consumptions.updated} updated`
+      summary: `Requirements: ${results.requirements.updated} updated (${results.requirements.overwritten_placeholder} placeholders), Allocations: ${results.allocations.updated} updated (${results.allocations.overwritten_placeholder} placeholders), Consumptions: ${results.consumptions.updated} updated (${results.consumptions.overwritten_placeholder} placeholders)`
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
