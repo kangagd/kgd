@@ -626,7 +626,7 @@ export default function V2Parts() {
             visitTargets={visitTargets}
             priceListItems={priceListItems}
             allocations={allocations}
-            locations={visitTargets.length > 0 ? [] : []} // Pass empty for now, will populate with locations fetch
+            locations={inventoryLocations}
             user={user}
             onSubmit={(data) => {
               const requirement = requirements.find(r => r.id === data.requirement_line_id);
