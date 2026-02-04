@@ -362,20 +362,40 @@ export default function V2Diagnostics() {
             <CardDescription>Verify inventory location setup: required locations, duplicates, orphaned records.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Button
-              onClick={() => runLocationIntegrityCheck()}
-              disabled={loading['checkInventoryLocationIntegrity']}
-              className="w-full"
-            >
-              {loading['checkInventoryLocationIntegrity'] ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Running...
-                </>
-              ) : (
-                'Run Location Integrity Check'
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => runLocationIntegrityCheck()}
+                disabled={loading['checkInventoryLocationIntegrity']}
+                className="flex-1"
+              >
+                {loading['checkInventoryLocationIntegrity'] ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Running...
+                  </>
+                ) : (
+                  'Run Location Integrity Check'
+                )}
+              </Button>
+              <Button
+                onClick={() => runRepairInactiveLocations(true)}
+                disabled={loading['repairInactiveLocationsInUse']}
+                variant="outline"
+                className="flex-1"
+              >
+                {loading['repairInactiveLocationsInUse'] ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Wrench className="w-4 h-4 mr-2" />
+                    Repair Inactive
+                  </>
+                )}
+              </Button>
+            </div>
             {results['checkInventoryLocationIntegrity'] && (
               <LocationIntegrityResults result={results['checkInventoryLocationIntegrity']} />
             )}
