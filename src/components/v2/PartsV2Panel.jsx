@@ -782,7 +782,8 @@ function AllocationsGroupedByJob({ allocations, jobs, jobId, user, priceListItem
                     </Button>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
