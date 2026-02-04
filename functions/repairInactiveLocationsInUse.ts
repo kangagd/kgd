@@ -1,5 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+function parseBool(val: any, defaultValue = true): boolean {
+  if (val === true || val === false) return val;
+  if (typeof val === 'string') {
+    const v = val.trim().toLowerCase();
+    if (v === 'true') return true;
+    if (v === 'false') return false;
+  }
+  if (typeof val === 'number') return val !== 0;
+  return defaultValue;
+}
+
 interface LocationReference {
   entity: string;
   count: number;
