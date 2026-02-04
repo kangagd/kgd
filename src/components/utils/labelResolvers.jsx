@@ -42,7 +42,12 @@ export const resolveVisitLabel = (visit) => {
 
 export const resolvePurchaseOrderLabel = (po) => {
   if (!po) return 'Unknown PO';
-  return po.reference_number || po.supplier_po_number || po.id?.substring(0, 6);
+  const poNum = po.purchase_order_number || po.po_number || po.reference_number || po.supplier_po_number || null;
+  const supplier = po.supplier_name || null;
+  if (poNum && supplier) return `PO #${poNum} - ${supplier}`;
+  if (poNum) return `PO #${poNum}`;
+  if (supplier) return supplier;
+  return po.id?.substring(0, 6);
 };
 
 /**
