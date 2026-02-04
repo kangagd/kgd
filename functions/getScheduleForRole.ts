@@ -35,16 +35,27 @@ Deno.serve(async (req) => {
             filter.scheduled_date = { $lte: date_to };
         }
 
-        // Technicians see only their own jobs (handle both string and array assigned_to)
-        if (isTechnician && !isAdmin && !isManager) {
-            filter.$or = [
-                { assigned_to: user.email },
-                { assigned_to: { $in: [user.email] } }
-            ];
-        }
-
         // Use service role to bypass RLS
-        const jobs = await base44.asServiceRole.entities.Job.filter(filter);
+        let jobs = await base44.asServiceRole.entities.Job.filter(filter);
+
+        // Technicians see only their own jobs (check both main assigned_to AND scheduled_visits)
+        if (isTechnician && !isAdmin && !isManager) {
+            jobs = jobs.filter(job => {
+                // Check main assigned_to field
+                const isMainAssignment = Array.isArray(job.assigned_to) 
+                    ? job.assigned_to.includes(user.email)
+                    : job.assigned_to === user.email;
+                
+                // Check scheduled_visits array
+                const isVisitAssignment = job.scheduled_visits?.some(visit => 
+                    Array.isArray(visit.assigned_to) 
+                        ? visit.assigned_to.includes(user.email)
+                        : visit.assigned_to === user.email
+                );
+
+                return isMainAssignment || isVisitAssignment;
+            });
+        }
 
         // Sanitize: return only fields needed for schedule UI
         const sanitized = jobs.map(j => ({
