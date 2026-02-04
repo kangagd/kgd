@@ -187,7 +187,7 @@ export default function Dashboard() {
   const tomorrow = getLocalDateString(new Date(Date.now() + 86400000));
 
   const todayJobs = jobs.filter(j => {
-    if (j.scheduled_date !== today || j.deleted_at || j.status === 'Cancelled') {
+    if (j.scheduled_date !== today || j.deleted_at || j.status === 'Cancelled' || j.status === 'Completed') {
       return false;
     }
     // Filter for field technician - only their assigned jobs
@@ -213,6 +213,11 @@ export default function Dashboard() {
   const completedToday = jobs.filter(j => 
     completedTodayJobIds.has(j.id) && !j.deleted_at
   );
+
+  // For technicians: filter completed today to only show their jobs
+  const technicianCompletedToday = user?.is_field_technician && user?.role !== 'admin' && user?.role !== 'manager'
+    ? completedToday.filter(j => j.assigned_to?.includes(user.email))
+    : [];
 
   const todayCheckIns = checkIns.filter(c =>
     c.created_date?.split('T')[0] === today
@@ -448,7 +453,7 @@ export default function Dashboard() {
           {user?.is_field_technician && (
             <div className="bg-white rounded-xl border border-[#E5E7EB] p-7 shadow-sm">
               <h2 className="text-[22px] font-semibold text-[#111827] leading-[1.2] mb-6">Today's Schedule</h2>
-              {todayJobs.length === 0 ? (
+              {todayJobs.length === 0 && technicianCompletedToday.length === 0 ? (
                 <div className="text-center py-16">
                   <Clock className="w-14 h-14 mx-auto text-[#D1D5DB] mb-4" />
                   <p className="text-[14px] text-[#4B5563] leading-[1.4] font-normal">No jobs scheduled for today</p>
@@ -463,6 +468,21 @@ export default function Dashboard() {
                       onViewDetails={(job) => setModalJob(job)}
                     />
                   ))}
+                  {technicianCompletedToday.length > 0 && (
+                    <>
+                      <div className="pt-4 border-t border-[#E5E7EB]">
+                        <h3 className="text-sm font-medium text-[#6B7280] mb-3">Completed Today</h3>
+                      </div>
+                      {technicianCompletedToday.map(job => (
+                        <JobCard
+                          key={job.id}
+                          job={job}
+                          onClick={() => navigate(createPageUrl("Jobs") + `?jobId=${job.id}`)}
+                          onViewDetails={(job) => setModalJob(job)}
+                        />
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </div>
