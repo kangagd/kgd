@@ -118,6 +118,17 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // Fetch catalog_item_name for caching
+      let catalog_item_name = line.catalog_item_name || null;
+      if (!catalog_item_name && line.catalog_item_id) {
+        try {
+          const priceListItem = await base44.asServiceRole.entities.PriceListItem.get(line.catalog_item_id);
+          catalog_item_name = priceListItem.item || null;
+        } catch (err) {
+          console.warn(`[applyInventoryMovements] Could not fetch catalog item ${line.catalog_item_id}:`, err.message);
+        }
+      }
+
       // Create movement
       await base44.asServiceRole.entities.StockMovement.create({
         source: 'receipt_clear',
@@ -128,6 +139,7 @@ Deno.serve(async (req) => {
         project_id: line.project_id || receipt.project_id || null,
         purchase_order_id: line.purchase_order_id || receipt.purchase_order_id || null,
         catalog_item_id: line.catalog_item_id || null,
+        catalog_item_name: catalog_item_name,
         description: line.description || null,
         quantity: line.qty_received,
         from_location_id: from_location_id,
