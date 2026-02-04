@@ -97,3 +97,43 @@ export const getPartCachedFields = (priceListItem) => {
     catalog_item_name: priceListItem.item || priceListItem.name || priceListItem.title || null,
   };
 };
+
+/**
+ * Shorten an ID for display purposes (last 6 characters)
+ * @param {string} id - The ID to shorten
+ * @returns {string} Shortened ID
+ */
+export const shortenId = (id) => {
+  if (!id || typeof id !== 'string') return '???';
+  return id.substring(id.length - 6);
+};
+
+/**
+ * Resolve catalog item label by ID using maps
+ * Checks PartsCatalogItem first, then PriceListItem, falls back to shortened ID
+ * 
+ * @param {string} catalog_item_id - The catalog item ID
+ * @param {Object} catalogMap - Map of id -> PartsCatalogItem (optional)
+ * @param {Object} priceListMap - Map of id -> PriceListItem (optional)
+ * @returns {string} Display label for the catalog item
+ */
+export const resolveCatalogItemLabel = (catalog_item_id, catalogMap = {}, priceListMap = {}) => {
+  if (!catalog_item_id) return '⚠ Needs relink';
+  
+  // Check PartsCatalogItem first
+  if (catalogMap[catalog_item_id]) {
+    const item = catalogMap[catalog_item_id];
+    const label = item.name || item.item || item.title;
+    if (label && !isPlaceholderLabel(label)) return label;
+  }
+  
+  // Check PriceListItem
+  if (priceListMap[catalog_item_id]) {
+    const item = priceListMap[catalog_item_id];
+    const label = item.item || item.name || item.title;
+    if (label && !isPlaceholderLabel(label)) return label;
+  }
+  
+  // Fallback to shortened ID
+  return shortenId(catalog_item_id);
+};
