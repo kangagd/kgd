@@ -403,7 +403,7 @@ export default function V2Diagnostics() {
                   <SelectContent>
                     {locations.map(loc => (
                       <SelectItem key={loc.id} value={loc.id}>
-                        {loc.location_code} ({loc.location_type})
+                        {formatInventoryLocationLabel(loc)}
                       </SelectItem>
                     ))}
                   </SelectContent>
