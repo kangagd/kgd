@@ -204,7 +204,26 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
   });
 
   const createAllocationMutation = useMutation({
-    mutationFn: (data) => base44.entities.StockAllocation.create(data),
+    mutationFn: (data) => {
+      // Add cached fields for catalog item
+      let cachedFields = {};
+      if (data.catalog_item_id) {
+        const selectedItem = priceListItems.find(p => p.id === data.catalog_item_id);
+        if (selectedItem) {
+          cachedFields = getPartCachedFields(selectedItem);
+        }
+      } else if (data.requirement_line_id) {
+        // Inherit from requirement if allocation is requirement-based
+        const req = requirements.find(r => r.id === data.requirement_line_id);
+        if (req) {
+          cachedFields = {
+            catalog_item_id: req.catalog_item_id || req.price_list_item_id || null,
+            catalog_item_name: req.catalog_item_name || null,
+          };
+        }
+      }
+      return base44.entities.StockAllocation.create({ ...data, ...cachedFields });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['stockAllocations', projectId]);
       setAllocationModalOpen(false);
