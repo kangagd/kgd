@@ -9,8 +9,11 @@
 export const resolveProjectLabel = (project) => {
   if (!project) return 'Unknown Project';
   const number = project.project_number || project.id?.substring(0, 6);
-  const title = project.title || project.name || project.project_title || '(no title)';
-  return `#${number} ${title}`;
+  const name = project.project_name || project.name || project.title || null;
+  if (number && name) return `#${number} ${name}`;
+  if (number) return `#${number}`;
+  if (name) return name;
+  return `Project #${project.id?.substring(0, 6) || 'Unknown'}`;
 };
 
 export const resolveJobLabel = (job) => {
@@ -40,14 +43,31 @@ export const resolveVisitLabel = (visit) => {
   return `Visit ${visit.visit_number || '(no #)'}`;
 };
 
+export const resolveRequirementLabel = (req, priceListItemById = {}) => {
+  if (!req) return 'Unknown Requirement';
+  
+  // Try in priority order
+  if (req.catalog_item_name) return req.catalog_item_name;
+  
+  if (req.catalog_item_id && priceListItemById[req.catalog_item_id]) {
+    const item = priceListItemById[req.catalog_item_id];
+    return item.name || item.item_name || item.item || item.title || null;
+  }
+  
+  if (req.description) return req.description;
+  if (req.custom_item_name) return req.custom_item_name;
+  
+  return `Requirement #${req.id?.substring(0, 6) || 'Unknown'}`;
+};
+
 export const resolvePurchaseOrderLabel = (po) => {
   if (!po) return 'Unknown PO';
-  const poNum = po.purchase_order_number || po.po_number || po.reference_number || po.supplier_po_number || null;
-  const supplier = po.supplier_name || null;
+  const poNum = po.po_number || po.number || po.reference_number || po.purchase_order_number || po.supplier_po_number || null;
+  const supplier = po.supplier_name || po.supplier?.name || null;
   if (poNum && supplier) return `PO #${poNum} - ${supplier}`;
   if (poNum) return `PO #${poNum}`;
   if (supplier) return supplier;
-  return po.id?.substring(0, 6);
+  return `PO #${po.id?.substring(0, 6) || 'Unknown'}`;
 };
 
 /**
