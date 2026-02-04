@@ -187,12 +187,31 @@ export default function Dashboard() {
   const tomorrow = getLocalDateString(new Date(Date.now() + 86400000));
 
   const todayJobs = jobs.filter(j => {
-    if (j.scheduled_date !== today || j.deleted_at || j.status === 'Cancelled' || j.status === 'Completed') {
+    if (j.deleted_at || j.status === 'Cancelled') {
       return false;
     }
-    // Filter for field technician - only their assigned jobs
+
+    // Check if job has a visit scheduled for today (in scheduled_visits array)
+    const hasVisitToday = j.scheduled_visits?.some(visit => 
+      visit.date === today && visit.status !== 'cancelled'
+    );
+
+    // Check main scheduled_date OR scheduled_visits for today
+    const isScheduledToday = j.scheduled_date === today || hasVisitToday;
+
+    if (!isScheduledToday) {
+      return false;
+    }
+
+    // Filter for field technician - check both main assignment and visit assignments
     if (user?.is_field_technician && user?.role !== 'admin' && user?.role !== 'manager') {
-      return j.assigned_to?.includes(user.email);
+      const isAssignedToJob = j.assigned_to?.includes(user.email);
+      const isAssignedToTodayVisit = j.scheduled_visits?.some(visit => 
+        visit.date === today && 
+        visit.status !== 'cancelled' &&
+        (Array.isArray(visit.assigned_to) ? visit.assigned_to.includes(user.email) : visit.assigned_to === user.email)
+      );
+      return isAssignedToJob || isAssignedToTodayVisit;
     }
     return true;
   });
