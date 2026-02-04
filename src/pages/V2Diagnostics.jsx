@@ -591,6 +591,86 @@ export default function V2Diagnostics() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Repair Inactive Locations Modal */}
+      <Dialog open={repairLocationsModal} onOpenChange={setRepairLocationsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Repair Inactive Locations In Use</DialogTitle>
+            <DialogDescription>
+              Dry run complete. Review the proposed changes below.
+            </DialogDescription>
+          </DialogHeader>
+
+          {repairLocationsDryRunResult && (
+            <div className="space-y-4">
+              {/* Summary */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-600 font-semibold">Locations Scanned</p>
+                  <p className="text-xl font-bold text-blue-900">{repairLocationsDryRunResult.locations_scanned}</p>
+                </div>
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-xs text-green-600 font-semibold">Will Reactivate</p>
+                  <p className="text-xl font-bold text-green-900">{repairLocationsDryRunResult.locations_reactivated}</p>
+                </div>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-xs text-amber-600 font-semibold">Will Patch Metadata</p>
+                  <p className="text-xl font-bold text-amber-900">{repairLocationsDryRunResult.locations_patched_metadata}</p>
+                </div>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs text-red-600 font-semibold">Errors</p>
+                  <p className="text-xl font-bold text-red-900">{repairLocationsDryRunResult.locations_errors}</p>
+                </div>
+              </div>
+
+              {/* Details */}
+              {repairLocationsDryRunResult.details && repairLocationsDryRunResult.details.length > 0 && (
+                <div className="border rounded-lg p-3 bg-slate-50 max-h-60 overflow-y-auto">
+                  <p className="text-sm font-semibold mb-2">Location Details:</p>
+                  <div className="space-y-2 text-xs">
+                    {repairLocationsDryRunResult.details.map((detail, idx) => (
+                      <div key={idx} className="bg-white border rounded p-2">
+                        <p className="font-mono text-slate-700">ID: {detail.location_id.substring(detail.location_id.length - 6)}</p>
+                        <div className="mt-1 space-y-0.5 text-slate-600">
+                          {detail.was_inactive && <p>• Was inactive, will reactivate</p>}
+                          {detail.had_missing_code && <p>• Missing code, will set LEGACY_*</p>}
+                          {detail.had_missing_type && <p>• Missing type, will set to virtual</p>}
+                          {detail.references.length > 0 && (
+                            <p>• References: {detail.references.map(r => `${r.entity} (${r.count})`).join(', ')}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-slate-600 italic">{repairLocationsDryRunResult.summary}</p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRepairLocationsModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => runRepairInactiveLocations(false)}
+              disabled={loading['repairInactiveLocationsInUse']}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {loading['repairInactiveLocationsInUse'] ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Applying...
+                </>
+              ) : (
+                'Apply Repairs'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
