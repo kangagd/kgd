@@ -133,12 +133,13 @@ Deno.serve(async (req) => {
       const partRefId = 
         alloc.catalog_item_id ||
         alloc.price_list_item_id ||
+        alloc.sku_id ||
         alloc.catalog_item ||
         alloc.price_list_item ||
         alloc.priceListItemId ||
         requirement?.catalog_item_id ||
         requirement?.price_list_item_id ||
-        requirement?.catalog_item ||
+        requirement?.sku_id ||
         null;
       
       // Priority order for label
