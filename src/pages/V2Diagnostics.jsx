@@ -73,6 +73,29 @@ export default function V2Diagnostics() {
     }
   };
 
+  const runLocationIntegrityCheck = async () => {
+    const fnName = 'checkInventoryLocationIntegrity';
+    setLoading(prev => ({ ...prev, [fnName]: true }));
+    try {
+      const result = await base44.functions.invoke(fnName, {});
+      
+      if (result.data) {
+        setResults(prev => ({ ...prev, [fnName]: result.data }));
+        if (result.data.status === 'PASS') {
+          toast.success('Location integrity check passed');
+        } else {
+          toast.warning('Location integrity check found issues');
+        }
+      }
+    } catch (error) {
+      console.error(`${fnName} error:`, error);
+      toast.error(`${fnName} error: ${error.message}`);
+      setResults(prev => ({ ...prev, [fnName]: { error: error.message } }));
+    } finally {
+      setLoading(prev => ({ ...prev, [fnName]: false }));
+    }
+  };
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
       <div className="mb-8">
@@ -222,7 +245,142 @@ export default function V2Diagnostics() {
             )}
           </CardContent>
         </Card>
+
+        {/* Location Integrity Check */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Location Integrity Check
+              <Badge variant="outline">Global</Badge>
+            </CardTitle>
+            <CardDescription>Verify inventory location setup: required locations, duplicates, orphaned records.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={() => runLocationIntegrityCheck()}
+              disabled={loading['checkInventoryLocationIntegrity']}
+              className="w-full"
+            >
+              {loading['checkInventoryLocationIntegrity'] ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Running...
+                </>
+              ) : (
+                'Run Location Integrity Check'
+              )}
+            </Button>
+            {results['checkInventoryLocationIntegrity'] && (
+              <LocationIntegrityResults result={results['checkInventoryLocationIntegrity']} />
+            )}
+          </CardContent>
+        </Card>
       </div>
+    </div>
+  );
+}
+
+function LocationIntegrityResults({ result }) {
+  if (result.error) {
+    return (
+      <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
+        <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <div className="text-sm text-red-800">
+          <p className="font-semibold">Error</p>
+          <p>{result.error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isPassing = result.status === 'PASS';
+
+  return (
+    <div className={`p-3 border rounded-lg space-y-3 ${isPassing ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+      <div className="flex gap-2 items-start">
+        {isPassing ? (
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+        ) : (
+          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        )}
+        <div className="text-sm">
+          <p className={`font-semibold ${isPassing ? 'text-green-800' : 'text-red-800'}`}>
+            Status: {result.status}
+          </p>
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      {result.summary && (
+        <div className="text-xs bg-white border rounded p-2 space-y-1">
+          <p className="font-semibold mb-1">Summary:</p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            <span>Total Locations:</span><span className="font-mono">{result.summary.total_locations}</span>
+            <span>Active Locations:</span><span className="font-mono">{result.summary.active_locations}</span>
+            <span>LOADING_BAY:</span><span className="font-mono">{result.summary.loading_bay_count}</span>
+            <span>CONSUMED:</span><span className="font-mono">{result.summary.consumed_count}</span>
+            <span>Warehouses:</span><span className="font-mono">{result.summary.warehouse_count}</span>
+            <span>Vehicle Locations:</span><span className="font-mono">{result.summary.vehicle_location_count}</span>
+            <span>Total Vehicles:</span><span className="font-mono">{result.summary.total_vehicles}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Missing Locations */}
+      {result.missing_locations && result.missing_locations.length > 0 && (
+        <div className="text-xs bg-red-100 border border-red-300 rounded p-2">
+          <p className="font-semibold text-red-800 mb-1">Missing Locations ({result.missing_locations.length}):</p>
+          <ul className="space-y-1 list-disc list-inside">
+            {result.missing_locations.map((item, idx) => (
+              <li key={idx} className="text-red-700">
+                {item.location_code || item.location_type || item.vehicle_name} - {item.reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Duplicate Locations */}
+      {result.duplicate_locations && result.duplicate_locations.length > 0 && (
+        <div className="text-xs bg-red-100 border border-red-300 rounded p-2">
+          <p className="font-semibold text-red-800 mb-1">Duplicate Locations ({result.duplicate_locations.length}):</p>
+          <ul className="space-y-1 list-disc list-inside">
+            {result.duplicate_locations.map((item, idx) => (
+              <li key={idx} className="text-red-700">
+                {item.location_code || item.vehicle_name} - {item.count} duplicates
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Orphaned Vehicle Locations */}
+      {result.orphaned_vehicle_locations && result.orphaned_vehicle_locations.length > 0 && (
+        <div className="text-xs bg-red-100 border border-red-300 rounded p-2">
+          <p className="font-semibold text-red-800 mb-1">Orphaned Vehicle Locations ({result.orphaned_vehicle_locations.length}):</p>
+          <ul className="space-y-1 list-disc list-inside">
+            {result.orphaned_vehicle_locations.map((item, idx) => (
+              <li key={idx} className="text-red-700">
+                {item.location_code} (vehicle_id: {item.vehicle_id}) - {item.reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Inactive Locations in Use */}
+      {result.inactive_locations_in_use && result.inactive_locations_in_use.length > 0 && (
+        <div className="text-xs bg-red-100 border border-red-300 rounded p-2">
+          <p className="font-semibold text-red-800 mb-1">Inactive Locations in Use ({result.inactive_locations_in_use.length}):</p>
+          <ul className="space-y-1 list-disc list-inside">
+            {result.inactive_locations_in_use.map((item, idx) => (
+              <li key={idx} className="text-red-700">
+                {item.location_code} ({item.location_type})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
