@@ -669,13 +669,13 @@ function StopCard({ stop, index, totalStops, isCompleted, confirmation, location
           
           {stop.project_id && (
             <div className="text-xs text-gray-600 mb-1">
-              Project: {resolveProjectLabel({ id: stop.project_id }) || "(unknown)"}
+              Project: {resolveProjectLabel({ id: stop.project_id, project_number: stop.project_number, title: stop.project_title }) || "(unknown)"}
             </div>
           )}
 
           {stop.purchase_order_id && (
             <div className="text-xs text-gray-600 mb-1">
-              PO: {resolvePurchaseOrderLabel({ id: stop.purchase_order_id }) || "(unknown)"}
+              PO: {resolvePurchaseOrderLabel({ id: stop.purchase_order_id, purchase_order_number: stop.purchase_order_number, supplier_name: stop.supplier_name }) || "(unknown)"}
             </div>
           )}
           
