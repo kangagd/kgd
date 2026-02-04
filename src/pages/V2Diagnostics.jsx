@@ -5,15 +5,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, Sprout } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function V2Diagnostics() {
   const [user, setUser] = useState(null);
   const [allowed, setAllowed] = useState(false);
+  const [catalogItems, setCatalogItems] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [projectId, setProjectId] = useState('');
   const [loading, setLoading] = useState({});
   const [results, setResults] = useState({});
+  
+  // Seed inventory state
+  const [seedCatalogItemId, setSeedCatalogItemId] = useState('');
+  const [seedQuantity, setSeedQuantity] = useState('');
+  const [seedLocationId, setSeedLocationId] = useState('');
+  const [seedNote, setSeedNote] = useState('');
+  const [seedForce, setSeedForce] = useState(false);
+  const [seededItems, setSeededItems] = useState([]);
 
   React.useEffect(() => {
     const loadUser = async () => {
@@ -28,6 +40,32 @@ export default function V2Diagnostics() {
     };
     loadUser();
   }, []);
+
+  // Load seeded items and reference data
+  React.useEffect(() => {
+    const loadData = async () => {
+      if (!allowed) return;
+      try {
+        const [seeds, items, locs] = await Promise.all([
+          base44.entities.StockMovement.filter(
+            { source_type: 'initial_seed' },
+            '-created_date',
+            50
+          ),
+          base44.entities.PriceListItem.filter({ track_inventory: true }, 'item'),
+          base44.entities.InventoryLocation.filter({ is_active: true }, 'location_code')
+        ]);
+        setSeededItems(seeds);
+        setCatalogItems(items);
+        setLocations(locs.filter(l => 
+          l.location_type === 'warehouse' || l.location_type === 'vehicle'
+        ));
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+    loadData();
+  }, [allowed]);
 
   if (!user) {
     return (
@@ -272,6 +310,135 @@ export default function V2Diagnostics() {
             </Button>
             {results['checkInventoryLocationIntegrity'] && (
               <LocationIntegrityResults result={results['checkInventoryLocationIntegrity']} />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Seed Inventory */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Seedling className="w-5 h-5" />
+              Seed Inventory
+              <Badge variant="outline">Global</Badge>
+            </CardTitle>
+            <CardDescription>Add initial stock via StockMovement. Idempotent and traceable.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="seed-item">Catalog Item</Label>
+                <Select value={seedCatalogItemId} onValueChange={setSeedCatalogItemId}>
+                  <SelectTrigger id="seed-item">
+                    <SelectValue placeholder="Select catalog item" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {catalogItems.map(item => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.item} {item.sku ? `(${item.sku})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="seed-qty">Quantity</Label>
+                <Input
+                  id="seed-qty"
+                  type="number"
+                  min="1"
+                  placeholder="Enter quantity"
+                  value={seedQuantity}
+                  onChange={(e) => setSeedQuantity(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="seed-location">Target Location (Warehouse or Vehicle only)</Label>
+                <Select value={seedLocationId} onValueChange={setSeedLocationId}>
+                  <SelectTrigger id="seed-location">
+                    <SelectValue placeholder="Select location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map(loc => (
+                      <SelectItem key={loc.id} value={loc.id}>
+                        {loc.location_code} ({loc.location_type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="seed-note">Note (optional)</Label>
+                <Input
+                  id="seed-note"
+                  placeholder="Optional note"
+                  value={seedNote}
+                  onChange={(e) => setSeedNote(e.target.value)}
+                />
+              </div>
+
+              {seedForce && (
+                <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span className="text-sm text-amber-800">Confirmation mode enabled</span>
+                </div>
+              )}
+            </div>
+
+            <Button
+              onClick={() => runSeedInventory()}
+              disabled={loading['seedInventoryItem'] || !seedCatalogItemId || !seedQuantity || !seedLocationId}
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              {loading['seedInventoryItem'] ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Seeding...
+                </>
+              ) : (
+                <>
+                  <Seedling className="w-4 h-4 mr-2" />
+                  Seed Inventory
+                </>
+              )}
+            </Button>
+
+            {/* Seeded Items Table */}
+            {seededItems.length > 0 && (
+              <div className="mt-6 border rounded-lg overflow-hidden">
+                <div className="bg-slate-50 border-b px-3 py-2">
+                  <p className="text-sm font-semibold">Recent Seeds ({seededItems.length})</p>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="text-left p-2 font-medium">Item</th>
+                        <th className="text-left p-2 font-medium">Location</th>
+                        <th className="text-right p-2 font-medium">Qty</th>
+                        <th className="text-left p-2 font-medium">Date</th>
+                        <th className="text-left p-2 font-medium">By</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seededItems.map(seed => (
+                        <tr key={seed.id} className="border-b hover:bg-slate-50">
+                          <td className="p-2">{seed.catalog_item_name}</td>
+                          <td className="p-2">{seed.to_location_code}</td>
+                          <td className="p-2 text-right font-mono">{seed.qty}</td>
+                          <td className="p-2 text-slate-600">
+                            {new Date(seed.created_date).toLocaleDateString()}
+                          </td>
+                          <td className="p-2 text-slate-600">{seed.created_by_name}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
