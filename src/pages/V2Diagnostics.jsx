@@ -140,7 +140,7 @@ export default function V2Diagnostics() {
     const fnName = 'repairInactiveLocationsInUse';
     setLoading(prev => ({ ...prev, [fnName]: true }));
     try {
-      const result = await base44.functions.invoke(fnName, { dry_run: dryRun });
+      const result = await base44.functions.invoke(fnName, { dry_run: Boolean(dryRun) });
       
       if (result.data) {
         if (dryRun) {
