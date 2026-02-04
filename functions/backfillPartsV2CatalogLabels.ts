@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
 
     const results = {
       requirements: { scanned: 0, updated: 0, skipped: 0, missing_label: 0, overwritten_placeholder: 0 },
-      allocations: { scanned: 0, updated: 0, skipped: 0, missing_label: 0, overwritten_placeholder: 0 },
+      allocations: { scanned: 0, updated: 0, skipped: 0, missing_label: 0, overwritten_placeholder: 0, orphan_count: 0 },
       consumptions: { scanned: 0, updated: 0, skipped: 0, missing_label: 0, overwritten_placeholder: 0 },
     };
 
