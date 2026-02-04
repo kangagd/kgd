@@ -216,9 +216,11 @@ export default function PartsV2Panel({ projectId, jobId = null, visitId = null }
         // Inherit from requirement if allocation is requirement-based
         const req = requirements.find(r => r.id === data.requirement_line_id);
         if (req) {
+          // Use resolved label from requirement with map lookup fallback
+          const reqLabel = getRequirementLabel(req, priceListItemMap);
           cachedFields = {
             catalog_item_id: req.catalog_item_id || req.price_list_item_id || null,
-            catalog_item_name: req.catalog_item_name || null,
+            catalog_item_name: reqLabel !== 'Requirement' ? reqLabel : (req.catalog_item_name || req.description || null),
           };
         }
       }
