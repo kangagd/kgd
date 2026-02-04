@@ -146,6 +146,7 @@ Deno.serve(async (req) => {
       const label =
         (alloc.catalog_item_name && !isPlaceholder(alloc.catalog_item_name) ? alloc.catalog_item_name : null) ||
         (alloc.price_list_item_name && !isPlaceholder(alloc.price_list_item_name) ? alloc.price_list_item_name : null) ||
+        (alloc.item_name && !isPlaceholder(alloc.item_name) ? alloc.item_name : null) ||
         (requirement?.catalog_item_name && !isPlaceholder(requirement.catalog_item_name) ? requirement.catalog_item_name : null) ||
         (requirement?.description && !isPlaceholder(requirement.description) ? requirement.description : null) ||
         (partRefId && itemMap[partRefId] && !isPlaceholder(itemMap[partRefId]) ? itemMap[partRefId] : null) ||
