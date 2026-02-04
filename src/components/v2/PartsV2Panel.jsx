@@ -1115,7 +1115,9 @@ function AllocationModal({ open, onClose, projectId, requirements, jobs, priceLi
                   </SelectTrigger>
                   <SelectContent>
                     {priceListItems.map(item => (
-                      <SelectItem key={item.id} value={item.id}>{item.item}</SelectItem>
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.item || item.name || item.title || `Item ${item.id.substring(item.id.length - 6)}`}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1362,7 +1364,9 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
                   </SelectTrigger>
                   <SelectContent>
                     {priceListItems.map(item => (
-                      <SelectItem key={item.id} value={item.id}>{item.item}</SelectItem>
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.item || item.name || item.title || `Item ${item.id.substring(item.id.length - 6)}`}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
