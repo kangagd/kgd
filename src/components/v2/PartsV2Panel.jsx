@@ -1355,9 +1355,13 @@ function UsageModal({ open, onClose, projectId, visitId = null, jobs, allocation
                     <SelectValue placeholder="Choose location..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {inventoryLocations.map(loc => (
-                      <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                    ))}
+                    {inventoryLocations.length === 0 ? (
+                      <div className="px-2 py-1 text-sm text-gray-500">No locations available</div>
+                    ) : (
+                      inventoryLocations.map(loc => (
+                        <SelectItem key={loc.id} value={loc.id}>{loc.name || `Location ${loc.id.substring(loc.id.length - 6)}`}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
