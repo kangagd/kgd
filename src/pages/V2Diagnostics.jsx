@@ -26,6 +26,16 @@ export default function V2Diagnostics() {
   const [seedNote, setSeedNote] = useState('');
   const [seedForce, setSeedForce] = useState(false);
   const [seededItems, setSeededItems] = useState([]);
+  const [catalogItems, setCatalogItems] = useState([]);
+  const [locations, setLocations] = useState([]);
+  
+  // Seed inventory state
+  const [seedCatalogItemId, setSeedCatalogItemId] = useState('');
+  const [seedQuantity, setSeedQuantity] = useState('');
+  const [seedLocationId, setSeedLocationId] = useState('');
+  const [seedNote, setSeedNote] = useState('');
+  const [seedForce, setSeedForce] = useState(false);
+  const [seededItems, setSeededItems] = useState([]);
 
   React.useEffect(() => {
     const loadUser = async () => {
