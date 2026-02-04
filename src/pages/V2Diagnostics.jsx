@@ -477,7 +477,7 @@ export default function V2Diagnostics() {
                 </>
               ) : (
                 <>
-                  <Seedling className="w-4 h-4 mr-2" />
+                  <Sprout className="w-4 h-4 mr-2" />
                   Seed Inventory
                 </>
               )}
