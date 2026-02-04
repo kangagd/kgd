@@ -152,22 +152,40 @@ Deno.serve(async (req) => {
         (partRefId && itemMap[partRefId] && !isPlaceholder(itemMap[partRefId]) ? itemMap[partRefId] : null) ||
         null;
       
-      if (!partRefId || !label) {
+      // Handle case where we have label but no partRefId (ad-hoc allocations)
+      if (!label) {
         results.allocations.missing_label++;
         results.allocations.skipped++;
         continue;
       }
 
       const updateData = {};
-      if (!alloc.catalog_item_id) updateData.catalog_item_id = partRefId;
-      updateData.catalog_item_name = label; // Always overwrite if placeholder
+      
+      // Set catalog_item_id if we have partRefId and it's missing
+      if (partRefId && !alloc.catalog_item_id) {
+        updateData.catalog_item_id = partRefId;
+      }
+      
+      // Always set catalog_item_name if missing or placeholder
+      if (!alloc.catalog_item_name || isPlaceholder(alloc.catalog_item_name)) {
+        updateData.catalog_item_name = label;
+      }
+      
+      // Also populate item_name for legacy/UI compatibility
+      if (!alloc.item_name || isPlaceholder(alloc.item_name)) {
+        updateData.item_name = label;
+      }
       
       if (isPlaceholder(alloc.catalog_item_name)) {
         results.allocations.overwritten_placeholder++;
       }
 
-      await base44.asServiceRole.entities.StockAllocation.update(alloc.id, updateData);
-      results.allocations.updated++;
+      if (Object.keys(updateData).length > 0) {
+        await base44.asServiceRole.entities.StockAllocation.update(alloc.id, updateData);
+        results.allocations.updated++;
+      } else {
+        results.allocations.skipped++;
+      }
     }
 
     // Backfill StockConsumption
