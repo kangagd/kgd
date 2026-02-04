@@ -131,6 +131,17 @@ Deno.serve(async (req) => {
       // Get linked requirement if exists
       const requirement = alloc.requirement_line_id ? requirementMap[alloc.requirement_line_id] : null;
       
+      // Track orphaned requirement references
+      if (alloc.requirement_line_id && !requirement) {
+        orphanAllocations.push({
+          allocation_id: alloc.id,
+          requirement_line_id: alloc.requirement_line_id,
+          project_id: alloc.project_id,
+          catalog_item_id: alloc.catalog_item_id
+        });
+        results.allocations.orphan_count++;
+      }
+      
       // Priority order for partRefId
       const partRefId = 
         alloc.catalog_item_id ||
