@@ -558,8 +558,9 @@ export default function V2LoadingBay() {
               </thead>
               <tbody>
                 {clearedReceipts.map((receipt) => {
-                   const projectLabel = getProjectLabel(receipt.project_id);
-                   const poLabel = getPOLabel(receipt.purchase_order_id);
+                   const projectLabel = getProjectLabel(receipt);
+                   const poLabel = getPOLabel(receipt);
+                   const supplierName = getSupplierName(receipt);
                    const photoCount = getPhotoCount(receipt.photos_json);
                    const isHighlighted = highlightedReceiptIds.includes(receipt.id);
 
