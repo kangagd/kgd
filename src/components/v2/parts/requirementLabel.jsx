@@ -18,9 +18,11 @@ export function getRequirementLabel(req, priceListItemMap = {}) {
   // Priority order for display
   if (req.catalog_item_name) return req.catalog_item_name;
   
-  if (req.catalog_item_id && priceListItemMap[req.catalog_item_id]) {
-    const item = priceListItemMap[req.catalog_item_id];
-    return item.name || item.item_name || item.item || item.title || null;
+  // Support both catalog_item_id and price_list_item_id
+  const partRefId = req.catalog_item_id || req.price_list_item_id;
+  if (partRefId && priceListItemMap[partRefId]) {
+    const item = priceListItemMap[partRefId];
+    return item.item || item.name || item.item_name || item.title || null;
   }
   
   if (req.description) return req.description;
