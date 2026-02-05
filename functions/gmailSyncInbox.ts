@@ -134,33 +134,42 @@ Deno.serve(async (req) => {
     stage = 'upsert_threads';
     const upsertedThreads = [];
 
+    // Batch fetch all thread details in parallel (max 5 concurrent to avoid rate limits)
+    const batchSize = 5;
+    const threadDetails = await Promise.all(
+      threads.map(t => 
+        gmailFetch(base44, `/gmail/v1/users/me/threads/${t.id}`, 'GET', null, { format: 'metadata' })
+          .catch(err => {
+            console.error(`[gmailSyncInbox] Failed to fetch thread ${t.id}:`, err.message);
+            return null;
+          })
+      )
+    );
+
+    // Batch fetch all existing threads by gmail_thread_id
+    const gmailThreadIds = threads.map(t => t.id);
+    const existingThreadsMap = {};
+    if (gmailThreadIds.length > 0) {
+      const existing = await base44.asServiceRole.entities.EmailThread.filter({
+        gmail_thread_id: { $in: gmailThreadIds }
+      });
+      existing.forEach(t => {
+        existingThreadsMap[t.gmail_thread_id] = t.id;
+      });
+    }
+
+    // Process threads sequentially for upsert (batched fetches complete)
     for (let i = 0; i < threads.length; i++) {
       const gmailThread = threads[i];
+      const threadDetail = threadDetails[i];
+
       try {
-        // Add delay to avoid rate limits (50ms per thread)
-        if (i > 0) {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        }
-
-        // Fetch minimal thread metadata (not full messages)
-        const threadDetail = await gmailFetch(
-          base44,
-          `/gmail/v1/users/me/threads/${gmailThread.id}`,
-          'GET',
-          null,
-          { format: 'metadata' }
-        );
-
-        if (!threadDetail.messages || threadDetail.messages.length === 0) {
+        if (!threadDetail || !threadDetail.messages || threadDetail.messages.length === 0) {
           console.log(`[gmailSyncInbox] Thread ${gmailThread.id} has no messages, skipping`);
           continue;
         }
 
-        // Use first and last message for thread metadata
-        const firstMsg = threadDetail.messages[0];
         const lastMsg = threadDetail.messages[threadDetail.messages.length - 1];
-
-        // Extract headers from last message
         const lastHeaders = {};
         if (lastMsg.payload?.headers) {
           lastMsg.payload.headers.forEach(h => {
@@ -172,25 +181,18 @@ Deno.serve(async (req) => {
         const fromAddress = lastHeaders['from'] || '';
         const toAddresses = lastHeaders['to'] ? lastHeaders['to'].split(',').map(e => e.trim()) : [];
 
-        // Skip Wix CRM emails to treat each as separate enquiry
+        // Skip Wix CRM emails
         if (fromAddress.includes('no-reply@crm.wix.com')) {
           console.log(`[gmailSyncInbox] Skipping Wix CRM email thread ${gmailThread.id}`);
           continue;
         }
 
-        // Create/update snippet
         let snippet = threadDetail.snippet || '';
         if (snippet.length > 200) {
           snippet = snippet.substring(0, 200) + '...';
         }
 
-        // Get last message date
         const lastMsgDate = lastMsg.internalDate ? new Date(parseInt(lastMsg.internalDate)).toISOString() : new Date().toISOString();
-
-        // Check if thread already exists
-        const existing = await base44.asServiceRole.entities.EmailThread.filter({
-          gmail_thread_id: gmailThread.id
-        });
 
         const threadData = {
           subject,
@@ -206,17 +208,16 @@ Deno.serve(async (req) => {
           last_activity_at: lastMsgDate
         };
 
-        if (existing.length > 0) {
-          // Update existing thread
-          await base44.asServiceRole.entities.EmailThread.update(existing[0].id, threadData);
+        const existingId = existingThreadsMap[gmailThread.id];
+        if (existingId) {
+          await base44.asServiceRole.entities.EmailThread.update(existingId, threadData);
           upsertedThreads.push({
-            id: existing[0].id,
+            id: existingId,
             gmail_thread_id: gmailThread.id,
             action: 'updated'
           });
           console.log(`[gmailSyncInbox] Updated thread ${gmailThread.id}`);
         } else {
-          // Create new thread
           const newThread = await base44.asServiceRole.entities.EmailThread.create(threadData);
           upsertedThreads.push({
             id: newThread.id,
@@ -226,7 +227,7 @@ Deno.serve(async (req) => {
           console.log(`[gmailSyncInbox] Created thread ${gmailThread.id}`);
         }
       } catch (err) {
-        console.error(`[gmailSyncInbox] Error processing thread ${gmailThread.id}:`, err);
+        console.error(`[gmailSyncInbox] Error processing thread ${gmailThread.id}:`, err.message);
       }
     }
 
