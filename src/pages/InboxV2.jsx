@@ -493,7 +493,7 @@ export default function InboxV2() {
 
     // Set sync in progress
     syncInFlightRef.current = true;
-    const SYNC_TIMEOUT_MS = 45000;
+    const SYNC_TIMEOUT_MS = 120000; // 2 min (matches backend timeout)
     let timeoutId;
 
     try {
