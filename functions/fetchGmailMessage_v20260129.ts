@@ -32,10 +32,14 @@ Deno.serve(async (req) => {
       for (const part of parts) {
         try {
           if (part.mimeType === 'text/html' && part.body?.data) {
-            const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            const base64 = part.body.data.replace(/-/g, '+').replace(/_/g, '/');
+            const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            const decoded = new TextDecoder('utf-8').decode(bytes);
             if (decoded) bodyHtml = decoded;
           } else if (part.mimeType === 'text/plain' && part.body?.data) {
-            const decoded = atob(part.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+            const base64 = part.body.data.replace(/-/g, '+').replace(/_/g, '/');
+            const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            const decoded = new TextDecoder('utf-8').decode(bytes);
             if (decoded) bodyText = decoded;
           }
           
@@ -68,7 +72,9 @@ Deno.serve(async (req) => {
 
     try {
       if (detail.payload.body?.data) {
-        const decoded = atob(detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/'));
+        const base64 = detail.payload.body.data.replace(/-/g, '+').replace(/_/g, '/');
+        const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        const decoded = new TextDecoder('utf-8').decode(bytes);
         if (decoded) bodyText = decoded;
       }
     } catch (err) {}
