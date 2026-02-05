@@ -57,68 +57,7 @@ function decodeBase64Url(b64url) {
   return bytes;
 }
 
-// Helper: refresh access token if expired (shared Gmail account pattern)
-async function refreshTokenIfNeeded(user, base44) {
-  if (!user?.gmail_refresh_token) {
-    throw new Error('No gmail_refresh_token available on user');
-  }
 
-  const tokenExpiry = user.gmail_token_expiry ? new Date(user.gmail_token_expiry) : null;
-  const now = new Date();
-  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-
-  if (!tokenExpiry || tokenExpiry < fiveMinutesFromNow) {
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: Deno.env.get('GMAIL_CLIENT_ID'),
-        client_secret: Deno.env.get('GMAIL_CLIENT_SECRET'),
-        refresh_token: user.gmail_refresh_token,
-        grant_type: 'refresh_token',
-      }),
-    });
-
-    if (!tokenResponse.ok) {
-      const txt = await tokenResponse.text().catch(() => '');
-      throw new Error(`Failed to refresh Gmail token: ${tokenResponse.status} ${txt}`);
-    }
-
-    const tokenData = await tokenResponse.json();
-    const expiresAt = new Date(now.getTime() + (tokenData.expires_in || 3600) * 1000);
-
-    await base44.asServiceRole.entities.User.update(user.id, {
-      gmail_access_token: tokenData.access_token,
-      gmail_token_expiry: expiresAt.toISOString(),
-    });
-
-    return tokenData.access_token;
-  }
-
-  if (!user.gmail_access_token) {
-    throw new Error('No gmail_access_token available on user');
-  }
-
-  return user.gmail_access_token;
-}
-
-// Helper: choose Gmail user (caller first, then shared)
-async function getGmailAccessToken(base44, callerUser) {
-  // Prefer caller if they have tokens
-  if (callerUser?.gmail_access_token && callerUser?.gmail_refresh_token) {
-    return await refreshTokenIfNeeded(callerUser, base44);
-  }
-
-  // Fallback to any user with connected Gmail (shared mailbox pattern)
-  const allUsers = await base44.asServiceRole.entities.User.list();
-  const gmailUser = allUsers.find((u) => u.gmail_access_token && u.gmail_refresh_token);
-
-  if (!gmailUser) {
-    throw new Error('Gmail not connected: no user has gmail_access_token + gmail_refresh_token');
-  }
-
-  return await refreshTokenIfNeeded(gmailUser, base44);
-}
 
 // Helper: stringify errors safely (avoid "[object Object]")
 function safeErr(error) {
@@ -175,9 +114,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get Gmail access token (NO connectors.getAccessToken('gmail'))
+    // Get Gmail access token from app connector
     phase = 'get_token';
-    const accessToken = await getGmailAccessToken(base44, user);
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
 
     // Fetch attachment from Gmail
     phase = 'gmail_fetch';
