@@ -406,6 +406,7 @@ Deno.serve(async (req) => {
 
     // Fetch thread with full message details
     const threadDetail = await gmailFetch(
+      base44,
       `/gmail/v1/users/me/threads/${gmail_thread_id}`,
       'GET',
       null,
