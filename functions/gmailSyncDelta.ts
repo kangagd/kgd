@@ -301,7 +301,7 @@ async function listRecentInboxMessageIds(base44, { days = 7, maxResults = 200 })
     const params = { q, maxResults: String(Math.min(100, maxResults - ids.length)) };
     if (pageToken) params.pageToken = pageToken;
 
-    const result = await gmailFetch('/gmail/v1/users/me/messages', 'GET', params);
+    const result = await gmailFetch(base44, '/gmail/v1/users/me/messages', 'GET', params);
     if (result.messages?.length) {
       for (const m of result.messages) {
         if (m?.id) ids.push(m.id);
