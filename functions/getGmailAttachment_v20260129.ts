@@ -1,8 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { gmailFetch } from './shared/gmailClient.js';
 import { decodeBase64UrlToBytes } from './shared/base64UrlDecoder.js';
 
-console.log("[DEPLOY_SENTINEL] getGmailAttachment_v20260129 v=2026-01-29");
+console.log("[DEPLOY_SENTINEL] getGmailAttachment_v20260129 v=2026-02-05");
 
 Deno.serve(async (req) => {
   try {
@@ -20,11 +19,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing gmail_message_id or attachment_id' }, { status: 400 });
     }
 
-    // Fetch the attachment from Gmail using shared client
-    const attData = await gmailFetch(
-      `/gmail/v1/users/me/messages/${gmail_message_id}/attachments/${attachment_id}`,
-      'GET'
+    // Get Gmail access token from app connector
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
+
+    // Fetch the attachment from Gmail API
+    const attResponse = await fetch(
+      `https://www.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}/attachments/${attachment_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
     );
+
+    if (!attResponse.ok) {
+      throw new Error(`Gmail API error: ${attResponse.status}`);
+    }
+
+    const attData = await attResponse.json();
     
     if (!attData?.data) {
       return Response.json({ error: 'No attachment data returned' }, { status: 500 });
@@ -45,11 +58,11 @@ Deno.serve(async (req) => {
       url: uploadResult.file_url,
       filename: filename,
       mime_type: mime_type,
-      version: '2026-01-29'
+      version: '2026-02-05'
     });
 
   } catch (error) {
     console.error('Get attachment error:', error);
-    return Response.json({ error: error.message, version: '2026-01-29' }, { status: 500 });
+    return Response.json({ error: error.message, version: '2026-02-05' }, { status: 500 });
   }
 });
