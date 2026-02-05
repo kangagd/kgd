@@ -145,6 +145,7 @@ const CATEGORY_PATTERNS = {
     /\bpricing\b/i,
     /\bestimate\b/i,
     /\bprice\b/i,
+    /\bquote\s*#/i,
   ],
   payment: [
     /\bpayment received\b/i,
@@ -180,6 +181,11 @@ const CATEGORY_PATTERNS = {
     /\beta\b/i,
     /\bback[- ]?order(ed)?\b/i,
   ],
+  customer_quote: [
+    /\bkangaroogd:\s*quote\s*for\b/i,
+    /\bour\s+quote\b/i,
+    /\byour\s+(requested\s+)?quote\b/i,
+  ],
   client_query: [
     /\?/,
     /\bcan you\b/i,
@@ -212,11 +218,13 @@ function determineCategory(thread, bodyText) {
   const scores = [];
 
   // Strong signals from subject
+  if (matchesAny(subject, CATEGORY_PATTERNS.customer_quote)) scores.push({ value: 'customer_quote', score: 85 });
   if (matchesAny(subject, CATEGORY_PATTERNS.order_confirmation)) scores.push({ value: 'order_confirmation', score: 90 });
   if (matchesAny(subject, CATEGORY_PATTERNS.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 85 });
   if (matchesAny(subject, CATEGORY_PATTERNS.supplier_quote)) scores.push({ value: 'supplier_quote', score: 75 });
 
   // Medium signals from combined text
+  if (matchesAny(combined, CATEGORY_PATTERNS.customer_quote)) scores.push({ value: 'customer_quote', score: 60 });
   if (matchesAny(combined, CATEGORY_PATTERNS.order_confirmation)) scores.push({ value: 'order_confirmation', score: 60 });
   if (matchesAny(combined, CATEGORY_PATTERNS.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 55 });
   if (matchesAny(combined, CATEGORY_PATTERNS.payment)) scores.push({ value: 'payment', score: 50 });
