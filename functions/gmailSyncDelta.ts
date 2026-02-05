@@ -130,8 +130,8 @@ async function gmailFetch(endpoint, method = 'GET', queryParams = null) {
 /**
  * Fetch current mailbox historyId
  */
-async function getCurrentHistoryId() {
-  const profile = await gmailFetch('/gmail/v1/users/me/profile');
+async function getCurrentHistoryId(base44) {
+  const profile = await gmailFetch(base44, '/gmail/v1/users/me/profile');
   return profile.historyId;
 }
 
@@ -156,7 +156,7 @@ function maxHistoryId(a, b) {
 /**
  * Fetch message IDs for a specific label since startHistoryId
  */
-async function fetchHistoryDeltaForLabel(startHistoryId, labelId, maxPages = 10) {
+async function fetchHistoryDeltaForLabel(base44, startHistoryId, labelId, maxPages = 10) {
   const messageIds = new Set();
   const deletedIds = new Set();
   let pageCount = 0;
@@ -178,7 +178,7 @@ async function fetchHistoryDeltaForLabel(startHistoryId, labelId, maxPages = 10)
     };
     if (pageToken) params.pageToken = pageToken;
 
-    const result = await gmailFetch('/gmail/v1/users/me/history', 'GET', params);
+    const result = await gmailFetch(base44, '/gmail/v1/users/me/history', 'GET', params);
     
     // Update cursor from response historyId (NOT historyItem.id)
     if (result.historyId) {
@@ -232,7 +232,7 @@ async function fetchHistoryDeltaForLabel(startHistoryId, labelId, maxPages = 10)
 /**
  * Fetch combined history for INBOX + SENT labels
  */
-async function fetchHistoryDelta(startHistoryId, maxPages = 10) {
+async function fetchHistoryDelta(base44, startHistoryId, maxPages = 10) {
   const WATCH_LABELS = ['INBOX', 'SENT'];
   const messageIds = new Set();
   const deletedIds = new Set();
@@ -243,7 +243,7 @@ async function fetchHistoryDelta(startHistoryId, maxPages = 10) {
 
   for (const label of WATCH_LABELS) {
     try {
-      const labelResult = await fetchHistoryDeltaForLabel(startHistoryId, label, maxPages);
+      const labelResult = await fetchHistoryDeltaForLabel(base44, startHistoryId, label, maxPages);
       
       // Union message IDs
       labelResult.messageIds.forEach(id => messageIds.add(id));
@@ -292,7 +292,7 @@ async function markDeleted(base44, deletedIds) {
 /**
  * List recent INBOX message IDs (bounded, for reconciliation)
  */
-async function listRecentInboxMessageIds({ days = 7, maxResults = 200 }) {
+async function listRecentInboxMessageIds(base44, { days = 7, maxResults = 200 }) {
   const q = `label:inbox newer_than:${days}d`;
   const ids = [];
   let pageToken = null;
@@ -381,7 +381,7 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
 
     try {
       // Fetch message to get thread ID
-      const gmailMsg = await gmailFetch(`/gmail/v1/users/me/messages/${msgId}`, 'GET', { format: 'minimal' });
+      const gmailMsg = await gmailFetch(base44, `/gmail/v1/users/me/messages/${msgId}`, 'GET', { format: 'minimal' });
       
       // Cap threads: stop adding new threads after MAX_THREADS_PER_RUN
       if (!threadMap.has(gmailMsg.threadId)) {
@@ -483,7 +483,7 @@ async function processMessageIds({ messageIds, base44, runId, maxMessagesFetched
 // Backfill (controlled, interruptible)
 // ============================================================================
 
-async function fetchBackfillMessages(cursorDate, windowDays, base44, runId) {
+async function fetchBackfillMessages(base44, cursorDate, windowDays, runId) {
   const endDate = new Date(cursorDate);
   const startDate = new Date(endDate);
   startDate.setDate(startDate.getDate() - windowDays);
@@ -501,7 +501,7 @@ async function fetchBackfillMessages(cursorDate, windowDays, base44, runId) {
     const params = { q, maxResults: 100 };
     if (pageToken) params.pageToken = pageToken;
 
-    const result = await gmailFetch('/gmail/v1/users/me/messages', 'GET', params);
+    const result = await gmailFetch(base44, '/gmail/v1/users/me/messages', 'GET', params);
 
     if (result.messages) {
       messages.push(...result.messages.map(m => m.id));
@@ -578,7 +578,7 @@ Deno.serve(async (req) => {
       console.log('[gmailSyncDelta] No history ID - bootstrapping and entering backfill mode');
       
       // Get current history ID to establish baseline
-      const currentHistoryId = await getCurrentHistoryId();
+      const currentHistoryId = await getCurrentHistoryId(base44);
       
       // Update state to start backfill from today going backwards
       syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
@@ -598,6 +598,7 @@ Deno.serve(async (req) => {
         
         // STEP 1: History delta collection (optimisation)
         const hist = await fetchHistoryDelta(
+          base44,
           syncState.last_history_id,
           maxHistoryPages
         );
@@ -624,7 +625,7 @@ Deno.serve(async (req) => {
         
         if (shouldReconcile) {
           console.log('[gmailSyncDelta] Running inbox reconciliation (conditional)');
-          const inboxRecentIds = await listRecentInboxMessageIds({ days: 7, maxResults: 100 });
+          const inboxRecentIds = await listRecentInboxMessageIds(base44, { days: 7, maxResults: 100 });
           inboxMissingIds = await filterMissingEmailMessageIds({ 
             base44, 
             messageIds: inboxRecentIds, 
@@ -745,7 +746,7 @@ Deno.serve(async (req) => {
 
       console.log(`[gmailSyncDelta] Backfill mode - cursor: ${cursorDate.toISOString()}, window: ${windowDays} days`);
 
-      const { messageIds, pageCount } = await fetchBackfillMessages(cursorDate, windowDays, base44, runId);
+      const { messageIds, pageCount } = await fetchBackfillMessages(base44, cursorDate, windowDays, runId);
 
       counts.message_ids_changed = messageIds.size;
       
@@ -824,7 +825,7 @@ Deno.serve(async (req) => {
 
       // If backfill complete, establish fresh history ID
       if (nextBackfillMode === 'off') {
-        const freshHistoryId = await getCurrentHistoryId();
+        const freshHistoryId = await getCurrentHistoryId(base44);
         syncState = await base44.asServiceRole.entities.EmailSyncState.update(syncState.id, {
           last_history_id: freshHistoryId
         });
