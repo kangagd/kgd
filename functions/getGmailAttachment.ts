@@ -1,6 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { decodeBase64UrlToBytes } from './shared/base64UrlDecoder.ts';
-import { getGmailClient } from './shared/gmailClient.ts';
 
 // Rate limiting: track requests per attachment
 const rateLimitMap = new Map();
@@ -84,14 +83,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get Gmail client with service account auth
-    const gmailClient = await getGmailClient(base44);
-    if (!gmailClient) {
-      console.error(`[${runId}] Failed to get Gmail client - check GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_IMPERSONATE_USER_EMAIL`);
-      return Response.json({ 
-        error: 'Gmail service account not configured' 
-      }, { status: 500 });
-    }
+    // Get Gmail access token from app connector
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
 
     // If only CID provided, need to fetch message and find attachmentId
     let finalAttachmentId = attachment_id;
@@ -100,7 +93,7 @@ Deno.serve(async (req) => {
       
       const msgResponse = await fetch(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}?format=full`,
-        { headers: { 'Authorization': `Bearer ${gmailClient.accessToken}` } }
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
       );
       
       if (!msgResponse.ok) {
@@ -166,7 +159,7 @@ Deno.serve(async (req) => {
     console.log(`[${runId}] Fetching attachment ${finalAttachmentId} from message ${gmail_message_id}`);
     const attResponse = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}/attachments/${finalAttachmentId}`,
-      { headers: { 'Authorization': `Bearer ${gmailClient.accessToken}` } }
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
 
     if (!attResponse.ok) {
