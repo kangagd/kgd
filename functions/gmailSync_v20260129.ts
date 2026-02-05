@@ -151,7 +151,37 @@ Deno.serve(async (req) => {
           return false;
         }
 
-        const subject = headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
+        // CRITICAL: Decode subject properly to prevent mojibake (â€" etc.)
+        const decodeSubject = (subjectValue) => {
+          if (!subjectValue) return '(No Subject)';
+          try {
+            // Check if subject contains MIME encoded-word (=?UTF-8?B?...?=)
+            if (subjectValue.includes('=?') && subjectValue.includes('?=')) {
+              // Decode MIME encoded-word format
+              const decoded = subjectValue.replace(/=\?([^?]+)\?([BQ])\?([^?]+)\?=/gi, (match, charset, encoding, encodedText) => {
+                try {
+                  if (encoding.toUpperCase() === 'B') {
+                    const bytes = Uint8Array.from(atob(encodedText), c => c.charCodeAt(0));
+                    return new TextDecoder(charset).decode(bytes);
+                  } else if (encoding.toUpperCase() === 'Q') {
+                    const decoded = encodedText.replace(/_/g, ' ').replace(/=([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+                    return decoded;
+                  }
+                  return match;
+                } catch {
+                  return match;
+                }
+              });
+              return decoded;
+            }
+            // Otherwise return as-is (already UTF-8 string from Gmail API)
+            return subjectValue;
+          } catch {
+            return subjectValue;
+          }
+        };
+
+        const subject = decodeSubject(headers.find(h => h.name === 'Subject')?.value);
         const from = headers.find(h => h.name === 'From')?.value || '';
         const to = headers.find(h => h.name === 'To')?.value || '';
         const date = headers.find(h => h.name === 'Date')?.value;
