@@ -743,11 +743,6 @@ export default function InboxV2() {
       }
     }
 
-    // Apply category filters from activeFilters
-    if (activeFilters.category) {
-      result = result.filter((t) => t.category === activeFilters.category);
-    }
-
     // Sorting per view - all views show newest first
     result.sort((a, b) => {
       const ta = safeTs(a.last_message_date);
@@ -1402,9 +1397,7 @@ Link: ${threadLink}
               activeFilters={activeFilters}
               onFilterChange={(filterId, filterValue) => {
                 if (filterId === "clear") setActiveFilters({});
-                else if (typeof filterValue === 'object' && filterValue.category) {
-                  setActiveFilters({ category: filterValue.category });
-                } else {
+                else {
                   setActiveFilters((prev) => ({
                     ...prev,
                     [filterId]: filterValue ? true : false,
@@ -1412,7 +1405,7 @@ Link: ${threadLink}
                 }
               }}
               userEmail={user?.email}
-              allowedChips={["sent", "received", "pinned", "linked", "unlinked", "supplier-quote", "supplier-invoice", "payment", "booking", "client-query", "order-confirmation"]}
+              allowedChips={["sent", "received", "pinned", "linked", "unlinked"]}
             />
           )}
 

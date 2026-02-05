@@ -25,13 +25,7 @@ export default function InboxFilterBar({
     { id: 'pinned', label: 'Pinned', value: { pinned: true } },
     { id: 'linked', label: 'Linked', value: { linked: true } },
     { id: 'unlinked', label: 'Unlinked', value: { linked: false } },
-    { id: 'closed', label: 'Closed', value: { status: 'closed' } },
-    { id: 'supplier-quote', label: '📋 Supplier Quote', value: { category: 'supplier_quote' } },
-    { id: 'supplier-invoice', label: '💰 Supplier Invoice', value: { category: 'supplier_invoice' } },
-    { id: 'payment', label: '💳 Payment', value: { category: 'payment' } },
-    { id: 'booking', label: '📅 Booking', value: { category: 'booking' } },
-    { id: 'client-query', label: '💬 Client Query', value: { category: 'client_query' } },
-    { id: 'order-confirmation', label: '📦 Order', value: { category: 'order_confirmation' } }
+    { id: 'closed', label: 'Closed', value: { status: 'closed' } }
   ];
 
   // If allowedChips provided, filter to only those; otherwise use all
