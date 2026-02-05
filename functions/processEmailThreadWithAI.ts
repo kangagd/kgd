@@ -182,9 +182,18 @@ const CATEGORY_PATTERNS = {
     /\bback[- ]?order(ed)?\b/i,
   ],
   customer_quote: [
-    /\bkangaroogd:\s*quote\s*for\b/i,
+    /kangaroogd:\s*quote\s*for/i,
     /\bour\s+quote\b/i,
     /\byour\s+(requested\s+)?quote\b/i,
+  ],
+  supplier_quote: [
+    /\bquote\s+request\s*#/i,
+    /\bquote\b/i,
+    /\bquotation\b/i,
+    /\bpricing\b/i,
+    /\bestimate\b/i,
+    /\bprice\b/i,
+    /\bquote\s*#/i,
   ],
   client_query: [
     /\?/,
