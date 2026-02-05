@@ -1,28 +1,25 @@
 /**
- * gmailSetupWatch - Registers a webhook with Gmail to receive push notifications
+ * gmailSetupWatch - Register webhook with Gmail API to receive push notifications
  * 
- * Creates a watch on the user's mailbox. Gmail will POST to gmailWebhookReceiver
- * whenever changes occur. Watches expire after ~7 days and need to be renewed.
+ * Sets up a watch on the user's mailbox that will send push notifications
+ * to the configured webhook URL when changes occur.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-async function gmailFetch(base44, endpoint, method = 'POST', body = null) {
+async function gmailFetch(base44, endpoint, method = 'GET', body = null) {
   const accessToken = await base44.asServiceRole.connectors.getAccessToken('gmail');
 
-  const options = {
+  const url = `https://www.googleapis.com${endpoint}`;
+
+  const response = await fetch(url, {
     method,
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
-    }
-  };
-
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-
-  const response = await fetch(`https://www.googleapis.com${endpoint}`, options);
+    },
+    body: body ? JSON.stringify(body) : null
+  });
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -35,66 +32,75 @@ async function gmailFetch(base44, endpoint, method = 'POST', body = null) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const bodyText = await req.text();
+    const { webhook_url } = bodyText ? JSON.parse(bodyText) : {};
+
+    // Use webhook URL from request or construct from environment
+    const finalWebhookUrl = webhook_url || Deno.env.get('GMAIL_WEBHOOK_URL');
+
+    if (!finalWebhookUrl) {
+      return Response.json(
+        { error: 'webhook_url is required or GMAIL_WEBHOOK_URL env var must be set' },
+        { status: 400 }
+      );
     }
 
-    console.log('[gmailSetupWatch] Setting up watch for user:', user.email);
+    console.log('[gmailSetupWatch] Setting up Gmail watch', { webhook_url: finalWebhookUrl });
 
-    // Get the webhook URL from environment or construct it
-    const webhookUrl = Deno.env.get('GMAIL_WEBHOOK_URL') || 
-      `https://api.base44.app/webhooks/gmail/${user.email}`;
-
-    // Call Gmail watch API
+    // Register watch with Gmail
     const watchResponse = await gmailFetch(
       base44,
       '/gmail/v1/users/me/watch',
       'POST',
       {
-        topicName: 'projects/kangaroogd-crm/topics/gmail-notifications',
-        labelIds: ['INBOX'] // Watch only inbox changes
+        topicName: 'projects/base44-app/topics/gmail-notifications',
+        labelIds: ['INBOX']
       }
     );
 
-    console.log('[gmailSetupWatch] Watch response:', {
-      historyId: watchResponse.historyId,
-      expiration: new Date(parseInt(watchResponse.expiration)).toISOString()
+    // Store watch metadata for future reference
+    const historyId = watchResponse.historyId;
+    const expiration = watchResponse.expiration;
+
+    const watchMetadata = {
+      webhook_url: finalWebhookUrl,
+      history_id: historyId,
+      expiration: expiration,
+      setup_at: new Date().toISOString(),
+      last_notification_at: null
+    };
+
+    // Save to AppSetting for persistence
+    const existing = await base44.asServiceRole.entities.AppSetting.filter({
+      key: 'gmail_watch_config'
     });
 
-    // Store watch metadata for future renewal
-    try {
-      const watchSettings = {
-        history_id: watchResponse.historyId,
-        expiration: watchResponse.expiration, // Unix timestamp in millis
-        expires_at: new Date(parseInt(watchResponse.expiration)).toISOString(),
-        setup_at: new Date().toISOString(),
-        user_email: user.email
-      };
-
-      // Save to AppSetting entity for tracking/renewal
-      await base44.asServiceRole.entities.AppSetting.create({
-        key: `gmail_watch_${user.email}`,
-        value: JSON.stringify(watchSettings),
-        description: 'Gmail push notification watch metadata'
+    if (existing.length > 0) {
+      await base44.asServiceRole.entities.AppSetting.update(existing[0].id, {
+        value: JSON.stringify(watchMetadata)
       });
-
-      console.log('[gmailSetupWatch] Watch metadata saved');
-    } catch (settingsError) {
-      console.warn('[gmailSetupWatch] Failed to save watch metadata:', settingsError.message);
-      // Continue anyway - watch is still active
+    } else {
+      await base44.asServiceRole.entities.AppSetting.create({
+        key: 'gmail_watch_config',
+        value: JSON.stringify(watchMetadata)
+      });
     }
+
+    console.log('[gmailSetupWatch] Watch registered successfully', {
+      historyId: historyId,
+      expiration: new Date(parseInt(expiration)).toISOString()
+    });
 
     return Response.json({
       success: true,
-      historyId: watchResponse.historyId,
-      expiresAt: new Date(parseInt(watchResponse.expiration)).toISOString(),
-      message: 'Gmail watch setup complete. Notifications will be sent to webhook.'
+      historyId: historyId,
+      expiration: expiration,
+      webhookUrl: finalWebhookUrl
     });
 
   } catch (error) {
-    console.error('[gmailSetupWatch] Error:', error.message);
+    console.error('[gmailSetupWatch] Error setting up watch:', error.message);
     return Response.json(
       { error: error.message },
       { status: 500 }
