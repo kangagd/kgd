@@ -196,37 +196,40 @@ Deno.serve(async (req) => {
 
     const result = await sendResponse.json();
 
-    // Create EmailMessage record
-    const messageData = {
-      thread_id: thread_id || null,
-      gmail_message_id: result.id,
-      gmail_thread_id: result.threadId,
-      from_address: currentUser.email,
-      to_addresses: to,
-      cc_addresses: cc || [],
-      bcc_addresses: bcc || [],
-      subject: subject || '(No Subject)',
-      body_html: body_html || '',
-      body_text: body_text || '',
-      sent_at: new Date().toISOString(),
-      is_outbound: true,
-      attachments: attachments || [],
-      has_body: !!(body_html || body_text),
-      sync_status: 'ok'
-    };
+    // Create EmailMessage record (only if we have a thread_id)
+    if (thread_id) {
+      const messageData = {
+        thread_id: thread_id,
+        gmail_message_id: result.id,
+        gmail_thread_id: result.threadId,
+        from_address: currentUser.email,
+        to_addresses: to,
+        cc_addresses: cc || [],
+        bcc_addresses: bcc || [],
+        subject: subject || '(No Subject)',
+        body_html: body_html || '',
+        body_text: body_text || '',
+        sent_at: new Date().toISOString(),
+        is_outbound: true,
+        attachments: attachments || [],
+        has_body: !!(body_html || body_text),
+        sync_status: 'ok'
+      };
 
-    if (in_reply_to) {
-      messageData.in_reply_to = in_reply_to;
+      if (in_reply_to) {
+        messageData.in_reply_to = in_reply_to;
+      }
+
+      await base44.asServiceRole.entities.EmailMessage.create(messageData);
     }
-
-    await base44.asServiceRole.entities.EmailMessage.create(messageData);
 
     // Update thread if exists
     if (thread_id) {
       try {
+        const threadMessages = await base44.asServiceRole.entities.EmailMessage.filter({ thread_id });
         await base44.asServiceRole.entities.EmailThread.update(thread_id, {
           last_message_date: new Date().toISOString(),
-          message_count: (await base44.asServiceRole.entities.EmailMessage.filter({ thread_id })).length
+          message_count: threadMessages.length
         });
       } catch (err) {
         console.error('Failed to update thread:', err.message);
