@@ -591,9 +591,28 @@ Deno.serve(async (req) => {
         // Update thread message count and auto-save attachments
         try {
           const currentThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
-          await base44.asServiceRole.entities.EmailThread.update(threadId, {
+          
+          // GUARDRAIL: Reopen actioned threads when new inbound email arrives
+          const threadUpdates = {
             message_count: (currentThread.message_count || 0) + 1
-          });
+          };
+          
+          if (!isOutbound) {
+            const needsReopening = 
+              currentThread.userStatus === 'closed' ||
+              currentThread.next_action_status === 'waiting' ||
+              currentThread.next_action_status === 'fyi';
+              
+            if (needsReopening) {
+              threadUpdates.next_action_status = 'needs_action';
+              threadUpdates.userStatus = null;
+              threadUpdates.assigned_to = null;
+              threadUpdates.inferredState = 'needs_reply';
+              console.log(`Reopened actioned thread ${threadId} - new inbound email`);
+            }
+          }
+          
+          await base44.asServiceRole.entities.EmailThread.update(threadId, threadUpdates);
 
           // Update project activity if thread is linked to a project
           if (currentThread.project_id) {
