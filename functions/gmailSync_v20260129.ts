@@ -1,11 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
-import { gmailFetch } from './shared/gmailClient.js';
 import { decodeEmailSubject } from './shared/emailSubjectDecoder.js';
 
-console.log("[DEPLOY_SENTINEL] gmailSync_v20260129 v=2026-01-29");
+console.log("[DEPLOY_SENTINEL] gmailSync_v20260129 v=2026-02-05");
 
-const VERSION = "2026-01-29";
+const VERSION = "2026-02-05";
 
 /**
  * Safe normalization - only apply after correct UTF-8 decoding
@@ -78,16 +77,44 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Use Service Account for Gmail access
-    const inboxData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
-      maxResults: 30,
-      labelIds: 'INBOX'
-    });
+    // Get Gmail access token from app connector
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
+    
+    // Fetch inbox messages
+    const inboxResponse = await fetch(
+      'https://www.googleapis.com/gmail/v1/users/me/messages?' + new URLSearchParams({
+        maxResults: '30',
+        labelIds: 'INBOX'
+      }),
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (!inboxResponse.ok) {
+      throw new Error(`Gmail API error (inbox): ${inboxResponse.status}`);
+    }
+    
+    const inboxData = await inboxResponse.json();
 
-    const sentData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
-      maxResults: 30,
-      labelIds: 'SENT'
-    }).catch(() => ({ messages: [] }));
+    // Fetch sent messages
+    const sentResponse = await fetch(
+      'https://www.googleapis.com/gmail/v1/users/me/messages?' + new URLSearchParams({
+        maxResults: '30',
+        labelIds: 'SENT'
+      }),
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    const sentData = sentResponse.ok ? await sentResponse.json() : { messages: [] };
 
     console.log('=== Gmail Sync Started ===');
     console.log('Inbox messages:', inboxData.messages?.length || 0);
@@ -133,10 +160,23 @@ Deno.serve(async (req) => {
            return false;
         }
 
-        const detail = await gmailFetch(
-          `/gmail/v1/users/me/messages/${message.id}`,
-          'GET'
+        // Fetch message details from Gmail API
+        const detailResponse = await fetch(
+          `https://www.googleapis.com/gmail/v1/users/me/messages/${message.id}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
         );
+        
+        if (!detailResponse.ok) {
+          console.error(`Failed to fetch message ${message.id}: ${detailResponse.status}`);
+          return false;
+        }
+        
+        const detail = await detailResponse.json();
 
         if (!detail?.payload?.headers) {
           console.error(`Invalid message format for ${message.id}`);
