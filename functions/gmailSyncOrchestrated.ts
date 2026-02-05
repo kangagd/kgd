@@ -235,15 +235,24 @@ Deno.serve(async (req) => {
           lastHeartbeatTime = now;
         }
 
-        // Invoke delta with current drain batch
-        const deltaResponse = await base44.functions.invoke('gmailSyncDelta', {
-          scope_key: scopeKey,
-          mode,
-          max_history_pages: max_history_pages,
-          max_messages_fetched: drainBatch
-        });
+        // Invoke inbox sync (fallback to simpler, proven approach)
+        const inboxResponse = await base44.functions.invoke('gmailSyncInbox', {});
 
-        const deltaResult = deltaResponse.data;
+        const deltaResult = {
+          success: inboxResponse.data?.success ?? false,
+          error: inboxResponse.data?.error,
+          mode: 'inbox',
+          counts: {
+            messages_fetched: inboxResponse.data?.synced || 0,
+            messages_created: 0,
+            messages_upgraded: 0,
+            messages_failed: 0,
+            deleted_count: 0,
+            message_ids_changed: inboxResponse.data?.synced || 0,
+            history_pages: 0
+          },
+          backlog_remaining: 0
+        };
 
         if (!deltaResult.success) {
           throw new Error(deltaResult.error || 'Delta returned failure');
