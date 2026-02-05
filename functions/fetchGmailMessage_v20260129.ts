@@ -1,9 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { gmailFetch } from './shared/gmailClient.ts';
 
-console.log("[DEPLOY_SENTINEL] fetchGmailMessage_v20260129 v=2026-01-29");
+console.log("[DEPLOY_SENTINEL] fetchGmailMessage_v20260129 v=2026-02-05");
 
-const VERSION = "2026-01-29";
+const VERSION = "2026-02-05";
 
 Deno.serve(async (req) => {
   try {
@@ -17,10 +16,25 @@ Deno.serve(async (req) => {
     const currentUser = await base44.auth.me();
     if (!currentUser) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const detail = await gmailFetch(
-      `/gmail/v1/users/me/messages/${gmail_message_id}`,
-      'GET'
+    // Get Gmail access token from app connector
+    const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
+    
+    // Fetch message details from Gmail API
+    const gmailResponse = await fetch(
+      `https://www.googleapis.com/gmail/v1/users/me/messages/${gmail_message_id}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
     );
+    
+    if (!gmailResponse.ok) {
+      throw new Error(`Gmail API error: ${gmailResponse.status} ${gmailResponse.statusText}`);
+    }
+    
+    const detail = await gmailResponse.json();
     
     // Process body and attachments (simplified logic from gmailSync)
     let bodyHtml = '';
@@ -91,6 +105,7 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
+    console.error('Fetch message error:', error);
     return Response.json({ error: error.message, version: VERSION }, { status: 500 });
   }
 });
