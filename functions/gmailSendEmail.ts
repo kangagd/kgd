@@ -213,72 +213,7 @@ async function retryWithBackoff(fn, maxRetries = 4) {
   throw lastError;
 }
 
-// Helper to get Gmail access token using service account
-async function getGmailAccessToken() {
-  try {
-    const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
-    const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL');
-    
-    if (!serviceAccountJson || !impersonateEmail) {
-      throw new Error('Service account credentials not configured');
-    }
 
-    const serviceAccount = JSON.parse(serviceAccountJson);
-    const now = Math.floor(Date.now() / 1000);
-    
-    // Create JWT for service account
-    const jwtHeader = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    
-    const jwtClaim = btoa(JSON.stringify({
-      iss: serviceAccount.client_email,
-      sub: impersonateEmail,
-      scope: 'https://www.googleapis.com/auth/gmail.send',
-      aud: 'https://oauth2.googleapis.com/token',
-      iat: now,
-      exp: now + 3600
-    })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    
-    const message = `${jwtHeader}.${jwtClaim}`;
-    
-    // Sign with private key
-    const privateKey = await crypto.subtle.importKey(
-      'pkcs8',
-      Uint8Array.from(atob(serviceAccount.private_key.replace(/-----.*?-----/g, '').replace(/\n/g, '')), c => c.charCodeAt(0)),
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-    
-    const signature = await crypto.subtle.sign(
-      'RSASSA-PKCS1-v1_5',
-      privateKey,
-      new TextEncoder().encode(message)
-    );
-    
-    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
-      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
-      .replace(/\s/g, ''); // Remove any whitespace
-    
-    const jwt = `${message}.${signatureBase64}`;
-    
-    // Exchange JWT for access token
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
-    });
-    
-    if (!tokenResponse.ok) {
-      throw new Error(`Token exchange failed: ${await tokenResponse.text()}`);
-    }
-    
-    const tokenData = await tokenResponse.json();
-    return tokenData.access_token;
-  } catch (error) {
-    throw new Error(`Failed to get Gmail access token: ${error.message}`);
-  }
-}
 
 Deno.serve(async (req) => {
   try {
@@ -397,13 +332,7 @@ Deno.serve(async (req) => {
       console.warn('[gmailSendEmail] Deprecated: htmlBody/textBody used; prefer body_html/body_text');
     }
 
-    // Get Service Account credentials
-    const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
-    const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL');
 
-    if (!serviceAccountJson || !impersonateEmail) {
-      return Response.json({ error: 'Gmail credentials not configured. Set GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_IMPERSONATE_USER_EMAIL' }, { status: 500 });
-    }
 
     // IDEMPOTENCY CHECK: If draft_id + content_hash provided, check for existing sent attempt
     if (draft_id && content_hash) {
@@ -451,10 +380,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Get access token using service account
+    // Get access token using app connector
     let accessToken;
     try {
-      accessToken = await getGmailAccessToken();
+      accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
       console.log('[gmailSendEmail] Access token obtained');
     } catch (tokenError) {
       console.error('[gmailSendEmail] Failed to get access token:', tokenError.message);
