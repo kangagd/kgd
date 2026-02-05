@@ -35,7 +35,7 @@ async function gmailFetch(base44, endpoint, method = 'GET', body = null, queryPa
 
   while (retries < maxRetries) {
     try {
-      const accessToken = await getAccessToken();
+      const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
       
       let url = `https://www.googleapis.com${endpoint}`;
       
