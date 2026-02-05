@@ -573,10 +573,12 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.EmailMessage.update(existing.id, messageData);
         } else {
           await base44.asServiceRole.entities.EmailMessage.create(messageData);
-          // Track if this is a new inbound message (not outbound)
-          if (!messageData.is_outbound) {
-            hasNewInboundMessage = true;
-          }
+        }
+        
+        // Track if ANY message in thread is inbound (new or existing)
+        // This ensures we reopen threads even if message was already synced
+        if (!messageData.is_outbound) {
+          hasNewInboundMessage = true;
         }
 
         // Debug log
