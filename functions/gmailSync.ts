@@ -1,8 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { updateProjectActivity } from './updateProjectActivity.js';
-import { gmailFetch } from './shared/gmailClient.js';
 
-console.log("[DEPLOY_SENTINEL] functions-import-fix v=2026-01-29 - gmailSync");
+console.log("[DEPLOY_SENTINEL] functions-import-fix v=2026-02-05 - gmailSync");
 
 /**
  * Safe normalization - only apply after correct UTF-8 decoding
@@ -64,6 +63,37 @@ function isWixEnquiry(fromAddress, headers = []) {
   return isWixDomain || isWixHeader;
 }
 
+// ============================================================================
+// Gmail API Helper with App Connector
+// ============================================================================
+
+async function gmailFetch(base44, endpoint, method = 'GET', queryParams = null) {
+  const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
+  
+  let url = `https://www.googleapis.com${endpoint}`;
+  if (queryParams) {
+    const params = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        params.append(key, value);
+      }
+    });
+    url += `?${params.toString()}`;
+  }
+
+  const response = await fetch(url, {
+    method,
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gmail API (${response.status}): ${errorText}`);
+  }
+
+  return await response.json();
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -75,14 +105,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Use Service Account for Gmail access
-    const inboxData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
-      maxResults: 30,
+    // Fetch inbox and sent messages using app connector
+    const inboxData = await gmailFetch(base44, '/gmail/v1/users/me/messages', 'GET', {
+      maxResults: '30',
       labelIds: 'INBOX'
     });
 
-    const sentData = await gmailFetch('/gmail/v1/users/me/messages', 'GET', null, {
-      maxResults: 30,
+    const sentData = await gmailFetch(base44, '/gmail/v1/users/me/messages', 'GET', {
+      maxResults: '30',
       labelIds: 'SENT'
     }).catch(() => ({ messages: [] }));
 
@@ -131,6 +161,7 @@ Deno.serve(async (req) => {
         }
 
         const detail = await gmailFetch(
+          base44,
           `/gmail/v1/users/me/messages/${message.id}`,
           'GET'
         );
