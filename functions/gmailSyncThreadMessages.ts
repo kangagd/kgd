@@ -462,6 +462,7 @@ Deno.serve(async (req) => {
     const failures = [];
     let newestSentAtMs = 0;
     let newestHeaders = null;
+    let hasNewInboundMessage = false;
 
     const now = new Date().toISOString();
 
@@ -572,6 +573,10 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.EmailMessage.update(existing.id, messageData);
         } else {
           await base44.asServiceRole.entities.EmailMessage.create(messageData);
+          // Track if this is a new inbound message (not outbound)
+          if (!messageData.is_outbound) {
+            hasNewInboundMessage = true;
+          }
         }
 
         // Debug log
@@ -632,20 +637,9 @@ Deno.serve(async (req) => {
         updates.has_preview = !!snippet;
       }
 
-      // GUARDRAIL: Only reopen actioned threads if new inbound messages exist
-      const existingThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
-      const hasNewInbound = threadDetail.messages.some(msg => {
-        const headers = {};
-        if (msg.payload?.headers) {
-          msg.payload.headers.forEach(h => {
-            headers[h.name.toLowerCase()] = h.value;
-          });
-        }
-        const isOutbound = headers['from']?.includes('kangaroogd.com.au') || false;
-        return !isOutbound;
-      });
-      
-      if (hasNewInbound) {
+      // GUARDRAIL: Only reopen actioned threads if new inbound messages were created
+      if (hasNewInboundMessage) {
+        const existingThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
         const needsReopening = 
           existingThread.userStatus === 'closed' ||
           existingThread.next_action_status === 'waiting' ||
