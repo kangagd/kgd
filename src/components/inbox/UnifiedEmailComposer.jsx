@@ -1040,7 +1040,7 @@ export default function UnifiedEmailComposer({
         }
       }
 
-      const response = await base44.functions.invoke("gmailSendEmail", payload);
+      const response = await base44.functions.invoke("gmailSendEmail_v20260206", payload);
 
       if (!response.data?.success) {
         throw new Error(response.data?.error || "Failed to send email");
