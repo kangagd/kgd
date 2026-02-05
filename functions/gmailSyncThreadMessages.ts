@@ -13,10 +13,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { extractCidsFromHtml, buildCidMapFromAttachments, determineCidState } from './shared/cidHelpers.js';
 
-const GMAIL_SCOPES = [
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.send'
-];
+
 
 // ============================================================================
 // Gmail API Helper with App Connector
