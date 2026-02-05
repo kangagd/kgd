@@ -1,90 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-const GMAIL_SCOPES = [
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/gmail.send'
-];
-
-function base64urlEncode(data) {
-  const base64 = btoa(data);
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-function pemToArrayBuffer(pem) {
-  const cleanPem = pem.replace(/-----BEGIN PRIVATE KEY-----/g, '').replace(/-----END PRIVATE KEY-----/g, '').replace(/\s/g, '');
-  const binaryString = atob(cleanPem);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
-
-async function createJwt(serviceAccount, impersonateEmail) {
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 3600;
-
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const payload = {
-    iss: serviceAccount.client_email,
-    scope: GMAIL_SCOPES.join(' '),
-    sub: impersonateEmail,
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: exp
-  };
-
-  const headerEncoded = base64urlEncode(JSON.stringify(header));
-  const payloadEncoded = base64urlEncode(JSON.stringify(payload));
-  const signatureInput = `${headerEncoded}.${payloadEncoded}`;
-
-  const privateKeyBuffer = pemToArrayBuffer(serviceAccount.private_key);
-  const key = await crypto.subtle.importKey(
-    'pkcs8',
-    privateKeyBuffer,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signatureBuffer = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(signatureInput));
-  const signatureArray = new Uint8Array(signatureBuffer);
-  const signatureBinary = String.fromCharCode(...signatureArray);
-  const signatureEncoded = base64urlEncode(signatureBinary);
-
-  return `${signatureInput}.${signatureEncoded}`;
-}
-
-async function getAccessToken() {
-  const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
-  const impersonateEmail = Deno.env.get('GOOGLE_IMPERSONATE_USER_EMAIL');
-
-  if (!serviceAccountJson || !impersonateEmail) {
-    throw new Error('Missing Gmail service account credentials');
-  }
-
-  const serviceAccount = JSON.parse(serviceAccountJson);
-  const jwt = await createJwt(serviceAccount, impersonateEmail);
-
-  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: jwt
-    }).toString()
-  });
-
-  if (!tokenResponse.ok) {
-    const errorText = await tokenResponse.text();
-    throw new Error(`Failed to get access token: ${tokenResponse.status} ${errorText}`);
-  }
-
-  const tokenData = await tokenResponse.json();
-  return tokenData.access_token;
-}
-
-async function gmailFetch(endpoint, accessToken) {
+async function gmailFetch(base44, endpoint) {
+  const accessToken = await base44.asServiceRole.connectors.getAccessToken("gmail");
+  
   const response = await fetch(`https://www.googleapis.com${endpoint}`, {
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -223,8 +141,7 @@ Deno.serve(async (req) => {
     }
 
     // Fetch thread from Gmail API
-    const accessToken = await getAccessToken();
-    const threadData = await gmailFetch(`/gmail/v1/users/me/threads/${gmailThreadId}?format=full`, accessToken);
+    const threadData = await gmailFetch(base44, `/gmail/v1/users/me/threads/${gmailThreadId}?format=full`);
 
     if (!threadData.messages || threadData.messages.length === 0) {
       throw new Error('No messages found in thread');
