@@ -145,7 +145,6 @@ const CATEGORY_PATTERNS = {
     /\bpricing\b/i,
     /\bestimate\b/i,
     /\bprice\b/i,
-    /\bquote\s*#/i,
   ],
   payment: [
     /\bpayment received\b/i,
@@ -180,11 +179,6 @@ const CATEGORY_PATTERNS = {
     /\bdelivery\b/i,
     /\beta\b/i,
     /\bback[- ]?order(ed)?\b/i,
-  ],
-  customer_quote: [
-    /\bkangaroogd:\s*quote\s*for\b/i,
-    /\bour\s+quote\b/i,
-    /\byour\s+(requested\s+)?quote\b/i,
   ],
   client_query: [
     /\?/,
