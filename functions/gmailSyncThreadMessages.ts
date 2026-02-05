@@ -632,13 +632,33 @@ Deno.serve(async (req) => {
         updates.has_preview = !!snippet;
       }
 
-      // Reset to unassigned and needs_action when new messages arrive
-      updates.next_action_status = 'needs_action';
-      updates.assigned_to = null;
-      updates.assigned_to_name = null;
-      updates.assigned_by = null;
-      updates.assigned_by_name = null;
-      updates.assigned_at = null;
+      // GUARDRAIL: Only reopen actioned threads if new inbound messages exist
+      const existingThread = await base44.asServiceRole.entities.EmailThread.get(threadId);
+      const hasNewInbound = threadDetail.messages.some(msg => {
+        const headers = {};
+        if (msg.payload?.headers) {
+          msg.payload.headers.forEach(h => {
+            headers[h.name.toLowerCase()] = h.value;
+          });
+        }
+        const isOutbound = headers['from']?.includes('kangaroogd.com.au') || false;
+        return !isOutbound;
+      });
+      
+      if (hasNewInbound) {
+        const needsReopening = 
+          existingThread.userStatus === 'closed' ||
+          existingThread.next_action_status === 'waiting' ||
+          existingThread.next_action_status === 'fyi';
+          
+        if (needsReopening) {
+          updates.next_action_status = 'needs_action';
+          updates.userStatus = null;
+          updates.assigned_to = null;
+          updates.inferredState = 'needs_reply';
+          console.log(`[gmailSyncThreadMessages] Reopened actioned thread ${threadId} - new inbound email`);
+        }
+      }
 
       await base44.asServiceRole.entities.EmailThread.update(threadId, updates);
     } catch (err) {
