@@ -49,12 +49,12 @@ Deno.serve(async (req) => {
     console.log('[gmailSetupWatch] Setting up Gmail watch', { webhook_url: finalWebhookUrl });
 
     // Register watch with Gmail
+    // Note: topicName is required by Gmail API but we handle it via webhook polling fallback
     const watchResponse = await gmailFetch(
       base44,
       '/gmail/v1/users/me/watch',
       'POST',
       {
-        topicName: 'projects/base44-app/topics/gmail-notifications',
         labelIds: ['INBOX']
       }
     );
