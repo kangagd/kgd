@@ -139,14 +139,7 @@ const CATEGORY_PATTERNS = {
     /\bremit(tance)?\b/i,
     /\bpro[- ]?forma\b/i,
   ],
-  supplier_quote: [
-    /\bquote\b/i,
-    /\bquotation\b/i,
-    /\bpricing\b/i,
-    /\bestimate\b/i,
-    /\bprice\b/i,
-    /\bquote\s*#/i,
-  ],
+
   payment: [
     /\bpayment received\b/i,
     /\bpaid\b/i,
