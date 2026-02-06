@@ -1,21 +1,29 @@
 import React from "react";
 import { Check, XCircle } from "lucide-react";
 import { PROJECT_STAGES } from "@/components/domain/projectStages";
+import { usePermissions } from "@/components/common/PermissionsContext";
 
 export default function ProjectStageSelector({ currentStage, onStageChange, onMarkAsLost, size = "default" }) {
+  const { isAdmin } = usePermissions();
   const isLost = currentStage === "Lost";
   const currentIndex = isLost ? -1 : PROJECT_STAGES.indexOf(currentStage);
 
   const handleStageClick = (stage) => {
     if (stage === currentStage) return;
+    // Allow admins to re-open lost projects by clicking on a different stage
+    if (isLost && !isAdmin) return;
     if (onStageChange) {
       onStageChange(stage);
     }
   };
 
   const getStageStyle = (stage, index) => {
-    if (isLost) {
+    if (isLost && !isAdmin) {
       return "bg-white text-[#9CA3AF] border-[#E5E7EB] font-medium opacity-50";
+    }
+    if (isLost && isAdmin) {
+      // Allow admins to see clickable stages when project is lost
+      return "bg-white text-[#4B5563] border-[#E5E7EB] font-medium hover:border-[#FAE008]";
     }
     if (index === currentIndex) {
       // Current stage - yellow
@@ -42,7 +50,7 @@ export default function ProjectStageSelector({ currentStage, onStageChange, onMa
             <button
               key={stage}
               onClick={() => handleStageClick(stage)}
-              disabled={isCurrent || isLost}
+              disabled={isCurrent || (isLost && !isAdmin)}
               className={`
                 ${getStageStyle(stage, index)}
                 px-2.5 py-1 text-xs whitespace-nowrap
