@@ -20,7 +20,7 @@ import VehicleStockView from "./VehicleStockView";
 
 export default function VehicleDetail({ vehicle, onBack }) {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("vehicle-stock");
+  const [activeTab, setActiveTab] = useState("stock");
   const [adjustmentItem, setAdjustmentItem] = useState(null);
   const [showRestockModal, setShowRestockModal] = useState(false);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
