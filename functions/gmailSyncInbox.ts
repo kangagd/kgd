@@ -246,6 +246,10 @@ Deno.serve(async (req) => {
     const upsertedThreads = [];
 
     // Batch fetch all thread details in parallel (max 5 concurrent to avoid rate limits)
+    // Preserve snippets from list result as detailed fetch doesn't always include them
+    const threadsWithSnippets = threads.map(t => ({ id: t.id, snippet: t.snippet || '' }));
+    const snippetMap = Object.fromEntries(threadsWithSnippets.map(t => [t.id, t.snippet]));
+    
     const batchSize = 5;
     const threadDetails = await Promise.all(
       threads.map(t => 
