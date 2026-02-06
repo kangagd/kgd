@@ -65,25 +65,32 @@ Deno.serve(async (req) => {
     }
 
     // ========================================
-    // 2. Catalog Item Resolvability
+    // 2. Catalog Item Resolvability (SKU-based)
     // ========================================
     const allCatalogItems = await base44.asServiceRole.entities.PriceListItem.list();
     
-    const catalogCodeMap = {};
-    const duplicateCatalogCodes = new Set();
+    const skuMap = {};
+    const duplicateSkus = new Set();
     const inactiveItems = [];
+    const itemsWithoutSku = [];
     
     for (const item of allCatalogItems) {
-      // Check for catalog_item_code uniqueness
-      if (!item.catalog_item_code) {
-        warnings.push(`PriceListItem ${item.item} (${item.id}) has no catalog_item_code`);
-      } else {
-        if (catalogCodeMap[item.catalog_item_code]) {
-          duplicateCatalogCodes.add(item.catalog_item_code);
-          blockingIssues.push(`Duplicate catalog_item_code: ${item.catalog_item_code} (${item.item})`);
+      // Only check active items with track_inventory=true for SKU requirement
+      if (item.is_active === true && item.track_inventory === true) {
+        if (!item.sku) {
+          itemsWithoutSku.push(`${item.item} (${item.id})`);
+          blockingIssues.push(`Active tracked item missing SKU: ${item.item} (${item.id})`);
           summary.catalog_ok = false;
         } else {
-          catalogCodeMap[item.catalog_item_code] = item;
+          // Check for duplicate SKUs (case-insensitive)
+          const skuLower = item.sku.toLowerCase().trim();
+          if (skuMap[skuLower]) {
+            duplicateSkus.add(item.sku);
+            blockingIssues.push(`Duplicate SKU: ${item.sku} (${item.item} conflicts with ${skuMap[skuLower].item})`);
+            summary.catalog_ok = false;
+          } else {
+            skuMap[skuLower] = item;
+          }
         }
       }
       
@@ -92,7 +99,7 @@ Deno.serve(async (req) => {
         inactiveItems.push({
           id: item.id,
           name: item.item,
-          catalog_item_code: item.catalog_item_code
+          sku: item.sku
         });
       }
     }
@@ -175,7 +182,9 @@ Deno.serve(async (req) => {
         vehicle_locations: vehicleLocations.length,
         total_catalog_items: allCatalogItems.length,
         active_catalog_items: allCatalogItems.filter(i => i.is_active).length,
-        items_with_catalog_code: allCatalogItems.filter(i => i.catalog_item_code).length,
+        items_with_sku: allCatalogItems.filter(i => i.sku).length,
+        items_missing_sku: itemsWithoutSku.length,
+        duplicate_skus: duplicateSkus.size,
         existing_seed_movements: existingSeeds.length,
         inventory_qty_records: inventoryQtyRecords.length,
         items_with_legacy_stock: itemsWithStockLevel.length
