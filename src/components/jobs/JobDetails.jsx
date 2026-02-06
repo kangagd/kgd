@@ -1524,11 +1524,8 @@ export default function JobDetails({ job: initialJob, onClose, onStatusChange, o
         data: updates 
       });
       
-      // If logistics job, explicitly trigger backfill for title/address
+      // If logistics job, link ready parts from project
       if (jobType?.is_logistics === true) {
-        await base44.functions.invoke('backfillLogisticsJobTitles', { job_ids: [job.id] });
-        await base44.functions.invoke('backfillLogisticsJobAddresses', { job_ids: [job.id] });
-        
         // Link ready parts from project
         if (job.project_id) {
           const readyParts = enrichedProjectParts.filter(p => {
