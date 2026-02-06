@@ -143,55 +143,63 @@ export default function EmailDetailView({ thread, onThreadUpdate }) {
   }, [visibleMessages]);
 
   /* ---------- render ---------- */
-  if (!thread) {
+   if (!thread) {
+     return (
+       <div className="flex items-center justify-center h-full bg-[#F8F9FA]">
+         <p className="text-[#6B7280]">No thread selected</p>
+       </div>
+     );
+   }
+
+   if (!thread.subject) {
+     return (
+       <div className="flex items-center justify-center h-full bg-[#F8F9FA]">
+         <p className="text-[#6B7280]">Thread data incomplete</p>
+       </div>
+     );
+   }
+
     return (
-      <div className="flex items-center justify-center h-full bg-[#F8F9FA]">
-        <p className="text-[#6B7280]">No thread selected</p>
-      </div>
-    );
-  }
+      <div className="flex flex-col h-full bg-[#F8F9FA]">
+       <div className="flex-1 overflow-y-auto">
+         <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
+           {/* SYNC STATUS BANNER */}
+                   {(() => {
+                     const partialCount = messages.filter(m => m.sync_status === "partial").length;
+                     const failedCount = messages.filter(m => m.sync_status === "failed").length;
+                     const missingBodyCount = messages.filter(m => !m.body_html && !m.body_text).length;
 
-   return (
-     <div className="flex flex-col h-full bg-[#F8F9FA]">
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8">
-          {/* SYNC STATUS BANNER */}
-                  {(() => {
-                    const partialCount = messages.filter(m => m.sync_status === "partial").length;
-                    const failedCount = messages.filter(m => m.sync_status === "failed").length;
-                    const missingBodyCount = messages.filter(m => !m.body_html && !m.body_text).length;
+                     if (partialCount > 0 || failedCount > 0 || missingBodyCount > 0) {
+                       return (
+                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 space-y-1">
+                           {partialCount > 0 && (
+                             <div className="text-[12px] text-amber-800">
+                               <strong>⏳ {partialCount} message{partialCount !== 1 ? 's are' : ' is'} still loading</strong> (partial sync). You may see 'Content not available yet'.
+                             </div>
+                           )}
+                           {failedCount > 0 && (
+                             <div className="text-[12px] text-amber-800">
+                               <strong>⚠ {failedCount} message{failedCount !== 1 ? 's' : ''} failed to parse.</strong> Body content may be unavailable.
+                             </div>
+                           )}
+                           {missingBodyCount > 0 && partialCount === 0 && failedCount === 0 && (
+                             <div className="text-[12px] text-amber-800">
+                               <strong>ℹ {missingBodyCount} message{missingBodyCount !== 1 ? 's have' : ' has'} no body content</strong> available for display.
+                             </div>
+                           )}
+                         </div>
+                       );
+                     }
+                     return null;
+                   })()}
 
-                    if (partialCount > 0 || failedCount > 0 || missingBodyCount > 0) {
-                      return (
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 space-y-1">
-                          {partialCount > 0 && (
-                            <div className="text-[12px] text-amber-800">
-                              <strong>⏳ {partialCount} message{partialCount !== 1 ? 's are' : ' is'} still loading</strong> (partial sync). You may see 'Content not available yet'.
-                            </div>
-                          )}
-                          {failedCount > 0 && (
-                            <div className="text-[12px] text-amber-800">
-                              <strong>⚠ {failedCount} message{failedCount !== 1 ? 's' : ''} failed to parse.</strong> Body content may be unavailable.
-                            </div>
-                          )}
-                          {missingBodyCount > 0 && partialCount === 0 && failedCount === 0 && (
-                            <div className="text-[12px] text-amber-800">
-                              <strong>ℹ {missingBodyCount} message{missingBodyCount !== 1 ? 's have' : ' has'} no body content</strong> available for display.
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
-
-          {/* THREAD SUBJECT */}
-                  <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
-                    <div className="p-6 border-b border-[#E5E7EB]">
-                      <h1 className="text-[24px] md:text-[28px] font-bold text-[#111827]">
-                        {sanitizeInboundText(thread.subject) || "(No subject)"}
-                      </h1>
-                    </div>
+           {/* THREAD SUBJECT */}
+                   <div className="bg-white rounded-xl shadow-sm border border-[#E5E7EB] overflow-hidden mb-6">
+                     <div className="p-6 border-b border-[#E5E7EB]">
+                       <h1 className="text-[24px] md:text-[28px] font-bold text-[#111827]">
+                         {sanitizeInboundText(thread.subject) || "(No subject)"}
+                       </h1>
+                     </div>
 
             {/* MESSAGE LIST */}
             <div className="divide-y divide-[#E5E7EB]">
