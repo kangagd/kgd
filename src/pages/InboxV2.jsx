@@ -391,6 +391,16 @@ export default function InboxV2() {
           }));
 
         devLog(`[InboxV2] queryFn RETURNING ${result.length} threads`);
+        
+        // Update pagination state
+        setCursor(result.length > 0 ? result[result.length - 1].last_message_date : null);
+        setHasMore(result.length === 100);
+        
+        // Auto-select first thread if none selected
+        if (!result.find((t) => t.id === selectedThreadId)) {
+          setSelectedThreadId(result[0]?.id ?? null);
+        }
+        
         return result;
       } catch (error) {
         console.error(`[InboxV2] Backend error - status: ${error.response?.status}, message: ${error.message}`);
@@ -409,15 +419,6 @@ export default function InboxV2() {
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: true,
     ...QUERY_CONFIG.reference,
-    onSuccess: (newThreads) => {
-      devLog(`[InboxV2] onSuccess - newThreads.length=${newThreads.length}`);
-      setCursor(newThreads.length > 0 ? newThreads[newThreads.length - 1].last_message_date : null);
-      setHasMore(newThreads.length === 100);
-      // Always fallback to first thread if selected is missing
-      if (!newThreads.find((t) => t.id === selectedThreadId)) {
-        setSelectedThreadId(newThreads[0]?.id ?? null);
-      }
-    },
   });
 
   const handleLoadMore = async () => {
