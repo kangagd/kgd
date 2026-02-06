@@ -10,6 +10,117 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 // ============================================================================
+// Category Detection (Pattern-based)
+// ============================================================================
+
+const CATEGORY_PATTERNS = {
+  supplier_invoice: [
+    /\btax invoice\b/i,
+    /\binvoice\b/i,
+    /\bstatement\b/i,
+    /\bamount due\b/i,
+    /\bpayable\b/i,
+    /\bremit(tance)?\b/i,
+    /\bpro[- ]?forma\b/i,
+  ],
+  customer_quote: [
+    /kangaroogd:\s*quote\s*for/i,
+    /\bour\s+quote\b/i,
+    /\byour\s+(requested\s+)?quote\b/i,
+  ],
+  supplier_quote: [
+    /\bquote\s+request\s*#/i,
+    /\bquote\b/i,
+    /\bquotation\b/i,
+    /\bpricing\b/i,
+    /\bestimate\b/i,
+    /\bprice\b/i,
+  ],
+  payment: [
+    /\bpayment received\b/i,
+    /\bpaid\b/i,
+    /\bpaid in full\b/i,
+    /\breceipt\b/i,
+    /\bdeposit\b/i,
+    /\bremittance\b/i,
+    /\btransfer\b/i,
+  ],
+  booking: [
+    /\bbooking\b/i,
+    /\bschedule\b/i,
+    /\bappointment\b/i,
+    /\bsite visit\b/i,
+    /\binstall\b/i,
+    /\breschedule\b/i,
+    /\bconfirm (a )?time\b/i,
+    /\bwhat time\b/i,
+    /\bdate\b/i,
+    /\bavailability\b/i,
+  ],
+  order_confirmation: [
+    /\border confirmation\b/i,
+    /\bpurchase order\b/i,
+    /\bpo\b/i,
+    /\border (has been )?(placed|confirmed)\b/i,
+    /\bdispatch(ed)?\b/i,
+    /\btracking\b/i,
+    /\bready for pickup\b/i,
+    /\bcollection\b/i,
+    /\bdelivery\b/i,
+    /\beta\b/i,
+    /\bback[- ]?order(ed)?\b/i,
+  ],
+  client_query: [
+    /\?/,
+    /\bcan you\b/i,
+    /\bcould you\b/i,
+    /\bplease\b/i,
+    /\bhow\b/i,
+    /\bwhen\b/i,
+    /\bwhy\b/i,
+    /\bissue\b/i,
+    /\bproblem\b/i,
+    /\bnot working\b/i,
+    /\bbroken\b/i,
+    /\bwarranty\b/i,
+    /\bchange\b/i,
+    /\bupdate\b/i,
+    /\bcancel\b/i,
+  ],
+};
+
+function matchesAny(text, patterns) {
+  const s = String(text || '');
+  return patterns.some(r => r.test(s));
+}
+
+function determineCategory(subject, snippet) {
+  const combined = `${subject}\n${snippet}`;
+  const scores = [];
+
+  // Strong signals from subject (prioritize customer_quote over supplier_quote)
+  if (matchesAny(subject, CATEGORY_PATTERNS.customer_quote)) scores.push({ value: 'customer_quote', score: 95 });
+  if (matchesAny(subject, CATEGORY_PATTERNS.order_confirmation)) scores.push({ value: 'order_confirmation', score: 90 });
+  if (matchesAny(subject, CATEGORY_PATTERNS.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 85 });
+  if (matchesAny(subject, CATEGORY_PATTERNS.supplier_quote)) scores.push({ value: 'supplier_quote', score: 75 });
+
+  // Medium signals from combined text
+  if (matchesAny(combined, CATEGORY_PATTERNS.customer_quote)) scores.push({ value: 'customer_quote', score: 65 });
+  if (matchesAny(combined, CATEGORY_PATTERNS.order_confirmation)) scores.push({ value: 'order_confirmation', score: 60 });
+  if (matchesAny(combined, CATEGORY_PATTERNS.supplier_invoice)) scores.push({ value: 'supplier_invoice', score: 55 });
+  if (matchesAny(combined, CATEGORY_PATTERNS.payment)) scores.push({ value: 'payment', score: 50 });
+  if (matchesAny(combined, CATEGORY_PATTERNS.booking)) scores.push({ value: 'booking', score: 45 });
+  if (matchesAny(combined, CATEGORY_PATTERNS.supplier_quote)) scores.push({ value: 'supplier_quote', score: 40 });
+  if (matchesAny(combined, CATEGORY_PATTERNS.client_query)) scores.push({ value: 'client_query', score: 35 });
+
+  scores.sort((a, b) => b.score - a.score);
+  const best = scores[0];
+
+  if (!best || best.score < 40) return 'uncategorised';
+  return best.value;
+}
+
+// ============================================================================
 // Gmail API Helper with App Connector
 // ============================================================================
 
