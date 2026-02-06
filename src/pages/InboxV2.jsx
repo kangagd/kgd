@@ -834,13 +834,8 @@ export default function InboxV2() {
       if (!lastAudit || now - lastAudit > 30 * 60 * 1000) {
         threadOpenAuditMapRef.current[mapKey] = now;
 
-        base44.entities.EmailAudit?.create?.({
-          thread_id: selectedThread.id,
-          type: 'thread_opened',
-          message: `Opened by ${user.display_name || user.full_name || user.email}`,
-          actor_user_id: user.id,
-          actor_name: user.display_name || user.full_name || user.email,
-        }).catch(() => {});
+        // Note: EmailAudit entity doesn't support 'thread_opened' action type
+        // Skip audit creation for thread open events
       }
     }, 10000);
 
