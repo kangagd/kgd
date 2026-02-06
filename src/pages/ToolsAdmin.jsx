@@ -153,13 +153,13 @@ export default function ToolsAdmin() {
           if (!tool.id) continue;
           if (existingToolIds.has(tool.id)) continue;
 
-          const required = tool.default_quantity_required ?? 0;
+          const carQty = tool.car_quantity ?? 0;
           toolsToCreate.push({
             vehicle_id: vehicle.id,
             tool_item_id: tool.id,
             location: tool.category || "Other",
-            quantity_required: required,
-            quantity_on_hand: required, // Defaulting to full stock as per template logic
+            quantity_required: carQty,
+            quantity_on_hand: carQty, // Stock based on car_quantity field
             notes: "",
           });
         }
