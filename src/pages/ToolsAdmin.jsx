@@ -185,6 +185,9 @@ export default function ToolsAdmin() {
       return createdCount;
     },
     onSuccess: (count) => {
+      queryClient.invalidateQueries(["vehicles-for-tools-admin"]);
+      queryClient.invalidateQueries(["vehicles"]);
+      queryClient.invalidateQueries({ queryKey: ["vehicle"] });
       toast.success(`Template applied. Created ${count} new vehicle tool entries.`);
     },
     onError: (error) => {
