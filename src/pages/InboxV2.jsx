@@ -429,7 +429,10 @@ export default function InboxV2() {
         limit: 100, 
         beforeDate: cursor 
       });
-      const moreThreads = response?.threads ?? response?.data?.threads ?? [];
+      const moreThreads = (response?.threads ?? response?.data?.threads ?? []).map(t => ({
+        ...t,
+        viewers: []
+      }));
 
       if (moreThreads.length > 0) {
         // Append to existing threads instead of refetching
