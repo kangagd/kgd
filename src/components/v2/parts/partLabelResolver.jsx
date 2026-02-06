@@ -85,16 +85,22 @@ export const resolvePartLabel = (record, priceListItemMap = {}) => {
 
 /**
  * Get cached fields to persist when creating/updating records
+ * CANONICAL SOURCE: PriceListItem.item (name) and PriceListItem.sku (code)
  * 
  * @param {Object} priceListItem - The selected PriceListItem
- * @returns {Object} { catalog_item_id, catalog_item_name }
+ * @returns {Object} { catalog_item_id, catalog_item_name, catalog_item_code }
  */
 export const getPartCachedFields = (priceListItem) => {
-  if (!priceListItem) return { catalog_item_id: null, catalog_item_name: null };
+  if (!priceListItem) return { 
+    catalog_item_id: null, 
+    catalog_item_name: null, 
+    catalog_item_code: null 
+  };
   
   return {
     catalog_item_id: priceListItem.id,
-    catalog_item_name: priceListItem.item || priceListItem.name || priceListItem.title || null,
+    catalog_item_name: priceListItem.item || null,  // CANONICAL: use .item
+    catalog_item_code: priceListItem.sku || null,   // CANONICAL: use .sku
   };
 };
 
@@ -110,7 +116,7 @@ export const shortenId = (id) => {
 
 /**
  * Resolve catalog item label by ID using maps
- * Checks PartsCatalogItem first, then PriceListItem, falls back to shortened ID
+ * CANONICAL SOURCE: PriceListItem.item is the primary label
  * 
  * @param {string} catalog_item_id - The catalog item ID
  * @param {Object} catalogMap - Map of id -> PartsCatalogItem (optional)
@@ -120,20 +126,73 @@ export const shortenId = (id) => {
 export const resolveCatalogItemLabel = (catalog_item_id, catalogMap = {}, priceListMap = {}) => {
   if (!catalog_item_id) return '⚠ Needs relink';
   
-  // Check PartsCatalogItem first
+  // Check PartsCatalogItem first (legacy support)
   if (catalogMap[catalog_item_id]) {
     const item = catalogMap[catalog_item_id];
     const label = item.name || item.item || item.title;
     if (label && !isPlaceholderLabel(label)) return label;
   }
   
-  // Check PriceListItem
+  // Check PriceListItem - CANONICAL SOURCE
   if (priceListMap[catalog_item_id]) {
     const item = priceListMap[catalog_item_id];
-    const label = item.item || item.name || item.title;
+    const label = item.item;  // CANONICAL: use .item field
     if (label && !isPlaceholderLabel(label)) return label;
   }
   
   // Fallback to shortened ID
   return shortenId(catalog_item_id);
+};
+
+/**
+ * Resolve catalog item code (SKU) from PriceListItem
+ * CANONICAL SOURCE: PriceListItem.sku
+ * 
+ * @param {Object} priceListItemOrId - PriceListItem object or string ID
+ * @param {Object} priceListMap - Map of id -> PriceListItem (required if passing ID)
+ * @returns {string|null} SKU code or null
+ */
+export const resolveCatalogCode = (priceListItemOrId, priceListMap = {}) => {
+  if (!priceListItemOrId) return null;
+  
+  // If object passed directly
+  if (typeof priceListItemOrId === 'object') {
+    return priceListItemOrId.sku || null;
+  }
+  
+  // If ID passed, lookup in map
+  if (typeof priceListItemOrId === 'string' && priceListMap[priceListItemOrId]) {
+    return priceListMap[priceListItemOrId].sku || null;
+  }
+  
+  return null;
+};
+
+/**
+ * Resolve catalog item label - supports object or ID lookup
+ * CANONICAL SOURCE: PriceListItem.item is the display name
+ * 
+ * @param {Object|string} priceListItemOrId - PriceListItem object or ID string
+ * @param {string} fallbackId - Optional fallback ID if first param is null
+ * @param {Object} priceListMap - Map of id -> PriceListItem (required for ID lookups)
+ * @returns {string} Display label
+ */
+export const resolveCatalogLabel = (priceListItemOrId, fallbackId = null, priceListMap = {}) => {
+  // If object passed directly
+  if (priceListItemOrId && typeof priceListItemOrId === 'object') {
+    return priceListItemOrId.item || priceListItemOrId.sku || shortenId(priceListItemOrId.id);
+  }
+  
+  // If ID passed, lookup in map
+  const itemId = priceListItemOrId || fallbackId;
+  if (itemId && typeof itemId === 'string') {
+    if (priceListMap[itemId]) {
+      const item = priceListMap[itemId];
+      return item.item || item.sku || shortenId(itemId);
+    }
+    // Last resort: shortened ID
+    return shortenId(itemId);
+  }
+  
+  return 'Part';
 };
