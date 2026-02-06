@@ -305,6 +305,9 @@ Deno.serve(async (req) => {
 
         const lastMsgDate = lastMsg.internalDate ? new Date(parseInt(lastMsg.internalDate)).toISOString() : new Date().toISOString();
 
+        // Auto-categorize based on subject and snippet
+        const category = determineCategory(subject, snippet);
+
         const threadData = {
           subject,
           gmail_thread_id: gmailThread.id,
@@ -316,7 +319,8 @@ Deno.serve(async (req) => {
           message_count: threadDetail.messages.length,
           isUnread: threadDetail.messages.some(m => m.labels?.includes('UNREAD')),
           status: 'Open',
-          last_activity_at: lastMsgDate
+          last_activity_at: lastMsgDate,
+          category: category
         };
 
         const existingId = existingThreadsMap[gmailThread.id];
