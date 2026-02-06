@@ -302,7 +302,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        let snippet = threadDetail.snippet || '';
+        // Use snippet from original list call (more reliable than detailed fetch)
+        let snippet = snippetMap[gmailThread.id] || threadDetail.snippet || '';
         if (snippet.length > 200) {
           snippet = snippet.substring(0, 200) + '...';
         }
