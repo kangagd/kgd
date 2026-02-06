@@ -16,29 +16,71 @@ Deno.serve(async (req) => {
         }
 
         const { 
-            catalog_item_id, 
+            catalog_item_id,
+            catalog_item_code, // SKU - preferred for CSV imports
             quantity, 
-            to_location_id, 
+            to_location_id,
+            location_code, // Location code - preferred for CSV imports
             note,
             force = false // Allow override for duplicate seeds
         } = await req.json();
 
         // Validation
-        if (!catalog_item_id) {
-            return Response.json({ error: 'catalog_item_id required' }, { status: 400 });
-        }
         if (!quantity || quantity <= 0) {
             return Response.json({ error: 'quantity must be positive' }, { status: 400 });
         }
-        if (!to_location_id) {
-            return Response.json({ error: 'to_location_id required' }, { status: 400 });
+
+        // Resolve catalog item (by SKU first, then ID)
+        let catalogItem = null;
+        let resolvedCatalogId = catalog_item_id;
+
+        if (catalog_item_code) {
+            // Prefer SKU lookup (case-insensitive)
+            const allItems = await base44.asServiceRole.entities.PriceListItem.list();
+            catalogItem = allItems.find(item => 
+                item.sku && item.sku.toLowerCase().trim() === catalog_item_code.toLowerCase().trim()
+            );
+            if (!catalogItem) {
+                return Response.json({ 
+                    error: `No catalog item found with SKU: ${catalog_item_code}` 
+                }, { status: 404 });
+            }
+            resolvedCatalogId = catalogItem.id;
+        } else if (catalog_item_id) {
+            // Fallback to ID lookup
+            catalogItem = await base44.asServiceRole.entities.PriceListItem.get(catalog_item_id);
+            if (!catalogItem) {
+                return Response.json({ error: 'Catalog item not found' }, { status: 404 });
+            }
+        } else {
+            return Response.json({ 
+                error: 'Either catalog_item_id or catalog_item_code required' 
+            }, { status: 400 });
         }
 
-        // Fetch catalog item and location
-        const [catalogItem, location] = await Promise.all([
-            base44.asServiceRole.entities.PriceListItem.get(catalog_item_id),
-            base44.asServiceRole.entities.InventoryLocation.get(to_location_id)
-        ]);
+        // Resolve location (by code first, then ID)
+        let location = null;
+        let resolvedLocationId = to_location_id;
+
+        if (location_code) {
+            const allLocations = await base44.asServiceRole.entities.InventoryLocation.list();
+            location = allLocations.find(loc => loc.location_code === location_code);
+            if (!location) {
+                return Response.json({ 
+                    error: `No location found with code: ${location_code}` 
+                }, { status: 404 });
+            }
+            resolvedLocationId = location.id;
+        } else if (to_location_id) {
+            location = await base44.asServiceRole.entities.InventoryLocation.get(to_location_id);
+            if (!location) {
+                return Response.json({ error: 'Location not found' }, { status: 404 });
+            }
+        } else {
+            return Response.json({ 
+                error: 'Either to_location_id or location_code required' 
+            }, { status: 400 });
+        }
 
         if (!catalogItem) {
             return Response.json({ error: 'Catalog item not found' }, { status: 404 });
@@ -73,8 +115,8 @@ Deno.serve(async (req) => {
 
         // IDEMPOTENCY: Check for existing seed
         const existingSeeds = await base44.asServiceRole.entities.StockMovement.filter({
-            catalog_item_id,
-            to_location_id,
+            catalog_item_id: resolvedCatalogId,
+            to_location_id: resolvedLocationId,
             source_type: 'initial_seed'
         });
 
@@ -90,16 +132,17 @@ Deno.serve(async (req) => {
             }, { status: 400 });
         }
 
-        // Create StockMovement
+        // Create StockMovement with canonical cached fields
         const movement = await base44.asServiceRole.entities.StockMovement.create({
-            catalog_item_id,
-            catalog_item_name: catalogItem.item,
+            catalog_item_id: resolvedCatalogId,
+            catalog_item_name: catalogItem.item,  // CANONICAL: .item
+            catalog_item_code: catalogItem.sku,   // CANONICAL: .sku
             qty: quantity,
             from_location_id: null,
-            to_location_id,
+            to_location_id: resolvedLocationId,
             to_location_code: location.location_code,
             source_type: 'initial_seed',
-            source_note: note || 'Operational seed (S11)',
+            source_note: note || 'Operational seed (SKU-based)',
             created_by_user_id: user.id,
             created_by_name: user.full_name || user.email,
             created_at: new Date().toISOString()
